@@ -34,13 +34,13 @@ symbol name of the function."
   (let [parent (or #spy/d *trace-log-parent*
                    #spy/d root)
         _ #spy/d parent
-        this {:id #spy/d (str (gensym ""))
-              :parent-id (:id parent)
-              :depth (-> parent :depth inc)
-              :name name
-              :args (vec args)
-              :children (atom [])
-              :started-at (java.util.Date.)}
+        this ^::entry {:id #spy/d (str (gensym ""))
+                       :parent-id (:id parent)
+                       :depth (-> parent :depth inc)
+                       :name name
+                       :args (vec args)
+                       :children (atom [])
+                       :started-at (java.util.Date.)}
         idx (-> (start-trace (:children parent)
                              this)
                 count
@@ -118,9 +118,9 @@ symbol name of the function."
 
 (defn default-root
   [& {:as m}]
-  (merge {:id (name (gensym "root"))
-          :depth 0
-          :children (atom [])}
+  (merge ^::entry {:id (name (gensym "root"))
+                   :depth 0
+                   :children (atom [])}
          m))
 
 (defmacro trace-ns
@@ -143,3 +143,12 @@ symbol name of the function."
   "Untrace all fns in the given name space."
   [ns]
   `(untrace-ns* ~ns))
+
+(defn deref-children
+  [v]
+  (clojure.walk/prewalk #(if (-> %
+                                 meta
+                                 ::entry)
+                           (update-in % [:children] deref)
+                           %)
+                        v))

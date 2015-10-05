@@ -9,6 +9,7 @@
 
         trace-root => {}
         (-> trace-root :children deref) => []
+        (mt/deref-children trace-root) => {}
 
         (mt/untrace-ns 'com.billpiel.mem-tracer.test.ns1)))
 
