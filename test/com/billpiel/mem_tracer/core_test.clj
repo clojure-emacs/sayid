@@ -7,8 +7,6 @@
       (let [trace-root (mt/trace-ns 'com.billpiel.mem-tracer.test.ns1)]
         (com.billpiel.mem-tracer.test.ns1/func1 :a)
 
-        trace-root => {}
-        (-> trace-root :children deref) => []
         (mt/deref-children trace-root) => {}
 
         (mt/untrace-ns 'com.billpiel.mem-tracer.test.ns1)))
