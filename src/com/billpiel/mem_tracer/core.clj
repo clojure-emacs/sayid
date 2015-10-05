@@ -71,7 +71,7 @@ symbol name of the function."
          s  (.sym v)]
      (if (and (ifn? @v) (-> v meta :macro not) (-> v meta ::traced not))
        (let [f @v
-             vname (symbol (str ns "/" s))] ;; string!!
+             vname (str ns "/" s)]
          (doto v
            (alter-var-root #(fn tracing-wrapper [& args]
                               (println "IN TRACING WRAPPER!")
