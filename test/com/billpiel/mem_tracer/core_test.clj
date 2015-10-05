@@ -11,4 +11,13 @@
 
         (mt/untrace-ns 'com.billpiel.mem-tracer.test.ns1)))
 
-(macroexpand-1 '(mt/trace-ns 'com.billpiel.mem-tracer.test.ns1 log))
+(comment "
+TODO
+- wrap args that are funcs
+ - and deep search values for funcs?
+- wrap returns that are funcs
+ - and deep search values for funcs?
+- string output like tools.trace
+ - requires sequencial log?
+
+")
