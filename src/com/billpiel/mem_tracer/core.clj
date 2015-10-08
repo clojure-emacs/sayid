@@ -152,3 +152,5 @@ symbol name of the function."
                            (update-in % [:children] deref)
                            %)
                         v))
+
+(def entry->string com.billpiel.mem-tracer.string-output/entry->string)
