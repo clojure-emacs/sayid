@@ -18,6 +18,6 @@ TODO
 - wrap returns that are funcs
  - and deep search values for funcs?
 - string output like tools.trace
- - requires sequencial log?
+ - requires sequential log?
 
 ")
