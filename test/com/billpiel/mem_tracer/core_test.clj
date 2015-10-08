@@ -20,5 +20,5 @@ TODO
  - and deep search values for funcs?
 - string output like tools.trace
  - requires sequential log?
-
+- diff entries
 ")
