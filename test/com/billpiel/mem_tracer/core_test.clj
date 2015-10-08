@@ -1,6 +1,7 @@
 (ns com.billpiel.mem-tracer.core-test
   (:require [midje.sweet :refer :all]
-            [com.billpiel.mem-tracer.core :as mt]))
+            [com.billpiel.mem-tracer.core :as mt]
+            com.billpiel.mem-tracer.test.ns1))
 
 (fact "fact"
       (mt/untrace-ns 'com.billpiel.mem-tracer.test.ns1)

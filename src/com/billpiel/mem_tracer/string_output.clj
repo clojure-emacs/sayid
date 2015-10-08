@@ -106,4 +106,4 @@
                            :started-at #inst "2015-10-05T20:24:43.887-00:00"}]
                :started-at #inst "2015-10-05T20:24:43.887-00:00"})
 
-(println  (entry->string ex-entry))
+#_ (println  (entry->string ex-entry))
