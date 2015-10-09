@@ -20,17 +20,35 @@
                                                            :class-delimiter [:cyan]
                                                            :class-name      [:cyan]}}))
 
+
 (defn color-code
-  [n]
-  (str "\033[1;3"
-       (nth [1 3 2 6 4 5] (mod n 6))
+  [& {:keys [fg bg bold]}]
+  (str "\033["
+       (->> [(when (#{true 1} bold)
+               1)
+             (when fg
+               (+ 30 (mod fg 10)))
+             (when bg
+               (+ 40 (mod bg 10)))]
+            (remove nil?)
+            (clojure.string/join ";"))
        "m"))
 
-(defn background-color-code
-  [n]
-  (str "\033[4" (mod n 7) "m"))
+(println (color-code :bold 1 :bg 1) "hi" (color-code))
 
-(def reset-color-code "\033[m")
+
+(defn fg-color-code
+  [n]
+  (color-code :fg (nth [1 3 2 6 4 5]
+                       (mod n 6))))
+
+(defn bg-color-code
+  [n]
+  (str "\033[4" (mod n 10) "m"))
+
+(println  (apply str (mapcat #(list (background-color-code %) "hi ") (range 0 20) )))
+
+(def reset-color-code (color-code))
 
 (defn header-indent
   [depth]
