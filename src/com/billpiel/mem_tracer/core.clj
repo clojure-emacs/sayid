@@ -31,10 +31,10 @@ may be rebound to do anything you like. 'name' is optional."
   "Traces a single call to a function f with args. 'name' is the
 symbol name of the function."
   [root name f args]
-  (let [parent (or #spy/d *trace-log-parent*
-                   #spy/d root)
-        _ #spy/d parent
-        this ^::entry {:id #spy/d (str (gensym ""))
+  (let [parent (or *trace-log-parent*
+                   root)
+        _ parent
+        this ^::entry {:id (str (gensym ""))
                        :parent-id (:id parent)
                        :depth (-> parent :depth inc)
                        :name name
