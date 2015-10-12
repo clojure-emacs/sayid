@@ -331,7 +331,7 @@
 
                 (fact "string output is correct"
                       (remove-iso-ctrl (mt/entry->string trace))
-                      => "[31m  [m[33m [33m| com.billpiel.mem-tracer.test.ns1/func-throws[m [33m| [33m:a[0m[m")
+                      => "[31m  [m[33m [33m| com.billpiel.mem-tracer.test.ns1/func-throws[m [33m| [33m:a[0m[m [33m| [1;37;41mTHROW[m => [35m\"Exception from func-throws: :a\"[0m [33m| [31m[[0m[35m\"com.billpiel.mem_tracer.test.ns1$func_throws ns1.clj:14\"[0m[31m][0m[m")
 
                 (mt/untrace-ns 'com.billpiel.mem-tracer.test.ns1))))
 
