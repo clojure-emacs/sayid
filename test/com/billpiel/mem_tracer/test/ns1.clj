@@ -9,4 +9,6 @@
   [arg1]
   (func2 arg1))
 
-#_ (meta (var func1))
+(defn func-throws
+  [arg1]
+  (throw (Exception. (str "Exception from func-throws: " arg1))))

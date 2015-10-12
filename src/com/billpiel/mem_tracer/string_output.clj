@@ -34,9 +34,6 @@
             (clojure.string/join ";"))
        "m"))
 
-(println (color-code :bold 1 :bg 1) "hi" (color-code))
-
-
 (defn fg-color-code
   [n]
   (color-code :fg (nth [1 3 2 6 4 5]
@@ -44,9 +41,7 @@
 
 (defn bg-color-code
   [n]
-  (str "\033[4" (mod n 10) "m"))
-
-(println  (apply str (mapcat #(list (background-color-code %) "hi ") (range 0 20) )))
+  (color-code :bg n))
 
 (def reset-color-code (color-code))
 
@@ -59,7 +54,7 @@
   (->> depth
        inc
        (range 1)
-       (map #(str (color-code %)
+       (map #(str (fg-color-code %)
                   "|"))
        (clojure.string/join "")
        (format " %s ")))
@@ -76,7 +71,7 @@
 (defn header->string
   [entry]
   (let [depth (:depth entry)]
-    (clojure.string/join "" [(color-code depth)
+    (clojure.string/join "" [(fg-color-code depth)
                              (indent depth)
                              (:name entry)
                              reset-color-code])))

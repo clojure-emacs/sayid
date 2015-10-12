@@ -5,6 +5,42 @@
 
 (def ^:dynamic *trace-log-parent* nil)
 
+(defn now [] (java.util.Date.))
+
+
+(defn StackTraceElement->map
+  [^StackTraceElement o]
+  {:class-name (.getClassName o)
+   :file-name (.getFileName o)
+   :method-name (.getMethodName o)
+   :line-number (.getLineNumber o)})
+
+(defn Throwable->map
+  "Constructs a data representation for a Throwable."
+  {:added "1.7"}
+  [^Throwable o]
+  (let [base (fn [^Throwable t]
+               (let [m {:type (class t)
+                        :message (.getLocalizedMessage t)
+                        :at (StackTraceElement->map (get (.getStackTrace t) 0))}
+                     data (ex-data t)]
+                 (if data
+                   (assoc m :data data)
+                   m)))
+        via (loop [via [], ^Throwable t o]
+              (if t
+                (recur (conj via t) (.getCause t))
+                via))
+        ^Throwable root (peek via)
+        m {:cause (.getLocalizedMessage root)
+           :via (vec (map base via))
+           :trace (mapv StackTraceElement->map (.getStackTrace ^Throwable (or root o)))}
+        data (ex-data root)]
+    (if data
+      (assoc m :data data)
+      m)))
+
+
 (defn ^{:private true} start-trace
   "This function is called by trace. Prints to standard output, but
 may be rebound to do anything you like. 'name' is optional."
@@ -33,24 +69,30 @@ symbol name of the function."
   [root name f args]
   (let [parent (or *trace-log-parent*
                    root)
-        _ parent
         this ^::entry {:id (str (gensym ""))
                        :parent-id (:id parent)
                        :depth (-> parent :depth inc)
                        :name name
                        :args (vec args)
                        :children (atom [])
-                       :started-at (java.util.Date.)}
+                       :started-at (now)}
         idx (-> (start-trace (:children parent)
                              this)
                 count
                 dec)]
     (let [value (binding [*trace-log-parent* this]
-                  (apply f args))]
+                  (try
+                    (apply f args)
+                    (catch Throwable t
+                       (end-trace (:children parent)
+                                 idx
+                                 {:throw (Throwable->map t)
+                                  :ended-at (now)})
+                      (throw t))))]
       (end-trace (:children parent)
                  idx
                  {:return value
-                  :ended-at (java.util.Date.)})
+                  :ended-at (now)})
       value)))
 
 (defn ^{:skip-wiki true} trace-var*
