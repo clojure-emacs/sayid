@@ -92,6 +92,30 @@
          (pprint-str return)
          "\n")))
 
+(defn throw-str
+  [entry]
+  (when-let [thrown (:throw entry)]
+    (str (indent (:depth entry))
+         (color-code :fg 7 :bg 1 :bold true)
+         "THROW"
+         reset-color-code
+         " => "
+         (pprint-str (:cause thrown))
+         "\n"
+         (indent-line-breaks
+          (->> thrown
+               :via
+               (mapv (fn [v]
+                       (let [at (:at v)
+                             [c f l] ((juxt :class-name
+                                            :file-name
+                                            :line-number)
+                                      at)]
+                         (format "%s %s:%s" c f l))))
+               pprint-str)
+          (:depth entry))
+         "\n")))
+
 (defn entry->string
   [entry]
   (->> [(header->string entry)
@@ -99,7 +123,8 @@
         (args-str entry)
         (when (some-> entry :children not-empty) (return-str entry))
         (clojure.string/join "" (mapcat entry->string (:children entry)))
-        (return-str entry)]
+        (return-str entry)
+        (throw-str entry)]
        (remove nil?)
        (clojure.string/join "")))
 
