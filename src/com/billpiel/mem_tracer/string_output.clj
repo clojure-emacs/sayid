@@ -50,19 +50,22 @@
   (str depth (clojure.string/join "" (repeat depth "|"))))
 
 (defn indent
-  [depth]
-  (->> depth
-       inc
-       (range 1)
-       (map #(str (fg-color-code %)
-                  "|"))
-       (clojure.string/join "")
-       (format " %s ")))
+  [depth & {:keys [start end]
+            :or   {start " " end " "}}]
+  (format "%s%s%s"
+          start
+          (->> depth
+               inc
+               (range 1)
+               (map #(str (fg-color-code %)
+                          "|"))
+               (clojure.string/join ""))
+          end))
 
 (defn indent-line-breaks
-  [s depth]
+  [s depth & rest]
   (clojure.string/join ""
-                       (mapcat (fn [line] [(indent depth)
+                       (mapcat (fn [line] [(apply indent depth rest)
                                            line
                                            reset-color-code
                                            "\n"])
@@ -72,7 +75,10 @@
   [entry]
   (let [depth (:depth entry)]
     (clojure.string/join "" [(fg-color-code depth)
-                             (indent depth)
+                             (indent depth :end "" )
+                             (color-code :fg 7 :bold true)
+                             ">"
+                             (fg-color-code depth)
                              (:name entry)
                              reset-color-code])))
 
@@ -82,15 +88,18 @@
     (indent-line-breaks (clojure.string/join "\n"
                                              (map pprint-str
                                                   args))
-                        (:depth entry))))
+                        (:depth entry)
+                        :end "  ")))
 
 (defn return-str
   [entry]
   (when-let [return (:return entry)]
     (str (indent (:depth entry))
-         "return => "
-         (pprint-str return)
-         "\n")))
+         "return => \n"
+         (indent-line-breaks (str (pprint-str return)
+                                  "\n")
+                             (:depth entry)
+                             :end "  "))))
 
 (defn throw-str
   [entry]
