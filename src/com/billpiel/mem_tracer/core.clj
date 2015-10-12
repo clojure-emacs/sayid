@@ -1,4 +1,5 @@
-(ns com.billpiel.mem-tracer.core)
+(ns com.billpiel.mem-tracer.core
+  (:require com.billpiel.mem-tracer.string-output))
 
 (def ^{:doc "Current stack depth of traced function calls." :private true :dynamic true}
   *trace-depth* 0)
