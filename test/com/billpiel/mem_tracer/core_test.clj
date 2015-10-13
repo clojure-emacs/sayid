@@ -1,6 +1,7 @@
 (ns com.billpiel.mem-tracer.core-test
   (:require [midje.sweet :refer :all]
             [com.billpiel.mem-tracer.core :as mt]
+            [com.billpiel.mem-tracer.trace :as mtt]
             com.billpiel.mem-tracer.test.ns1))
 
 ;; https://github.com/Prismatic/plumbing/blob/6f9f1b6453ed2c978a619dc99bb0317d8c053141/src/plumbing/core.cljx#L356
@@ -43,7 +44,7 @@
 (fact-group "fact"
 
             (mt/untrace-ns 'com.billpiel.mem-tracer.test.ns1)
-            (with-redefs [mt/now (mock-now-fn)
+            (with-redefs [mtt/now (mock-now-fn)
                           gensym (mock-gensym-fn)]
               (let [trace-root (mt/trace-ns 'com.billpiel.mem-tracer.test.ns1)
                     _ (com.billpiel.mem-tracer.test.ns1/func1 :a)
@@ -289,7 +290,7 @@
 
 (fact-group "exception thrown"
             (mt/untrace-ns 'com.billpiel.mem-tracer.test.ns1)
-            (with-redefs [mt/now (mock-now-fn)
+            (with-redefs [mtt/now (mock-now-fn)
                           gensym (mock-gensym-fn)]
               (let [trace-root (mt/trace-ns 'com.billpiel.mem-tracer.test.ns1)
                     _ (try
