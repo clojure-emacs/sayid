@@ -66,9 +66,9 @@ may be rebound to do anything you like. 'name' is optional."
 (defn ^{:skip-wiki true} trace-fn-call
   "Traces a single call to a function f with args. 'name' is the
 symbol name of the function."
-  [root name f args]
+  [workspace name f args]
   (let [parent (or *trace-log-parent*
-                   root)
+                   workspace)
         this ^::entry {:id (str (gensym ""))
                        :parent-id (:id parent)
                        :depth (-> parent :depth inc)
@@ -105,9 +105,9 @@ symbol name of the function."
 
   In the binary case, ns should be a namespace object or a symbol
   naming a namespace and s a symbol to be resolved in that namespace."
-  ([ns s root]
-   (trace-var* (ns-resolve ns s) root))
-  ([v root]
+  ([ns s workspace]
+   (trace-var* (ns-resolve ns s) workspace))
+  ([v workspace]
    (let [^clojure.lang.Var v (if (var? v) v (resolve v))
          ns (.ns v)
          s  (.sym v)]
@@ -117,8 +117,8 @@ symbol name of the function."
          (doto v
            (alter-var-root #(fn tracing-wrapper [& args]
                               (println "IN TRACING WRAPPER!")
-                              (trace-fn-call root vname % args)))
-           (alter-meta! assoc ::traced f)))))))
+                              (trace-fn-call workspace vname % args)))
+           (alter-meta! assoc ::traced [(:id workspace) f])))))))
 
 (defn ^{:skip-wiki true} untrace-var*
   "Reverses the effect of trace-var / trace-vars / trace-ns for the
@@ -132,7 +132,7 @@ symbol name of the function."
      (let [^clojure.lang.Var v (if (var? v) v (resolve v))
            ns (.ns v)
            s  (.sym v)
-           f  ((meta v) ::traced)]
+           [_ f]  ((meta v) ::traced)]
        (when f
          (doto v
            (alter-var-root (constantly ((meta v) ::traced)))
@@ -151,12 +151,13 @@ symbol name of the function."
   object or a symbol.
 
   No-op for clojure.core and clojure.tools.trace."
-  [ns root]
+  [ns workspace]
   (let [ns (the-ns ns)]
     (when-not ('#{clojure.core com.billpiel.mem-tracer.core} (.name ns))
       (let [ns-fns (->> ns ns-interns vals (filter (comp fn? var-get)))]
+        (swap! workspace #(update-in % [:traced] conj [:ns ns]))
         (doseq [f ns-fns]
-          (trace-var* f root))))))
+          (trace-var* f workspace))))))
 
 (defn ^{:skip-wiki true} untrace-ns*
   "Reverses the effect of trace-var / trace-vars / trace-ns for the

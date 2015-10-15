@@ -5,34 +5,31 @@
 
 (def workspace (atom nil))
 
-
-
 (defn default-workspace
   [& {:as m}]
   (merge ^::entry {:id (name (gensym "root"))
                    :depth 0
                    :children (atom [])
-                   :traced []}
+                   :traced #{}}
          m))
 
-(defn default-root
-  [& {:as m}]
-  (merge ^::entry {:id (name (gensym "root"))
-                   :depth 0
-                   :children (atom [])}
-         m))
+(defn add-trace-ns
+  [ns-sym]
+  (compare-and-set! workspace nil (default-workspace))
+  (swap! workspace #(update-in % [:traced] conj [:ns ns-sym]))
+  (trace/trace-ns* ns-sym workspace))
 
-(defmacro trace-ns
-  "Trace all fns in the given name space."
-  [ns & [root]]
-  `(let [root# (or ~root (default-root))]
-     (trace/trace-ns* ~ns root#)
-     root#))
-
-(defmacro untrace-ns
+(defn remove-trace-ns
   "Untrace all fns in the given name space."
-  [ns]
-  `(trace/untrace-ns* ~ns))
+  [ns-sym]
+  (swap! workspace update-in [:traced] #(remove % (partial = [:ns ns-sym])))
+  (trace/untrace-ns* ns-sym workspace))
+
+(defn enable-all-traces
+  []
+  (doseq))
+(defn disable-all-traces [] nil)
+(defn remove-all-traces [] nil)
 
 (defn deref-children
   [v]
