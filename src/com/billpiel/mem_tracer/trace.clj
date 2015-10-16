@@ -95,6 +95,18 @@ symbol name of the function."
                   :ended-at (now)})
       value)))
 
+(defn apply-trace-to-var
+  [^clojure.lang.Var v workspace]
+  (let [ns (.ns v)
+        s  (.sym v)
+        f @v
+        vname (str ns "/" s)]
+    (doto v
+      (alter-var-root #(fn tracing-wrapper [& args]
+                         (println "IN TRACING WRAPPER!")
+                         (trace-fn-call workspace vname % args)))
+      (alter-meta! assoc ::traced [(:id workspace) f]))))
+
 (defn ^{:skip-wiki true} trace-var*
   "If the specified Var holds an IFn and is not marked as a macro, its
   contents is replaced with a version wrapped in a tracing call;
@@ -108,17 +120,13 @@ symbol name of the function."
   ([ns s workspace]
    (trace-var* (ns-resolve ns s) workspace))
   ([v workspace]
-   (let [^clojure.lang.Var v (if (var? v) v (resolve v))
-         ns (.ns v)
-         s  (.sym v)]
-     (if (and (ifn? @v) (-> v meta :macro not) (-> v meta ::traced not))
-       (let [f @v
-             vname (str ns "/" s)]
-         (doto v
-           (alter-var-root #(fn tracing-wrapper [& args]
-                              (println "IN TRACING WRAPPER!")
-                              (trace-fn-call workspace vname % args)))
-           (alter-meta! assoc ::traced [(:id workspace) f])))))))
+   (let [^clojure.lang.Var v (if (var? v) v (resolve v))]
+     (when (and (ifn? @v) (-> v meta :macro not))
+       (if-let [[traced-id traced-f] (-> v meta ::traced)]
+         (when (not= traced-id (:id workspace))
+           (untrace-var* v)
+           (apply-trace-to-var v workspace))
+         (apply-trace-to-var v workspace))))))
 
 (defn ^{:skip-wiki true} untrace-var*
   "Reverses the effect of trace-var / trace-vars / trace-ns for the
@@ -138,13 +146,6 @@ symbol name of the function."
            (alter-var-root (constantly ((meta v) ::traced)))
            (alter-meta! dissoc ::traced))))))
 
-#_ (defmacro trace-vars
-     "Trace each of the specified Vars.
-  The arguments may be Var objects or symbols to be resolved in the
-  current namespace."
-     [& vs]
-     `(do ~@(for [x vs] `(trace-var* (quote ~x)))))
-
 (defn ^{:skip-wiki true} trace-ns*
   "Replaces each function from the given namespace with a version wrapped
   in a tracing call. Can be undone with untrace-ns. ns should be a namespace
@@ -155,7 +156,6 @@ symbol name of the function."
   (let [ns (the-ns ns)]
     (when-not ('#{clojure.core com.billpiel.mem-tracer.core} (.name ns))
       (let [ns-fns (->> ns ns-interns vals (filter (comp fn? var-get)))]
-        (swap! workspace #(update-in % [:traced] conj [:ns ns]))
         (doseq [f ns-fns]
           (trace-var* f workspace))))))
 
@@ -167,3 +167,24 @@ symbol name of the function."
   (let [ns-fns (->> ns the-ns ns-interns vals)]
     (doseq [f ns-fns]
           (untrace-var* f))))
+
+(defmulti trace* (fn [type sym workspace] type))
+
+(defmethod trace* :ns
+  [_ sym workspace]
+  (trace-ns* sym workspace))
+
+(defmethod trace* :fn
+  [_ sym workspace]
+  (throw (Exception. "not implemented")))
+
+
+(defmulti untrace* (fn [type sym workspace] type))
+
+(defmethod untrace* :ns
+  [_ sym workspace]
+  (untrace-ns* sym workspace))
+
+(defmethod untrace* :fn
+  [_ sym workspace]
+  (throw (Exception. "not implemented")))

@@ -22,14 +22,23 @@
 (defn remove-trace-ns
   "Untrace all fns in the given name space."
   [ns-sym]
-  (swap! workspace update-in [:traced] #(remove % (partial = [:ns ns-sym])))
+  (swap! workspace update-in [:traced] #(remove #{[:ns ns-sym]} %))
   (trace/untrace-ns* ns-sym workspace))
 
 (defn enable-all-traces
   []
-  (doseq))
-(defn disable-all-traces [] nil)
-(defn remove-all-traces [] nil)
+  (let [w @workspace]
+    (doseq [[type sym] (:traced w)]
+      (apply trace/trace* type sym w))))
+
+(defn disable-all-traces
+  []
+  (doseq [t (:traced @workspace)]
+    (apply trace/untrace* t)))
+
+(defn remove-all-traces []
+  (disable-all-traces)
+  (swap! workspace assoc :traced []))
 
 (defn deref-children
   [v]
