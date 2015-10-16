@@ -1,9 +1,5 @@
 (ns com.billpiel.mem-tracer.trace)
 
-
-(def ^{:doc "Current stack depth of traced function calls." :private true :dynamic true}
-  *trace-depth* 0)
-
 (def ^:dynamic *trace-log-parent* nil)
 
 (defn now [] (java.util.Date.))
@@ -57,11 +53,6 @@ may be rebound to do anything you like. 'name' is optional."
          update-in
          [idx]
          #(merge % entry)))
-
-(defn ^{:private true} trace-indent
-  "Returns an indentation string based on *trace-depth*"
-  []
-  (apply str (take *trace-depth* (repeat "| "))))
 
 (defn ^{:skip-wiki true} trace-fn-call
   "Traces a single call to a function f with args. 'name' is the
