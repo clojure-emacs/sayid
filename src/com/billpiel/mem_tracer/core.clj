@@ -39,12 +39,11 @@
   (swap! workspace update-in [:traced] disj [:ns ns-sym])
   (trace/untrace-ns* ns-sym))
 
-
 (defn enable-all-traces!
   []
   (let [w (get-current-workspace!)]
     (doseq [[type sym] (:traced w)]
-      (apply trace/trace* type sym w))))
+      (trace/trace* type sym w))))
 
 (defn disable-all-traces!
   []

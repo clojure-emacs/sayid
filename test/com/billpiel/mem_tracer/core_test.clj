@@ -91,6 +91,54 @@
 
               (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)))
 
+
+(fact-group "about enable/disable -all-traces!"
+            (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
+            (mt/reset-workspace!)
+            (with-redefs [mtt/now (mock-now-fn)
+                          gensym (mock-gensym-fn)]
+
+              (mt/add-trace-ns! 'com.billpiel.mem-tracer.test.ns1)
+
+              (fact "disable-all-traces! works"
+                    (mt/disable-all-traces!)
+                    (com.billpiel.mem-tracer.test.ns1/func1 :a)
+
+                    (mt/deref-workspace!)
+                    => {:children []
+                        :depth 0
+                        :id "root10"
+                        :traced #{[:ns 'com.billpiel.mem-tracer.test.ns1]}})
+
+              (fact "enable-all-traces! works"
+                    (mt/enable-all-traces!)
+                    (com.billpiel.mem-tracer.test.ns1/func1 :a)
+
+                    (mt/deref-workspace!)
+                    => {:children [{:args [:a]
+                                    :children [{:args [:a]
+                                                :children []
+                                                :depth 2
+                                                :ended-at #inst "2010-01-01T03:00:00.000-00:00"
+                                                :id "12"
+                                                :name "com.billpiel.mem-tracer.test.ns1/func2"
+                                                :parent-id "11"
+                                                :return :a
+                                                :started-at #inst "2010-01-01T02:00:00.000-00:00"}]
+                                    :depth 1
+                                    :ended-at #inst "2010-01-01T04:00:00.000-00:00"
+                                    :id "11"
+                                    :name "com.billpiel.mem-tracer.test.ns1/func1"
+                                    :parent-id "root10"
+                                    :return :a
+                                    :started-at #inst "2010-01-01T01:00:00.000-00:00"}]
+                        :depth 0
+                        :id "root10"
+                        :traced #{[:ns 'com.billpiel.mem-tracer.test.ns1]}})
+
+              (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)))
+
+
 (def mock-log {:children
                [{:args [:a],
                  :children [],
@@ -298,52 +346,53 @@
                :id "root10"})
 
 #_ (fact-group "exception thrown"
-            (mt/untrace-ns 'com.billpiel.mem-tracer.test.ns1)
-            (with-redefs [mtt/now (mock-now-fn)
-                          gensym (mock-gensym-fn)]
-              (let [trace-root (mt/trace-ns 'com.billpiel.mem-tracer.test.ns1)
-                    _ (try
-                        (com.billpiel.mem-tracer.test.ns1/func-throws :a)
-                        (catch Throwable t))
-                    trace (mt/deref-children trace-root)]
+               (mt/untrace-ns 'com.billpiel.mem-tracer.test.ns1)
+               (with-redefs [mtt/now (mock-now-fn)
+                             gensym (mock-gensym-fn)]
+                 (let [trace-root (mt/trace-ns 'com.billpiel.mem-tracer.test.ns1)
+                       _ (try
+                           (com.billpiel.mem-tracer.test.ns1/func-throws :a)
+                           (catch Throwable t))
+                       trace (mt/deref-children trace-root)]
 
-                (fact "log is correct"
-                      (dissoc trace :children)
-                      => {:depth 0, :id "root10"})
+                   (fact "log is correct"
+                         (dissoc trace :children)
+                         => {:depth 0
+                             :id "root10"})
 
-                (fact "log is correct"
-                      (-> trace :children count)
-                      => 1)
+                   (fact "log is correct"
+                         (-> trace :children count)
+                         => 1)
 
-                (fact "log is correct"
-                      (-> trace :children first :throw :cause)
-                      => "Exception from func-throws: :a")
+                   (fact "log is correct"
+                         (-> trace :children first :throw :cause)
+                         => "Exception from func-throws: :a")
 
-                (fact "log is correct"
-                      (-> trace :children first :throw :via first)
-                      => {:at {:class-name "com.billpiel.mem_tracer.test.ns1$func_throws"
-                               :file-name "ns1.clj"
-                               :line-number 14
-                               :method-name "invoke"}
-                          :message "Exception from func-throws: :a"
-                          :type java.lang.Exception})
+                   (fact "log is correct"
+                         (-> trace :children first :throw :via first)
+                         => {:at {:class-name "com.billpiel.mem_tracer.test.ns1$func_throws"
+                                  :file-name "ns1.clj"
+                                  :line-number 14
+                                  :method-name "invoke"}
+                             :message "Exception from func-throws: :a"
+                             :type java.lang.Exception})
 
-                (fact "log is correct"
-                      (-> trace :children first (dissoc :throw))
-                      => {:args [:a]
-                          :children []
-                          :depth 1
-                          :ended-at #inst "2010-01-01T02:00:00.000-00:00"
-                          :id "11"
-                          :name "com.billpiel.mem-tracer.test.ns1/func-throws"
-                          :parent-id "root10"
-                          :started-at #inst "2010-01-01T01:00:00.000-00:00"})
+                   (fact "log is correct"
+                         (-> trace :children first (dissoc :throw))
+                         => {:args [:a]
+                             :children []
+                             :depth 1
+                             :ended-at #inst "2010-01-01T02:00:00.000-00:00"
+                             :id "11"
+                             :name "com.billpiel.mem-tracer.test.ns1/func-throws"
+                             :parent-id "root10"
+                             :started-at #inst "2010-01-01T01:00:00.000-00:00"})
 
-                (fact "string output is correct"
-                      (remove-iso-ctrl (mt/entry->string trace))
-                      => "[31m  [m[33m [33m| com.billpiel.mem-tracer.test.ns1/func-throws[m [33m| [33m:a[0m[m [33m| [1;37;41mTHROW[m => [35m\"Exception from func-throws: :a\"[0m [33m| [31m[[0m[35m\"com.billpiel.mem_tracer.test.ns1$func_throws ns1.clj:14\"[0m[31m][0m[m")
+                   (fact "string output is correct"
+                         (remove-iso-ctrl (mt/entry->string trace))
+                         => "[31m  [m[33m [33m| com.billpiel.mem-tracer.test.ns1/func-throws[m [33m| [33m:a[0m[m [33m| [1;37;41mTHROW[m => [35m\"Exception from func-throws: :a\"[0m [33m| [31m[[0m[35m\"com.billpiel.mem_tracer.test.ns1$func_throws ns1.clj:14\"[0m[31m][0m[m")
 
-                (mt/untrace-ns 'com.billpiel.mem-tracer.test.ns1))))
+                   (mt/untrace-ns 'com.billpiel.mem-tracer.test.ns1))))
 
 (comment "
 TODO
