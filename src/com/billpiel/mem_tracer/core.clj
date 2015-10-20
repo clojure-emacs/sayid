@@ -50,9 +50,9 @@
   (doseq [t (:traced (get-current-workspace!))]
     (apply trace/untrace* t)))
 
-(defn remove-all-traces []
+(defn remove-all-traces! []
   (disable-all-traces!)
-  (swap! workspace assoc :traced []))
+  (swap! workspace assoc :traced #{}))
 
 (defn deref-workspace!
   [& [v]]

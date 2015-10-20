@@ -138,6 +138,22 @@
 
               (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)))
 
+(fact-group "about remove-all-traces!"
+            (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
+            (mt/reset-workspace!)
+            (with-redefs [mtt/now (mock-now-fn)
+                          gensym (mock-gensym-fn)]
+
+              (mt/add-trace-ns! 'com.billpiel.mem-tracer.test.ns1)
+
+              (fact "remove-all-traces! works"
+                    (mt/remove-all-traces)
+                    (com.billpiel.mem-tracer.test.ns1/func1 :a)
+
+                    (mt/deref-workspace!)
+                    => {:children [] :depth 0 :id "root10" :traced []})
+
+              (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)))
 
 (def mock-log {:children
                [{:args [:a],
