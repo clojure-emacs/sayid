@@ -41,46 +41,55 @@
 
 (defn remove-iso-ctrl [s]  (apply str (remove #(Character/isISOControl %) s)))
 
-(fact-group "fact"
-
-            (mt/untrace-ns 'com.billpiel.mem-tracer.test.ns1)
+(fact-group "basic test"
+            (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
+            (mt/reset-workspace!)
             (with-redefs [mtt/now (mock-now-fn)
                           gensym (mock-gensym-fn)]
-              (let [trace-root (mt/trace-ns 'com.billpiel.mem-tracer.test.ns1)
-                    _ (com.billpiel.mem-tracer.test.ns1/func1 :a)
-                    trace (mt/deref-children trace-root)]
+
+              (mt/add-trace-ns! 'com.billpiel.mem-tracer.test.ns1)
+              (com.billpiel.mem-tracer.test.ns1/func1 :a)
+              (let [trace (mt/deref-workspace!)
+                    expected-trace {:id "root10",
+                                    :depth 0,
+                                    :children
+                                    [{:args [:a],
+                                      :children
+                                      [{:args [:a],
+                                        :children [],
+                                        :return :a,
+                                        :started-at #inst "2010-01-01T02:00:00.000-00:00",
+                                        :name "com.billpiel.mem-tracer.test.ns1/func2",
+                                        :id "12",
+                                        :parent-id "11",
+                                        :ended-at #inst "2010-01-01T03:00:00.000-00:00",
+                                        :depth 2}],
+                                      :return :a,
+                                      :started-at #inst "2010-01-01T01:00:00.000-00:00",
+                                      :name "com.billpiel.mem-tracer.test.ns1/func1",
+                                      :id "11",
+                                      :parent-id "root10",
+                                      :ended-at #inst "2010-01-01T04:00:00.000-00:00",
+                                      :depth 1}],
+                                    :traced #{[:ns 'com.billpiel.mem-tracer.test.ns1]}}]
 
                 (fact "log is correct"
                       trace
-                      => {:children
-                          [{:args [:a],
-                            :children
-                            [{:args [:a],
-                              :children [],
-                              :return :a,
-                              :started-at #inst "2010-01-01T02:00:00.000-00:00",
-                              :name "com.billpiel.mem-tracer.test.ns1/func2",
-                              :id "12",
-                              :parent-id "11",
-                              :ended-at #inst "2010-01-01T03:00:00.000-00:00",
-                              :depth 2}],
-                            :return :a,
-                            :started-at #inst "2010-01-01T01:00:00.000-00:00",
-                            :name "com.billpiel.mem-tracer.test.ns1/func1",
-                            :id "11",
-                            :parent-id "root10",
-                            :ended-at #inst "2010-01-01T04:00:00.000-00:00",
-                            :depth 1}],
-                          :depth 0,
-                          :id "root10"})
+                      => expected-trace)
 
                 (fact "string output is correct"
                       (->> trace
                            mt/entry->string
                            remove-iso-ctrl)
-                      => "[31m  [m[33m [33m| com.billpiel.mem-tracer.test.ns1/func1[m [33m| [33m:a[0m[m [33m| return => [33m:a[0m[32m [33m|[32m| com.billpiel.mem-tracer.test.ns1/func2[m [33m|[32m| [33m:a[0m[m [33m|[32m| return => [33m:a[0m [33m| return => [33m:a[0m")
+                      => "[31m [1;37m>[31m[m[33m [33m|[1;37m>[33mcom.billpiel.mem-tracer.test.ns1/func1[m [33m|  [33m:a[0m[m [33m| return =>  [33m|  [33m:a[0m[m[32m [33m|[32m|[1;37m>[32mcom.billpiel.mem-tracer.test.ns1/func2[m [33m|[32m|  [33m:a[0m[m [33m|[32m| return =>  [33m|[32m|  [33m:a[0m[m [33m| return =>  [33m|  [33m:a[0m[m")
 
-                (mt/untrace-ns 'com.billpiel.mem-tracer.test.ns1))))
+                (fact "remove trace"
+                      (mt/remove-trace-ns! 'com.billpiel.mem-tracer.test.ns1)
+                      (com.billpiel.mem-tracer.test.ns1/func1 :b)
+                      (mt/deref-workspace!) => (assoc expected-trace
+                                                      :traced #{})))
+
+              (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)))
 
 (def mock-log {:children
                [{:args [:a],
@@ -288,7 +297,7 @@
                :depth 0,
                :id "root10"})
 
-(fact-group "exception thrown"
+#_ (fact-group "exception thrown"
             (mt/untrace-ns 'com.billpiel.mem-tracer.test.ns1)
             (with-redefs [mtt/now (mock-now-fn)
                           gensym (mock-gensym-fn)]

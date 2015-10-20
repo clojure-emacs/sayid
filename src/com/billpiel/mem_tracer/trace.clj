@@ -60,13 +60,13 @@ symbol name of the function."
   [workspace name f args]
   (let [parent (or *trace-log-parent*
                    workspace)
-        this ^::entry {:id (str (gensym ""))
-                       :parent-id (:id parent)
-                       :depth (-> parent :depth inc)
-                       :name name
-                       :args (vec args)
-                       :children (atom [])
-                       :started-at (now)}
+        this ^:com.billpiel.mem-tracer.core/entry {:id (str (gensym ""))
+                                                   :parent-id (:id parent)
+                                                   :depth (-> parent :depth inc)
+                                                   :name name
+                                                   :args (vec args)
+                                                   :children (atom [])
+                                                   :started-at (now)}
         idx (-> (start-trace (:children parent)
                              this)
                 count
@@ -75,7 +75,7 @@ symbol name of the function."
                   (try
                     (apply f args)
                     (catch Throwable t
-                       (end-trace (:children parent)
+                      (end-trace (:children parent)
                                  idx
                                  {:throw (Throwable->map t)
                                   :ended-at (now)})
@@ -94,9 +94,27 @@ symbol name of the function."
         vname (str ns "/" s)]
     (doto v
       (alter-var-root #(fn tracing-wrapper [& args]
-                         (println "IN TRACING WRAPPER!")
                          (trace-fn-call workspace vname % args)))
       (alter-meta! assoc ::traced [(:id workspace) f]))))
+
+(defn ^{:skip-wiki true} untrace-var*
+  "Reverses the effect of trace-var / trace-vars / trace-ns for the
+  given Var, replacing the traced function with the original, untraced
+  version. No-op for non-traced Vars.
+
+  Argument types are the same as those for trace-var."
+  ([ns s]
+     (untrace-var* (ns-resolve ns s)))
+  ([v]
+     (let [^clojure.lang.Var v (if (var? v) v (resolve v))
+           ns (.ns v)
+           s  (.sym v)
+           [_ f]  ((meta v) ::traced)]
+       (when f
+         (doto v
+           (alter-var-root (constantly f))
+           (alter-meta! dissoc ::traced))))))
+
 
 (defn ^{:skip-wiki true} trace-var*
   "If the specified Var holds an IFn and is not marked as a macro, its
@@ -118,24 +136,6 @@ symbol name of the function."
            (untrace-var* v)
            (apply-trace-to-var v workspace))
          (apply-trace-to-var v workspace))))))
-
-(defn ^{:skip-wiki true} untrace-var*
-  "Reverses the effect of trace-var / trace-vars / trace-ns for the
-  given Var, replacing the traced function with the original, untraced
-  version. No-op for non-traced Vars.
-
-  Argument types are the same as those for trace-var."
-  ([ns s]
-     (untrace-var* (ns-resolve ns s)))
-  ([v]
-     (let [^clojure.lang.Var v (if (var? v) v (resolve v))
-           ns (.ns v)
-           s  (.sym v)
-           [_ f]  ((meta v) ::traced)]
-       (when f
-         (doto v
-           (alter-var-root (constantly ((meta v) ::traced)))
-           (alter-meta! dissoc ::traced))))))
 
 (defn ^{:skip-wiki true} trace-ns*
   "Replaces each function from the given namespace with a version wrapped
@@ -170,12 +170,12 @@ symbol name of the function."
   (throw (Exception. "not implemented")))
 
 
-(defmulti untrace* (fn [type sym workspace] type))
+(defmulti untrace* (fn [type sym] type))
 
 (defmethod untrace* :ns
-  [_ sym workspace]
-  (untrace-ns* sym workspace))
+  [_ sym]
+  (untrace-ns* sym))
 
 (defmethod untrace* :fn
-  [_ sym workspace]
+  [_ sym]
   (throw (Exception. "not implemented")))
