@@ -137,20 +137,8 @@
        (remove nil?)
        (clojure.string/join "")))
 
-(def ex-entry {:id "23622",
-               :parent-id "root23621",
-               :depth 1,
-               :name "com.billpiel.mem-tracer.test.ns1/func1",
-               :args [:a :b]
-               :return :r
-               :children [{:id "23622",
-                           :parent-id "root23621",
-                           :depth 2,
-                           :name "com.billpiel.mem-tracer.test.ns1/func2",
-                           :args [:c :d]
-                           :return [:r1 :r2 :r3]
-                           :children []
-                           :started-at #inst "2015-10-05T20:24:43.887-00:00"}]
-               :started-at #inst "2015-10-05T20:24:43.887-00:00"})
-
-#_ (println  (entry->string ex-entry))
+(defn print-entry
+  [entry]
+  (-> entry
+      entry->string
+      print))

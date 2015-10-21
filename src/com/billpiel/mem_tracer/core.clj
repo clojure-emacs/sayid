@@ -65,3 +65,9 @@
                         (or v (get-current-workspace!))))
 
 (def entry->string com.billpiel.mem-tracer.string-output/entry->string)
+
+(defn print-entry
+  [entry]
+  (-> entry
+      deref-workspace! ;; This can safely be run on a deref'd entry
+      com.billpiel.mem-tracer.string-output/print-entry))

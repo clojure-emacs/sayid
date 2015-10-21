@@ -115,7 +115,6 @@ symbol name of the function."
            (alter-var-root (constantly f))
            (alter-meta! dissoc ::traced))))))
 
-
 (defn ^{:skip-wiki true} trace-var*
   "If the specified Var holds an IFn and is not marked as a macro, its
   contents is replaced with a version wrapped in a tracing call;
