@@ -61,7 +61,7 @@ symbol name of the function."
   (let [parent (or *trace-log-parent*
                    workspace)
         this ^:com.billpiel.mem-tracer.core/entry {:id (str (gensym ""))
-                                                   :parent-id (:id parent)
+                                                   :path (conj (:path parent) (:id parent))
                                                    :depth (-> parent :depth inc)
                                                    :name name
                                                    :args (vec args)

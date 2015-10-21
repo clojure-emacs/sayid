@@ -405,8 +405,6 @@
             :parent-id "root10"
             :started-at #inst "2010-01-01T01:00:00.000-00:00"})
 
-      (-> trace mt/entry->string println)
-
       (fact "string output is correct"
         (remove-iso-ctrl (mt/entry->string trace))
         => "[31m [1;37m>[31m[m[33m [33m|[1;37m>[33mcom.billpiel.mem-tracer.test.ns1/func-throws[m [33m|  [33m:a[0m[m [33m| [1;37;41mTHROW[m => [35m\"Exception from func-throws: :a\"[0m [33m| [31m[[0m[35m\"com.billpiel.mem_tracer.test.ns1$func_throws ns1.clj:14\"[0m[31m][0m[m")
@@ -419,8 +417,6 @@ TODO
  - and deep search values for funcs?
 - wrap returns that are funcs
  - and deep search values for funcs?
-- string output like tools.trace
- - requires sequential log?
 - diff entries
-- optionally grab stactrace
+- tree query
 ")

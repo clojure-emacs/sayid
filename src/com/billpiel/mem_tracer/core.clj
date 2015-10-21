@@ -7,6 +7,7 @@
 (defn default-workspace
   [& {:as m}]
   (merge ^::entry {:id (name (gensym "root"))
+                   :path []
                    :depth 0
                    :children (atom [])
                    :traced #{}}
