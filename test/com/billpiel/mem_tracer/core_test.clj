@@ -42,118 +42,118 @@
 (defn remove-iso-ctrl [s]  (apply str (remove #(Character/isISOControl %) s)))
 
 (fact-group "basic test"
-            (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
-            (mt/reset-workspace!)
-            (with-redefs [mtt/now (mock-now-fn)
-                          gensym (mock-gensym-fn)]
+  (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
+  (mt/reset-workspace!)
+  (with-redefs [mtt/now (mock-now-fn)
+                gensym (mock-gensym-fn)]
 
-              (mt/add-trace-ns! 'com.billpiel.mem-tracer.test.ns1)
-              (com.billpiel.mem-tracer.test.ns1/func1 :a)
-              (let [trace (mt/deref-workspace!)
-                    expected-trace {:id "root10",
-                                    :depth 0,
-                                    :children
-                                    [{:args [:a],
-                                      :children
-                                      [{:args [:a],
-                                        :children [],
-                                        :return :a,
-                                        :started-at #inst "2010-01-01T02:00:00.000-00:00",
-                                        :name "com.billpiel.mem-tracer.test.ns1/func2",
-                                        :id "12",
-                                        :parent-id "11",
-                                        :ended-at #inst "2010-01-01T03:00:00.000-00:00",
-                                        :depth 2}],
-                                      :return :a,
-                                      :started-at #inst "2010-01-01T01:00:00.000-00:00",
-                                      :name "com.billpiel.mem-tracer.test.ns1/func1",
-                                      :id "11",
-                                      :parent-id "root10",
-                                      :ended-at #inst "2010-01-01T04:00:00.000-00:00",
-                                      :depth 1}],
-                                    :traced #{[:ns 'com.billpiel.mem-tracer.test.ns1]}}]
+    (mt/add-trace-ns! 'com.billpiel.mem-tracer.test.ns1)
+    (com.billpiel.mem-tracer.test.ns1/func1 :a)
+    (let [trace (mt/deref-workspace!)
+          expected-trace {:id "root10",
+                          :depth 0,
+                          :children
+                          [{:args [:a],
+                            :children
+                            [{:args [:a],
+                              :children [],
+                              :return :a,
+                              :started-at #inst "2010-01-01T02:00:00.000-00:00",
+                              :name "com.billpiel.mem-tracer.test.ns1/func2",
+                              :id "12",
+                              :parent-id "11",
+                              :ended-at #inst "2010-01-01T03:00:00.000-00:00",
+                              :depth 2}],
+                            :return :a,
+                            :started-at #inst "2010-01-01T01:00:00.000-00:00",
+                            :name "com.billpiel.mem-tracer.test.ns1/func1",
+                            :id "11",
+                            :parent-id "root10",
+                            :ended-at #inst "2010-01-01T04:00:00.000-00:00",
+                            :depth 1}],
+                          :traced #{[:ns 'com.billpiel.mem-tracer.test.ns1]}}]
 
-                (fact "log is correct"
-                      trace
-                      => expected-trace)
+      (fact "log is correct"
+        trace
+        => expected-trace)
 
-                (fact "string output is correct"
-                      (->> trace
-                           mt/entry->string
-                           remove-iso-ctrl)
-                      => "[31m [1;37m>[31m[m[33m [33m|[1;37m>[33mcom.billpiel.mem-tracer.test.ns1/func1[m [33m|  [33m:a[0m[m [33m| return =>  [33m|  [33m:a[0m[m[32m [33m|[32m|[1;37m>[32mcom.billpiel.mem-tracer.test.ns1/func2[m [33m|[32m|  [33m:a[0m[m [33m|[32m| return =>  [33m|[32m|  [33m:a[0m[m [33m| return =>  [33m|  [33m:a[0m[m")
+      (fact "string output is correct"
+        (->> trace
+             mt/entry->string
+             remove-iso-ctrl)
+        => "[31m [1;37m>[31m[m[33m [33m|[1;37m>[33mcom.billpiel.mem-tracer.test.ns1/func1[m [33m|  [33m:a[0m[m [33m| return =>  [33m|  [33m:a[0m[m[32m [33m|[32m|[1;37m>[32mcom.billpiel.mem-tracer.test.ns1/func2[m [33m|[32m|  [33m:a[0m[m [33m|[32m| return =>  [33m|[32m|  [33m:a[0m[m [33m| return =>  [33m|  [33m:a[0m[m")
 
-                (fact "remove trace"
-                      (mt/remove-trace-ns! 'com.billpiel.mem-tracer.test.ns1)
-                      (com.billpiel.mem-tracer.test.ns1/func1 :b)
-                      (mt/deref-workspace!) => (assoc expected-trace
-                                                      :traced #{})))
+      (fact "remove trace"
+        (mt/remove-trace-ns! 'com.billpiel.mem-tracer.test.ns1)
+        (com.billpiel.mem-tracer.test.ns1/func1 :b)
+        (mt/deref-workspace!) => (assoc expected-trace
+                                        :traced #{})))
 
-              (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)))
+    (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)))
 
 
 (fact-group "about enable/disable -all-traces!"
-            (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
-            (mt/reset-workspace!)
-            (with-redefs [mtt/now (mock-now-fn)
-                          gensym (mock-gensym-fn)]
+  (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
+  (mt/reset-workspace!)
+  (with-redefs [mtt/now (mock-now-fn)
+                gensym (mock-gensym-fn)]
 
-              (mt/add-trace-ns! 'com.billpiel.mem-tracer.test.ns1)
+    (mt/add-trace-ns! 'com.billpiel.mem-tracer.test.ns1)
 
-              (fact "disable-all-traces! works"
-                    (mt/disable-all-traces!)
-                    (com.billpiel.mem-tracer.test.ns1/func1 :a)
+    (fact "disable-all-traces! works"
+      (mt/disable-all-traces!)
+      (com.billpiel.mem-tracer.test.ns1/func1 :a)
 
-                    (mt/deref-workspace!)
-                    => {:children []
-                        :depth 0
-                        :id "root10"
-                        :traced #{[:ns 'com.billpiel.mem-tracer.test.ns1]}})
+      (mt/deref-workspace!)
+      => {:children []
+          :depth 0
+          :id "root10"
+          :traced #{[:ns 'com.billpiel.mem-tracer.test.ns1]}})
 
-              (fact "enable-all-traces! works"
-                    (mt/enable-all-traces!)
-                    (com.billpiel.mem-tracer.test.ns1/func1 :a)
+    (fact "enable-all-traces! works"
+      (mt/enable-all-traces!)
+      (com.billpiel.mem-tracer.test.ns1/func1 :a)
 
-                    (mt/deref-workspace!)
-                    => {:children [{:args [:a]
-                                    :children [{:args [:a]
-                                                :children []
-                                                :depth 2
-                                                :ended-at #inst "2010-01-01T03:00:00.000-00:00"
-                                                :id "12"
-                                                :name "com.billpiel.mem-tracer.test.ns1/func2"
-                                                :parent-id "11"
-                                                :return :a
-                                                :started-at #inst "2010-01-01T02:00:00.000-00:00"}]
-                                    :depth 1
-                                    :ended-at #inst "2010-01-01T04:00:00.000-00:00"
-                                    :id "11"
-                                    :name "com.billpiel.mem-tracer.test.ns1/func1"
-                                    :parent-id "root10"
-                                    :return :a
-                                    :started-at #inst "2010-01-01T01:00:00.000-00:00"}]
-                        :depth 0
-                        :id "root10"
-                        :traced #{[:ns 'com.billpiel.mem-tracer.test.ns1]}})
+      (mt/deref-workspace!)
+      => {:children [{:args [:a]
+                      :children [{:args [:a]
+                                  :children []
+                                  :depth 2
+                                  :ended-at #inst "2010-01-01T03:00:00.000-00:00"
+                                  :id "12"
+                                  :name "com.billpiel.mem-tracer.test.ns1/func2"
+                                  :parent-id "11"
+                                  :return :a
+                                  :started-at #inst "2010-01-01T02:00:00.000-00:00"}]
+                      :depth 1
+                      :ended-at #inst "2010-01-01T04:00:00.000-00:00"
+                      :id "11"
+                      :name "com.billpiel.mem-tracer.test.ns1/func1"
+                      :parent-id "root10"
+                      :return :a
+                      :started-at #inst "2010-01-01T01:00:00.000-00:00"}]
+          :depth 0
+          :id "root10"
+          :traced #{[:ns 'com.billpiel.mem-tracer.test.ns1]}})
 
-              (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)))
+    (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)))
 
 (fact-group "about remove-all-traces!"
-            (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
-            (mt/reset-workspace!)
-            (with-redefs [mtt/now (mock-now-fn)
-                          gensym (mock-gensym-fn)]
+  (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
+  (mt/reset-workspace!)
+  (with-redefs [mtt/now (mock-now-fn)
+                gensym (mock-gensym-fn)]
 
-              (mt/add-trace-ns! 'com.billpiel.mem-tracer.test.ns1)
+    (mt/add-trace-ns! 'com.billpiel.mem-tracer.test.ns1)
 
-              (fact "remove-all-traces! works"
-                    (mt/remove-all-traces!)
-                    (com.billpiel.mem-tracer.test.ns1/func1 :a)
+    (fact "remove-all-traces! works"
+      (mt/remove-all-traces!)
+      (com.billpiel.mem-tracer.test.ns1/func1 :a)
 
-                    (mt/deref-workspace!)
-                    => {:children [] :depth 0 :id "root10" :traced #{}})
+      (mt/deref-workspace!)
+      => {:children [] :depth 0 :id "root10" :traced #{}})
 
-              (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)))
+    (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)))
 
 (def mock-log {:children
                [{:args [:a],
