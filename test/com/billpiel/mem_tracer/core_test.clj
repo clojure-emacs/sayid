@@ -147,11 +147,11 @@
               (mt/add-trace-ns! 'com.billpiel.mem-tracer.test.ns1)
 
               (fact "remove-all-traces! works"
-                    (mt/remove-all-traces)
+                    (mt/remove-all-traces!)
                     (com.billpiel.mem-tracer.test.ns1/func1 :a)
 
                     (mt/deref-workspace!)
-                    => {:children [] :depth 0 :id "root10" :traced []})
+                    => {:children [] :depth 0 :id "root10" :traced #{}})
 
               (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)))
 
