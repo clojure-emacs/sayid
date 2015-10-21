@@ -50,27 +50,26 @@
     (mt/add-trace-ns! 'com.billpiel.mem-tracer.test.ns1)
     (com.billpiel.mem-tracer.test.ns1/func1 :a)
     (let [trace (mt/deref-workspace!)
-          expected-trace {:id "root10",
-                          :depth 0,
-                          :children
-                          [{:args [:a],
-                            :children
-                            [{:args [:a],
-                              :children [],
-                              :return :a,
-                              :started-at #inst "2010-01-01T02:00:00.000-00:00",
-                              :name "com.billpiel.mem-tracer.test.ns1/func2",
-                              :id "12",
-                              :parent-id "11",
-                              :ended-at #inst "2010-01-01T03:00:00.000-00:00",
-                              :depth 2}],
-                            :return :a,
-                            :started-at #inst "2010-01-01T01:00:00.000-00:00",
-                            :name "com.billpiel.mem-tracer.test.ns1/func1",
-                            :id "11",
-                            :parent-id "root10",
-                            :ended-at #inst "2010-01-01T04:00:00.000-00:00",
-                            :depth 1}],
+          expected-trace {:children [{:args [:a]
+                                      :children [{:args [:a]
+                                                  :children []
+                                                  :depth 2
+                                                  :ended-at #inst "2010-01-01T03:00:00.000-00:00"
+                                                  :id "12"
+                                                  :name "com.billpiel.mem-tracer.test.ns1/func2"
+                                                  :path ["root10" "11"]
+                                                  :return :a
+                                                  :started-at #inst "2010-01-01T02:00:00.000-00:00"}]
+                                      :depth 1
+                                      :ended-at #inst "2010-01-01T04:00:00.000-00:00"
+                                      :id "11"
+                                      :name "com.billpiel.mem-tracer.test.ns1/func1"
+                                      :path ["root10"]
+                                      :return :a
+                                      :started-at #inst "2010-01-01T01:00:00.000-00:00"}]
+                          :depth 0
+                          :id "root10"
+                          :path []
                           :traced #{[:ns 'com.billpiel.mem-tracer.test.ns1]}}]
 
       (fact "log is correct"
@@ -107,6 +106,7 @@
       => {:children []
           :depth 0
           :id "root10"
+          :path []
           :traced #{[:ns 'com.billpiel.mem-tracer.test.ns1]}})
 
     (fact "enable-all-traces! works"
@@ -121,18 +121,19 @@
                                   :ended-at #inst "2010-01-01T03:00:00.000-00:00"
                                   :id "12"
                                   :name "com.billpiel.mem-tracer.test.ns1/func2"
-                                  :parent-id "11"
+                                  :path ["root10" "11"]
                                   :return :a
                                   :started-at #inst "2010-01-01T02:00:00.000-00:00"}]
                       :depth 1
                       :ended-at #inst "2010-01-01T04:00:00.000-00:00"
                       :id "11"
                       :name "com.billpiel.mem-tracer.test.ns1/func1"
-                      :parent-id "root10"
+                      :path ["root10"]
                       :return :a
                       :started-at #inst "2010-01-01T01:00:00.000-00:00"}]
           :depth 0
           :id "root10"
+          :path []
           :traced #{[:ns 'com.billpiel.mem-tracer.test.ns1]}})
 
     (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)))
@@ -150,7 +151,11 @@
       (com.billpiel.mem-tracer.test.ns1/func1 :a)
 
       (mt/deref-workspace!)
-      => {:children [] :depth 0 :id "root10" :traced #{}})
+      => {:children []
+          :depth 0
+          :id "root10"
+          :path []
+          :traced #{}})
 
     (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)))
 
@@ -375,6 +380,7 @@
         (dissoc trace :children)
         => {:depth 0
             :id "root10"
+            :path []
             :traced #{[:ns 'com.billpiel.mem-tracer.test.ns1]}})
 
       (fact "log is correct"
@@ -402,7 +408,7 @@
             :ended-at #inst "2010-01-01T02:00:00.000-00:00"
             :id "10"
             :name "com.billpiel.mem-tracer.test.ns1/func-throws"
-            :parent-id "root10"
+            :path ["root10"]
             :started-at #inst "2010-01-01T01:00:00.000-00:00"})
 
       (fact "string output is correct"
