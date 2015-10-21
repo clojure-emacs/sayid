@@ -22,6 +22,10 @@
   []
   (reset! workspace nil))
 
+(defn clear-log!
+  []
+  (swap! workspace assoc :children (atom [])))
+
 (defn get-current-workspace!
   []
   (init-workspace!)
@@ -69,5 +73,5 @@
 (defn print-entry
   [entry]
   (-> entry
-      deref-workspace! ;; This can safely be run on a deref'd entry
+      deref-workspace! ;; ??? This can safely be run on a deref'd entry
       com.billpiel.mem-tracer.string-output/print-entry))
