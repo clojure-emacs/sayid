@@ -4,6 +4,26 @@
 
 (defn now [] (java.util.Date.))
 
+(defn mk-entry
+  [& {:keys [workspace? parent name args merge-map]}]
+  (let [id (-> (if workspace?
+                 "root" "")
+               gensym
+               keyword)
+        path (conj (or (:path parent)
+                       [])
+                   id)]
+    (merge ^::entry {:id id
+                     :path path
+                     :depth (or (some-> parent :depth inc) 0)
+                     :children (atom [])}
+           (if workspace?
+             {:traced #{}}
+             {:name name
+              :args (vec args)
+              :started-at (now)})
+           merge-map)))
+
 (defn StackTraceElement->map
   [^StackTraceElement o]
   {:class-name (.getClassName o)
@@ -60,13 +80,9 @@ symbol name of the function."
   [workspace name f args]
   (let [parent (or *trace-log-parent*
                    workspace)
-        this ^:com.billpiel.mem-tracer.core/entry {:id (str (gensym ""))
-                                                   :path (conj (:path parent) (:id parent))
-                                                   :depth (-> parent :depth inc)
-                                                   :name name
-                                                   :args (vec args)
-                                                   :children (atom [])
-                                                   :started-at (now)}
+        this (mk-entry :parent parent
+                       :name name
+                       :args args)
         idx (-> (start-trace (:children parent)
                              this)
                 count

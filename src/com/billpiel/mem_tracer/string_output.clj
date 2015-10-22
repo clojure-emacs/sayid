@@ -1,7 +1,6 @@
 (ns com.billpiel.mem-tracer.string-output
   (:require [puget.printer :as puget]))
 
-
 (def pprint-str #(puget.printer/cprint-str %
                                            {:color-scheme { ; syntax elements
                                                            :delimiter [:red]

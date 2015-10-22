@@ -55,21 +55,21 @@
                                                   :children []
                                                   :depth 2
                                                   :ended-at #inst "2010-01-01T03:00:00.000-00:00"
-                                                  :id "12"
+                                                  :id :12
                                                   :name "com.billpiel.mem-tracer.test.ns1/func2"
-                                                  :path ["root10" "11"]
+                                                  :path [:root10 :11 :12]
                                                   :return :a
                                                   :started-at #inst "2010-01-01T02:00:00.000-00:00"}]
                                       :depth 1
                                       :ended-at #inst "2010-01-01T04:00:00.000-00:00"
-                                      :id "11"
+                                      :id :11
                                       :name "com.billpiel.mem-tracer.test.ns1/func1"
-                                      :path ["root10"]
+                                      :path [:root10 :11]
                                       :return :a
                                       :started-at #inst "2010-01-01T01:00:00.000-00:00"}]
                           :depth 0
-                          :id "root10"
-                          :path []
+                          :id :root10
+                          :path [:root10]
                           :traced #{[:ns 'com.billpiel.mem-tracer.test.ns1]}}]
 
       (fact "log is correct"
@@ -105,8 +105,8 @@
       (mt/deref-workspace!)
       => {:children []
           :depth 0
-          :id "root10"
-          :path []
+          :id :root10
+          :path [:root10]
           :traced #{[:ns 'com.billpiel.mem-tracer.test.ns1]}})
 
     (fact "enable-all-traces! works"
@@ -119,21 +119,21 @@
                                   :children []
                                   :depth 2
                                   :ended-at #inst "2010-01-01T03:00:00.000-00:00"
-                                  :id "12"
+                                  :id :12
                                   :name "com.billpiel.mem-tracer.test.ns1/func2"
-                                  :path ["root10" "11"]
+                                  :path [:root10 :11 :12]
                                   :return :a
                                   :started-at #inst "2010-01-01T02:00:00.000-00:00"}]
                       :depth 1
                       :ended-at #inst "2010-01-01T04:00:00.000-00:00"
-                      :id "11"
+                      :id :11
                       :name "com.billpiel.mem-tracer.test.ns1/func1"
-                      :path ["root10"]
+                      :path [:root10 :11]
                       :return :a
                       :started-at #inst "2010-01-01T01:00:00.000-00:00"}]
           :depth 0
-          :id "root10"
-          :path []
+          :id :root10
+          :path [:root10]
           :traced #{[:ns 'com.billpiel.mem-tracer.test.ns1]}})
 
     (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)))
@@ -153,217 +153,217 @@
       (mt/deref-workspace!)
       => {:children []
           :depth 0
-          :id "root10"
-          :path []
+          :id :root10
+          :path [:root10]
           :traced #{}})
 
     (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)))
 
 (def mock-log {:children
-               [{:args [:a],
-                 :children [],
-                 :started-at #inst "2010-01-01T01:00:00.000-00:00",
-                 :name "com.billpiel.mem-tracer.test.ns1/func-throws",
-                 :id "11",
-                 :parent-id "root10",
-                 :ended-at #inst "2010-01-01T02:00:00.000-00:00",
+               [{:args [:a]
+                 :children []
+                 :started-at #inst "2010-01-01T01:00:00.000-00:00"
+                 :name "com.billpiel.mem-tracer.test.ns1/func-throws"
+                 :id :11
+                 :parent-id :root10
+                 :ended-at #inst "2010-01-01T02:00:00.000-00:00"
                  :throw
-                 {:cause "Exception from func-throws: :a",
+                 {:cause "Exception from func-throws: :a"
                   :via
-                  [{:type java.lang.Exception,
+                  [{:type java.lang.Exception
                     :at
-                    {:method-name "invoke",
-                     :file-name "ns1.clj",
-                     :class-name "com.billpiel.mem_tracer.test.ns1$func_throws",
-                     :line-number 14},
-                    :message "Exception from func-throws: :a"}],
+                    {:method-name "invoke"
+                     :file-name "ns1.clj"
+                     :class-name "com.billpiel.mem_tracer.test.ns1$func_throws"
+                     :line-number 14}
+                    :message "Exception from func-throws: :a"}]
                   :trace
-                  [{:method-name "invoke",
-                    :file-name "ns1.clj",
-                    :class-name "com.billpiel.mem_tracer.test.ns1$func_throws",
+                  [{:method-name "invoke"
+                    :file-name "ns1.clj"
+                    :class-name "com.billpiel.mem_tracer.test.ns1$func_throws"
                     :line-number 14}
-                   {:method-name "applyToHelper",
-                    :file-name "AFn.java",
-                    :class-name "clojure.lang.AFn",
+                   {:method-name "applyToHelper"
+                    :file-name "AFn.java"
+                    :class-name "clojure.lang.AFn"
                     :line-number 154}
-                   {:method-name "applyTo",
-                    :file-name "AFn.java",
-                    :class-name "clojure.lang.AFn",
+                   {:method-name "applyTo"
+                    :file-name "AFn.java"
+                    :class-name "clojure.lang.AFn"
                     :line-number 144}
-                   {:method-name "invoke",
-                    :file-name "core.clj",
-                    :class-name "clojure.core$apply",
+                   {:method-name "invoke"
+                    :file-name "core.clj"
+                    :class-name "clojure.core$apply"
                     :line-number 624}
-                   {:method-name "invoke",
-                    :file-name "core.clj",
+                   {:method-name "invoke"
+                    :file-name "core.clj"
                     :class-name
-                    "com.billpiel.mem_tracer.core$trace_fn_call$fn__22284",
+                    "com.billpiel.mem_tracer.core$trace_fn_call$fn__22284"
                     :line-number 85}
-                   {:method-name "invoke",
-                    :file-name "core.clj",
-                    :class-name "com.billpiel.mem_tracer.core$trace_fn_call",
+                   {:method-name "invoke"
+                    :file-name "core.clj"
+                    :class-name "com.billpiel.mem_tracer.core$trace_fn_call"
                     :line-number 83}
-                   {:method-name "doInvoke",
-                    :file-name "core.clj",
+                   {:method-name "doInvoke"
+                    :file-name "core.clj"
                     :class-name
-                    "com.billpiel.mem_tracer.core$trace_var_STAR_$fn__22290$tracing_wrapper__22291",
+                    "com.billpiel.mem_tracer.core$trace_var_STAR_$fn__22290$tracing_wrapper__22291"
                     :line-number 120}
-                   {:method-name "invoke",
-                    :file-name "RestFn.java",
-                    :class-name "clojure.lang.RestFn",
+                   {:method-name "invoke"
+                    :file-name "RestFn.java"
+                    :class-name "clojure.lang.RestFn"
                     :line-number 408}
-                   {:method-name "invoke",
-                    :file-name "form-init2637533150160036371.clj",
+                   {:method-name "invoke"
+                    :file-name "form-init2637533150160036371.clj"
                     :class-name
-                    "com.billpiel.mem_tracer.core_test$eval22994$fn__22995$fn__22996$fn__22997$fn__22998",
+                    "com.billpiel.mem_tracer.core_test$eval22994$fn__22995$fn__22996$fn__22997$fn__22998"
                     :line-number 1}
-                   {:method-name "invoke",
-                    :file-name "form-init2637533150160036371.clj",
+                   {:method-name "invoke"
+                    :file-name "form-init2637533150160036371.clj"
                     :class-name
-                    "com.billpiel.mem_tracer.core_test$eval22994$fn__22995$fn__22996$fn__22997",
+                    "com.billpiel.mem_tracer.core_test$eval22994$fn__22995$fn__22996$fn__22997"
                     :line-number 1}
-                   {:method-name "invoke",
-                    :file-name "core.clj",
-                    :class-name "clojure.core$with_redefs_fn",
+                   {:method-name "invoke"
+                    :file-name "core.clj"
+                    :class-name "clojure.core$with_redefs_fn"
                     :line-number 6861}
-                   {:method-name "invoke",
-                    :file-name "form-init2637533150160036371.clj",
+                   {:method-name "invoke"
+                    :file-name "form-init2637533150160036371.clj"
                     :class-name
-                    "com.billpiel.mem_tracer.core_test$eval22994$fn__22995$fn__22996",
+                    "com.billpiel.mem_tracer.core_test$eval22994$fn__22995$fn__22996"
                     :line-number 1}
-                   {:method-name "invoke",
-                    :file-name "thread_safe_var_nesting.clj",
+                   {:method-name "invoke"
+                    :file-name "thread_safe_var_nesting.clj"
                     :class-name
-                    "midje.util.thread_safe_var_nesting$with_altered_roots_STAR_",
+                    "midje.util.thread_safe_var_nesting$with_altered_roots_STAR_"
                     :line-number 32}
-                   {:method-name "invoke",
-                    :file-name "form-init2637533150160036371.clj",
+                   {:method-name "invoke"
+                    :file-name "form-init2637533150160036371.clj"
                     :class-name
-                    "com.billpiel.mem_tracer.core_test$eval22994$fn__22995",
+                    "com.billpiel.mem_tracer.core_test$eval22994$fn__22995"
                     :line-number 1}
-                   {:method-name "applyToHelper",
-                    :file-name "AFn.java",
-                    :class-name "clojure.lang.AFn",
+                   {:method-name "applyToHelper"
+                    :file-name "AFn.java"
+                    :class-name "clojure.lang.AFn"
                     :line-number 152}
-                   {:method-name "applyTo",
-                    :file-name "AFn.java",
-                    :class-name "clojure.lang.AFn",
+                   {:method-name "applyTo"
+                    :file-name "AFn.java"
+                    :class-name "clojure.lang.AFn"
                     :line-number 144}
-                   {:method-name "doInvoke",
-                    :file-name "AFunction.java",
-                    :class-name "clojure.lang.AFunction$1",
+                   {:method-name "doInvoke"
+                    :file-name "AFunction.java"
+                    :class-name "clojure.lang.AFunction$1"
                     :line-number 29}
-                   {:method-name "invoke",
-                    :file-name "RestFn.java",
-                    :class-name "clojure.lang.RestFn",
+                   {:method-name "invoke"
+                    :file-name "RestFn.java"
+                    :class-name "clojure.lang.RestFn"
                     :line-number 397}
-                   {:method-name "invoke",
-                    :file-name "facts.clj",
-                    :class-name "midje.checking.facts$check_one$fn__13965",
+                   {:method-name "invoke"
+                    :file-name "facts.clj"
+                    :class-name "midje.checking.facts$check_one$fn__13965"
                     :line-number 31}
-                   {:method-name "invoke",
-                    :file-name "facts.clj",
-                    :class-name "midje.checking.facts$check_one",
+                   {:method-name "invoke"
+                    :file-name "facts.clj"
+                    :class-name "midje.checking.facts$check_one"
                     :line-number 30}
-                   {:method-name "invoke",
-                    :file-name "facts.clj",
-                    :class-name "midje.checking.facts$creation_time_check",
+                   {:method-name "invoke"
+                    :file-name "facts.clj"
+                    :class-name "midje.checking.facts$creation_time_check"
                     :line-number 35}
-                   {:method-name "invoke",
-                    :file-name "form-init2637533150160036371.clj",
-                    :class-name "com.billpiel.mem_tracer.core_test$eval22994",
+                   {:method-name "invoke"
+                    :file-name "form-init2637533150160036371.clj"
+                    :class-name "com.billpiel.mem_tracer.core_test$eval22994"
                     :line-number 1}
-                   {:method-name "eval",
-                    :file-name "Compiler.java",
-                    :class-name "clojure.lang.Compiler",
+                   {:method-name "eval"
+                    :file-name "Compiler.java"
+                    :class-name "clojure.lang.Compiler"
                     :line-number 6703}
-                   {:method-name "eval",
-                    :file-name "Compiler.java",
-                    :class-name "clojure.lang.Compiler",
+                   {:method-name "eval"
+                    :file-name "Compiler.java"
+                    :class-name "clojure.lang.Compiler"
                     :line-number 6666}
-                   {:method-name "invoke",
-                    :file-name "core.clj",
-                    :class-name "clojure.core$eval",
+                   {:method-name "invoke"
+                    :file-name "core.clj"
+                    :class-name "clojure.core$eval"
                     :line-number 2927}
-                   {:method-name "invoke",
-                    :file-name "main.clj",
-                    :class-name "clojure.main$repl$read_eval_print__6625$fn__6628",
+                   {:method-name "invoke"
+                    :file-name "main.clj"
+                    :class-name "clojure.main$repl$read_eval_print__6625$fn__6628"
                     :line-number 239}
-                   {:method-name "invoke",
-                    :file-name "main.clj",
-                    :class-name "clojure.main$repl$read_eval_print__6625",
+                   {:method-name "invoke"
+                    :file-name "main.clj"
+                    :class-name "clojure.main$repl$read_eval_print__6625"
                     :line-number 239}
-                   {:method-name "invoke",
-                    :file-name "main.clj",
-                    :class-name "clojure.main$repl$fn__6634",
+                   {:method-name "invoke"
+                    :file-name "main.clj"
+                    :class-name "clojure.main$repl$fn__6634"
                     :line-number 257}
-                   {:method-name "doInvoke",
-                    :file-name "main.clj",
-                    :class-name "clojure.main$repl",
+                   {:method-name "doInvoke"
+                    :file-name "main.clj"
+                    :class-name "clojure.main$repl"
                     :line-number 257}
-                   {:method-name "invoke",
-                    :file-name "RestFn.java",
-                    :class-name "clojure.lang.RestFn",
+                   {:method-name "invoke"
+                    :file-name "RestFn.java"
+                    :class-name "clojure.lang.RestFn"
                     :line-number 1523}
-                   {:method-name "invoke",
-                    :file-name "interruptible_eval.clj",
+                   {:method-name "invoke"
+                    :file-name "interruptible_eval.clj"
                     :class-name
-                    "clojure.tools.nrepl.middleware.interruptible_eval$evaluate$fn__6509",
+                    "clojure.tools.nrepl.middleware.interruptible_eval$evaluate$fn__6509"
                     :line-number 72}
-                   {:method-name "applyToHelper",
-                    :file-name "AFn.java",
-                    :class-name "clojure.lang.AFn",
+                   {:method-name "applyToHelper"
+                    :file-name "AFn.java"
+                    :class-name "clojure.lang.AFn"
                     :line-number 152}
-                   {:method-name "applyTo",
-                    :file-name "AFn.java",
-                    :class-name "clojure.lang.AFn",
+                   {:method-name "applyTo"
+                    :file-name "AFn.java"
+                    :class-name "clojure.lang.AFn"
                     :line-number 144}
-                   {:method-name "invoke",
-                    :file-name "core.clj",
-                    :class-name "clojure.core$apply",
+                   {:method-name "invoke"
+                    :file-name "core.clj"
+                    :class-name "clojure.core$apply"
                     :line-number 624}
-                   {:method-name "doInvoke",
-                    :file-name "core.clj",
-                    :class-name "clojure.core$with_bindings_STAR_",
+                   {:method-name "doInvoke"
+                    :file-name "core.clj"
+                    :class-name "clojure.core$with_bindings_STAR_"
                     :line-number 1862}
-                   {:method-name "invoke",
-                    :file-name "RestFn.java",
-                    :class-name "clojure.lang.RestFn",
+                   {:method-name "invoke"
+                    :file-name "RestFn.java"
+                    :class-name "clojure.lang.RestFn"
                     :line-number 425}
-                   {:method-name "invoke",
-                    :file-name "interruptible_eval.clj",
+                   {:method-name "invoke"
+                    :file-name "interruptible_eval.clj"
                     :class-name
-                    "clojure.tools.nrepl.middleware.interruptible_eval$evaluate",
+                    "clojure.tools.nrepl.middleware.interruptible_eval$evaluate"
                     :line-number 56}
-                   {:method-name "invoke",
-                    :file-name "interruptible_eval.clj",
+                   {:method-name "invoke"
+                    :file-name "interruptible_eval.clj"
                     :class-name
-                    "clojure.tools.nrepl.middleware.interruptible_eval$interruptible_eval$fn__6551$fn__6554",
+                    "clojure.tools.nrepl.middleware.interruptible_eval$interruptible_eval$fn__6551$fn__6554"
                     :line-number 191}
-                   {:method-name "invoke",
-                    :file-name "interruptible_eval.clj",
+                   {:method-name "invoke"
+                    :file-name "interruptible_eval.clj"
                     :class-name
-                    "clojure.tools.nrepl.middleware.interruptible_eval$run_next$fn__6546",
+                    "clojure.tools.nrepl.middleware.interruptible_eval$run_next$fn__6546"
                     :line-number 159}
-                   {:method-name "run",
-                    :file-name "AFn.java",
-                    :class-name "clojure.lang.AFn",
+                   {:method-name "run"
+                    :file-name "AFn.java"
+                    :class-name "clojure.lang.AFn"
                     :line-number 22}
-                   {:method-name "runWorker",
-                    :file-name "ThreadPoolExecutor.java",
-                    :class-name "java.util.concurrent.ThreadPoolExecutor",
+                   {:method-name "runWorker"
+                    :file-name "ThreadPoolExecutor.java"
+                    :class-name "java.util.concurrent.ThreadPoolExecutor"
                     :line-number 1145}
-                   {:method-name "run",
-                    :file-name "ThreadPoolExecutor.java",
-                    :class-name "java.util.concurrent.ThreadPoolExecutor$Worker",
+                   {:method-name "run"
+                    :file-name "ThreadPoolExecutor.java"
+                    :class-name "java.util.concurrent.ThreadPoolExecutor$Worker"
                     :line-number 615}
-                   {:method-name "run",
-                    :file-name "Thread.java",
-                    :class-name "java.lang.Thread",
-                    :line-number 745}]},
-                 :depth 1}],
-               :depth 0,
-               :id "root10"})
+                   {:method-name "run"
+                    :file-name "Thread.java"
+                    :class-name "java.lang.Thread"
+                    :line-number 745}]}
+                 :depth 1}]
+               :depth 0
+               :id :root10})
 
 (fact-group "exception thrown"
 
@@ -379,8 +379,8 @@
       (fact "log is correct"
         (dissoc trace :children)
         => {:depth 0
-            :id "root10"
-            :path []
+            :id :root10
+            :path [:root10]
             :traced #{[:ns 'com.billpiel.mem-tracer.test.ns1]}})
 
       (fact "log is correct"
@@ -406,9 +406,9 @@
             :children []
             :depth 1
             :ended-at #inst "2010-01-01T02:00:00.000-00:00"
-            :id "10"
+            :id :10
             :name "com.billpiel.mem-tracer.test.ns1/func-throws"
-            :path ["root10"]
+            :path [:root10 :10]
             :started-at #inst "2010-01-01T01:00:00.000-00:00"})
 
       (fact "string output is correct"

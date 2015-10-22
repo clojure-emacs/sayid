@@ -6,12 +6,7 @@
 
 (defn default-workspace
   [& {:as m}]
-  (merge ^::entry {:id (name (gensym "root"))
-                   :path []
-                   :depth 0
-                   :children (atom [])
-                   :traced #{}}
-         m))
+  (trace/mk-entry :workspace? true :merge-map m))
 
 (defn init-workspace!
   []
@@ -63,7 +58,7 @@
   [& [v]]
   (clojure.walk/prewalk #(if (-> %
                                  meta
-                                 ::entry)
+                                 ::trace/entry)
                            (update-in % [:children] deref)
                            %)
                         (or v (get-current-workspace!))))
