@@ -419,10 +419,14 @@
 
 (comment "
 TODO
+- ws ns
 - wrap args that are funcs
  - and deep search values for funcs?
 - wrap returns that are funcs
  - and deep search values for funcs?
 - diff entries
 - tree query
+- save/load workspaces
+- re-exec traces
+- deep trace
 ")
