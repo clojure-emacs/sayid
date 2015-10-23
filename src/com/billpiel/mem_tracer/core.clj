@@ -1,67 +1,24 @@
 (ns com.billpiel.mem-tracer.core
   (:require com.billpiel.mem-tracer.string-output
-            [com.billpiel.mem-tracer.trace :as trace]))
+            [com.billpiel.mem-tracer.trace :as trace]
+            [com.billpiel.mem-tracer.workspace :as ws]))
 
 (def workspace (atom nil))
 
-(defn default-workspace
-  [& {:as m}]
-  (trace/mk-entry :workspace? true :merge-map m))
-
-(defn init-workspace!
-  []
-  (if (= nil @workspace)
-    (compare-and-set! workspace nil (default-workspace))))
-
-(defn reset-workspace!
-  []
-  (reset! workspace nil))
-
-(defn clear-log!
-  []
-  (swap! workspace assoc :children (atom [])))
-
 (defn get-current-workspace!
   []
-  (init-workspace!)
+  (#'ws/init-workspace! workspace)
   @workspace)
 
-(defn add-trace-ns!
-  [ns-sym]
-  (init-workspace!)
-  (swap! workspace #(update-in % [:traced] conj [:ns ns-sym]))
-  (trace/trace-ns* ns-sym @workspace))
+(def reset-workspace! (partial #'ws/reset-workspace! workspace))
+(def clear-log! (partial #'ws/clear-log! workspace))
+(def add-trace-ns! (partial #'ws/add-trace-ns! workspace))
+(def remove-trace-ns! (partial #'ws/remove-trace-ns! workspace))
+(def enable-all-traces! (partial #'ws/enable-all-traces! workspace))
+(def disable-all-traces! (partial #'ws/disable-all-traces! workspace))
+(def remove-all-traces! (partial #'ws/remove-all-traces! workspace))
+(def deref-workspace! (partial #'ws/deref-workspace! workspace))
 
-(defn remove-trace-ns!
-  "Untrace all fns in the given name space."
-  [ns-sym]
-  (init-workspace!)
-  (swap! workspace update-in [:traced] disj [:ns ns-sym])
-  (trace/untrace-ns* ns-sym))
-
-(defn enable-all-traces!
-  []
-  (let [w (get-current-workspace!)]
-    (doseq [[type sym] (:traced w)]
-      (trace/trace* type sym w))))
-
-(defn disable-all-traces!
-  []
-  (doseq [t (:traced (get-current-workspace!))]
-    (apply trace/untrace* t)))
-
-(defn remove-all-traces! []
-  (disable-all-traces!)
-  (swap! workspace assoc :traced #{}))
-
-(defn deref-workspace!
-  [& [v]]
-  (clojure.walk/prewalk #(if (-> %
-                                 meta
-                                 ::trace/entry)
-                           (update-in % [:children] deref)
-                           %)
-                        (or v (get-current-workspace!))))
 
 (def entry->string com.billpiel.mem-tracer.string-output/entry->string)
 
