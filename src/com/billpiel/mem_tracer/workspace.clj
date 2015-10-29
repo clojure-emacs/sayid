@@ -1,6 +1,10 @@
 (ns com.billpiel.mem-tracer.workspace
   (:require [com.billpiel.mem-tracer.trace :as trace]))
 
+(defn atom?
+  [v]
+  (instance? clojure.lang.Atom v))
+
 (defn default-workspace
   [& {:as m}]
   (trace/mk-entry :workspace? true :merge-map m))
@@ -49,9 +53,12 @@
 
 (defn deref-workspace!
   [ws]
-  (clojure.walk/prewalk #(if (-> %
-                                 meta
-                                 ::trace/entry)
+  (clojure.walk/prewalk #(if (and (-> %
+                                      meta
+                                      ::trace/entry)
+                                  (-> %
+                                      :children
+                                      atom?))
                            (update-in % [:children] deref)
                            %)
                         @ws))
