@@ -1,5 +1,6 @@
 (ns com.billpiel.mem-tracer.util.tree-query
-  (require [clojure.zip :as z]))
+  (require [clojure.zip :as z]
+           [swiss.arrows :refer [-<> -<>>]]))
 
 (def ^:dynamic *get-tags-mz* nil)
 
@@ -20,8 +21,9 @@
 
 (defn get-tags
   [node pred-map]
-  (for [[kw pred] pred-map :when (pred node)]
-    kw))
+  (vec (for [[kw pred] pred-map
+             :when (pred node)]
+         kw)))
 
 (defn get-tags'
   [node pred-map]
@@ -29,12 +31,31 @@
    node
    pred-map))
 
+#_ (get-tags' {:id 1} {:a #(-> % :id #{1}) :b #(-> % :id #{1})})
+
+(defn get-children-tags*
+  [zipr pred-map]
+  (let [this-tags (-> zipr
+                      z/node
+                      (get-tags' pred-map))]
+    (mapv #(into [this-tags] %)
+          (if-let [ch-zips (not-empty (children-zips zipr))]
+            (mapcat #(get-children-tags* % pred-map)
+                    ch-zips)
+            [[]]))))
+
 (defn get-children-tags
-  [zipr]
-  (let [kids (children-zips zipr)]
-    (apply concat (for [child-zip kids
-                        desc-tags (get-children-tags child-zip)]
-                    (map (fn [tag-trail] (conj tag-trail (get-tags' child-zip))))))))
+  [zipr pred-map]
+  (->> zipr
+       children-zips
+       (mapcat #(get-children-tags* % pred-map))
+       vec))
+
+#_ (ppcp (get-children-tags z1
+                            {:a #(-> % :id #{1 2 3 4}) :even #(-<> (do %)
+                                                                   :id
+                                                                   even?)}))
+
 
 (defn tag*
   [zipr pred-map & {:keys [parent-tags]}]
@@ -57,9 +78,35 @@
 
 #_ (do
 
+     (def tree {:id 1 :children
+                [{:id 2}
+                 {:id 3
+                  :children [{:id 5
+                              :children [{:id 6}]}]}
+                 {:id 4
+                  :children [{:id 7
+                              :children []}
+                             {:id 8
+                              :children []}
+                             ]}]})
 
-     (def z1 (z/zipper map? :children #(assoc % :children %2)
-                       {:a 1 :children [{:a 2} {:a 3 :children []} {:a 4}]}))
+     [[[:a :even]]
+      [[:a] [] [:even]]
+      [[:a :even] []]
+      [[:a :even] [:even]]]
+
+
+
+     (def ppcp puget.printer/cprint)
+
+     (ppcp tree)
+
+     (def z1 (z/zipper map?
+                       #(-> % :children not-empty)
+                       #(assoc % :children %2)
+                       tree))
+
+     (ppcp (z/root z1))
 
 
 
