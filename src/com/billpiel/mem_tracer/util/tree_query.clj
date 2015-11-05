@@ -11,7 +11,8 @@
 
 (defn children-zips [z] (if-let [d (z/down z)]
                           (lazy-cat [d]
-                                    (right-sib-zips d)) []))
+                                    (right-sib-zips d))
+                          []))
 
 (defn set-zip-children
   [z c]
@@ -33,29 +34,51 @@
 
 #_ (get-tags' {:id 1} {:a #(-> % :id #{1}) :b #(-> % :id #{1})})
 
-(defn get-children-tags*
+(defn merge-children-tag-summary
+  [& rest]
+  {:paths (->> rest
+               (mapcat :paths)
+               vec)
+   :set (->> rest
+             (map :set)
+             (apply clojure.set/union))})
+
+(defn insert-tag-into-children-tag-summary
+  [tag ch-tags]
+  {:paths (->> ch-tags
+               :paths
+               (mapv #(into [tag] %)))
+   :set (-> ch-tags
+            :set
+            (conj tag))})
+
+(defn get-children-tag-summary*
   [zipr pred-map]
   (let [this-tags (-> zipr
                       z/node
                       (get-tags' pred-map))]
-    (mapv #(into [this-tags] %)
-          (if-let [ch-zips (not-empty (children-zips zipr))]
-            (mapcat #(get-children-tags* % pred-map)
-                    ch-zips)
-            [[]]))))
+    (insert-tag-into-children-tag-summary this-tags
+                                          (if-let [ch-zips (-> zipr
+                                                               children-zips
+                                                               not-empty)]
+                                            (->> ch-zips
+                                                 (map #(get-children-tag-summary* %
+                                                                                  pred-map))
+                                                 (apply merge-children-tag-summary))
+                                            (merge-children-tag-summary)))))
 
-(defn get-children-tags
+(defn get-children-tag-summary
   [zipr pred-map]
   (->> zipr
        children-zips
-       (mapcat #(get-children-tags* % pred-map))
-       vec))
+       (map #(get-children-tag-summary* %
+                                        pred-map))
+       merge-children-tag-summary))
 
 #_ (ppcp (get-children-tags z1
                             {:a #(-> % :id #{1 2 3 4}) :even #(-<> (do %)
                                                                    :id
                                                                    even?)}))
-
 
 (defn tag*
   [zipr pred-map & {:keys [parent-tags]}]
