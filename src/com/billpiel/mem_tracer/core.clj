@@ -1,7 +1,8 @@
 (ns com.billpiel.mem-tracer.core
   (:require com.billpiel.mem-tracer.string-output
             [com.billpiel.mem-tracer.trace :as trace]
-            [com.billpiel.mem-tracer.workspace :as ws]))
+            [com.billpiel.mem-tracer.workspace :as ws]
+            [com.billpiel.mem-tracer.query :as q]))
 
 (def workspace (atom nil))
 
@@ -27,3 +28,6 @@
   (-> entry
       deref-workspace! ;; ??? This can safely be run on a deref'd entry
       com.billpiel.mem-tracer.string-output/print-entry))
+
+(defmacro q [& body] `(q/q (q/trace->zipper (deref-workspace!))
+                           ~@body))

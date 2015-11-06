@@ -1,5 +1,6 @@
 (ns com.billpiel.mem-tracer.query
-  (require [clojure.zip :as z]))
+  (require [clojure.zip :as z]
+           [com.billpiel.mem-tracer.util.tree-query :as tq]))
 
 (defn entry->seq
   [entry]
@@ -41,3 +42,87 @@
             #(-> % :children not-empty)
             #(assoc % :children %2)
             trace))
+
+(defn q-default
+  [pairs]
+  (let [tag-pred (map (fn [p] `(mk-query-fn ~@p))
+                      pairs)
+        tag-pred' `({:a (some-fn ~@tag-pred)})]
+    `(~@tag-pred' (tq/has-all-tags-fn :a))))
+
+(defn q-segment
+  [[ancestor descendant]]
+  (let [tag-pred `({:a (mk-query-fn ~@ancestor)
+                    :d (mk-query-fn ~@descendant)})]
+    `(~@tag-pred (tq/is-between-fn :a :d))))
+
+(defn q-all-ancestors-of-any
+  [pairs]
+  (let [tag-pred (map (fn [p] `(mk-query-fn ~@p))
+                      pairs)
+        tag-pred' `({:a (some-fn ~@tag-pred)})]
+    `(~@tag-pred' (some-fn (tq/has-all-tags-fn :a)
+                          (tq/has-descen-fn :a)))))
+
+(defn q*
+  [ws body]
+  (let [[arg rest] (if (-> body
+                           first
+                           vector?)
+                     [nil body]
+                     [(first body) (rest body)])
+        pairs (partition 2 rest)
+        meat (case arg
+               nil (q-default pairs)
+               s (q-segment pairs)
+               a* (q-all-ancestors-of-any pairs))]
+    `(tq/query ~ws ~@meat)))
+
+(defmacro q
+  [ws & body]
+  (q* ws body))
+
+#_ (do
+
+     (comment a ancestors
+              d descendants
+              p parent
+              c children)
+
+     (q ws [:name] "bill")
+
+     (tq/query (trace->zipper *trace??*)
+               {:a (mk-query-fn [:name] "bill")}
+               (has-all-tags-fn :a))
+
+     (q ws [:name] "bill"
+        [:name] "bob")
+
+     (tq/query (trace->zipper *trace??*)
+               {:a (some-fn (mk-query-fn [:name] "bill")
+                            (mk-query-fn [:name] "bob"))}
+               (has-all-tags-fn :a))
+
+     (q ws s
+        [:name] "bill"
+        [:name] "bob")
+
+     (tq/query (trace->zipper *trace??*)
+               {:a (mk-query-fn [:name] "bill")
+                :b (mk-query-fn [:name] "bill")}
+               (is-between-fn :a :b))
+
+
+
+     (q ws a+ [:name] "bill")
+     (q ws a* [:name] "bill")
+     (q ws s
+        [:name] "bill"
+        [:name] "bob")
+     (q ws S
+        [:name] "bill"
+        [:name] "bob")
+
+
+
+     (comment))

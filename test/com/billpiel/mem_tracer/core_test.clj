@@ -430,11 +430,11 @@
 
       (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1))))
 
-(fact-group "querying"
-
+(fact-group "querying with query/query"
 
   (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
   (mt/clear-log!)
+  (mt/reset-workspace!)
   (with-redefs [mtt/now (mock-now-fn)
                 gensym (mock-gensym-fn)]
     (let [trace-root (mt/add-trace-ns! 'com.billpiel.mem-tracer.test.ns1)
@@ -446,41 +446,85 @@
                    {:a (mq/mk-query-fn [:name] #".*func3-4") }
                    (some-fn (mtq/has-all-tags-fn :a)
                             (mtq/has-descen-fn :a)))
-        => [{:children [{:args [3 8],
-                         :children [{:args [8],
-                                     :children [{:args [8],
-                                                 :children [],
-                                                 :depth 3,
-                                                 :ended-at #inst "2010-01-01T04:00:00.000-00:00",
-                                                 :id :14,
-                                                 :name "com.billpiel.mem-tracer.test.ns1/func3-4",
-                                                 :path [:root10 :10 :12 :14],
-                                                 :return
-                                                 8,
-                                                 :started-at #inst "2010-01-01T04:00:00.000-00:00"}],
-                                     :depth 2,
-                                     :ended-at #inst "2010-01-01T04:00:00.000-00:00",
-                                     :id :12,
-                                     :name "com.billpiel.mem-tracer.test.ns1/func3-3",
-                                     :path [:root10 :10 :12],
-                                     :return 8,
-                                     :started-at #inst "2010-01-01T04:00:00.000-00:00"}],
-                         :depth 1,
-                         :ended-at #inst "2010-01-01T04:00:00.000-00:00",
-                         :id :10,
+        => [{:children [{:args [3 8]
+                         :children [{:args [8]
+                                     :children [{:args [8]
+                                                 :children []
+                                                 :depth 3
+                                                 :ended-at #inst "2010-01-01T04:00:00.000-00:00"
+                                                 :id :15
+                                                 :name "com.billpiel.mem-tracer.test.ns1/func3-4"
+                                                 :path [:root10 :11 :13 :15]
+                                                 :return 8
+                                                 :started-at #inst "2010-01-01T04:00:00.000-00:00"}]
+                                     :depth 2
+                                     :ended-at #inst "2010-01-01T04:00:00.000-00:00"
+                                     :id :13
+                                     :name "com.billpiel.mem-tracer.test.ns1/func3-3"
+                                     :path [:root10 :11 :13]
+                                     :return 8
+                                     :started-at #inst "2010-01-01T04:00:00.000-00:00"}]
+                         :depth 1
+                         :ended-at #inst "2010-01-01T04:00:00.000-00:00"
+                         :id :11
                          :name "com.billpiel.mem-tracer.test.ns1/func3-1"
-                         ,
-                         :path [:root10 :10],
-                         :return 13,
-                         :started-at #inst "2010-01-01T01:00:00.000-00:00"}],
-             :depth 0,
-             :id :root10,
-             :path [:root10],
+                         :path [:root10 :11]
+                         :return 13
+                         :started-at #inst "2010-01-01T01:00:00.000-00:00"}]
+             :depth 0
+             :id :root10
+             :path [:root10]
              :traced #{[:ns 'com.billpiel.mem-tracer.test.ns1]}}])
 
       (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1))))
 
 
+(fact-group "querying with q macro"
+
+  (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
+  (mt/clear-log!)
+  (mt/reset-workspace!)
+  (with-redefs [mtt/now (mock-now-fn)
+                gensym (mock-gensym-fn)]
+    (let [trace-root (mt/add-trace-ns! 'com.billpiel.mem-tracer.test.ns1)
+          _ (com.billpiel.mem-tracer.test.ns1/func3-1 3 8)
+          trace (mt/deref-workspace!)]
+
+      (fact "find node by name and all parents"
+        (mt/q a* [:name] #".*func3-4")
+        =>  [{:path [:root10]
+              :children
+              [{:args [3 8]
+                :path [:root10 :11]
+                :children
+                [{:args [8]
+                  :path [:root10 :11 :13]
+                  :children
+                  [{:args [8]
+                    :path [:root10 :11 :13 :15]
+                    :children []
+                    :return 8
+                    :started-at #inst "2010-01-01T04:00:00.000-00:00"
+                    :name "com.billpiel.mem-tracer.test.ns1/func3-4"
+                    :id :15
+                    :ended-at #inst "2010-01-01T04:00:00.000-00:00"
+                    :depth 3}]
+                  :return 8
+                  :started-at #inst "2010-01-01T04:00:00.000-00:00"
+                  :name "com.billpiel.mem-tracer.test.ns1/func3-3"
+                  :id :13
+                  :ended-at #inst "2010-01-01T04:00:00.000-00:00"
+                  :depth 2}]
+                :return 13
+                :started-at #inst "2010-01-01T01:00:00.000-00:00"
+                :name "com.billpiel.mem-tracer.test.ns1/func3-1"
+                :id :11
+                :ended-at #inst "2010-01-01T04:00:00.000-00:00"
+                :depth 1}]
+              :id :root10
+              :depth 0
+              :traced #{[:ns 'com.billpiel.mem-tracer.test.ns1]}}])
+      (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1))))
 
 
 (comment "
@@ -494,4 +538,7 @@ TODO
 - save/load workspaces
 - re-exec traces
 - deep trace
+- nice query syntax
+- nice query result printing
+- nicer printing (rewrite string output ns?)
 ")
