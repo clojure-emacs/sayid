@@ -4,15 +4,19 @@
 
 (def ^:dynamic *get-tags-mz* nil)
 
-(defn right-sib-zips [z] (if-let [r (z/right z)]
-                           (lazy-cat [r]
-                                     (right-sib-zips r))
-                           []))
+(defn right-sib-zips [z]
+  (if-let [r (z/right z)]
+    (lazy-cat [r]
+              (right-sib-zips r))
+    []))
 
-(defn children-zips [z] (if-let [d (z/down z)]
-                          (lazy-cat [d]
-                                    (right-sib-zips d))
-                          []))
+(defn children-zips [z]
+  (if-let [d (z/down z)]
+    (lazy-cat [d]
+              (right-sib-zips d))
+    []))
+
+
 
 (defn set-zip-children
   [z c]
@@ -34,6 +38,22 @@
 
 #_ (get-tags' {:id 1} {:a #(-> % :id #{1}) :b #(-> % :id #{1})})
 
+(defn insert-tags-into-parent-tag-summary
+  [& [tags summary]]
+  {:path (if tags
+           (-<> summary
+                :path
+                (or [])
+                (into [tags]
+                      <>))
+           [])
+   :set (if tags
+          (-> summary
+              :set
+              (or #{})
+              (conj tags))
+          #{})})
+
 (defn merge-children-tag-summary
   [& rest]
   {:paths (->> rest
@@ -45,11 +65,15 @@
 
 (defn insert-tag-into-children-tag-summary
   [tag ch-tags]
-  {:paths (->> ch-tags
+  {:paths (-<> ch-tags
                :paths
-               (mapv #(into [tag] %)))
+               not-empty
+               (or [[]])
+               (mapv #(into [tag] %)
+                     <>))
    :set (-> ch-tags
             :set
+            (or #{})
             (conj tag))})
 
 (defn get-children-tag-summary*
@@ -67,37 +91,56 @@
                                                  (apply merge-children-tag-summary))
                                             (merge-children-tag-summary)))))
 
-(defn get-children-tag-summary
+(defn get-children-tag-summary ;; memoize?
   [zipr pred-map]
   (->> zipr
        children-zips
        (map #(get-children-tag-summary* %
                                         pred-map))
-       merge-children-tag-summary))
+       (apply merge-children-tag-summary)))
 
-#_ (ppcp (get-children-tags z1
-                            {:a #(-> % :id #{1 2 3 4}) :even #(-<> (do %)
-                                                                   :id
-                                                                   even?)}))
+#_ (ppcp (get-children-tag-summary z1
+                                   {:a #(-> % :id #{1 2 3 4}) :even #(-> (do %)
+                                                                         :id
+                                                                         even?)}))
+
+(defn get-parents-tag-summary ;; memoize?
+  [zipr pred-map]
+  (if-let [p (z/up zipr)]
+    (insert-tags-into-parent-tag-summary (get-tags' (z/node p)
+                                                    pred-map)
+                                         (get-parents-tag-summary (z/up p)
+                                                                  pred-map))
+    (insert-tags-into-parent-tag-summary))) ;; tail recursion possible?
 
 (defn tag*
-  [zipr pred-map & {:keys [parent-tags]}]
-  (let [this-tags (get-tags' (z/node zipr) pred-map)
-        parent-tags' (conj parent-tags)
-        children-tags (get-children-tags zipr)
-])
+  [zipr pred-map]
   (z/edit zipr (fn [z] (with-meta z
-                         {:tags (get-tags' (z/node z) pred-map)
-                          :parent-tags []
-                          :parent-tag-set #{}
-                          :children []
-                          :children-set #{}}))))
+                         {::? {:tags  (get-tags' (z/node zipr) pred-map)
+                               :parents (get-parents-tag-summary zipr pred-map)
+                               :children (get-children-tag-summary zipr
+                                                                   pred-map)}}))))
 
 (defn tag
   [zipr pred-map]
   (binding [*get-tags-mz* (memoize get-tags)]
-    (tag* zipr
-          pred-map)))
+    (loop [z (-> zipr
+                 (tag* pred-map))]
+      (let [zn (z/next z)]
+        (if-not (z/end? zn)
+          (recur (tag* zn pred-map))
+          (z/root z))))))
+
+#_ (do
+     (def tree2 (tag z1
+                     {:a #(-> % :id #{1 2 3 4}) :even #(-<> (do %)
+                                                            :id
+                                                            even?)}))
+     (ppcp tree2)
+     (println)
+     (-> tree2
+         meta
+         ppcp))
 
 #_ (do
 
