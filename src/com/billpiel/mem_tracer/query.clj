@@ -1,4 +1,5 @@
-(ns com.billpiel.mem-tracer.query)
+(ns com.billpiel.mem-tracer.query
+  (require [clojure.zip :as z]))
 
 (defn entry->seq
   [entry]
@@ -33,3 +34,10 @@
       (-> v
           (get-in path)
           pred'))))
+
+(defn trace->zipper
+  [trace]
+  (z/zipper map?
+            #(-> % :children not-empty)
+            #(assoc % :children %2)
+            trace))

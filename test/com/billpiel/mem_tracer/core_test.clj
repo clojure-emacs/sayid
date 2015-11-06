@@ -2,6 +2,8 @@
   (:require [midje.sweet :refer :all]
             [com.billpiel.mem-tracer.core :as mt]
             [com.billpiel.mem-tracer.trace :as mtt]
+            [com.billpiel.mem-tracer.query :as mq]
+            [com.billpiel.mem-tracer.util.tree-query :as mtq]
             com.billpiel.mem-tracer.test.ns1))
 
 ;; https://github.com/Prismatic/plumbing/blob/6f9f1b6453ed2c978a619dc99bb0317d8c053141/src/plumbing/core.cljx#L356
@@ -31,13 +33,24 @@
                                        [#inst "2010-01-01T01:00:00.000-00:00"
                                         #inst "2010-01-01T02:00:00.000-00:00"
                                         #inst "2010-01-01T03:00:00.000-00:00"
+                                        #inst "2010-01-01T04:00:00.000-00:00"
+                                        #inst "2010-01-01T04:00:00.000-00:00"
+                                        #inst "2010-01-01T04:00:00.000-00:00"
+                                        #inst "2010-01-01T04:00:00.000-00:00"
+                                        #inst "2010-01-01T04:00:00.000-00:00"
+                                        #inst "2010-01-01T04:00:00.000-00:00"
+                                        #inst "2010-01-01T04:00:00.000-00:00"
+                                        #inst "2010-01-01T04:00:00.000-00:00"
                                         #inst "2010-01-01T04:00:00.000-00:00"]))
+
+
 
 (def mock-gensym-fn (fn []
                       (make-mock-series-fn
                        (fn [id & [pre]]
                          (str (or pre "") id))
-                       ["10" "11" "12" "13"])))
+                       (vec (map str (range 10 1000))))))
+
 
 (defn remove-iso-ctrl [s]  (apply str (remove #(Character/isISOControl %) s)))
 
@@ -417,6 +430,59 @@
 
       (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1))))
 
+(fact-group "querying"
+
+
+  (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
+  (mt/clear-log!)
+  (with-redefs [mtt/now (mock-now-fn)
+                gensym (mock-gensym-fn)]
+    (let [trace-root (mt/add-trace-ns! 'com.billpiel.mem-tracer.test.ns1)
+          _ (com.billpiel.mem-tracer.test.ns1/func3-1 3 8)
+          trace (mt/deref-workspace!)]
+
+      (fact "find node by name and all parents"
+        (mtq/query (mq/trace->zipper trace)
+                   {:a (mq/mk-query-fn [:name] #".*func3-4") }
+                   (some-fn (mtq/has-all-tags-fn :a)
+                            (mtq/has-descen-fn :a)))
+        => [{:children [{:args [3 8],
+                         :children [{:args [8],
+                                     :children [{:args [8],
+                                                 :children [],
+                                                 :depth 3,
+                                                 :ended-at #inst "2010-01-01T04:00:00.000-00:00",
+                                                 :id :14,
+                                                 :name "com.billpiel.mem-tracer.test.ns1/func3-4",
+                                                 :path [:root10 :10 :12 :14],
+                                                 :return
+                                                 8,
+                                                 :started-at #inst "2010-01-01T04:00:00.000-00:00"}],
+                                     :depth 2,
+                                     :ended-at #inst "2010-01-01T04:00:00.000-00:00",
+                                     :id :12,
+                                     :name "com.billpiel.mem-tracer.test.ns1/func3-3",
+                                     :path [:root10 :10 :12],
+                                     :return 8,
+                                     :started-at #inst "2010-01-01T04:00:00.000-00:00"}],
+                         :depth 1,
+                         :ended-at #inst "2010-01-01T04:00:00.000-00:00",
+                         :id :10,
+                         :name "com.billpiel.mem-tracer.test.ns1/func3-1"
+                         ,
+                         :path [:root10 :10],
+                         :return 13,
+                         :started-at #inst "2010-01-01T01:00:00.000-00:00"}],
+             :depth 0,
+             :id :root10,
+             :path [:root10],
+             :traced #{[:ns 'com.billpiel.mem-tracer.test.ns1]}}])
+
+      (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1))))
+
+
+
+
 (comment "
 TODO
 - ws ns
@@ -425,7 +491,6 @@ TODO
 - wrap returns that are funcs
  - and deep search values for funcs?
 - diff entries
-- tree query
 - save/load workspaces
 - re-exec traces
 - deep trace

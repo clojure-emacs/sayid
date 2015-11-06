@@ -150,6 +150,37 @@
       (tag pred-map)
       (pred-query pred-final)))
 
+(defn has-all-tags-fn
+  [& tags]
+  (fn [node]
+    (clojure.set/subset? (set tags)
+                         (-> node :tags set))))
+
+(defn has-any-tags-fn
+  [& tags]
+  (fn [node]
+    (some (set tags)
+          (:tags node))))
+
+
+(defn has-child-fn [])
+
+(defn has-descen-fn
+  [& tags]
+  (fn [node]
+    (some (set tags)
+          (-> node
+              :children
+              :set))))
+
+
+(defn has-parent-fn [])
+(defn has-ancest-fn [])
+(defn has-closer-ancest-fn [])
+(defn has-closer-descen-fn [])
+(defn is-between-fn [])
+(defn is-strict-between-fn [])
+
 #_ (do
      (def z2 (tag z1
                   {:a #(-> % :id #{1 2 3 4}) :even #(-<> (do %)
