@@ -16,8 +16,6 @@
               (right-sib-zips d))
     []))
 
-
-
 (defn set-zip-children
   [z c]
   (z/edit z #(z/make-node z
@@ -36,8 +34,6 @@
    node
    pred-map))
 
-#_ (get-tags' {:id 1} {:a #(-> % :id #{1}) :b #(-> % :id #{1})})
-
 (defn insert-tags-into-parent-tag-summary
   [& [tags summary]]
   {:path (if tags
@@ -48,10 +44,10 @@
                       <>))
            [])
    :set (if tags
-          (-> summary
-              :set
-              (or #{})
-              (conj tags))
+          (-<> summary
+               :set
+               (or #{})
+               (apply conj <> tags))
           #{})})
 
 (defn merge-children-tag-summary
@@ -71,10 +67,10 @@
                (or [[]])
                (mapv #(into [tag] %)
                      <>))
-   :set (-> ch-tags
-            :set
-            (or #{})
-            (conj tag))})
+   :set (-<> ch-tags
+             :set
+             (or #{})
+             (apply conj <> tag))})
 
 (defn get-children-tag-summary*
   [zipr pred-map]
@@ -129,13 +125,37 @@
       (let [zn (z/next z)]
         (if-not (z/end? zn)
           (recur (tag* zn pred-map))
-          (z/root z))))))
+          ;; reset zipper
+          (z/edit zipr (-> z z/root constantly)))))))
+
+(defn pred-query
+  [zipr pred]
+  (let [z' (set-zip-children zipr
+                             (->> zipr
+                                  children-zips
+                                  (mapcat #(pred-query %
+                                                       pred))
+                                  vec))
+        n (z/node z')]
+    (if (-> n
+            meta
+            ::?
+            pred)
+      [n] ;; clear meta ::?
+      (z/children z'))))
+
+(defn query
+  [zipr pred-map pred-final]
+  (-> zipr
+      (tag pred-map)
+      (pred-query pred-final)))
 
 #_ (do
-     (def tree2 (tag z1
-                     {:a #(-> % :id #{1 2 3 4}) :even #(-<> (do %)
-                                                            :id
-                                                            even?)}))
+     (def z2 (tag z1
+                  {:a #(-> % :id #{1 2 3 4}) :even #(-<> (do %)
+                                                         :id
+                                                         even?)}))
+
      (ppcp tree2)
      (println)
      (-> tree2
@@ -171,6 +191,10 @@
                        #(-> % :children not-empty)
                        #(assoc % :children %2)
                        tree))
+
+     (def qr1 (query z1 {:a #(-> % :id #{6})}
+                     #(->> % :children :set (some #{:a}))
+                     ))
 
      (ppcp (z/root z1))
 
