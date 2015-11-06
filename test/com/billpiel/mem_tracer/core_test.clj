@@ -529,16 +529,14 @@
 
 (comment "
 TODO
-- ws ns
+- nice query result printing
+- nicer printing (rewrite string output ns?)
+- diff entries
+- save/load workspaces
 - wrap args that are funcs
  - and deep search values for funcs?
 - wrap returns that are funcs
  - and deep search values for funcs?
-- diff entries
-- save/load workspaces
 - re-exec traces
 - deep trace
-- nice query syntax
-- nice query result printing
-- nicer printing (rewrite string output ns?)
 ")
