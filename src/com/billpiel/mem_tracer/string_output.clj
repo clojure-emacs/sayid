@@ -33,14 +33,22 @@
             (clojure.string/join ";"))
        "m"))
 
-(defn fg-color-code
+(defn apply-color-palette
   [n]
-  (color-code :fg (nth [1 3 2 6 4 5]
-                       (mod n 6))))
+  (nth [1 3 2 6 4 5]
+       (mod n 6)))
 
-(defn bg-color-code
-  [n]
-  (color-code :bg n))
+(defn color-code
+  [& {:keys [fg bg fg* bg* bold]}]
+  (let [ansi #(conj % (+ %2 (mod %3 10)))]
+    (->> (cond-> []
+           (#{true 1} bold) (conj 1)
+           fg (ansi 30 fg)
+           bg (ansi 40 bg)
+           fg* (ansi 30 (apply-color-palette fg*))
+           bg* (ansi 40 (apply-color-palette bg*)))
+         (clojure.string/join ";")
+         (format "\33[%sm"))))
 
 (def reset-color-code (color-code))
 
@@ -56,7 +64,7 @@
           (->> depth
                inc
                (range 1)
-               (map #(str (fg-color-code %)
+               (map #(str (color-code :fg* %)
                           "|"))
                (clojure.string/join ""))
           end))
@@ -73,10 +81,11 @@
 (defn header->string
   [entry]
   (let [depth (:depth entry)]
-    (clojure.string/join "" [(fg-color-code depth)
+    (clojure.string/join "" [(color-code :fg* depth)
                              (indent depth :end "" )
-                             (color-code :fg 7 :bold true)
-                             ">"
+                             (color-code :fg 10 :bg* depth :bold true)
+                             "-"
+                             (color-code :bg 0)
                              (fg-color-code depth)
                              (:name entry)
                              reset-color-code])))

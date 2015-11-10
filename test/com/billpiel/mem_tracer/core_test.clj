@@ -93,7 +93,7 @@
         (->> trace
              mt/entry->string
              remove-iso-ctrl)
-        => "[31m [1;37m>[31m[m[33m [33m|[1;37m>[33mcom.billpiel.mem-tracer.test.ns1/func1[m [33m|  [33m:a[0m[m [33m| return =>  [33m|  [33m:a[0m[m[32m [33m|[32m|[1;37m>[32mcom.billpiel.mem-tracer.test.ns1/func2[m [33m|[32m|  [33m:a[0m[m [33m|[32m| return =>  [33m|[32m|  [33m:a[0m[m [33m| return =>  [33m|  [33m:a[0m[m")
+        => "[31m [1;30;41m-[40m[31m[m[33m [33m|[1;30;43m-[40m[33mcom.billpiel.mem-tracer.test.ns1/func1[m [33m|  [33m:a[0m[m [33m| return =>  [33m|  [33m:a[0m[m[32m [33m|[32m|[1;30;42m-[40m[32mcom.billpiel.mem-tracer.test.ns1/func2[m [33m|[32m|  [33m:a[0m[m [33m|[32m| return =>  [33m|[32m|  [33m:a[0m[m [33m| return =>  [33m|  [33m:a[0m[m")
 
       (fact "remove trace"
         (mt/remove-trace-ns! 'com.billpiel.mem-tracer.test.ns1)
