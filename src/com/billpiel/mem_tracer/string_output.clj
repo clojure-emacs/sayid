@@ -19,19 +19,59 @@
                                                            :class-delimiter [:cyan]
                                                            :class-name      [:cyan]}}))
 
+(defn arg-indent
+  [& {:keys [start end]
+      :or {start " "
+           end " "}}]
+  [:start start
+   -1 "-"
+   :default (fn [i]
+              {:fg* i :text "|"})
+   :end end])
 
-(defn color-code
-  [& {:keys [fg bg bold]}]
-  (str "\033["
-       (->> [(when (#{true 1} bold)
-               1)
-             (when fg
-               (+ 30 (mod fg 10)))
-             (when bg
-               (+ 40 (mod bg 10)))]
-            (remove nil?)
-            (clojure.string/join ";"))
-       "m"))
+(defn slicky-match
+  [i len sl]
+  (when-not (-> sl first #{:start :end})
+    (let [[fi se] sl
+          [lo hi] (cond (sequential? fi) fi
+                        (= :default fi) [java.lang.Integer/MIN_VALUE java.lang.Integer/MAX_VALUE]
+                        (number? fi) [fi fi])]
+      (when (or (<= lo i hi)
+                (<= lo (- len i) hi))
+        se))))
+
+(defn slinky-first-match
+  [sl i len]
+  (some (partial slicky-match i len)
+        (partition 2 sl)))
+
+(defn slinky-map->str
+  [m]
+  (str (->> (dissoc m :text)
+            (mapcat identity)
+            (apply color-code))
+       (:text m)))
+
+(defn slinky-part->str
+  [p n]
+  (cond
+    (string? p) p
+    (fn? p) (recur (p n) n)
+    (map? p) (slinky-map->str p)))
+
+(defn slinky->str
+  [sl n]
+  (let [[& {:keys [start end]}] sl]
+    (->> [[(slinky-part->str start nil)]
+          (map #(slinky-part->str
+                 (slinky-first-match sl
+                                     %
+                                     n)
+                 %)
+               (range 0 n))
+          [(slinky-part->str end nil)]]
+         (apply concat)
+         (apply str))))
 
 (defn apply-color-palette
   [n]
@@ -52,22 +92,10 @@
 
 (def reset-color-code (color-code))
 
-(defn header-indent
-  [depth]
-  (str depth (clojure.string/join "" (repeat depth "|"))))
-
 (defn indent
-  [depth & {:keys [start end]
-            :or   {start " " end " "}}]
-  (format "%s%s%s"
-          start
-          (->> depth
-               inc
-               (range 1)
-               (map #(str (color-code :fg* %)
-                          "|"))
-               (clojure.string/join ""))
-          end))
+  [depth & rest]
+  (slinky->str (apply arg-indent rest)
+               depth))
 
 (defn indent-line-breaks
   [s depth & rest]
@@ -80,15 +108,14 @@
 
 (defn header->string
   [entry]
-  (let [depth (:depth entry)]
-    (clojure.string/join "" [(color-code :fg* depth)
-                             (indent depth :end "" )
-                             (color-code :fg 10 :bg* depth :bold true)
-                             "-"
-                             (color-code :bg 0)
-                             (fg-color-code depth)
-                             (:name entry)
-                             reset-color-code])))
+  (let [{:keys [depth name]} entry]
+    (if name
+      (clojure.string/join "" [(indent depth :end {:fg 7
+                                                   :bold true
+                                                   :text ">"})
+                               (color-code :fg* (dec depth) :bg 0 :bold false)
+                               (:name entry)
+                               reset-color-code]))))
 
 (defn args-str
   [entry]
