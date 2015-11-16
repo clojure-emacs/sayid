@@ -36,3 +36,7 @@
   (func3-3 arg2)
   (+ 2
      (func3-2 arg2)))
+
+(defn func-identity
+  [& rest]
+  (first rest))

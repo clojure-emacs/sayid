@@ -29,6 +29,23 @@
               {:fg* i :text "|"})
    :end end])
 
+(defn apply-color-palette
+  [n]
+  (nth [1 3 2 6 4 5]
+       (mod n 6)))
+
+(defn color-code
+  [& {:keys [fg bg fg* bg* bold]}]
+  (let [ansi #(conj % (+ %2 (mod %3 10)))]
+    (->> (cond-> []
+           (#{true 1} bold) (conj 1)
+           fg (ansi 30 fg)
+           bg (ansi 40 bg)
+           fg* (ansi 30 (apply-color-palette fg*))
+           bg* (ansi 40 (apply-color-palette bg*)))
+         (clojure.string/join ";")
+         (format "\33[%sm"))))
+
 (defn slicky-match
   [i len sl]
   (when-not (-> sl first #{:start :end})
@@ -73,23 +90,6 @@
          (apply concat)
          (apply str))))
 
-(defn apply-color-palette
-  [n]
-  (nth [1 3 2 6 4 5]
-       (mod n 6)))
-
-(defn color-code
-  [& {:keys [fg bg fg* bg* bold]}]
-  (let [ansi #(conj % (+ %2 (mod %3 10)))]
-    (->> (cond-> []
-           (#{true 1} bold) (conj 1)
-           fg (ansi 30 fg)
-           bg (ansi 40 bg)
-           fg* (ansi 30 (apply-color-palette fg*))
-           bg* (ansi 40 (apply-color-palette bg*)))
-         (clojure.string/join ";")
-         (format "\33[%sm"))))
-
 (def reset-color-code (color-code))
 
 (defn indent
@@ -112,7 +112,7 @@
     (if name
       (clojure.string/join "" [(indent depth :end {:fg 7
                                                    :bold true
-                                                   :text ">"})
+                                                   :text "> "})
                                (color-code :fg* (dec depth) :bg 0 :bold false)
                                (:name entry)
                                reset-color-code]))))
@@ -124,17 +124,23 @@
                                              (map pprint-str
                                                   args))
                         (:depth entry)
-                        :end "  ")))
+                        :end "   ")))
 
 (defn return-str
   [entry]
   (when-let [return (:return entry)]
-    (str (indent (:depth entry))
-         "return => \n"
-         (indent-line-breaks (str (pprint-str return)
-                                  "\n")
-                             (:depth entry)
-                             :end "  "))))
+    (let [s (pprint-str return)
+          mline (some #{\newline} s)]
+      (str (indent (:depth entry))
+           "return => "
+           (if mline
+             (str "\n"
+                  (indent-line-breaks (str s
+                                           "\n")
+                                      (:depth entry)
+                                      :end "   "))
+             (str s))
+           "\n"))))
 
 (defn throw-str
   [entry]
@@ -165,9 +171,9 @@
   (->> [(header->string entry)
         "\n"
         (args-str entry)
-        (when (some-> entry :children not-empty) (return-str entry))
-        (clojure.string/join "" (mapcat entry->string (:children entry)))
         (return-str entry)
+        (clojure.string/join "" (mapcat entry->string (:children entry)))
+        (when (some-> entry :children not-empty) (return-str entry))
         (throw-str entry)]
        (remove nil?)
        (clojure.string/join "")))

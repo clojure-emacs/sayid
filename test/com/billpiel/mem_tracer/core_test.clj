@@ -103,6 +103,32 @@
 
     (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)))
 
+(fact-group "long values display nicely"
+  (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
+  (mt/reset-workspace!)
+  (with-redefs [mtt/now (mock-now-fn)
+                gensym (mock-gensym-fn)]
+
+    (mt/add-trace-ns! 'com.billpiel.mem-tracer.test.ns1)
+    (com.billpiel.mem-tracer.test.ns1/func-identity {:a 1
+                                                     :b 2
+                                                     :c [1 2 3 4 5 6 7]
+                                                     :d [1 2 3 4 5 6 7]
+                                                     :e [1 2 3 4 5 6 7]
+                                                     :f [1 2 3 4 5 6 7]}
+                                                    :hello
+                                                    [1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0])
+    (let [trace (mt/deref-workspace!)]
+
+      (fact :dev "string output is correct"
+        (->> trace
+             mt/entry->string
+             println
+             remove-iso-ctrl)
+        => ""))
+
+    (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)))
+
 (fact-group "about enable/disable -all-traces!"
   (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
   (mt/reset-workspace!)
