@@ -36,15 +36,19 @@
           (get-in path)
           pred'))))
 
+(defn some-mk-query-fn
+  [pairs]
+  (->> pairs
+       (map (partial apply
+                     mk-query-fn))
+       (apply some-fn)))
+
 (defmulti exec-query
   (fn [query-type zipr pairs] query-type))
 
 (defmethod exec-query nil
   [_ zipr pairs]
-  (let [tag-pred {:a (->> pairs
-                          (map (partial apply
-                                        mk-query-fn))
-                          (apply some-fn))}]
+  (let [tag-pred {:a (some-mk-query-fn pairs)}]
     (tq/query zipr
               tag-pred
               (tq/has-all-tags-fn :a))))
@@ -57,6 +61,13 @@
               tag-pred
               (some-fn (tq/is-between-fn :a :d)
                        (tq/has-any-tags-fn :a :d)))))
+
+(defmethod exec-query :a
+  [_ zipr pairs]
+  (tq/query zipr
+            {:a (some-mk-query-fn pairs)}
+            (some-fn (tq/has-all-tags-fn :a)
+                     (tq/has-descen-fn :a))))
 
 (defn trace->zipper
   [trace]

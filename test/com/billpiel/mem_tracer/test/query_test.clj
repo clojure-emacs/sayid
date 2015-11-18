@@ -77,3 +77,29 @@
        :depth 1,
        :name "C",
        :return 8}])
+
+(fact "ancestors"
+  (q/q test-zipr :a
+       [:name] "B"
+       [:name] "I")
+  => [{:args [1 2],
+       :children
+       [{:args [3 4 5],
+         :children [],
+         :depth 1,
+         :name "B",
+         :return :b-return}
+        {:args [1 {:a [10 11 12]} 5],
+         :children
+         [{:args [2 5 9],
+           :children
+           [{:args [], :children [], :depth 3, :name "I", :return 0}],
+           :depth 2,
+           :name "F",
+           :return "return F"}],
+         :depth 1,
+         :name "C",
+         :return 8}],
+       :depth 0,
+       :name "A",
+       :return 3}])
