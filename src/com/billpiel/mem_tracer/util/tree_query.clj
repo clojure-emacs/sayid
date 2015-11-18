@@ -175,10 +175,21 @@
 
 
 (defn has-parent-fn [])
-(defn has-ancest-fn [])
+
+(defn has-ancest-fn [& tags]
+  (fn [node]
+    (some (set tags)
+          (-> node
+              :parents
+              :set))))
+
 (defn has-closer-ancest-fn [])
 (defn has-closer-descen-fn [])
-(defn is-between-fn [])
+
+(defn is-between-fn [ancestor descendant]
+  (every-pred (has-ancest-fn ancestor)
+              (has-descen-fn descendant)))
+
 (defn is-strict-between-fn [])
 
 #_ (do

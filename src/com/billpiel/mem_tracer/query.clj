@@ -36,6 +36,19 @@
           (get-in path)
           pred'))))
 
+(defmulti exec-query
+  (fn [query-type zipr pairs] query-type))
+
+(defmethod exec-query nil
+  [_ zipr pairs]
+  (let [tag-pred {:a (->> pairs
+                          (map (partial apply
+                                        mk-query-fn))
+                          (apply some-fn))}]
+    (tq/query zipr
+              tag-pred
+              (tq/has-all-tags-fn :a))))
+
 (defn trace->zipper
   [trace]
   (z/zipper map?
@@ -64,23 +77,15 @@
     `(~@tag-pred' (some-fn (tq/has-all-tags-fn :a)
                           (tq/has-descen-fn :a)))))
 
-(defn q*
-  [ws body]
+(defn q
+  [zipr & body]
   (let [[arg rest] (if (-> body
                            first
                            vector?)
                      [nil body]
                      [(first body) (rest body)])
-        pairs (partition 2 rest)
-        meat (case arg
-               nil (q-default pairs)
-               s (q-segment pairs)
-               a* (q-all-ancestors-of-any pairs))]
-    `(tq/query ~ws ~@meat)))
-
-(defmacro q
-  [ws & body]
-  (q* ws body))
+        pairs (partition 2 rest)]
+    (exec-query arg zipr pairs)))
 
 #_ (do
 
