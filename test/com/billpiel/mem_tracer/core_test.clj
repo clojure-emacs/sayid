@@ -567,6 +567,8 @@ TODO
  - and deep search values for funcs?
 - re-exec traces
 - deep trace (inside fn)
-- tag vals w meta data and track?
+- bisect recording trees to find bugs
 - search fn syntax for dynamic vars to capture
+- use defn and docstring in core
+- tag vals w meta data and track?
 ")
