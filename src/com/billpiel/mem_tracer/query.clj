@@ -49,6 +49,15 @@
               tag-pred
               (tq/has-all-tags-fn :a))))
 
+(defmethod exec-query :s
+  [_ zipr [ancest descen]]
+  (let [tag-pred {:a (apply mk-query-fn ancest)
+                  :d (apply mk-query-fn descen)}]
+    (tq/query zipr
+              tag-pred
+              (some-fn (tq/is-between-fn :a :d)
+                       (tq/has-any-tags-fn :a :d)))))
+
 (defn trace->zipper
   [trace]
   (z/zipper map?
