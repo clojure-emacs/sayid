@@ -555,14 +555,18 @@
 
 (comment "
 TODO
+- tree query sibliings
+- query syntax??
 - nice query result printing
-- nicer printing (rewrite string output ns?)
 - diff entries
 - save/load workspaces
+- save recordings
 - wrap args that are funcs
  - and deep search values for funcs?
 - wrap returns that are funcs
  - and deep search values for funcs?
 - re-exec traces
-- deep trace
+- deep trace (inside fn)
+- tag vals w meta data and track?
+- search fn syntax for dynamic vars to capture
 ")
