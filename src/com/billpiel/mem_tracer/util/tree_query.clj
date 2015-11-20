@@ -4,17 +4,34 @@
 
 (def ^:dynamic *get-tags-mz* nil)
 
-(defn right-sib-zips [z]
-  (if-let [r (z/right z)]
-    (lazy-cat [r]
-              (right-sib-zips r))
-    []))
+(defn iter-while-identity
+  [f v]
+  (->> v
+       (iterate f)
+       (take-while identity)))
+
+(defn right-sib-zips
+  [z]
+  (->> z
+       (iter-while-identity z/right)
+       rest))
+
+(defn left-sib-zips
+  [z]
+  (->> z
+       (iter-while-identity z/left)
+       rest))
+
+(defn all-sib-zips [z]
+  (->> z
+       z/leftmost
+       right-sib-zips
+       (filter #(not (= % z)))))
 
 (defn children-zips [z]
-  (if-let [d (z/down z)]
-    (lazy-cat [d]
-              (right-sib-zips d))
-    []))
+  (->> z
+       z/down
+       (iter-while-identity z/right)))
 
 (defn set-zip-children
   [z c]

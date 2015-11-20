@@ -504,9 +504,7 @@
 
       (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1))))
 
-
 (fact-group "querying with q macro"
-
   (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
   (mt/clear-log!)
   (mt/reset-workspace!)
