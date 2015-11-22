@@ -28,6 +28,12 @@
        right-sib-zips
        (filter #(not (= % z)))))
 
+(defn parent-zips
+  [z]
+  (->> z
+       (iter-while-identity z/up)
+       rest))
+
 (defn children-zips [z]
   (->> z
        z/down
@@ -51,7 +57,7 @@
    node
    pred-map))
 
-(defn insert-tags-into-parent-tag-summary
+(defn insert-tags-into-summary
   [& [tags summary]]
   {:path (if tags
            (-<> summary
@@ -117,22 +123,29 @@
                                                                          :id
                                                                          even?)}))
 
-(defn get-parents-tag-summary ;; memoize?
-  [zipr pred-map]
-  (if-let [p (z/up zipr)]
-    (insert-tags-into-parent-tag-summary (get-tags' (z/node p)
-                                                    pred-map)
-                                         (get-parents-tag-summary (z/up p)
-                                                                  pred-map))
-    (insert-tags-into-parent-tag-summary))) ;; tail recursion possible?
+(defn seq->tag-summary ;; memoize?
+  [zips pred-map]
+  (let [[fst & rest] (or zips [])]
+    (insert-tags-into-summary
+     (when fst
+       (get-tags' (z/node fst)
+                  pred-map))
+     (when rest
+       (seq->tag-summary rest
+                         pred-map)))))
 
 (defn tag*
   [zipr pred-map]
-  (z/edit zipr (fn [z] (with-meta z
-                         {::? {:tags  (get-tags' (z/node zipr) pred-map)
-                               :parents (get-parents-tag-summary zipr pred-map)
-                               :children (get-children-tag-summary zipr
-                                                                   pred-map)}}))))
+  (let [get-tag-summary #(-> zipr
+                             %
+                             (seq->tag-summary pred-map))]
+    (z/edit zipr (fn [z] (with-meta z
+                           {::? {:tags  (get-tags' (z/node zipr) pred-map)
+                                 :parents (get-tag-summary parent-zips) ; (get-parents-tag-summary zipr pred-map)
+                                 :children (get-children-tag-summary zipr
+                                                                     pred-map)
+                                 :old-sibs (get-tag-summary left-sib-zips)
+                                 :young-sibs (get-tag-summary right-sib-zips)}})))))
 
 (defn tag
   [zipr pred-map]
