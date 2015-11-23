@@ -553,20 +553,22 @@
 
 (comment "
 TODO
-- tree query sibliings
-- query syntax??
-- nice query result printing
-- diff entries
-- save/load workspaces
+x tree query sibliings
 - save recordings
+- save/load workspaces
+- preserve arglists and other meta in core fns
+  - use defn and docstring in core
+- optional print func log before and after children
+- bisect recording trees to find bugs
+- trace individual fns
+- deep trace (inside fn)
+- query syntax??
 - wrap args that are funcs
  - and deep search values for funcs?
 - wrap returns that are funcs
  - and deep search values for funcs?
 - re-exec traces
-- deep trace (inside fn)
-- bisect recording trees to find bugs
+- diff entries
 - search fn syntax for dynamic vars to capture
-- use defn and docstring in core
 - tag vals w meta data and track?
 ")
