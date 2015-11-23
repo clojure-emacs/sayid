@@ -6,8 +6,10 @@
   (instance? clojure.lang.Atom v))
 
 (defn default-workspace
-  [& {:as m}]
-  (trace/mk-entry :workspace? true :merge-map m))
+  []
+  (-> (trace/mk-entry)
+      (merge {:traced #{}})
+      (with-meta {::workspace true})))
 
 (defn init-workspace!
   [ws]

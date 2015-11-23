@@ -13,16 +13,20 @@
         path (conj (or (:path parent)
                        [])
                    id)]
-    (merge ^::entry {:id id
-                     :path path
-                     :depth (or (some-> parent :depth inc) 0)
-                     :children (atom [])}
-           (if workspace?
-             {:traced #{}}
-             {:name name
-              :args (vec args)
-              :started-at (now)})
-           merge-map)))
+    ^::entry {:id id
+              :path path
+              :depth (or (some-> parent :depth inc) 0)
+              :children (atom [])}))
+
+(defn mk-fn-entry
+  [& {:keys [parent name args]}]
+  (merge (mk-entry :parent parent
+                   :name name
+                   :args args
+                   :merge-map )
+         {:name name
+          :args (vec args)
+          :started-at (now)}))
 
 (defn StackTraceElement->map
   [^StackTraceElement o]
@@ -80,9 +84,9 @@ symbol name of the function."
   [workspace name f args]
   (let [parent (or *trace-log-parent*
                    workspace)
-        this (mk-entry :parent parent
-                       :name name
-                       :args args)
+        this (mk-fn-entry :parent parent
+                          :name name
+                          :args args)
         idx (-> (start-trace (:children parent)
                              this)
                 count
