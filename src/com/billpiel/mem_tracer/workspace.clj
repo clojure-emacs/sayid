@@ -7,9 +7,11 @@
 
 (defn default-workspace
   []
-  (-> (trace/mk-entry)
+  (-> (trace/mk-entry :id-prefix "root")
       (merge {:traced #{}})
-      (with-meta {::workspace true})))
+      (vary-meta assoc
+                 ::workspace
+                 true)))
 
 (defn init-workspace!
   [ws]

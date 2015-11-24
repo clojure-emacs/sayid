@@ -5,9 +5,8 @@
 (defn now [] (java.util.Date.))
 
 (defn mk-entry
-  [& {:keys [workspace? parent name args merge-map]}]
-  (let [id (-> (if workspace?
-                 "root" "")
+  [& {:keys [id-prefix parent]}]
+  (let [id (-> id-prefix
                gensym
                keyword)
         path (conj (or (:path parent)
@@ -20,10 +19,7 @@
 
 (defn mk-fn-entry
   [& {:keys [parent name args]}]
-  (merge (mk-entry :parent parent
-                   :name name
-                   :args args
-                   :merge-map )
+  (merge (mk-entry :parent parent)
          {:name name
           :args (vec args)
           :started-at (now)}))
