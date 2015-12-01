@@ -22,7 +22,10 @@
 (defn init-workspace!
   [ws]
   (if (= nil @ws)
-    (compare-and-set! ws nil (default-workspace))))
+    (compare-and-set! ws nil (default-workspace))
+    (throw
+     (Exception.
+      "Cannot run `init-workspace!` if workspace is not `nil`. Run `reset-workspace!` first."))))
 
 (defn reset-workspace!
   [ws]
@@ -103,5 +106,5 @@
                    :ws-slot
                    (ns-resolve ws-shelf))
           (= :f force))
-    (reset! ws (ns-resolve ws-shelf slot))
+    (reset! ws @(ns-resolve ws-shelf slot))
     (throw (Exception. "Current workspace is not saved. Use :f as last arg to force, or else `save!` first."))))
