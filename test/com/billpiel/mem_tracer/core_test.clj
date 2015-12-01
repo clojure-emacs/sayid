@@ -6,53 +6,6 @@
             [com.billpiel.mem-tracer.util.tree-query :as mtq]
             com.billpiel.mem-tracer.test.ns1))
 
-;; https://github.com/Prismatic/plumbing/blob/6f9f1b6453ed2c978a619dc99bb0317d8c053141/src/plumbing/core.cljx#L356
-(defn swap-pair!
-  "Like swap! but returns a pair [old-val new-val]"
-  ([a f]
-     (loop []
-       (let [old-val @a
-             new-val (f old-val)]
-         (if (compare-and-set! a old-val new-val)
-           [old-val new-val]
-           (recur)))))
-  ([a f & args]
-   (swap-pair! a #(apply f % args))))
-
-(defn make-mock-series-fn
-  [f s]
-  (let [a (atom s)]
-    (fn [& args]
-      (let [v (-> a
-                  (swap-pair! subvec 1)
-                  first
-                  first)]
-        (apply f (into [v] args))))))
-
-(def mock-now-fn #(make-mock-series-fn identity
-                                       [#inst "2010-01-01T01:00:00.000-00:00"
-                                        #inst "2010-01-01T02:00:00.000-00:00"
-                                        #inst "2010-01-01T03:00:00.000-00:00"
-                                        #inst "2010-01-01T04:00:00.000-00:00"
-                                        #inst "2010-01-01T04:00:00.000-00:00"
-                                        #inst "2010-01-01T04:00:00.000-00:00"
-                                        #inst "2010-01-01T04:00:00.000-00:00"
-                                        #inst "2010-01-01T04:00:00.000-00:00"
-                                        #inst "2010-01-01T04:00:00.000-00:00"
-                                        #inst "2010-01-01T04:00:00.000-00:00"
-                                        #inst "2010-01-01T04:00:00.000-00:00"
-                                        #inst "2010-01-01T04:00:00.000-00:00"]))
-
-
-
-(def mock-gensym-fn (fn []
-                      (make-mock-series-fn
-                       (fn [id & [pre]]
-                         (str (or pre "") id))
-                       (vec (map str (range 10 1000))))))
-
-
-(defn remove-iso-ctrl [s]  (apply str (remove #(Character/isISOControl %) s)))
 
 (fact-group "basic test"
   (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
@@ -92,6 +45,7 @@
       (fact "string output is correct"
         (->> trace
              mt/entry->string
+println
              remove-iso-ctrl)
         => "[31m [1;30;41m-[40m[31m[m[33m [33m|[1;30;43m-[40m[33mcom.billpiel.mem-tracer.test.ns1/func1[m [33m|  [33m:a[0m[m [33m| return =>  [33m|  [33m:a[0m[m[32m [33m|[32m|[1;30;42m-[40m[32mcom.billpiel.mem-tracer.test.ns1/func2[m [33m|[32m|  [33m:a[0m[m [33m|[32m| return =>  [33m|[32m|  [33m:a[0m[m [33m| return =>  [33m|  [33m:a[0m[m")
 
@@ -554,11 +508,13 @@
 (comment "
 TODO
 x tree query sibliings
+- use dynamic ns for storage instead of atom/map?!?!?!
 - save recordings
 - save/load workspaces
 - preserve arglists and other meta in core fns
   - use defn and docstring in core
 - optional print func log before and after children
+- include ID in string output
 - bisect recording trees to find bugs
 - trace individual fns
 - deep trace (inside fn)
