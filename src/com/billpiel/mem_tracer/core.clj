@@ -5,6 +5,10 @@
             [com.billpiel.mem-tracer.query :as q]))
 
 (def workspace (atom nil))
+(def recording (atom nil))
+
+(def config (atom {:ws-ns '$ws
+                   :rec-ns '$rec}))
 
 (defn get-current-workspace!
   []

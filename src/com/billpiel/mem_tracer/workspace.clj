@@ -1,14 +1,6 @@
 (ns com.billpiel.mem-tracer.workspace
-  (:require [com.billpiel.mem-tracer.trace :as trace]))
-
-(defn qualify-sym
-  [ns sym]
-  (symbol (name ns)
-          (name sym)))
-
-(defn atom?
-  [v]
-  (instance? clojure.lang.Atom v))
+  (:require [com.billpiel.mem-tracer.trace :as trace]
+            [com.billpiel.mem-tracer.util.other :as util]))
 
 (defn default-workspace
   []
@@ -18,6 +10,13 @@
       (vary-meta assoc
                  ::workspace
                  true)))
+
+(defn workspace->entry
+  [ws]
+  (-> ws
+      (dissoc :traced
+              :ws-slot)
+      (vary-meta dissoc ::workspace)))
 
 (defn init-workspace!
   [ws]
@@ -71,31 +70,26 @@
                                       ::trace/entry)
                                   (-> %
                                       :children
-                                      atom?))
+                                      util/atom?))
                            (update-in % [:children] deref)
                            %)
-                        (if (atom? ws)
+                        (if (util/atom? ws)
                           @ws
                           ws)))
-
-(defn def-ns-var
-  [ws-ns-sym sym v]
-  (binding [*ns* (create-ns ws-ns-sym)]
-    (eval `(def ~sym '~v))))
 
 (defn save!
   [ws ws-shelf]
   (let [ws' @ws
         slot (:ws-slot ws')]
     (if (symbol? slot)
-      (def-ns-var ws-shelf slot ws')
+      (util/def-ns-var ws-shelf slot ws')
       (throw (Exception. (format "Workspace must have a symbol value in :ws-slot. Value was `%s`. Try `save-as!` instead."
                                  slot))))
     ws'))
 
 (defn save-as!
   [ws ws-shelf slot]
-  (swap! ws assoc :ws-slot (qualify-sym ws-shelf slot))
+  (swap! ws assoc :ws-slot (util/qualify-sym ws-shelf slot))
   (save! ws ws-shelf))
 
 ;; TODO remove traces before unloading a ws???
