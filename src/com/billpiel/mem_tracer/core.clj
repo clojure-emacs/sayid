@@ -2,6 +2,7 @@
   (:require com.billpiel.mem-tracer.string-output
             [com.billpiel.mem-tracer.trace :as trace]
             [com.billpiel.mem-tracer.workspace :as ws]
+            [com.billpiel.mem-tracer.recording :as rec]
             [com.billpiel.mem-tracer.query :as q]))
 
 (def workspace (atom nil))
@@ -81,6 +82,29 @@
 ;; === END Workspace functions
 
 ;; === Recording functions
+
+(defn rec-save!
+  "Saves active recording to the recording shelf namespace in the pre-specified slot."
+  []
+  (#'ws/save! recording (:rec-ns @config)))
+
+(defn rec-save-as!
+  "Saves active recording to the recording shelf namespace in the specified `slot`."
+  [slot]
+  (#'ws/save-as! recording
+                 (:rec-ns @config)
+                 slot))
+
+(defn rec-load!
+  "Loads a recording from the shelf namespace into the active
+  position. Will not overwrite an un-saved active recording unless
+  `active` equals :f"
+  [slot & [force]]
+  (#'ws/load! recording
+              (:rec-ns @config)
+              slot
+              force))
+
 ;; === END Recording functions
 
 

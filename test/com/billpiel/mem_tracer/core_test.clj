@@ -509,10 +509,10 @@ println
 TODO
 x tree query sibliings
 x use dynamic ns for storage instead of atom/map?!?!?!
-- save recordings
+x save recordings
 x save/load workspaces
-- preserve arglists and other meta in core fns
-  - use defn and docstring in core
+x preserve arglists and other meta in core fns
+  x use defn and docstring in core
 - optional print func log before and after children
 - include ID in string output
 - bisect recording trees to find bugs
