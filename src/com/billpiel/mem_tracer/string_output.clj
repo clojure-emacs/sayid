@@ -115,6 +115,9 @@
                                                    :text "> "})
                                (color-code :fg* (dec depth) :bg 0 :bold false)
                                (:name entry)
+                               "  "
+                               (color-code :fg 7)
+                               (:id entry)
                                reset-color-code]))))
 
 (defn args-str
@@ -167,16 +170,32 @@
          "\n")))
 
 (defn entry->string
-  [entry]
-  (->> [(header->string entry)
-        "\n"
-        (args-str entry)
-        (return-str entry)
-        (clojure.string/join "" (mapcat entry->string (:children entry)))
-        (when (some-> entry :children not-empty) (return-str entry))
-        (throw-str entry)]
-       (remove nil?)
-       (clojure.string/join "")))
+  [entry & {:keys [post-head pre-args post-args pre-ret post-ret pre-ex post-ex children]
+            :or {post-head true pre-args true post-args true pre-ret true post-ret true pre-ex true post-ex true children true}}]
+  (let [has-children (some-> entry
+                             :children
+                             not-empty)]
+    (->> [[(header->string entry) "\n"]
+          (when pre-args
+            (args-str entry))
+          (when pre-ret
+            (return-str entry))
+          (when pre-ex
+            (throw-str entry))
+          (when has-children
+            [(mapcat entry->string
+                     (:children entry))
+             (when post-head
+               [(header->string entry) "\n"])
+             (when pre-args
+               (args-str entry))
+             (when post-ret
+               (return-str entry))
+             (when post-ex
+               (throw-str entry))])]
+         flatten
+         (remove nil?)
+         (clojure.string/join ""))))
 
 (defn print-entry
   [entry]
