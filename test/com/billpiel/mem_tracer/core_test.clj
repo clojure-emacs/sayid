@@ -4,14 +4,15 @@
             [com.billpiel.mem-tracer.trace :as mtt]
             [com.billpiel.mem-tracer.query :as mq]
             [com.billpiel.mem-tracer.util.tree-query :as mtq]
+            [com.billpiel.mem-tracer.test-utils :as t-utils]
             com.billpiel.mem-tracer.test.ns1))
 
 
 (fact-group "basic test"
   (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
   (mt/reset-workspace!)
-  (with-redefs [mtt/now (mock-now-fn)
-                gensym (mock-gensym-fn)]
+  (with-redefs [mtt/now (t-utils/mock-now-fn)
+                gensym (t-utils/mock-gensym-fn)]
 
     (mt/add-trace-ns! 'com.billpiel.mem-tracer.test.ns1)
     (com.billpiel.mem-tracer.test.ns1/func1 :a)
@@ -46,7 +47,7 @@
         (->> trace
              mt/entry->string
 println
-             remove-iso-ctrl)
+             t-utils/remove-iso-ctrl)
         => "[31m [1;30;41m-[40m[31m[m[33m [33m|[1;30;43m-[40m[33mcom.billpiel.mem-tracer.test.ns1/func1[m [33m|  [33m:a[0m[m [33m| return =>  [33m|  [33m:a[0m[m[32m [33m|[32m|[1;30;42m-[40m[32mcom.billpiel.mem-tracer.test.ns1/func2[m [33m|[32m|  [33m:a[0m[m [33m|[32m| return =>  [33m|[32m|  [33m:a[0m[m [33m| return =>  [33m|  [33m:a[0m[m")
 
       (fact "remove trace"
@@ -60,8 +61,8 @@ println
 (fact-group "long values display nicely"
   (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
   (mt/reset-workspace!)
-  (with-redefs [mtt/now (mock-now-fn)
-                gensym (mock-gensym-fn)]
+  (with-redefs [mtt/now (t-utils/mock-now-fn)
+                gensym (t-utils/mock-gensym-fn)]
 
     (mt/add-trace-ns! 'com.billpiel.mem-tracer.test.ns1)
     (com.billpiel.mem-tracer.test.ns1/func-identity {:a 1
@@ -86,8 +87,8 @@ println
 (fact-group "about enable/disable -all-traces!"
   (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
   (mt/reset-workspace!)
-  (with-redefs [mtt/now (mock-now-fn)
-                gensym (mock-gensym-fn)]
+  (with-redefs [mtt/now (t-utils/mock-now-fn)
+                gensym (t-utils/mock-gensym-fn)]
 
     (mt/add-trace-ns! 'com.billpiel.mem-tracer.test.ns1)
 
@@ -134,8 +135,8 @@ println
 (fact-group "about remove-all-traces!"
   (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
   (mt/reset-workspace!)
-  (with-redefs [mtt/now (mock-now-fn)
-                gensym (mock-gensym-fn)]
+  (with-redefs [mtt/now (t-utils/mock-now-fn)
+                gensym (t-utils/mock-gensym-fn)]
 
     (mt/add-trace-ns! 'com.billpiel.mem-tracer.test.ns1)
 
@@ -361,8 +362,8 @@ println
 (fact-group "exception thrown"
 
   (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
-  (with-redefs [mtt/now (mock-now-fn)
-                gensym (mock-gensym-fn)]
+  (with-redefs [mtt/now (t-utils/mock-now-fn)
+                gensym (t-utils/mock-gensym-fn)]
     (let [trace-root (mt/add-trace-ns! 'com.billpiel.mem-tracer.test.ns1)
           _ (try
               (com.billpiel.mem-tracer.test.ns1/func-throws :a)
@@ -415,8 +416,8 @@ println
   (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
   (mt/clear-log!)
   (mt/reset-workspace!)
-  (with-redefs [mtt/now (mock-now-fn)
-                gensym (mock-gensym-fn)]
+  (with-redefs [mtt/now (t-utils/mock-now-fn)
+                gensym (t-utils/mock-gensym-fn)]
     (let [trace-root (mt/add-trace-ns! 'com.billpiel.mem-tracer.test.ns1)
           _ (com.billpiel.mem-tracer.test.ns1/func3-1 3 8)
           trace (mt/deref-workspace!)]
@@ -462,8 +463,8 @@ println
   (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
   (mt/clear-log!)
   (mt/reset-workspace!)
-  (with-redefs [mtt/now (mock-now-fn)
-                gensym (mock-gensym-fn)]
+  (with-redefs [mtt/now (t-utils/mock-now-fn)
+                gensym (t-utils/mock-gensym-fn)]
     (let [trace-root (mt/add-trace-ns! 'com.billpiel.mem-tracer.test.ns1)
           _ (com.billpiel.mem-tracer.test.ns1/func3-1 3 8)
           trace (mt/deref-workspace!)]
