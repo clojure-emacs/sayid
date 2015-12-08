@@ -513,6 +513,7 @@ x save recordings
 x save/load workspaces
 x preserve arglists and other meta in core fns
   x use defn and docstring in core
+- test reloading ws after code change
 - optional print func log before and after children
 - include ID in string output
 - bisect recording trees to find bugs

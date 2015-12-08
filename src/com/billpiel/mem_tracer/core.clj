@@ -13,29 +13,35 @@
 
 ;; === Workspace functions
 
-(defn get-current-workspace!
-  []
-  (#'ws/init-workspace! workspace)
-  @workspace)
+
+(defn- init-workspace! [& [quiet]]
+  (#'ws/init-workspace! workspace quiet))
+
+(defn get-current-workspace! []
+  @(init-workspace! :quiet))
 
 (defn reset-workspace!
-  "Reset the active workspace back to default state."
-  [] (#'ws/reset-workspace! workspace))
+  "Removes all traces set by active workspace. Resets the active workspace to nil."
+  []
+  (remove-all-traces!)
+  (#'ws/reset-workspace! workspace))
 
 (defn clear-log!
 "Clears the log of the active workspace, but preserves traces and other
   properties."
-[] (#'ws/clear-log! workspace))
+[] (#'ws/clear-log! (get-current-workspace!)))
 
 (defn add-trace-ns!
-"`ns-sym` is a symbol that references an existing namespace. Applies an enabled
+  "`ns-sym` is a symbol that references an existing namespace. Applies an enabled
   trace to all functions in that namespace. Adds the traces to the active workspace trace set."
-[ns-sym] (#'ws/add-trace-ns! workspace))
+  [ns-sym]
+  (#'ws/add-trace-ns! (init-workspace!)
+                      ns-sym))
 
 (defn remove-trace-ns!
 "`ns-sym` is a symbol that references an existing namespace. Removes all
   traces applied to the namespace."
-[] (#'ws/remove-trace-ns! workspace))
+[ns-sym] (#'ws/remove-trace-ns! workspace ns-sym))
 
 (defn enable-all-traces!
 "Enables any disabled traces in active workspace."
@@ -130,3 +136,7 @@
   (-> entry
       deref-workspace! ;; ??? This can safely be run on a deref'd entry
       com.billpiel.mem-tracer.string-output/print-entry))
+
+(defn print-ws
+  []
+  (com.billpiel.mem-tracer.string-output/print-entry (deref-workspace!)))
