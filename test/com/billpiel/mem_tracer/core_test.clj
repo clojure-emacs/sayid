@@ -517,7 +517,9 @@ x preserve arglists and other meta in core fns
 - test reloading ws after code change
 - optional print func log before and after children
 - include ID in string output
+- show file and line num in output
 - bisect recording trees to find bugs
+- split ns and fn name in trace rec and output
 - trace individual fns
 - deep trace (inside fn)
 - query syntax??
