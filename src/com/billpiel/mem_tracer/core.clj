@@ -35,7 +35,7 @@
   "`ns-sym` is a symbol that references an existing namespace. Applies an enabled
   trace to all functions in that namespace. Adds the traces to the active workspace trace set."
   [ns-sym]
-  (#'ws/add-trace-ns! (init-workspace!)
+  (#'ws/add-trace-ns! (init-workspace! :quiet)
                       ns-sym))
 
 (defn remove-trace-ns!
