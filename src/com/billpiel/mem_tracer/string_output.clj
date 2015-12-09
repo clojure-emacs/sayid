@@ -19,15 +19,33 @@
                                                            :class-delimiter [:cyan]
                                                            :class-name      [:cyan]}}))
 
-(defn arg-indent
+(defn base-indent-slinky
+  [& {:keys [override underride]
+      :or {override [] underride []}}]
+  (concat override
+          [:start " "
+           :end " "
+           :default (fn [i]
+                      {:fg* i :text "|"})]
+          underride))
+
+(defn arg-indent-slinky
   [& {:keys [start end]
       :or {start " "
            end " "}}]
-  [:start start
-   -1 "-"
-   :default (fn [i]
-              {:fg* i :text "|"})
-   :end end])
+  (base-indent-slinky :override [:start start
+                                 -1 "-"
+                                 :end end]))
+
+(defn fn-header-indent-slinky
+  []
+  (base-indent-slinky :override [-1 (fn [i]
+                                      {:fg* i :text "v"})]))
+
+(defn fn-footer-indent-slinky
+  []
+  (base-indent-slinky :override [-1 (fn [i]
+                                      {:fg* i :text "^"})]))
 
 (defn apply-color-palette
   [n]
@@ -54,7 +72,7 @@
                         (= :default fi) [java.lang.Integer/MIN_VALUE java.lang.Integer/MAX_VALUE]
                         (number? fi) [fi fi])]
       (when (or (<= lo i hi)
-                (<= lo (- len i) hi))
+                (<= lo (- i len) hi))
         se))))
 
 (defn slinky-first-match
@@ -94,7 +112,7 @@
 
 (defn indent
   [depth & rest]
-  (slinky->str (apply arg-indent rest)
+  (slinky->str (apply base-indent-slinky rest)
                depth))
 
 (defn indent-line-breaks
@@ -110,9 +128,7 @@
   [entry]
   (let [{:keys [depth name]} entry]
     (if name
-      (clojure.string/join "" [(indent depth :end {:fg 7
-                                                   :bold true
-                                                   :text "> "})
+      (clojure.string/join "" [(slinky->str #spy/d (fn-header-indent-slinky) depth)
                                (color-code :fg* (dec depth) :bg 0 :bold false)
                                (:name entry)
                                "  "
@@ -192,7 +208,10 @@
              (when post-ret
                (return-str entry))
              (when post-ex
-               (throw-str entry))])]
+               (throw-str entry))])
+          (slinky->str (fn-footer-indent-slinky)
+                       (:depth entry))
+          "\n"]
          flatten
          (remove nil?)
          (clojure.string/join ""))))
