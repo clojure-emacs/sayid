@@ -139,4 +139,4 @@
 
 (defn print-ws
   []
-  (com.billpiel.mem-tracer.string-output/print-entry (deref-workspace!)))
+  (#'com.billpiel.mem-tracer.string-output/print-entry (deref-workspace!)))
