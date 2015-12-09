@@ -128,7 +128,7 @@
   [entry]
   (let [{:keys [depth name]} entry]
     (if name
-      (clojure.string/join "" [(slinky->str #spy/d (fn-header-indent-slinky) depth)
+      (clojure.string/join "" [(slinky->str (fn-header-indent-slinky) depth)
                                (color-code :fg* (dec depth) :bg 0 :bold false)
                                (:name entry)
                                "  "
@@ -211,6 +211,7 @@
                (throw-str entry))])
           (slinky->str (fn-footer-indent-slinky)
                        (:depth entry))
+          reset-color-code
           "\n"]
          flatten
          (remove nil?)
