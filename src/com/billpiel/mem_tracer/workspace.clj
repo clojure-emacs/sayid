@@ -43,7 +43,6 @@
 (defn remove-trace-ns!
   "Untrace all fns in the given name space."
   [ws ns-sym]
-  (init-workspace! ws)
   (swap! ws update-in [:traced] disj [:ns ns-sym])
   (trace/untrace-ns* ns-sym))
 
