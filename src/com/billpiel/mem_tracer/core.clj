@@ -29,7 +29,7 @@
 (defn clear-log!
 "Clears the log of the active workspace, but preserves traces and other
   properties."
-[] (#'ws/clear-log! (get-current-workspace!)))
+[] (#'ws/clear-log! workspace))
 
 (defn add-trace-ns!
   "`ns-sym` is a symbol that references an existing namespace. Applies an enabled
