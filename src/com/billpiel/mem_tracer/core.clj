@@ -124,7 +124,7 @@
 
 (defmacro q
 "Queries the active trace recording."
- [& body] `(q/q (q/trace->zipper recording)
+ [& body] `(q/q (q/trace->zipper @recording)
                            ~@body))
 
 ;; === END Query functions
