@@ -79,7 +79,7 @@ println
         (->> trace
              mt/entry->string
              println
-             remove-iso-ctrl)
+             t-utils/remove-iso-ctrl)
         => ""))
 
     (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)))
@@ -406,7 +406,7 @@ println
             :started-at #inst "2010-01-01T01:00:00.000-00:00"})
 
       (fact "string output is correct"
-        (remove-iso-ctrl (mt/entry->string trace))
+        (t-utils/remove-iso-ctrl (mt/entry->string trace))
         => "[31m [1;37m>[31m[m[33m [33m|[1;37m>[33mcom.billpiel.mem-tracer.test.ns1/func-throws[m [33m|  [33m:a[0m[m [33m| [1;37;41mTHROW[m => [35m\"Exception from func-throws: :a\"[0m [33m| [31m[[0m[35m\"com.billpiel.mem_tracer.test.ns1$func_throws ns1.clj:14\"[0m[31m][0m[m")
 
       (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1))))
