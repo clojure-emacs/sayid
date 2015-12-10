@@ -38,9 +38,11 @@
                                  :end end]))
 
 (defn fn-header-indent-slinky
-  []
-  (base-indent-slinky :override [-1 (fn [i]
-                                      {:fg* i :text "v"})]))
+  [& [start?]]
+  (apply base-indent-slinky (when start?
+                              [:override
+                               [-1 (fn [i]
+                                     {:fg* i :text "v"})]])))
 
 (defn fn-footer-indent-slinky
   []
@@ -124,11 +126,11 @@
                                            "\n"])
                                (clojure.string/split-lines s))))
 
-(defn header->string
-  [entry]
+(defn name->string
+  [entry start?]
   (let [{:keys [depth name]} entry]
     (if name
-      (clojure.string/join "" [(slinky->str (fn-header-indent-slinky) depth)
+      (clojure.string/join "" [(slinky->str (fn-header-indent-slinky start?) depth)
                                (color-code :fg* (dec depth) :bg 0 :bold false)
                                (:name entry)
                                "  "
@@ -191,24 +193,24 @@
   (let [has-children (some-> entry
                              :children
                              not-empty)]
-    (->> [[(header->string entry) "\n"]
+    (->> [[(name->string entry true) "\n"]
           (when pre-args
             (args-str entry))
-          (when pre-ret
-            (return-str entry))
-          (when pre-ex
-            (throw-str entry))
           (when has-children
+            (when pre-ret
+              (return-str entry))
+            (when pre-ex
+              (throw-str entry))
             [(mapcat entry->string
                      (:children entry))
              (when post-head
-               [(header->string entry) "\n"])
+               [(header->string entry false) "\n"])
              (when pre-args
-               (args-str entry))
-             (when post-ret
-               (return-str entry))
-             (when post-ex
-               (throw-str entry))])
+               (args-str entry))])
+          (when post-ret
+            (return-str entry))
+          (when post-ex
+            (throw-str entry))
           (slinky->str (fn-footer-indent-slinky)
                        (:depth entry))
           reset-color-code
