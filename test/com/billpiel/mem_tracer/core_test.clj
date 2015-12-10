@@ -470,7 +470,7 @@ println
           trace (mt/deref-workspace!)]
 
       (fact "find node by name and all parents"
-        (mt/q :a [:name] #".*func3-4")
+        (mt/qws :a [:name] #".*func3-4")
         =>  [{:path [:root10]
               :children
               [{:args [3 8]
