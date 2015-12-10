@@ -39,9 +39,10 @@
                       ns-sym))
 
 (defn remove-trace-ns!
-"`ns-sym` is a symbol that references an existing namespace. Removes all
+  "`ns-sym` is a symbol that references an existing namespace. Removes all
   traces applied to the namespace."
-[ns-sym] (#'ws/remove-trace-ns! workspace ns-sym))
+  [ns-sym] (#'ws/remove-trace-ns! (init-workspace! :quiet)
+                                  ns-sym))
 
 (defn enable-all-traces!
 "Enables any disabled traces in active workspace."
