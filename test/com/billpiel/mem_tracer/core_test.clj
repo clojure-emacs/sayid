@@ -514,13 +514,14 @@ x save recordings
 x save/load workspaces
 x preserve arglists and other meta in core fns
   x use defn and docstring in core
-- test reloading ws after code change
-- optional print func log before and after children
-- include ID in string output
-- show file and line num in output
+x test reloading ws after code change
+x optional print func log before and after children
+x include ID in string output
 - bisect recording trees to find bugs
+- use 'returns' and 'returned' in output
 - split ns and fn name in trace rec and output
 - trace individual fns
+- show file and line num in output
 - deep trace (inside fn)
 - query syntax??
 - wrap args that are funcs
