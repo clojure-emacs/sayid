@@ -37,7 +37,8 @@
                           :depth 0
                           :id :root10
                           :path [:root10]
-                          :traced #{[:ns 'com.billpiel.mem-tracer.test.ns1]}}]
+                          :traced #{[:ns 'com.billpiel.mem-tracer.test.ns1]}
+                          :ws-slot nil}]
 
       (fact "log is correct"
         trace
@@ -46,7 +47,6 @@
       (fact "string output is correct"
         (->> trace
              mt/entry->string
-println
              t-utils/remove-iso-ctrl)
         => "[31m [1;30;41m-[40m[31m[m[33m [33m|[1;30;43m-[40m[33mcom.billpiel.mem-tracer.test.ns1/func1[m [33m|  [33m:a[0m[m [33m| return =>  [33m|  [33m:a[0m[m[32m [33m|[32m|[1;30;42m-[40m[32mcom.billpiel.mem-tracer.test.ns1/func2[m [33m|[32m|  [33m:a[0m[m [33m|[32m| return =>  [33m|[32m|  [33m:a[0m[m [33m| return =>  [33m|  [33m:a[0m[m")
 
@@ -78,7 +78,6 @@ println
       (fact :dev "string output is correct"
         (->> trace
              mt/entry->string
-             println
              t-utils/remove-iso-ctrl)
         => ""))
 
