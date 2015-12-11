@@ -44,3 +44,54 @@
                        (vec (map str (range 10 1000))))))
 
 (defn remove-iso-ctrl [s]  (apply str (remove #(Character/isISOControl %) s)))
+
+(defn replace-iso-ctrl [s r]  (apply str (map #(if (Character/isISOControl %)
+                                              r
+                                              %) s)))
+
+(replace-iso-ctrl "hello\33[31m;whoa" "~~~")
+
+(defn replace-ansi*
+  [s coll]
+  #spy/d s
+  (if-let [[both text code] #spy/d (re-find #"(.*?)(~#~\[[\d*;?]*m)"
+                                            (replace-iso-ctrl s "~#~"))]
+    (recur (subs s  (-> both count (- 2)))
+           (into coll [text code]))
+    (into coll [s])))
+
+(defn tag-ansi
+  [s]
+  (if-let [[_ code] (re-find #"~#~\[(.*?)m"
+                             s)]
+    (let [codes (clojure.string/split code #";")]
+      (mapv {"31" :red "41" :bg-red "1" :bold} codes)) ;; TODO #->color-kw converter
+    s))
+
+(let [re #"~#~\[(.*?)m"]
+
+  [
+   (tag-ansi "~#~[31m")
+   (tag-ansi "~#~[31;41m")
+   (tag-ansi "~#~[1;31;41m")]
+
+)
+
+
+(replace-ansi* "hello\33[31mwhoa" [])
+
+(replace-ansi* "hello\33[31mwhoahello\33[31mwhoa" [])
+
+
+
+(defn replace-ansi
+  [s]
+  (let [v (replace-ansi* s [])]
+    (mapv tag-ansi v)))
+
+(replace-ansi "hello\33[31mwhoahello\33[1;31;41mwhoa")
+
+
+(re-find
+ (re-pattern (str \u001B "\\d*;m"))
+ "\33[31m;whoa")
