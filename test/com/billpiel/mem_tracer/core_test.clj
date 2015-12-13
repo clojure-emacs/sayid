@@ -5,7 +5,8 @@
             [com.billpiel.mem-tracer.query :as mq]
             [com.billpiel.mem-tracer.util.tree-query :as mtq]
             [com.billpiel.mem-tracer.test-utils :as t-utils]
-            com.billpiel.mem-tracer.test.ns1))
+            com.billpiel.mem-tracer.test.ns1
+            [com.billpiel.mem-tracer.expected-output1 :as ex-o1]))
 
 
 (fact-group "basic test"
@@ -47,8 +48,8 @@
       (fact "string output is correct"
         (->> trace
              mt/entry->string
-             t-utils/remove-iso-ctrl)
-        => "[31m [1;30;41m-[40m[31m[m[33m [33m|[1;30;43m-[40m[33mcom.billpiel.mem-tracer.test.ns1/func1[m [33m|  [33m:a[0m[m [33m| return =>  [33m|  [33m:a[0m[m[32m [33m|[32m|[1;30;42m-[40m[32mcom.billpiel.mem-tracer.test.ns1/func2[m [33m|[32m|  [33m:a[0m[m [33m|[32m| return =>  [33m|[32m|  [33m:a[0m[m [33m| return =>  [33m|  [33m:a[0m[m")
+             t-utils/replace-ansi)
+        => ["\n " [:red] "v " [:bg-black :red] "com.billpiel.mem-tracer.test.ns1/func1  " [:white] ":11" [nil] "\n " [:red] "| " [:yellow] ":a" [:bold-off] "" [nil] "\n " [:red] "|" [:yellow] "v " [:bg-black :yellow] "com.billpiel.mem-tracer.test.ns1/func2  " [:white] ":12" [nil] "\n " [:red] "|" [:yellow] "| " [:yellow] ":a" [:bold-off] "" [nil] "\n " [:red] "|" [:yellow] "| return => " [:yellow] ":a" [:bold-off] "\n " [:red] "|" [:yellow] "^ " [nil] "\n " [:red] "| " [:bg-black :red] "com.billpiel.mem-tracer.test.ns1/func1  " [:white] ":11" [nil] "\n " [:red] "| " [:yellow] ":a" [:bold-off] "" [nil] "\n " [:red] "| return => " [:yellow] ":a" [:bold-off] "\n " [:red] "^ " [nil] "\n\n  " [nil] "\n"])
 
       (fact "remove trace"
         (mt/remove-trace-ns! 'com.billpiel.mem-tracer.test.ns1)
@@ -78,8 +79,8 @@
       (fact :dev "string output is correct"
         (->> trace
              mt/entry->string
-             t-utils/remove-iso-ctrl)
-        => ""))
+             t-utils/replace-ansi)
+        => ex-o1/expected1))
 
     (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)))
 
@@ -100,7 +101,8 @@
           :depth 0
           :id :root10
           :path [:root10]
-          :traced #{[:ns 'com.billpiel.mem-tracer.test.ns1]}})
+          :traced #{[:ns 'com.billpiel.mem-tracer.test.ns1]}
+          :ws-slot nil})
 
     (fact "enable-all-traces! works"
       (mt/enable-all-traces!)
@@ -127,7 +129,8 @@
           :depth 0
           :id :root10
           :path [:root10]
-          :traced #{[:ns 'com.billpiel.mem-tracer.test.ns1]}})
+          :traced #{[:ns 'com.billpiel.mem-tracer.test.ns1]}
+          :ws-slot nil})
 
     (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)))
 
@@ -148,7 +151,8 @@
           :depth 0
           :id :root10
           :path [:root10]
-          :traced #{}})
+          :traced #{}
+          :ws-slot nil})
 
     (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)))
 
@@ -374,7 +378,8 @@
         => {:depth 0
             :id :root10
             :path [:root10]
-            :traced #{[:ns 'com.billpiel.mem-tracer.test.ns1]}})
+            :traced #{[:ns 'com.billpiel.mem-tracer.test.ns1]}
+            :ws-slot nil})
 
       (fact "log is correct"
         (-> trace :children count)
@@ -399,14 +404,14 @@
             :children []
             :depth 1
             :ended-at #inst "2010-01-01T02:00:00.000-00:00"
-            :id :10
+            :id :11
             :name "com.billpiel.mem-tracer.test.ns1/func-throws"
-            :path [:root10 :10]
+            :path [:root10 :11]
             :started-at #inst "2010-01-01T01:00:00.000-00:00"})
 
       (fact "string output is correct"
-        (t-utils/remove-iso-ctrl (mt/entry->string trace))
-        => "[31m [1;37m>[31m[m[33m [33m|[1;37m>[33mcom.billpiel.mem-tracer.test.ns1/func-throws[m [33m|  [33m:a[0m[m [33m| [1;37;41mTHROW[m => [35m\"Exception from func-throws: :a\"[0m [33m| [31m[[0m[35m\"com.billpiel.mem_tracer.test.ns1$func_throws ns1.clj:14\"[0m[31m][0m[m")
+        (-> trace mt/entry->string t-utils/replace-ansi)
+        => ["\n " [:red] "v " [:bg-black :red] "com.billpiel.mem-tracer.test.ns1/func-throws  " [:white] ":11" [nil] "\n " [:red] "| " [:yellow] ":a" [:bold-off] "" [nil] "\n " [:red] "| " [:bold :white :bg-red] "THROW" [nil] " => " [:magenta] "\"Exception from func-throws: :a\"" [:bold-off] "\n " [:red] "| " [:red] "[" [:bold-off] "" [:magenta] "\"com.billpiel.mem_tracer.test.ns1$func_throws ns1.clj:14\"" [:bold-off] "" [:red] "]" [:bold-off] "" [nil] "\n\n " [:red] "^ " [nil] "\n\n  " [nil] "\n"])
 
       (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1))))
 
@@ -454,7 +459,8 @@
              :depth 0
              :id :root10
              :path [:root10]
-             :traced #{[:ns 'com.billpiel.mem-tracer.test.ns1]}}])
+             :traced #{[:ns 'com.billpiel.mem-tracer.test.ns1]}
+             :ws-slot nil}])
 
       (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1))))
 
@@ -501,7 +507,8 @@
                 :depth 1}]
               :id :root10
               :depth 0
-              :traced #{[:ns 'com.billpiel.mem-tracer.test.ns1]}}])
+              :traced #{[:ns 'com.billpiel.mem-tracer.test.ns1]}
+              :ws-slot nil}])
       (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1))))
 
 

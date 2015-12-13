@@ -45,53 +45,41 @@
 
 (defn remove-iso-ctrl [s]  (apply str (remove #(Character/isISOControl %) s)))
 
-(defn replace-iso-ctrl [s r]  (apply str (map #(if (Character/isISOControl %)
-                                              r
-                                              %) s)))
+(def ansi-colors [:black :red :green :yellow :blue :magenta :cyan :white])
 
-(replace-iso-ctrl "hello\33[31m;whoa" "~~~")
+(defn kw->bg [kw] (->> kw name (str "bg-") keyword))
+
+(defn ansi->kw
+  [a]
+  (try (let [a' (if (string? a)
+                  (Integer/parseInt a)
+                  a)]
+         (cond (= a' 0) :bold-off
+               (= a' 1) :bold
+               (<= 30 a' 39) (nth ansi-colors (mod a' 10))
+               (<= 40 a' 49) (->> (mod a' 10)
+                                  (nth ansi-colors)
+                                  kw->bg)))
+       (catch Exception ex nil)))
 
 (defn replace-ansi*
   [s coll]
-  #spy/d s
-  (if-let [[both text code] #spy/d (re-find #"(.*?)(~#~\[[\d*;?]*m)"
-                                            (replace-iso-ctrl s "~#~"))]
-    (recur (subs s  (-> both count (- 2)))
-           (into coll [text code]))
+  (if-let [[both text code] (re-find (re-pattern (format "(?is)^(.*?)(%s\\[[\\d;]*m)" \u001B))
+                                     s)]
+    (do  [s both (count both) text (count text) code (count code)]
+        (recur (subs  s (count both))
+               (into coll [text code])))
     (into coll [s])))
 
 (defn tag-ansi
   [s]
-  (if-let [[_ code] (re-find #"~#~\[(.*?)m"
+  (if-let [[_ code] (re-find (re-pattern (format "%s\\[([\\d;]*)m" \u001B))
                              s)]
     (let [codes (clojure.string/split code #";")]
-      (mapv {"31" :red "41" :bg-red "1" :bold} codes)) ;; TODO #->color-kw converter
+      (mapv ansi->kw codes))
     s))
-
-(let [re #"~#~\[(.*?)m"]
-
-  [
-   (tag-ansi "~#~[31m")
-   (tag-ansi "~#~[31;41m")
-   (tag-ansi "~#~[1;31;41m")]
-
-)
-
-
-(replace-ansi* "hello\33[31mwhoa" [])
-
-(replace-ansi* "hello\33[31mwhoahello\33[31mwhoa" [])
-
-
 
 (defn replace-ansi
   [s]
   (let [v (replace-ansi* s [])]
     (mapv tag-ansi v)))
-
-(replace-ansi "hello\33[31mwhoahello\33[1;31;41mwhoa")
-
-
-(re-find
- (re-pattern (str \u001B "\\d*;m"))
- "\33[31m;whoa")
