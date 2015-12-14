@@ -48,7 +48,7 @@
    [:cyan] " 6" [:bold-off] "" [nil] "\n " [:red] "| " [:cyan] " 7" [:bold-off] "" [nil] "\n "
    [:red] "| " [:cyan] " 8" [:bold-off] "" [nil] "\n " [:red] "| " [:cyan] " 9" [:bold-off] ""
    [nil] "\n " [:red] "| " [:cyan] " 0" [:bold-off] "" [:red] "]" [:bold-off] "" [nil] "\n "
-   [:red] "| return => \n " [:red] "| " [:red] "{" [:bold-off] "" [:yellow] ":a" [:bold-off] " "
+   [:red] "| returned => \n " [:red] "| " [:red] "{" [:bold-off] "" [:yellow] ":a" [:bold-off] " "
    [:cyan] "1" [:bold-off] "," [nil] "\n " [:red] "| " [:yellow] " :b" [:bold-off] " "
    [:cyan] "2" [:bold-off] "," [nil] "\n " [:red] "| " [:yellow] " :c" [:bold-off] " "
    [:red] "[" [:bold-off] "" [:cyan] "1" [:bold-off] " " [:cyan] "2" [:bold-off] " "

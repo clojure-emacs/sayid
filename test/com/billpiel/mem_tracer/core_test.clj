@@ -46,10 +46,10 @@
         => expected-trace)
 
       (fact "string output is correct"
-        (->> trace
-             mt/entry->string
-             t-utils/replace-ansi)
-        => ["\n " [:red] "v " [:bg-black :red] "com.billpiel.mem-tracer.test.ns1/func1  " [:white] ":11" [nil] "\n " [:red] "| " [:yellow] ":a" [:bold-off] "" [nil] "\n " [:red] "|" [:yellow] "v " [:bg-black :yellow] "com.billpiel.mem-tracer.test.ns1/func2  " [:white] ":12" [nil] "\n " [:red] "|" [:yellow] "| " [:yellow] ":a" [:bold-off] "" [nil] "\n " [:red] "|" [:yellow] "| return => " [:yellow] ":a" [:bold-off] "\n " [:red] "|" [:yellow] "^ " [nil] "\n " [:red] "| " [:bg-black :red] "com.billpiel.mem-tracer.test.ns1/func1  " [:white] ":11" [nil] "\n " [:red] "| " [:yellow] ":a" [:bold-off] "" [nil] "\n " [:red] "| return => " [:yellow] ":a" [:bold-off] "\n " [:red] "^ " [nil] "\n\n  " [nil] "\n"])
+        (-> trace
+            mt/entry->string
+            t-utils/replace-ansi)
+        => ["\n " [:red] "v " [:bg-black :red] "com.billpiel.mem-tracer.test.ns1/func1  " [:white] ":11" [nil] "\n " [:red] "| " [:yellow] ":a" [:bold-off] "" [nil] "\n " [:red] "| returns => " [:yellow] ":a" [:bold-off] "\n " [:red] "|" [:yellow] "v " [:bg-black :yellow] "com.billpiel.mem-tracer.test.ns1/func2  " [:white] ":12" [nil] "\n " [:red] "|" [:yellow] "| " [:yellow] ":a" [:bold-off] "" [nil] "\n " [:red] "|" [:yellow] "| returned => " [:yellow] ":a" [:bold-off] "\n " [:red] "|" [:yellow] "^ " [nil] "\n " [:red] "| " [:bg-black :red] "com.billpiel.mem-tracer.test.ns1/func1  " [:white] ":11" [nil] "\n " [:red] "| " [:yellow] ":a" [:bold-off] "" [nil] "\n " [:red] "| returned => " [:yellow] ":a" [:bold-off] "\n " [:red] "^ " [nil] "\n\n  " [nil] "\n"])
 
       (fact "remove trace"
         (mt/remove-trace-ns! 'com.billpiel.mem-tracer.test.ns1)
@@ -523,8 +523,8 @@ x preserve arglists and other meta in core fns
 x test reloading ws after code change
 x optional print func log before and after children
 x include ID in string output
+x use 'returns' and 'returned' in output
 - bisect recording trees to find bugs
-- use 'returns' and 'returned' in output
 - split ns and fn name in trace rec and output
 - trace individual fns
 - show file and line num in output

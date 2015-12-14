@@ -148,12 +148,16 @@
                         :end "   ")))
 
 (defn return-str
-  [entry]
+  [entry & {pos :pos}]
   (when-let [return (:return entry)]
     (let [s (pprint-str return)
-          mline (some #{\newline} s)]
+          mline (some #{\newline} s)
+          ret-label (condp = pos
+                      :before "returns"
+                      :after "returned")]
       (str (indent (:depth entry))
-           "return => "
+           ret-label
+           " => "
            (if mline
              (str "\n"
                   (indent-line-breaks (str s
@@ -197,18 +201,18 @@
           (when pre-args
             (args-str entry))
           (when has-children
-            (when pre-ret
-              (return-str entry))
-            (when pre-ex
-              (throw-str entry))
-            [(mapcat entry->string
+            [(when pre-ret
+               (return-str entry :pos :before))
+             (when pre-ex
+               (throw-str entry))
+             (mapcat entry->string
                      (:children entry))
              (when post-head
                [(header->string entry false) "\n"])
              (when pre-args
                (args-str entry))])
           (when post-ret
-            (return-str entry))
+            (return-str entry :pos :after))
           (when post-ex
             (throw-str entry))
           (slinky->str (fn-footer-indent-slinky)
