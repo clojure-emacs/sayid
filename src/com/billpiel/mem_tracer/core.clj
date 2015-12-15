@@ -31,12 +31,24 @@
   properties."
 [] (#'ws/clear-log! workspace))
 
-(defn add-trace-ns!
+(defn add-trace-ns!*
   "`ns-sym` is a symbol that references an existing namespace. Applies an enabled
   trace to all functions in that namespace. Adds the traces to the active workspace trace set."
   [ns-sym]
   (#'ws/add-trace-ns! (init-workspace! :quiet)
                       ns-sym))
+
+(defn sym->ns [s n] (or (some-> n
+                                ns-aliases
+                                (get s)
+                                str
+                                symbol)
+                        s))
+
+(defmacro add-trace-ns!
+  [ns-sym]
+  (let [n *ns*]
+    `(add-trace-ns!* (sym->ns '~ns-sym ~n))))
 
 (defn remove-trace-ns!
   "`ns-sym` is a symbol that references an existing namespace. Removes all

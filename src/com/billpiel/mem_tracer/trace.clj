@@ -169,10 +169,11 @@ symbol name of the function."
   "Reverses the effect of trace-var / trace-vars / trace-ns for the
   Vars in the given namespace, replacing each traced function from the
   given namespace with the original, untraced version."
-  [ns]
-  (let [ns-fns (->> ns the-ns ns-interns vals)]
+  [ns*]
+  (let [ns' (the-ns ns*)
+        ns-fns (->> ns' ns-interns vals)]
     (doseq [f ns-fns]
-          (untrace-var* f))))
+      (untrace-var* f))))
 
 (defmulti trace* (fn [type sym workspace] type))
 

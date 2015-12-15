@@ -6,7 +6,8 @@
             [com.billpiel.mem-tracer.util.tree-query :as mtq]
             [com.billpiel.mem-tracer.test-utils :as t-utils]
             com.billpiel.mem-tracer.test.ns1
-            [com.billpiel.mem-tracer.expected-output1 :as ex-o1]))
+            [com.billpiel.mem-tracer.expected-output1 :as ex-o1]
+            [com.billpiel.mem-tracer.test.ns1 :as ns1]))
 
 
 (fact-group "basic test"
@@ -14,8 +15,7 @@
   (mt/reset-workspace!)
   (with-redefs [mtt/now (t-utils/mock-now-fn)
                 gensym (t-utils/mock-gensym-fn)]
-
-    (mt/add-trace-ns! 'com.billpiel.mem-tracer.test.ns1)
+    (mt/add-trace-ns! com.billpiel.mem-tracer.test.ns1)
     (com.billpiel.mem-tracer.test.ns1/func1 :a)
     (let [trace (mt/deref-workspace!)
           expected-trace {:children [{:args [:a]
@@ -65,7 +65,7 @@
   (with-redefs [mtt/now (t-utils/mock-now-fn)
                 gensym (t-utils/mock-gensym-fn)]
 
-    (mt/add-trace-ns! 'com.billpiel.mem-tracer.test.ns1)
+    (mt/add-trace-ns! com.billpiel.mem-tracer.test.ns1)
     (com.billpiel.mem-tracer.test.ns1/func-identity {:a 1
                                                      :b 2
                                                      :c [1 2 3 4 5 6 7]
@@ -90,7 +90,7 @@
   (with-redefs [mtt/now (t-utils/mock-now-fn)
                 gensym (t-utils/mock-gensym-fn)]
 
-    (mt/add-trace-ns! 'com.billpiel.mem-tracer.test.ns1)
+    (mt/add-trace-ns! com.billpiel.mem-tracer.test.ns1)
 
     (fact "disable-all-traces! works"
       (mt/disable-all-traces!)
@@ -140,7 +140,7 @@
   (with-redefs [mtt/now (t-utils/mock-now-fn)
                 gensym (t-utils/mock-gensym-fn)]
 
-    (mt/add-trace-ns! 'com.billpiel.mem-tracer.test.ns1)
+    (mt/add-trace-ns! com.billpiel.mem-tracer.test.ns1)
 
     (fact "remove-all-traces! works"
       (mt/remove-all-traces!)
@@ -367,7 +367,7 @@
   (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
   (with-redefs [mtt/now (t-utils/mock-now-fn)
                 gensym (t-utils/mock-gensym-fn)]
-    (let [trace-root (mt/add-trace-ns! 'com.billpiel.mem-tracer.test.ns1)
+    (let [trace-root (mt/add-trace-ns! com.billpiel.mem-tracer.test.ns1)
           _ (try
               (com.billpiel.mem-tracer.test.ns1/func-throws :a)
               (catch Throwable t))
@@ -422,7 +422,7 @@
   (mt/reset-workspace!)
   (with-redefs [mtt/now (t-utils/mock-now-fn)
                 gensym (t-utils/mock-gensym-fn)]
-    (let [trace-root (mt/add-trace-ns! 'com.billpiel.mem-tracer.test.ns1)
+    (let [trace-root (mt/add-trace-ns! com.billpiel.mem-tracer.test.ns1)
           _ (com.billpiel.mem-tracer.test.ns1/func3-1 3 8)
           trace (mt/deref-workspace!)]
 
@@ -470,10 +470,9 @@
   (mt/reset-workspace!)
   (with-redefs [mtt/now (t-utils/mock-now-fn)
                 gensym (t-utils/mock-gensym-fn)]
-    (let [trace-root (mt/add-trace-ns! 'com.billpiel.mem-tracer.test.ns1)
+    (let [trace-root (mt/add-trace-ns! com.billpiel.mem-tracer.test.ns1)
           _ (com.billpiel.mem-tracer.test.ns1/func3-1 3 8)
           trace (mt/deref-workspace!)]
-
       (fact "find node by name and all parents"
         (mt/qws :a [:name] #".*func3-4")
         =>  [{:path [:root10]
@@ -511,6 +510,43 @@
               :ws-slot nil}])
       (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1))))
 
+(fact-group "trace a namespace by alias"
+  (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
+  (mt/reset-workspace!)
+
+  (with-redefs [mtt/now (t-utils/mock-now-fn)
+                gensym (t-utils/mock-gensym-fn)]
+    (mt/add-trace-ns! ns1)
+    (com.billpiel.mem-tracer.test.ns1/func1 :a)
+    (let [trace (mt/deref-workspace!)
+          expected-trace {:children [{:args [:a]
+                                      :children [{:args [:a]
+                                                  :children []
+                                                  :depth 2
+                                                  :ended-at #inst "2010-01-01T03:00:00.000-00:00"
+                                                  :id :12
+                                                  :name "com.billpiel.mem-tracer.test.ns1/func2"
+                                                  :path [:root10 :11 :12]
+                                                  :return :a
+                                                  :started-at #inst "2010-01-01T02:00:00.000-00:00"}]
+                                      :depth 1
+                                      :ended-at #inst "2010-01-01T04:00:00.000-00:00"
+                                      :id :11
+                                      :name "com.billpiel.mem-tracer.test.ns1/func1"
+                                      :path [:root10 :11]
+                                      :return :a
+                                      :started-at #inst "2010-01-01T01:00:00.000-00:00"}]
+                          :depth 0
+                          :id :root10
+                          :path [:root10]
+                          :traced #{[:ns 'com.billpiel.mem-tracer.test.ns1]}
+                          :ws-slot nil}]
+
+      (fact "log is correct"
+        trace
+        => expected-trace))
+
+    (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)))
 
 (comment "
 TODO
@@ -524,6 +560,8 @@ x test reloading ws after code change
 x optional print func log before and after children
 x include ID in string output
 x use 'returns' and 'returned' in output
+x trace aliases
+- ns wildcards
 - bisect recording trees to find bugs
 - split ns and fn name in trace rec and output
 - trace individual fns
