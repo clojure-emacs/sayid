@@ -76,11 +76,11 @@
                                                     [1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0])
     (let [trace (mt/deref-workspace!)]
 
-      (fact :dev "string output is correct"
-        (->> trace
-             mt/entry->string
-             t-utils/replace-ansi)
-        => ex-o1/expected1))
+      (fact "string output is correct"
+            (->> trace
+                 mt/entry->string
+                 t-utils/replace-ansi)
+            => ex-o1/expected1))
 
     (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)))
 

@@ -1,6 +1,5 @@
 (ns com.billpiel.mem-tracer.expected-output1
-  (:require [com.billpiel.mem-tracer.expected-output1 :refer :all]
-            [midje.sweet :refer :all]))
+  (:require [midje.sweet :refer :all]))
 
 (def expected1
   "long values display nicely"
