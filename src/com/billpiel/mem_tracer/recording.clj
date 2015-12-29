@@ -35,16 +35,6 @@
                       {::success false
                        ::code :unknown-type})))))
 
-;; rec could be:
-;;  recording
-;;  workspace
-;;  entry (better name?)
-(defn save-as!
-  [rec shelf slot]
-  (doto rec
-    (swap! assoc :rec-slot
-           (util/qualify-sym shelf slot))
-    (save! shelf)))
 
 (defn save!
   [rec shelf]
@@ -56,6 +46,17 @@
                           bad-slot-msg
                           slot))))
     rec'))
+
+;; rec could be:
+;;  recording
+;;  workspace
+;;  entry (better name?)
+(defn save-as!
+  [rec shelf slot]
+  (doto rec
+    (swap! assoc :rec-slot
+           (util/qualify-sym shelf slot))
+    (save! shelf)))
 
 (defn safe-to-load?
   [rec shelf & [force]]

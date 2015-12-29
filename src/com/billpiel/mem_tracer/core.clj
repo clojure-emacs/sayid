@@ -20,6 +20,10 @@
 (defn get-current-workspace! []
   @(init-workspace! :quiet))
 
+(defn remove-all-traces!
+"Disables and removes all traces in the active workspace."
+[] (#'ws/remove-all-traces! workspace))
+
 (defn reset-workspace!
   "Removes all traces set by active workspace. Resets the active workspace to nil."
   []
@@ -64,10 +68,6 @@
 "Disables all traces in active workspace. The active workspace trace set will be
   preserved and can be re-enabled."
 [] (#'ws/disable-all-traces! workspace))
-
-(defn remove-all-traces!
-"Disables and removes all traces in the active workspace."
-[] (#'ws/remove-all-traces! workspace))
 
 (defn deref-workspace!
 "Returns the value of the active workspace, but with all children
