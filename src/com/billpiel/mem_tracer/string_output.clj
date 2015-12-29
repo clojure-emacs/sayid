@@ -208,7 +208,7 @@
              (mapcat entry->string
                      (:children entry))
              (when post-head
-               [(header->string entry false) "\n"])
+               [(name->string entry false) "\n"])
              (when pre-args
                (args-str entry))])
           (when post-ret
