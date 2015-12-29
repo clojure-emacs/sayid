@@ -3,7 +3,8 @@
             [com.billpiel.mem-tracer.trace :as trace]
             [com.billpiel.mem-tracer.workspace :as ws]
             [com.billpiel.mem-tracer.recording :as rec]
-            [com.billpiel.mem-tracer.query :as q]))
+            [com.billpiel.mem-tracer.query :as q]
+            [com.billpiel.mem-tracer.util.find-ns :as find-ns]))
 
 (def workspace (atom nil))
 (def recording (atom nil))
@@ -40,19 +41,13 @@
   trace to all functions in that namespace. Adds the traces to the active workspace trace set."
   [ns-sym]
   (#'ws/add-trace-ns! (init-workspace! :quiet)
-                      ns-sym))
-
-(defn sym->ns [s n] (or (some-> n
-                                ns-aliases
-                                (get s)
-                                str
-                                symbol)
-                        s))
+                      ns-sym)
+  ns-sym)
 
 (defmacro add-trace-ns!
   [ns-sym]
-  (let [n *ns*]
-    `(add-trace-ns!* (sym->ns '~ns-sym ~n))))
+  (let [ref-ns *ns*]
+    `(mapv add-trace-ns!* (find-ns/search-nses '~ns-sym ~ref-ns))))
 
 (defn remove-trace-ns!
   "`ns-sym` is a symbol that references an existing namespace. Removes all
