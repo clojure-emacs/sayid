@@ -57,6 +57,12 @@
    node
    pred-map))
 
+(defn conj*
+  [& r]
+  (if (= (count r) 1)
+    (first r)
+    (apply conj r)))
+
 (defn insert-tags-into-summary
   [& [tags summary]]
   {:path (if tags
@@ -70,7 +76,7 @@
           (-<> summary
                :set
                (or #{})
-               (apply conj <> tags))
+               (apply conj* <> tags))
           #{})})
 
 (defn merge-children-tag-summary
@@ -93,7 +99,7 @@
    :set (-<> ch-tags
              :set
              (or #{})
-             (apply conj <> tag))})
+             (apply conj* <> tag))})
 
 (defn get-children-tag-summary*
   [zipr pred-map]
