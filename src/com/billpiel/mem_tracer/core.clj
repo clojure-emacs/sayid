@@ -85,7 +85,7 @@
 (defn ws-load!
   "Loads a workspace from the shelf namespace into the active
   position. Will not overwrite an un-saved active workspace unless
-  `active` equals :f"
+  `force` equals :f"
   [slot & [force]]
   (#'ws/load! workspace
               (:ws-ns @config)
@@ -100,12 +100,12 @@
 (defn rec-save!
   "Saves active recording to the recording shelf namespace in the pre-specified slot."
   []
-  (#'ws/save! recording (:rec-ns @config)))
+  (#'rec/save! recording (:rec-ns @config)))
 
 (defn rec-save-as!
   "Saves active recording to the recording shelf namespace in the specified `slot`."
   [slot]
-  (#'ws/save-as! recording
+  (#'rec/save-as! recording
                  (:rec-ns @config)
                  slot))
 
@@ -114,7 +114,7 @@
   position. Will not overwrite an un-saved active recording unless
   `active` equals :f"
   [slot & [force]]
-  (#'ws/load! recording
+  (#'rec/load! recording
               (:rec-ns @config)
               slot
               force))
@@ -142,7 +142,7 @@
 (defn print-entry
   [entry]
   (-> entry
-      deref-workspace! ;; ??? This can safely be run on a deref'd entry
+      (#'ws/deref-workspace!) ;; ??? This can safely be run on a deref'd entry
       (#'com.billpiel.mem-tracer.string-output/print-entry)))
 
 (defn print-ws

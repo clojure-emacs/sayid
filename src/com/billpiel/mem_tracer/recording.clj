@@ -35,7 +35,6 @@
                       {::success false
                        ::code :unknown-type})))))
 
-
 (defn save!
   [rec shelf]
   (let [rec' @rec
