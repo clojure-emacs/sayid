@@ -119,6 +119,18 @@
               slot
               force))
 
+(defn rec-load-from!
+"Loads a recording from the provided source. Source may be a work"
+  [src & [force]]
+  (#'rec/coerce&load! recording
+                      src
+                      (:rec-ns @config)
+                      force))
+
+(defn rec-load-from-ws!
+  [& [force]]
+  (rec-load-from! (get-current-workspace!) force))
+
 ;; === END Recording functions
 
 
