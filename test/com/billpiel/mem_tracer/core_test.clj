@@ -562,6 +562,9 @@ x include ID in string output
 x use 'returns' and 'returned' in output
 x trace aliases
 - ns wildcards
+   x for `add-trace`
+   - for `remove-trace`
+   - other places?
 - bisect recording trees to find bugs
 - split ns and fn name in trace rec and output
 - trace individual fns
