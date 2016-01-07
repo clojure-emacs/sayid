@@ -474,7 +474,7 @@
           _ (com.billpiel.mem-tracer.test.ns1/func3-1 3 8)
           trace (mt/deref-workspace!)]
       (fact "find node by name and all parents"
-        (mt/qws :a [:name] #".*func3-4")
+        (mt/qw :a [:name] #".*func3-4")
         =>  [{:path [:root10]
               :children
               [{:args [3 8]

@@ -124,12 +124,12 @@
 
 ;; === Query functions
 
-(defmacro qws
+(defmacro qw
 "Queries the trace record of the active workspace."
  [& body] `(q/q (q/trace->zipper (deref-workspace!))
                            ~@body))
 
-(defmacro q
+(defmacro qr
 "Queries the active trace recording."
  [& body] `(q/q (q/trace->zipper @recording)
                            ~@body))
