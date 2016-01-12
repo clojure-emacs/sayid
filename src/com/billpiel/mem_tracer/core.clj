@@ -149,14 +149,14 @@
 ;; === END Query functions
 
 
-(def entry->string #'com.billpiel.mem-tracer.string-output/entry->string)
+(def tree->string #'com.billpiel.mem-tracer.string-output/tree->string)
 
-(defn print-entry
-  [entry]
-  (-> entry
-      (#'ws/deref-workspace!) ;; ??? This can safely be run on a deref'd entry
-      (#'com.billpiel.mem-tracer.string-output/print-entry)))
+(defn print-tree
+  [tree]
+  (-> tree
+      (#'ws/deref-workspace!) ;; ??? This can safely be run on a deref'd tree
+      (#'com.billpiel.mem-tracer.string-output/print-tree)))
 
 (defn print-ws
   []
-  (#'com.billpiel.mem-tracer.string-output/print-entry (deref-workspace!)))
+  (#'com.billpiel.mem-tracer.string-output/print-tree (deref-workspace!)))

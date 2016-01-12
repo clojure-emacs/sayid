@@ -47,7 +47,7 @@
 
       (fact "string output is correct"
         (-> trace
-            mt/entry->string
+            mt/tree->string
             t-utils/replace-ansi)
         => ["\n " [:red] "v " [:bg-black :red] "com.billpiel.mem-tracer.test.ns1/func1  " [:white] ":11" [nil] "\n " [:red] "| " [:yellow] ":a" [:bold-off] "" [nil] "\n " [:red] "| returns => " [:yellow] ":a" [:bold-off] "\n " [:red] "|" [:yellow] "v " [:bg-black :yellow] "com.billpiel.mem-tracer.test.ns1/func2  " [:white] ":12" [nil] "\n " [:red] "|" [:yellow] "| " [:yellow] ":a" [:bold-off] "" [nil] "\n " [:red] "|" [:yellow] "| returned => " [:yellow] ":a" [:bold-off] "\n " [:red] "|" [:yellow] "^ " [nil] "\n " [:red] "| " [:bg-black :red] "com.billpiel.mem-tracer.test.ns1/func1  " [:white] ":11" [nil] "\n " [:red] "| " [:yellow] ":a" [:bold-off] "" [nil] "\n " [:red] "| returned => " [:yellow] ":a" [:bold-off] "\n " [:red] "^ " [nil] "\n\n  " [nil] "\n"])
 
@@ -78,7 +78,7 @@
 
       (fact "string output is correct"
             (->> trace
-                 mt/entry->string
+                 mt/tree->string
                  t-utils/replace-ansi)
             => ex-o1/expected1))
 
@@ -410,7 +410,7 @@
             :started-at #inst "2010-01-01T01:00:00.000-00:00"})
 
       (fact "string output is correct"
-        (-> trace mt/entry->string t-utils/replace-ansi)
+        (-> trace mt/tree->string t-utils/replace-ansi)
         => ["\n " [:red] "v " [:bg-black :red] "com.billpiel.mem-tracer.test.ns1/func-throws  " [:white] ":11" [nil] "\n " [:red] "| " [:yellow] ":a" [:bold-off] "" [nil] "\n " [:red] "| " [:bold :white :bg-red] "THROW" [nil] " => " [:magenta] "\"Exception from func-throws: :a\"" [:bold-off] "\n " [:red] "| " [:red] "[" [:bold-off] "" [:magenta] "\"com.billpiel.mem_tracer.test.ns1$func_throws ns1.clj:14\"" [:bold-off] "" [:red] "]" [:bold-off] "" [nil] "\n\n " [:red] "^ " [nil] "\n\n  " [nil] "\n"])
 
       (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1))))

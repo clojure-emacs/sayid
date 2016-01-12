@@ -127,50 +127,50 @@
                                (clojure.string/split-lines s))))
 
 (defn name->string
-  [entry start?]
-  (let [{:keys [depth name]} entry]
+  [tree start?]
+  (let [{:keys [depth name]} tree]
     (if name
       (clojure.string/join "" [(slinky->str (fn-header-indent-slinky start?) depth)
                                (color-code :fg* (dec depth) :bg 0 :bold false)
-                               (:name entry)
+                               (:name tree)
                                "  "
                                (color-code :fg 7)
-                               (:id entry)
+                               (:id tree)
                                reset-color-code]))))
 
 (defn args-str
-  [entry]
-  (when-let [args (:args entry)]
+  [tree]
+  (when-let [args (:args tree)]
     (indent-line-breaks (clojure.string/join "\n"
                                              (map pprint-str
                                                   args))
-                        (:depth entry)
+                        (:depth tree)
                         :end "   ")))
 
 (defn return-str
-  [entry & {pos :pos}]
-  (when-let [return (:return entry)]
+  [tree & {pos :pos}]
+  (when-let [return (:return tree)]
     (let [s (pprint-str return)
           mline (some #{\newline} s)
           ret-label (condp = pos
                       :before "returns"
                       :after "returned")]
-      (str (indent (:depth entry))
+      (str (indent (:depth tree))
            ret-label
            " => "
            (if mline
              (str "\n"
                   (indent-line-breaks (str s
                                            "\n")
-                                      (:depth entry)
+                                      (:depth tree)
                                       :end "   "))
              (str s))
            "\n"))))
 
 (defn throw-str
-  [entry]
-  (when-let [thrown (:throw entry)]
-    (str (indent (:depth entry))
+  [tree]
+  (when-let [thrown (:throw tree)]
+    (str (indent (:depth tree))
          (color-code :fg 7 :bg 1 :bold true)
          "THROW"
          reset-color-code
@@ -188,43 +188,43 @@
                                       at)]
                          (format "%s %s:%s" c f l))))
                pprint-str)
-          (:depth entry))
+          (:depth tree))
          "\n")))
 
-(defn entry->string
-  [entry & {:keys [post-head pre-args post-args pre-ret post-ret pre-ex post-ex children]
+(defn tree->string
+  [tree & {:keys [post-head pre-args post-args pre-ret post-ret pre-ex post-ex children]
             :or {post-head true pre-args true post-args true pre-ret true post-ret true pre-ex true post-ex true children true}}]
-  (let [has-children (some-> entry
+  (let [has-children (some-> tree
                              :children
                              not-empty)]
-    (->> [[(name->string entry true) "\n"]
+    (->> [[(name->string tree true) "\n"]
           (when pre-args
-            (args-str entry))
+            (args-str tree))
           (when has-children
             [(when pre-ret
-               (return-str entry :pos :before))
+               (return-str tree :pos :before))
              (when pre-ex
-               (throw-str entry))
-             (mapcat entry->string
-                     (:children entry))
+               (throw-str tree))
+             (mapcat tree->string
+                     (:children tree))
              (when post-head
-               [(name->string entry false) "\n"])
+               [(name->string tree false) "\n"])
              (when pre-args
-               (args-str entry))])
+               (args-str tree))])
           (when post-ret
-            (return-str entry :pos :after))
+            (return-str tree :pos :after))
           (when post-ex
-            (throw-str entry))
+            (throw-str tree))
           (slinky->str (fn-footer-indent-slinky)
-                       (:depth entry))
+                       (:depth tree))
           reset-color-code
           "\n"]
          flatten
          (remove nil?)
          (clojure.string/join ""))))
 
-(defn print-entry
-  [entry]
-  (-> entry
-      entry->string
+(defn print-tree
+  [tree]
+  (-> tree
+      tree->string
       print))

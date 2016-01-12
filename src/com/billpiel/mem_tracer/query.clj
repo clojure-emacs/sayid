@@ -2,23 +2,23 @@
   (require [clojure.zip :as z]
            [com.billpiel.mem-tracer.util.tree-query :as tq]))
 
-(defn entry->seq
-  [entry]
-  (lazy-cat [entry] (mapcat entry->seq (:children entry))))
+(defn tree->seq
+  [tree]
+  (lazy-cat [tree] (mapcat tree->seq (:children tree))))
 
 (defn query-cat
-  [qry-fn entry]
-  (->> entry
-       entry->seq
+  [qry-fn tree]
+  (->> tree
+       tree->seq
        (keep #(when (qry-fn %) %))))
 
 (defn query-tree
-  [qry-fn entry]
-  (let [e' (update-in entry [:children]
+  [qry-fn tree]
+  (let [e' (update-in tree [:children]
                       (partial mapcat
                                (partial query-tree
                                         qry-fn)))]
-    (if (qry-fn entry)
+    (if (qry-fn tree)
       [e']
       (:children e'))))
 

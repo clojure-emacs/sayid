@@ -4,7 +4,7 @@
 
 (defn now [] (java.util.Date.))
 
-(defn mk-entry
+(defn mk-tree
   [& {:keys [id-prefix parent]}]
   (let [id (-> id-prefix
                gensym
@@ -12,14 +12,14 @@
         path (conj (or (:path parent)
                        [])
                    id)]
-    ^::entry {:id id
+    ^::tree {:id id
               :path path
               :depth (or (some-> parent :depth inc) 0)
               :children (atom [])}))
 
-(defn mk-fn-entry
+(defn mk-fn-tree
   [& {:keys [parent name args]}]
-  (merge (mk-entry :parent parent)
+  (merge (mk-tree :parent parent)
          {:name name
           :args (vec args)
           :started-at (now)}))
@@ -60,19 +60,19 @@
 (defn ^{:private true} start-trace
   "This function is called by trace. Prints to standard output, but
 may be rebound to do anything you like. 'name' is optional."
-  [trace-log entry]
+  [trace-log tree]
   (swap! trace-log
          conj
-         entry))  ;; string!!
+         tree))  ;; string!!
 
 (defn ^{:private true} end-trace
   "This function is called by trace. Prints to standard output, but
 may be rebound to do anything you like. 'name' is optional."
-  [trace-log idx entry]
+  [trace-log idx tree]
   (swap! trace-log
          update-in
          [idx]
-         #(merge % entry)))
+         #(merge % tree)))
 
 (defn ^{:skip-wiki true} trace-fn-call
   "Traces a single call to a function f with args. 'name' is the
@@ -80,7 +80,7 @@ symbol name of the function."
   [workspace name f args]
   (let [parent (or *trace-log-parent*
                    workspace)
-        this (mk-fn-entry :parent parent
+        this (mk-fn-tree :parent parent
                           :name name
                           :args args)
         idx (-> (start-trace (:children parent)

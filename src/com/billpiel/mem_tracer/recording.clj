@@ -4,12 +4,12 @@
             [com.billpiel.mem-tracer.util.other :as util]))
 
 (def bad-slot-msg "Recording must have a symbol value in :rec-slot. Value was `%s`. Try `save-as!` instead.")
-(def unknown-type-msg "Unknown type. `rec` must be a recording, workspace or trace entry. Received a %s.")
+(def unknown-type-msg "Unknown type. `rec` must be a recording, workspace or trace tree. Received a %s.")
 (def load-over-unsaved "Current recording is not saved. Use :f as last arg to force, or else `save!` first.")
 
 (defn mk-recording
   [children]
-  (-> (trace/mk-entry :id-prefix "rec")
+  (-> (trace/mk-tree :id-prefix "rec")
       (merge {:rec-slot nil
               :children children})
       (vary-meta assoc
@@ -26,7 +26,7 @@
       (::ws/workspace mv)
       (-> v ws/deref-workspace! :children mk-recording)
 
-      (::trace/entry mv)
+      (::trace/tree mv)
       (mk-recording [v])
 
       :default
@@ -49,7 +49,7 @@
 ;; rec could be:
 ;;  recording
 ;;  workspace
-;;  entry (better name?)
+;;  tree
 (defn save-as!
   [rec shelf slot]
   (doto rec

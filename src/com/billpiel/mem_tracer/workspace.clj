@@ -4,14 +4,14 @@
 
 (defn default-workspace
   []
-  (-> (trace/mk-entry :id-prefix "root")
+  (-> (trace/mk-tree :id-prefix "root")
       (merge {:traced #{}
               :ws-slot nil})
       (vary-meta assoc
                  ::workspace
                  true)))
 
-(defn workspace->entry
+(defn workspace->tree
   [ws]
   (-> ws
       (dissoc :traced
@@ -66,7 +66,7 @@
   [ws]
   (clojure.walk/prewalk #(if (and (-> %
                                       meta
-                                      ::trace/entry)
+                                      ::trace/tree)
                                   (-> %
                                       :children
                                       util/atom?))
