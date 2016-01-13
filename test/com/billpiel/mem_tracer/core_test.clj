@@ -428,7 +428,7 @@
 
       (fact "find node by name and all parents"
         (mtq/query (mq/trace->zipper trace)
-                   {:a (mq/mk-query-fn [:name] #".*func3-4") }
+                   {:a (mq/mk-query-fn [:name #".*func3-4"]) }
                    (some-fn (mtq/has-all-tags-fn :a)
                             (mtq/has-descen-fn :a)))
         => [{:children [{:args [3 8]
@@ -474,7 +474,7 @@
           _ (com.billpiel.mem-tracer.test.ns1/func3-1 3 8)
           trace (mt/deref-workspace!)]
       (fact "find node by name and all parents"
-        (mt/qw :a [:name] #".*func3-4")
+        (mt/qw :a [:name #".*func3-4"])
         =>  [{:path [:root10]
               :children
               [{:args [3 8]
@@ -565,12 +565,12 @@ x trace aliases
    x for `add-trace`
    - for `remove-trace`
    - other places?
+x change query syntax -- single vector and get-some
 - bisect recording trees to find bugs
 - split ns and fn name in trace rec and output
 - trace individual fns
 - show file and line num in output
 - deep trace (inside fn)
-- query syntax??
 - wrap args that are funcs
  - and deep search values for funcs?
 - wrap returns that are funcs

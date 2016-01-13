@@ -22,25 +22,46 @@
       [e']
       (:children e'))))
 
+(defn get-some*
+  [f v]
+  (if (fn? f)
+    (f v)
+    (get v f)))
+
+(defn get-some
+  [coll v]
+  (loop [coll coll
+         v v]
+    (if ((some-fn empty? nil?) coll)
+      v
+      (let [[f & r] coll]
+        (when-let [v' (get-some* f v)]
+          (recur r v'))))))
+
+(defn eq* [pred v]
+  (cond (fn? pred)
+        (pred v)
+
+        (instance? java.util.regex.Pattern pred)
+        (->> v
+             str
+             (re-matches pred))
+
+        :default (= pred v)))
+
 (defn mk-query-fn
-  [path pred]
-  (let [pred' (cond (fn? pred)
-                    pred
-                    (instance? java.util.regex.Pattern pred)
-                    #(->> %
-                          str
-                          (re-matches pred))
-                    :default (partial = pred))]
+  [query-coll]
+  (let [path (drop-last query-coll)
+        pred (last query-coll)]
     (fn [v]
-      (-> v
-          (get-in path)
-          pred'))))
+      (->> v
+           (get-some path)
+           (eq* pred)))))
 
 (defn some-mk-query-fn
-  [pairs]
-  (->> pairs
-       (map (partial apply
-                     mk-query-fn))
+  [queries]
+  (->> queries
+       (map mk-query-fn)
        (apply some-fn)))
 
 (defmulti exec-query
@@ -55,17 +76,17 @@
 
 (defmethod exec-query :s
   [_ zipr [ancest descen]]
-  (let [tag-pred {:a (apply mk-query-fn ancest)
-                  :d (apply mk-query-fn descen)}]
+  (let [tag-pred {:a (mk-query-fn ancest)
+                  :d (mk-query-fn descen)}]
     (tq/query zipr
               tag-pred
               (some-fn (tq/is-between-fn :a :d)
                        (tq/has-any-tags-fn :a :d)))))
 
 (defmethod exec-query :a
-  [_ zipr pairs]
+  [_ zipr queries]
   (tq/query zipr
-            {:a (some-mk-query-fn pairs)}
+            {:a (some-mk-query-fn queries)}
             (some-fn (tq/has-all-tags-fn :a)
                      (tq/has-descen-fn :a))))
 
@@ -99,13 +120,12 @@
 
 (defn q
   [zipr & body]
-  (let [[arg rest] (if (-> body
+  (let [[arg r] (if (-> body
                            first
                            vector?)
                      [nil body]
-                     [(first body) (rest body)])
-        pairs (partition 2 rest)]
-    (exec-query arg zipr pairs)))
+                     [(first body) (rest body)])]
+    (exec-query arg zipr r)))
 
 #_ (do
 

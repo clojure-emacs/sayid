@@ -51,7 +51,7 @@
 (def test-zipr (q/trace->zipper test-trace))
 
 (fact "simple"
-  (q/q test-zipr [:depth] 1) => [{:name "B"
+  (q/q test-zipr [:depth 1]) => [{:name "B"
                                   :depth 1
                                   :args [3 4 5]
                                   :return :b-return
@@ -64,8 +64,8 @@
 
 (fact "segment"
   (q/q test-zipr :s
-       [:name] "C"
-       [:name] "I")
+       [:name "C"]
+       [:name "I"])
   => [{:args [1 {:a [10 11 12]} 5],
        :children
        [{:args [2 5 9],
@@ -80,8 +80,8 @@
 
 (fact "ancestors"
   (q/q test-zipr :a
-       [:name] "B"
-       [:name] "I")
+       [:name "B"]
+       [:name "I"])
   => [{:args [1 2],
        :children
        [{:args [3 4 5],
