@@ -177,10 +177,11 @@
   [tree]
   (when-let [args (:arg-map tree)]
     (apply str
-           (map #(multi-line-indent :label (first %)
+           (map #(multi-line-indent :label (str (first %) " => ")
                                     :value  (second %)
                                     :indent-base (:depth tree)
-                                    :indent-offset  2)))))
+                                    :indent-offset  2)
+                args))))
 
 #_ (defn args-map-str
      [tree]
@@ -233,7 +234,7 @@
                              not-empty)]
     (->> [[(name->string tree true) "\n"]
           (when pre-args
-            (args-str tree))
+            (args-map-str tree))
           (when has-children
             [(when pre-ret
                (return-str tree :pos :before))
@@ -244,7 +245,7 @@
              (when post-head
                [(name->string tree false) "\n"])
              (when pre-args
-               (args-str tree))])
+               (args-map-str tree))])
           (when post-ret
             (return-str tree :pos :after))
           (when post-ex
