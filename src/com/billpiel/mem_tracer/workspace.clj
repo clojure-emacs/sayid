@@ -1,6 +1,7 @@
 (ns com.billpiel.mem-tracer.workspace
   (:require [com.billpiel.mem-tracer.trace :as trace]
-            [com.billpiel.mem-tracer.util.other :as util]))
+            [com.billpiel.mem-tracer.util.other :as util]
+            [com.billpiel.mem-tracer.shelf :as shelf]))
 
 (defn default-workspace
   []
@@ -78,26 +79,25 @@
 
 (defn save!
   [ws ws-shelf]
-  (let [ws' @ws
-        slot (:ws-slot ws')]
-    (if (symbol? slot)
-      (util/def-ns-var ws-shelf slot ws')
-      (throw (Exception. (format "Workspace must have a symbol value in :ws-slot. Value was `%s`. Try `save-as!` instead."
-                                 slot))))
-    ws'))
+  (shelf/save! ws
+               ws-shelf
+               :ws-slot
+               #(format "Workspace must have a symbol value in :ws-slot. Value was `%s`. Try `save-as!` instead." %)))
 
 (defn save-as!
   [ws ws-shelf slot]
-  (swap! ws assoc :ws-slot (util/qualify-sym ws-shelf slot))
-  (save! ws ws-shelf))
+  (shelf/save-as! ws
+                  ws-shelf
+                  :ws-slot
+                  slot
+                  #(format "Workspace must have a symbol value in :ws-slot. Value was `%s`. Try `save-as!` instead." %)))
 
 ;; TODO remove traces before unloading a ws???
 (defn load!
   [ws ws-shelf slot & [force]]
-  (if (or (nil? @ws)
-          (some->> @ws
-                   :ws-slot
-                   (ns-resolve ws-shelf))
-          (= :f force))
-    (reset! ws @(ns-resolve ws-shelf slot))
-    (throw (Exception. "Current workspace is not saved. Use :f as last arg to force, or else `save!` first."))))
+  (shelf/load! ws
+               ws-shelf
+               :ws-slot
+               slot
+               "Current workspace is not saved. Use :f as last arg to force, or else `save!` first."
+               force))

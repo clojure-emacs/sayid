@@ -1,7 +1,8 @@
 (ns com.billpiel.mem-tracer.recording
   (:require [com.billpiel.mem-tracer.workspace :as ws]
             [com.billpiel.mem-tracer.trace :as trace]
-            [com.billpiel.mem-tracer.util.other :as util]))
+            [com.billpiel.mem-tracer.util.other :as util]
+            [com.billpiel.mem-tracer.shelf :as shelf]))
 
 (def bad-slot-msg "Recording must have a symbol value in :rec-slot. Value was `%s`. Try `save-as!` instead.")
 (def unknown-type-msg "Unknown type. `rec` must be a recording, workspace or trace tree. Received a %s.")
@@ -37,14 +38,10 @@
 
 (defn save!
   [rec shelf]
-  (let [rec' @rec
-        slot (:rec-slot rec')]
-    (if (symbol? slot)
-      (util/def-ns-var shelf slot rec')
-      (throw (Exception. (format
-                          bad-slot-msg
-                          slot))))
-    rec'))
+  (shelf/save! rec
+               shelf
+               :rec-slot
+               #(format bad-slot-msg %)))
 
 ;; rec could be:
 ;;  recording
@@ -52,35 +49,32 @@
 ;;  tree
 (defn save-as!
   [rec shelf slot]
-  (doto rec
-    (swap! assoc :rec-slot
-           (util/qualify-sym shelf slot))
-    (save! shelf)))
-
-(defn safe-to-load?
-  [rec shelf & [force]]
-  (let [rec' @rec]
-    (or (= :f force)
-        (nil? @rec)
-        (some->> @rec
-                 :rec-slot
-                 (ns-resolve shelf)))))
+  (shelf/save-as! rec
+                  shelf
+                  :rec-slot
+                  slot
+                  #(format bad-slot-msg %)))
 
 (defn load!
   [rec shelf slot & [force]]
-  (if (safe-to-load? rec shelf force)
-    (reset! rec @(ns-resolve shelf slot))
-    (throw (Exception. load-over-unsaved))))
+  (shelf/load! rec
+               shelf
+               :rec-slot
+               slot
+               load-over-unsaved
+               force))
 
 (defn coerce&load!
-  [rec source shelf & force]
-  (if (safe-to-load? rec shelf)
-    (let [source' (try (-> source
-                           util/atom?->
-                           ->recording)
-                       (catch Exception ex
-                         (if (-> ex ex-data ::code (= :unknown-type))
-                           (throw (Exception. (.getMessage ex))) ;; uh... prob get rid of this
-                           (throw ex))))]
-      (reset! rec source'))
-    (throw (Exception. load-over-unsaved))))
+     [rec source shelf & force]
+     (shelf/load! rec
+                  shelf
+                  :rec-slot
+                  (delay (try (-> source
+                                  util/atom?->
+                                  ->recording)
+                              (catch Exception ex
+                                (if (-> ex ex-data ::code (= :unknown-type))
+                                  (throw (Exception. (.getMessage ex))) ;; uh... prob get rid of this
+                                  (throw ex)))))
+                  load-over-unsaved
+                  force))
