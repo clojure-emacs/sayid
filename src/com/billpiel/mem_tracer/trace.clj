@@ -1,4 +1,5 @@
-(ns com.billpiel.mem-tracer.trace)
+(ns com.billpiel.mem-tracer.trace
+  (require [com.billpiel.mem-tracer.util.other :as util]))
 
 (def ^:dynamic *trace-log-parent* nil)
 
@@ -18,10 +19,13 @@
               :children (atom [])}))
 
 (defn mk-fn-tree
-  [& {:keys [parent name args]}]
+  [& {:keys [parent name args meta]}]
   (merge (mk-tree :parent parent)
          {:name name
           :args (vec args)
+          :meta meta
+          :arg-map (util/arg-match (:arglists meta)
+                                   args)
           :started-at (now)}))
 
 (defn StackTraceElement->map
@@ -77,12 +81,13 @@ may be rebound to do anything you like. 'name' is optional."
 (defn ^{:skip-wiki true} trace-fn-call
   "Traces a single call to a function f with args. 'name' is the
 symbol name of the function."
-  [workspace name f args]
+  [workspace name f args meta']
   (let [parent (or *trace-log-parent*
                    workspace)
         this (mk-fn-tree :parent parent
                           :name name
-                          :args args)
+                          :args args
+                          :meta meta')
         idx (-> (start-trace (:children parent)
                              this)
                 count
@@ -106,11 +111,12 @@ symbol name of the function."
   [^clojure.lang.Var v workspace]
   (let [ns (.ns v)
         s  (.sym v)
+        m (meta v)
         f @v
         vname (str ns "/" s)]
     (doto v
       (alter-var-root #(fn tracing-wrapper [& args]
-                         (trace-fn-call workspace vname % args)))
+                         (trace-fn-call workspace vname % args m)))
       (alter-meta! assoc ::traced [(:id workspace) f]))))
 
 (defn ^{:skip-wiki true} untrace-var*

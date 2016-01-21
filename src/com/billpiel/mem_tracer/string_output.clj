@@ -1,5 +1,6 @@
 (ns com.billpiel.mem-tracer.string-output
-  (:require [puget.printer :as puget]))
+  (:require [puget.printer :as puget]
+            clojure.string))
 
 (def pprint-str #(puget.printer/cprint-str %
                                            {:color-scheme { ; syntax elements
@@ -22,9 +23,9 @@
 (defn base-indent-slinky
   [& {:keys [override underride]
       :or {override [] underride []}}]
-  (concat override
+  #spy/d (concat override
           [:start " "
-           :end " "
+           :end " o o  "
            :default (fn [i]
                       {:fg* i :text "|"})]
           underride))
@@ -138,6 +139,50 @@
                                (:id tree)
                                reset-color-code]))))
 
+(defn multi-line-indent
+  [& {:keys [label value indent-base indent-offset]}]
+  (let [s (pprint-str value)
+        mline (some #{\newline} s)]
+    (str (indent indent-base)
+         label
+         (if mline
+           (str "\n"
+                (indent-line-breaks (str s "\n")
+                                    indent-base
+                                    :override [:end " x x x  "]))
+           (str s))
+         "\n")))
+
+(defn return-str
+  [tree & {pos :pos}]
+  (when-let [return (:return tree)]
+    (multi-line-indent :label (str (condp = pos
+                                     :before "returns"
+                                     :after "returned")
+                                   " => ")
+                       :value  return
+                       :indent-base (:depth tree)
+                       :indent-offset  2)))
+
+(defn args-map-str
+  [tree]
+  (when-let [args (:arg-map tree)]
+    (apply str
+           (map #(multi-line-indent :label (first %)
+                                    :value  (second %)
+                                    :indent-base (:depth tree)
+                                    :indent-offset  2)))))
+
+#_ (defn args-map-str
+     [tree]
+     (when-let [args (:arg-map tree)]
+       (let [lines (map (fn [[a v]] (str a " => " (pprint-str v)))
+                        args)]
+         (indent-line-breaks (clojure.string/join "\n"
+                                                  lines)
+                             (:depth tree)
+                             :end "   "))))
+
 (defn args-str
   [tree]
   (when-let [args (:args tree)]
@@ -146,26 +191,6 @@
                                                   args))
                         (:depth tree)
                         :end "   ")))
-
-(defn return-str
-  [tree & {pos :pos}]
-  (when-let [return (:return tree)]
-    (let [s (pprint-str return)
-          mline (some #{\newline} s)
-          ret-label (condp = pos
-                      :before "returns"
-                      :after "returned")]
-      (str (indent (:depth tree))
-           ret-label
-           " => "
-           (if mline
-             (str "\n"
-                  (indent-line-breaks (str s
-                                           "\n")
-                                      (:depth tree)
-                                      :end "   "))
-             (str s))
-           "\n"))))
 
 (defn throw-str
   [tree]
@@ -228,3 +253,17 @@
   (-> tree
       tree->string
       print))
+
+(defn print-trees
+  [trees]
+  (doall (map print-tree
+              trees)))
+
+#_ (print (let [v ["a" "bc" "def" "ghijklmnop" "qr" "stu"]
+                col-width (inc (apply max (map count v)))]
+            (clojure.string/join "\n"
+                                 (map #(apply str (concat (take col-width
+                                                                (concat %
+                                                                        (repeat \space)))
+                                                          [\x]))
+                                      v))))

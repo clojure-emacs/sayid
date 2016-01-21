@@ -5,6 +5,27 @@
   (binding [*ns* (create-ns ws-ns-sym)]
     (eval `(def ~sym '~v))))
 
+(defmacro get-env
+  []
+  (into {} (for [k (keys &env)]
+             [(name k) k])))
+
+(defn apply-to-map-vals
+  [f m]
+  (into {} (map (fn [[k v]] [k (f v)])
+                m)))
+
+(defn arg-match
+  [arglists args]
+  (let [arities (map #(list % '(com.billpiel.mem-tracer.util.other/get-env) ) ;; NOTE!  NS/get-env must match this ns
+                     arglists)
+        args-v (vec args)
+        final `(apply (fn ~@arities) ~args-v)]
+    (apply-to-map-vals #(if (seq? %)
+                          (apply list %)
+                          %)
+                       (eval final))))
+
 (defn qualify-sym
   [ns sym]
   (symbol (name ns)

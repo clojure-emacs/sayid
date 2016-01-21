@@ -4,7 +4,8 @@
             [com.billpiel.mem-tracer.workspace :as ws]
             [com.billpiel.mem-tracer.recording :as rec]
             [com.billpiel.mem-tracer.query :as q]
-            [com.billpiel.mem-tracer.util.find-ns :as find-ns]))
+            [com.billpiel.mem-tracer.util.find-ns :as find-ns]
+            [com.billpiel.mem-tracer.string-output :as so]))
 
 (def workspace (atom nil))
 (def recording (atom nil))
@@ -148,15 +149,34 @@
 
 ;; === END Query functions
 
+;; === String Output functions
 
 (def tree->string #'com.billpiel.mem-tracer.string-output/tree->string)
 
-(defn print-tree
-  [tree]
-  (-> tree
-      (#'ws/deref-workspace!) ;; ??? This can safely be run on a deref'd tree
-      (#'com.billpiel.mem-tracer.string-output/print-tree)))
+(defn print-trees
+  [coll]
+  (-> coll
+      get-trees
+      so/print-trees))
+
+(defn get-trees
+  [v]
+  (let [mk (meta v)]
+    (cond
+      ((some-fn ::ws/workspace
+                ::rec/recording) mk)
+      (:children v)
+
+      (::trace/tree mk)
+      [v]
+
+      :default
+      (throw (Exception. (format "Don't know how to get a tree from this thing. keys=> %s, meta=> %s"
+                                 (keys v)
+                                 (meta v)))))))
 
 (defn print-ws
   []
   (#'com.billpiel.mem-tracer.string-output/print-tree (deref-workspace!)))
+
+;; === END String Output functions
