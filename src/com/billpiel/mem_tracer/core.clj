@@ -153,12 +153,6 @@
 
 (def tree->string #'com.billpiel.mem-tracer.string-output/tree->string)
 
-(defn print-trees
-  [coll]
-  (-> coll
-      get-trees
-      so/print-trees))
-
 (defn get-trees
   [v]
   (let [mk (meta v)]
@@ -174,6 +168,12 @@
       (throw (Exception. (format "Don't know how to get a tree from this thing. keys=> %s, meta=> %s"
                                  (keys v)
                                  (meta v)))))))
+
+(defn print-trees
+  [coll]
+  (-> coll
+      get-trees
+      so/print-trees))
 
 (defn print-ws
   []
