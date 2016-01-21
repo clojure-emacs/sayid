@@ -157,9 +157,10 @@
            (str "\n"
                 (indent-line-breaks (str s "\n")
                                     indent-base
-                                    :override [:end "   "]))
-           (str s))
-         "\n")))
+                                    :override [:end (apply str
+                                                           (repeat indent-offset
+                                                                   " "))]))
+           (str s "\n")))))
 
 (defn return-str
   [tree & {pos :pos}]
@@ -170,7 +171,7 @@
                                    " => ")
                        :value  return
                        :indent-base (:depth tree)
-                       :indent-offset  2)))
+                       :indent-offset  3)))
 
 (defn args-map-str
   [tree]
@@ -266,12 +267,3 @@
   [trees]
   (doall (map print-tree
               trees)))
-
-#_ (print (let [v ["a" "bc" "def" "ghijklmnop" "qr" "stu"]
-                col-width (inc (apply max (map count v)))]
-            (clojure.string/join "\n"
-                                 (map #(apply str (concat (take col-width
-                                                                (concat %
-                                                                        (repeat \space)))
-                                                          [\x]))
-                                      v))))
