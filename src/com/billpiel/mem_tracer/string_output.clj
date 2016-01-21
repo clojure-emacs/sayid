@@ -23,9 +23,9 @@
 (defn base-indent-slinky
   [& {:keys [override underride]
       :or {override [] underride []}}]
-  #spy/d (concat override
+  (concat override
           [:start " "
-           :end " o o  "
+           :end " "
            :default (fn [i]
                       {:fg* i :text "|"})]
           underride))
@@ -67,6 +67,14 @@
          (clojure.string/join ";")
          (format "\33[%sm"))))
 
+(defn first-wins
+  [kv-coll]
+  (->> kv-coll
+       (partition 2)
+       reverse
+       (map vec)
+       (into {})))
+
 (defn slicky-match
   [i len sl]
   (when-not (-> sl first #{:start :end})
@@ -99,7 +107,7 @@
 
 (defn slinky->str
   [sl n]
-  (let [[& {:keys [start end]}] sl]
+  (let [{:keys [start end]} (first-wins sl)]
     (->> [[(slinky-part->str start nil)]
           (map #(slinky-part->str
                  (slinky-first-match sl
@@ -149,7 +157,7 @@
            (str "\n"
                 (indent-line-breaks (str s "\n")
                                     indent-base
-                                    :override [:end " x x x  "]))
+                                    :override [:end "   "]))
            (str s))
          "\n")))
 
