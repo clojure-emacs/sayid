@@ -14,9 +14,9 @@
                        [])
                    id)]
     ^::tree {:id id
-              :path path
-              :depth (or (some-> parent :depth inc) 0)
-              :children (atom [])}))
+             :path path
+             :depth (or (some-> parent :depth inc) 0)
+             :children (atom [])}))
 
 (defn mk-fn-tree
   [& {:keys [parent name args meta]}]

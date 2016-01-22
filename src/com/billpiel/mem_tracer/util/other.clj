@@ -20,11 +20,12 @@
   (let [arities (map #(list % '(com.billpiel.mem-tracer.util.other/get-env) ) ;; NOTE!  NS/get-env must match this ns
                      arglists)
         args-v (vec args)
-        final `(apply (fn ~@arities) ~args-v)]
-    (apply-to-map-vals #(if (seq? %)
+        fn1 `(fn ~@arities)]
+    (apply-to-map-vals #(if (seq? %) ;; Resolve LazySeqs
                           (apply list %)
                           %)
-                       (eval final))))
+                       (apply (eval fn1)
+                              args-v))))
 
 (defn qualify-sym
   [ns sym]

@@ -64,6 +64,11 @@
   preserved and can be re-enabled."
 [] (#'ws/disable-all-traces! workspace))
 
+(defn ws-cycle-all-traces!
+  []
+  (ws-disable-all-traces!)
+  (ws-enable-all-traces!))
+
 (defn ws-deref!
 "Returns the value of the active workspace, but with all children
   recursively dereferenced. This workspace value will not receive new
