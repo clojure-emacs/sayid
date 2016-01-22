@@ -24,8 +24,14 @@
 
 (defn get-some*
   [f v]
-  (if (fn? f)
+  (cond
+    (fn? f)
     (f v)
+
+    (set? f)
+    (f v)
+
+    :default
     (get v f)))
 
 (defn get-some
@@ -40,6 +46,9 @@
 
 (defn eq* [pred v]
   (cond (fn? pred)
+        (pred v)
+
+        (set? pred)
         (pred v)
 
         (instance? java.util.regex.Pattern pred)
