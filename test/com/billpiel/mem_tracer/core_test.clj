@@ -13,12 +13,12 @@
 
 (fact-group "basic test"
   (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
-  (mt/reset-workspace!)
+  (mt/ws-reset!)
   (with-redefs [mtt/now (t-utils/mock-now-fn)
                 gensym (t-utils/mock-gensym-fn)]
-    (mt/add-trace-ns! com.billpiel.mem-tracer.test.ns1)
+    (mt/ws-add-trace-ns! com.billpiel.mem-tracer.test.ns1)
     (com.billpiel.mem-tracer.test.ns1/func1 :a)
-    (let [trace (mt/deref-workspace!)
+    (let [trace (mt/ws-deref!)
           expected-trace {:children [{:args [:a]
                                       :children [{:args [:a]
                                                   :children []
@@ -55,20 +55,20 @@
            => ["\n " [:red] "v " [:bg-black :red] "com.billpiel.mem-tracer.test.ns1/func1  " [:white] ":11" [nil] "\n " [:red] "| " [:yellow] ":a" [:bold-off] "" [nil] "\n " [:red] "| returns => " [:yellow] ":a" [:bold-off] "\n " [:red] "|" [:yellow] "v " [:bg-black :yellow] "com.billpiel.mem-tracer.test.ns1/func2  " [:white] ":12" [nil] "\n " [:red] "|" [:yellow] "| " [:yellow] ":a" [:bold-off] "" [nil] "\n " [:red] "|" [:yellow] "| returned => " [:yellow] ":a" [:bold-off] "\n " [:red] "|" [:yellow] "^ " [nil] "\n " [:red] "| " [:bg-black :red] "com.billpiel.mem-tracer.test.ns1/func1  " [:white] ":11" [nil] "\n " [:red] "| " [:yellow] ":a" [:bold-off] "" [nil] "\n " [:red] "| returned => " [:yellow] ":a" [:bold-off] "\n " [:red] "^ " [nil] "\n\n  " [nil] "\n"])
 
       (fact "remove trace"
-        (mt/remove-trace-ns! 'com.billpiel.mem-tracer.test.ns1)
+        (mt/ws-remove-trace-ns! 'com.billpiel.mem-tracer.test.ns1)
         (com.billpiel.mem-tracer.test.ns1/func1 :b)
-        (mt/deref-workspace!) => (assoc expected-trace
+        (mt/ws-deref!) => (assoc expected-trace
                                         :traced #{})))
 
     (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)))
 
 (fact-group "long values display nicely"
   (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
-  (mt/reset-workspace!)
+  (mt/ws-reset!)
   (with-redefs [mtt/now (t-utils/mock-now-fn)
                 gensym (t-utils/mock-gensym-fn)]
 
-    (mt/add-trace-ns! com.billpiel.mem-tracer.test.ns1)
+    (mt/ws-add-trace-ns! com.billpiel.mem-tracer.test.ns1)
     (com.billpiel.mem-tracer.test.ns1/func-identity {:a 1
                                                      :b 2
                                                      :c [1 2 3 4 5 6 7]
@@ -77,7 +77,7 @@
                                                      :f [1 2 3 4 5 6 7]}
                                                     :hello
                                                     [1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0])
-    (let [trace (mt/deref-workspace!)]
+    (let [trace (mt/ws-deref!)]
 
       (so/print-tree trace)
       #_ (fact "string output is correct"
@@ -90,17 +90,17 @@
 
 (fact-group "about enable/disable -all-traces!"
   (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
-  (mt/reset-workspace!)
+  (mt/ws-reset!)
   (with-redefs [mtt/now (t-utils/mock-now-fn)
                 gensym (t-utils/mock-gensym-fn)]
 
-    (mt/add-trace-ns! com.billpiel.mem-tracer.test.ns1)
+    (mt/ws-add-trace-ns! com.billpiel.mem-tracer.test.ns1)
 
-    (fact "disable-all-traces! works"
-      (mt/disable-all-traces!)
+    (fact "ws-disable-all-traces! works"
+      (mt/ws-disable-all-traces!)
       (com.billpiel.mem-tracer.test.ns1/func1 :a)
 
-      (mt/deref-workspace!)
+      (mt/ws-deref!)
       => {:children []
           :depth 0
           :id :root10
@@ -108,11 +108,11 @@
           :traced #{[:ns 'com.billpiel.mem-tracer.test.ns1]}
           :ws-slot nil})
 
-    (fact "enable-all-traces! works"
-      (mt/enable-all-traces!)
+    (fact "ws-enable-all-traces! works"
+      (mt/ws-enable-all-traces!)
       (com.billpiel.mem-tracer.test.ns1/func1 :a)
 
-      (mt/deref-workspace!)
+      (mt/ws-deref!)
       => {:children [{:args [:a]
                       :children [{:args [:a]
                                   :children []
@@ -140,17 +140,17 @@
 
 (fact-group "about remove-all-traces!"
   (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
-  (mt/reset-workspace!)
+  (mt/ws-reset!)
   (with-redefs [mtt/now (t-utils/mock-now-fn)
                 gensym (t-utils/mock-gensym-fn)]
 
-    (mt/add-trace-ns! com.billpiel.mem-tracer.test.ns1)
+    (mt/ws-add-trace-ns! com.billpiel.mem-tracer.test.ns1)
 
     (fact "remove-all-traces! works"
       (mt/remove-all-traces!)
       (com.billpiel.mem-tracer.test.ns1/func1 :a)
 
-      (mt/deref-workspace!)
+      (mt/ws-deref!)
       => {:children []
           :depth 0
           :id :root10
@@ -371,11 +371,11 @@
   (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
   (with-redefs [mtt/now (t-utils/mock-now-fn)
                 gensym (t-utils/mock-gensym-fn)]
-    (let [trace-root (mt/add-trace-ns! com.billpiel.mem-tracer.test.ns1)
+    (let [trace-root (mt/ws-add-trace-ns! com.billpiel.mem-tracer.test.ns1)
           _ (try
               (com.billpiel.mem-tracer.test.ns1/func-throws :a)
               (catch Throwable t))
-          trace (mt/deref-workspace!)]
+          trace (mt/ws-deref!)]
 
       (fact "log is correct"
         (dissoc trace :children)
@@ -423,13 +423,13 @@
 (fact-group "querying with query/query"
 
   (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
-  (mt/clear-log!)
-  (mt/reset-workspace!)
+  (mt/ws-clear-log!)
+  (mt/ws-reset!)
   (with-redefs [mtt/now (t-utils/mock-now-fn)
                 gensym (t-utils/mock-gensym-fn)]
-    (let [trace-root (mt/add-trace-ns! com.billpiel.mem-tracer.test.ns1)
+    (let [trace-root (mt/ws-add-trace-ns! com.billpiel.mem-tracer.test.ns1)
           _ (com.billpiel.mem-tracer.test.ns1/func3-1 3 8)
-          trace (mt/deref-workspace!)]
+          trace (mt/ws-deref!)]
 
       (fact "find node by name and all parents"
         (mtq/query (mq/trace->zipper trace)
@@ -471,13 +471,13 @@
 
 (fact-group "querying with q macro"
   (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
-  (mt/clear-log!)
-  (mt/reset-workspace!)
+  (mt/ws-clear-log!)
+  (mt/ws-reset!)
   (with-redefs [mtt/now (t-utils/mock-now-fn)
                 gensym (t-utils/mock-gensym-fn)]
-    (let [trace-root (mt/add-trace-ns! com.billpiel.mem-tracer.test.ns1)
+    (let [trace-root (mt/ws-add-trace-ns! com.billpiel.mem-tracer.test.ns1)
           _ (com.billpiel.mem-tracer.test.ns1/func3-1 3 8)
-          trace (mt/deref-workspace!)]
+          trace (mt/ws-deref!)]
       (fact "find node by name and all parents"
         (mt/qw :a [:name #".*func3-4"])
         =>  [{:path [:root10]
@@ -517,13 +517,13 @@
 
 (fact-group "trace a namespace by alias"
   (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
-  (mt/reset-workspace!)
+  (mt/ws-reset!)
 
   (with-redefs [mtt/now (t-utils/mock-now-fn)
                 gensym (t-utils/mock-gensym-fn)]
-    (mt/add-trace-ns! ns1)
+    (mt/ws-add-trace-ns! ns1)
     (com.billpiel.mem-tracer.test.ns1/func1 :a)
-    (let [trace (mt/deref-workspace!)
+    (let [trace (mt/ws-deref!)
           expected-trace {:children [{:args [:a]
                                       :children [{:args [:a]
                                                   :children []
@@ -571,7 +571,7 @@ x trace aliases
    - for `remove-trace`
    - other places?
 x change query syntax -- single vector and get-some
-- destructure arglist
+x destructure arglist
 - cursors
    - bisect recording trees to find bugs
 - split ns and fn name in trace rec and output

@@ -25,7 +25,7 @@
       v
 
       (::ws/workspace mv)
-      (-> v ws/deref-workspace! :children mk-recording)
+      (-> v ws/deref! :children mk-recording)
 
       (::trace/tree mv)
       (mk-recording [v])

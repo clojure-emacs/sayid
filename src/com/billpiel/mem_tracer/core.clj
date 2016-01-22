@@ -15,61 +15,60 @@
 
 ;; === Workspace functions
 
+(defn- ws-init! [& [quiet]]
+  (#'ws/init! workspace quiet))
 
-(defn- init-workspace! [& [quiet]]
-  (#'ws/init-workspace! workspace quiet))
-
-(defn get-current-workspace! []
-  @(init-workspace! :quiet))
+(defn ws-get-current! []
+  @(ws-init! :quiet))
 
 (defn remove-all-traces!
 "Disables and removes all traces in the active workspace."
 [] (#'ws/remove-all-traces! workspace))
 
-(defn reset-workspace!
+(defn ws-reset!
   "Removes all traces set by active workspace. Resets the active workspace to nil."
   []
   (remove-all-traces!)
-  (#'ws/reset-workspace! workspace))
+  (#'ws/reset-to-nil! workspace))
 
-(defn clear-log!
+(defn ws-clear-log!
 "Clears the log of the active workspace, but preserves traces and other
   properties."
 [] (#'ws/clear-log! workspace))
 
-(defn add-trace-ns!*
+(defn ws-add-trace-ns!*
   "`ns-sym` is a symbol that references an existing namespace. Applies an enabled
   trace to all functions in that namespace. Adds the traces to the active workspace trace set."
   [ns-sym]
-  (#'ws/add-trace-ns! (init-workspace! :quiet)
+  (#'ws/add-trace-ns! (ws-init! :quiet)
                       ns-sym)
   ns-sym)
 
-(defmacro add-trace-ns!
+(defmacro ws-add-trace-ns!
   [ns-sym]
   (let [ref-ns *ns*]
-    `(mapv add-trace-ns!* (find-ns/search-nses '~ns-sym ~ref-ns))))
+    `(mapv ws-add-trace-ns!* (find-ns/search-nses '~ns-sym ~ref-ns))))
 
-(defn remove-trace-ns!
+(defn ws-remove-trace-ns!
   "`ns-sym` is a symbol that references an existing namespace. Removes all
   traces applied to the namespace."
-  [ns-sym] (#'ws/remove-trace-ns! (init-workspace! :quiet)
+  [ns-sym] (#'ws/remove-trace-ns! (ws-init! :quiet)
                                   ns-sym))
 
-(defn enable-all-traces!
+(defn ws-enable-all-traces!
 "Enables any disabled traces in active workspace."
 [] (#'ws/enable-all-traces! workspace))
 
-(defn disable-all-traces!
+(defn ws-disable-all-traces!
 "Disables all traces in active workspace. The active workspace trace set will be
   preserved and can be re-enabled."
 [] (#'ws/disable-all-traces! workspace))
 
-(defn deref-workspace!
+(defn ws-deref!
 "Returns the value of the active workspace, but with all children
   recursively dereferenced. This workspace value will not receive new
   trace entries."
-[] (#'ws/deref-workspace! workspace))
+[] (#'ws/deref! workspace))
 
 (defn ws-save!
   "Saves active workspace to the workspace shelf namespace in the pre-specified slot."
@@ -121,7 +120,7 @@
               force))
 
 (defn rec-load-from!
-"Loads a recording from the provided source. Source may be a work"
+"Loads a recording from the provided source. Source may be a workspace"
   [src & [force]]
   (#'rec/coerce&load! recording
                       src
@@ -130,7 +129,7 @@
 
 (defn rec-load-from-ws!
   [& [force]]
-  (rec-load-from! (get-current-workspace!) force))
+  (rec-load-from! (ws-get-current!) force))
 
 ;; === END Recording functions
 
@@ -139,7 +138,7 @@
 
 (defmacro qw
 "Queries the trace record of the active workspace."
- [& body] `(q/q (q/trace->zipper (deref-workspace!))
+ [& body] `(q/q (q/trace->zipper (ws-deref!))
                            ~@body))
 
 (defmacro qr
@@ -177,6 +176,6 @@
 
 (defn print-ws
   []
-  (#'com.billpiel.mem-tracer.string-output/print-tree (deref-workspace!)))
+  (#'com.billpiel.mem-tracer.string-output/print-tree (ws-deref!)))
 
 ;; === END String Output functions

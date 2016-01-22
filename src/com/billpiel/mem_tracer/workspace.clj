@@ -19,16 +19,16 @@
               :ws-slot)
       (vary-meta dissoc ::workspace)))
 
-(defn init-workspace!
+(defn init!
   [ws & [quiet]]
   (when-not (or (compare-and-set! ws nil (default-workspace))
                 (#{:quiet} quiet))
     (throw
      (Exception.
-      "Cannot run `init-workspace!` if workspace is not `nil`. Run `reset-workspace!` first or pass :quiet as second arg.")))
+      "Cannot run `ws-init!` if workspace is not `nil`. Run `ws-reset!` first or pass :quiet as second arg.")))
   ws)
 
-(defn reset-workspace!
+(defn reset-to-nil!
   [ws]
   (reset! ws nil))
 
@@ -63,7 +63,7 @@
   (disable-all-traces! ws)
   (swap! ws assoc :traced #{}))
 
-(defn deref-workspace!
+(defn deref!
   [ws]
   (clojure.walk/prewalk #(if (and (-> %
                                       meta

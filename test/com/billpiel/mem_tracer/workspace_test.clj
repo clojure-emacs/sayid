@@ -1,14 +1,14 @@
 (ns com.billpiel.mem-tracer.workspace-test
-  (:require [com.billpiel.mem-tracer.workspace :as w]
+  (:require [com.billpiel.mem-tracer.workspace :as ws]
             [com.billpiel.mem-tracer.test-utils :as t-utils]
             [midje.sweet :refer :all]))
 
 (fact "save-as"
   (with-redefs [gensym (t-utils/mock-gensym-fn)]
     (let [shelf '$ws
-          ws (atom (w/default-workspace))]
+          ws (atom (ws/default-workspace))]
 
-      (w/deref-workspace! (w/save-as! ws shelf 'test1))
+      (ws/deref! (ws/save-as! ws shelf 'test1))
       => {:children []
           :depth 0
           :id :root10
@@ -17,9 +17,9 @@
           :ws-slot '$ws/test1}
 
 
-      (w/reset-workspace! ws)
+      (ws/reset-to-nil! ws)
 
-      (w/deref-workspace! @(ns-resolve (the-ns shelf)
+      (ws/deref! @(ns-resolve (the-ns shelf)
                                        'test1))
       => {:children []
           :depth 0
@@ -33,14 +33,14 @@
 (fact "load"
   (with-redefs [gensym (t-utils/mock-gensym-fn)]
     (let [shelf '$ws
-          ws (atom (w/default-workspace))]
+          ws (atom (ws/default-workspace))]
 
-      (w/save-as! ws shelf 'test1)
-      (w/reset-workspace! ws)
+      (ws/save-as! ws shelf 'test1)
+      (ws/reset-to-nil! ws)
 
-      (w/load! ws shelf 'test1)
+      (ws/load! ws shelf 'test1)
 
-      (w/deref-workspace! ws)
+      (ws/deref! ws)
       => {:children []
           :depth 0
           :id :root10
@@ -53,16 +53,16 @@
 (fact "forced load"
   (with-redefs [gensym (t-utils/mock-gensym-fn)]
     (let [shelf '$ws
-          ws (atom (w/default-workspace))]
+          ws (atom (ws/default-workspace))]
 
-      (w/save-as! ws shelf 'test1)
-      (w/reset-workspace! ws)
-      (w/init-workspace! ws)
+      (ws/save-as! ws shelf 'test1)
+      (ws/reset-to-nil! ws)
+      (ws/init! ws)
 
-      (w/load! ws shelf 'test1)
+      (ws/load! ws shelf 'test1)
       => (throws Exception)
 
-      (w/deref-workspace! ws)
+      (ws/deref! ws)
       => {:children []
           :depth 0
           :id :root11
@@ -70,9 +70,9 @@
           :traced #{}
           :ws-slot nil}
 
-      (w/load! ws shelf 'test1 :f)
+      (ws/load! ws shelf 'test1 :f)
 
-      (w/deref-workspace! ws)
+      (ws/deref! ws)
       => {:children []
           :depth 0
           :id :root10
