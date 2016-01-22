@@ -1,7 +1,8 @@
 (ns com.billpiel.mem-tracer.workspace
   (:require [com.billpiel.mem-tracer.trace :as trace]
             [com.billpiel.mem-tracer.util.other :as util]
-            [com.billpiel.mem-tracer.shelf :as shelf]))
+            [com.billpiel.mem-tracer.shelf :as shelf]
+            [com.billpiel.mem-tracer.util.walk18 :as walk-1.8]))
 
 (defn default-workspace
   []
@@ -65,7 +66,7 @@
 
 (defn deref!
   [ws]
-  (clojure.walk/prewalk #(if (and (-> %
+  (walk-1.8/prewalk #(if (and (-> %
                                       meta
                                       ::trace/tree)
                                   (-> %
