@@ -161,11 +161,20 @@
   [v]
   (let [mk (meta v)]
     (cond
+      (sequential? v)
+      v
+
       ((some-fn ::ws/workspace
-                ::rec/recording) mk)
+                ::rec/recording
+                ::q/query-result)
+       mk)
       (:children v)
 
       (::trace/tree mk)
+      [v]
+
+      (every? #(contains? v %)
+              [:children :depth :args :name :return :arg-map :id])
       [v]
 
       :default
