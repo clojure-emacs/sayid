@@ -572,12 +572,32 @@ x trace aliases
    - other places?
 x change query syntax -- single vector and get-some
 x destructure arglist
+  - filter out dummy __ args
+x query evals (rather than gets) a `set`
+- rendering strings is deadly slow?
+- use pmap all over the place?
+  -- add pmap mode to walk18???
+- ws-load bug???
+  = 'sour1 or (delay $ws/sour1) works
+
+  sourcerer.user> (mt/ws-load!)
+  ArityException Wrong number of args (0) passed to: core$ws-load-BANG-  clojure.lang.AFn.throwArity (AFn.java:437)
+
+  sourcerer.user> (mt/ws-load! $ws/sour1)
+  ClassCastException clojure.lang.PersistentArrayMap cannot be cast to java.util.concurrent.Future  clojure.core/deref-future (core.clj:2108)
+
+  sourcerer.user> (mt/ws-load! :sour1)
+  ClassCastException clojure.lang.Keyword cannot be cast to java.util.concurrent.Future  clojure.core/deref-future (core.clj:2108)
+
 - cursors
    - bisect recording trees to find bugs
 - split ns and fn name in trace rec and output
+- some kind of string output length limit options?
 - trace individual fns
 - show file and line num in output
 - deep trace (inside fn)
+- profiling features?
+  - use joda
 - wrap args that are funcs
  - and deep search values for funcs?
 - wrap returns that are funcs
