@@ -266,5 +266,5 @@
 
 (defn print-trees
   [trees]
-  (doall (map print-tree
-              trees)))
+  (doseq [o (pmap tree->string trees)]
+    (print o)))
