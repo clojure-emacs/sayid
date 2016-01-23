@@ -55,3 +55,39 @@
        (swap! maybe-atom f)
        maybe-atom)]
     [maybe-atom identity identity]))
+
+
+(defn derefable?
+  [v]
+  (instance? clojure.lang.IDeref v))
+
+(defn derefable?->
+  [maybe-ideref]
+  (if (derefable? maybe-ideref)
+    @maybe-ideref
+    maybe-ideref))
+
+(defn obj-pred-action-else
+  [obj pred & {:keys [t t-fn f f-fn]}]
+  (let [pred' (or pred identity)]
+    (if (pred' obj)
+      (let [fn' (if t-fn
+                  t-fn
+                  (constantly (if (nil? t)
+                                obj
+                                t)))]
+        (fn' obj))
+      (let [fn' (cond
+                  f-fn f-fn
+                  t (constantly obj)
+                  t-fn (constantly obj)
+                  :else (constantly f))]
+        (fn' obj)))))
+
+(defn just-get-whatever-you-can
+  [ns-sym clue]
+  (-> clue
+      (obj-pred-action-else keyword? :t-fn name)
+      (obj-pred-action-else string? :t-fn symbol)
+      (obj-pred-action-else symbol? :t-fn #(ns-resolve ns-sym %))
+      derefable?->))

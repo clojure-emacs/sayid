@@ -23,8 +23,8 @@
   [item shelf slot-kw & [force]]
   (let [item' @item]
     (or (= :f force)
-        (nil? @item)
-        (some->> @item
+        (nil? item')
+        (some->> item'
                  slot-kw
                  (ns-resolve shelf)))))
 
@@ -34,10 +34,9 @@
                      shelf
                      slot-kw
                      force)
-    (let [source (if (symbol? slot-src)
-                   (ns-resolve shelf slot-src)
-                   slot-src)]
-      (reset! item @source))
+    (let [source (util/just-get-whatever-you-can shelf
+                                                 slot-src)]
+      (reset! item source))
     (throw (Exception. load-over-unsaved-ex-msg))))
 
 #_ (defn load!

@@ -30,7 +30,7 @@
 
       (remove-ns shelf))))
 
-(fact "load"
+(fact "load with symbol"
   (with-redefs [gensym (t-utils/mock-gensym-fn)]
     (let [shelf '$ws
           ws (atom (ws/default-workspace))]
@@ -39,6 +39,52 @@
       (ws/reset-to-nil! ws)
 
       (ws/load! ws shelf 'test1)
+
+      (ws/deref! ws)
+      => {:children []
+          :depth 0
+          :id :root10
+          :path [:root10]
+          :traced #{}
+          :ws-slot '$ws/test1}
+
+      (remove-ns shelf))))
+
+(fact "load with value"
+  (with-redefs [gensym (t-utils/mock-gensym-fn)]
+    (let [shelf '$ws
+          ws (atom (ws/default-workspace))]
+
+      (ws/save-as! ws shelf 'test1)
+      (ws/reset-to-nil! ws)
+
+      (ws/deref! ws)
+      => nil
+
+      (ws/load! ws shelf @(ns-resolve '$ws 'test1))
+
+      (ws/deref! ws)
+      => {:children []
+          :depth 0
+          :id :root10
+          :path [:root10]
+          :traced #{}
+          :ws-slot '$ws/test1}
+
+      (remove-ns shelf))))
+
+(fact "load with keyword"
+  (with-redefs [gensym (t-utils/mock-gensym-fn)]
+    (let [shelf '$ws
+          ws (atom (ws/default-workspace))]
+
+      (ws/save-as! ws shelf 'test1)
+      (ws/reset-to-nil! ws)
+
+      (ws/deref! ws)
+      => nil
+
+      (ws/load! ws shelf :test1)
 
       (ws/deref! ws)
       => {:children []
