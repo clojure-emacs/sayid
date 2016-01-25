@@ -575,7 +575,7 @@ x query evals (rather than gets) a `set`
 - use pmap all over the place?
   -- add pmap mode to walk18???
 x ws-load bug???
-- profiling features?
+- profiling features
   - use joda
 - cursors
    - bisect recording trees to find bugs

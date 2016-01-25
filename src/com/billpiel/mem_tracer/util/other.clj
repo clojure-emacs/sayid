@@ -1,4 +1,6 @@
-(ns com.billpiel.mem-tracer.util.other)
+(ns com.billpiel.mem-tracer.util.other
+  (require [clj-time.core :as time]
+           [clj-time.coerce :as time-c]))
 
 (defn def-ns-var
   [ws-ns-sym sym v]
@@ -91,3 +93,8 @@
       (obj-pred-action-else string? :t-fn symbol)
       (obj-pred-action-else symbol? :t-fn #(ns-resolve ns-sym %))
       derefable?->))
+
+(defn diff-dates-in-sec
+  [a b]
+  (- (-> a time-c/from-date time-c/to-epoch)
+     (-> b time-c/from-date time-c/to-epoch)))
