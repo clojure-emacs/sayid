@@ -18,17 +18,19 @@
 (defn- ws-init! [& [quiet]]
   (#'ws/init! workspace quiet))
 
-(defn ws-get-current! []
+(defn ws-get-current!
+  "Returns the active workspace"
+  []
   @(ws-init! :quiet))
 
-(defn remove-all-traces!
+(defn ws-remove-all-traces!
 "Disables and removes all traces in the active workspace."
 [] (#'ws/remove-all-traces! workspace))
 
 (defn ws-reset!
   "Removes all traces set by active workspace. Resets the active workspace to nil."
   []
-  (remove-all-traces!)
+  (ws-remove-all-traces!)
   (#'ws/reset-to-nil! workspace))
 
 (defn ws-clear-log!
@@ -187,14 +189,22 @@
                                  (keys v)
                                  (meta v)))))))
 
+; rec-print ws-print print-trees
+
 (defn print-trees
   [coll]
   (-> coll
       get-trees
       so/print-trees))
 
-(defn print-ws
-  []
-  (#'com.billpiel.mem-tracer.string-output/print-tree (ws-deref!)))
+(defn ws-print
+  [& [ws]]
+  (#'com.billpiel.mem-tracer.string-output/print-tree (or ws
+                                                          (ws-deref!))))
+
+(defn rec-print
+  [& [rec]]
+  (#'com.billpiel.mem-tracer.string-output/print-tree (or rec
+                                                          @recording)))
 
 ;; === END String Output functions
