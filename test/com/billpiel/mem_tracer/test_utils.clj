@@ -23,6 +23,19 @@
                   first)]
         (apply f (into [v] args))))))
 
+(let [[f & r] (range 1 100)] [f r])
+
+
+(defn make-mock-series-lazy-fn
+  [f s]
+  (let [a (atom s)]
+    (fn [& args]
+      (let [v (-> a
+                  (swap-pair! rest)
+                  first
+                  first)]
+        (apply f (into [v] args))))))
+
 (def mock-now-fn #(make-mock-series-fn identity
                                        [#inst "2010-01-01T01:00:00.000-00:00"
                                         #inst "2010-01-01T02:00:00.000-00:00"

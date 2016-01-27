@@ -8,6 +8,10 @@
 (def unknown-type-msg "Unknown type. `rec` must be a recording, workspace or trace tree. Received a %s.")
 (def load-over-unsaved "Current recording is not saved. Use :f as last arg to force, or else `save!` first.")
 
+(defn reset-to-nil!
+  [rec]
+  (reset! rec nil))
+
 (defn mk-recording
   [children]
   (-> (trace/mk-tree :id-prefix "rec")
@@ -65,7 +69,7 @@
                force))
 
 (defn coerce&load!
-     [rec source shelf & force]
+  [rec source shelf & [force]]
      (shelf/load! rec
                   shelf
                   :rec-slot

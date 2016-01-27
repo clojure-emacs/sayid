@@ -102,6 +102,11 @@
 
 ;; === Recording functions
 
+(defn rec-reset!
+  "Removes all traces set by active workspace. Resets the active workspace to nil."
+  []
+  (#'rec/reset-to-nil! recording))
+
 (defn rec-save!
   "Saves active recording to the recording shelf namespace in the pre-specified slot."
   []
@@ -125,7 +130,7 @@
               force))
 
 (defn rec-load-from!
-"Loads a recording from the provided source. Source may be a workspace"
+  "Loads a recording from the provided source. Source may be a workspace"
   [src & [force]]
   (#'rec/coerce&load! recording
                       src

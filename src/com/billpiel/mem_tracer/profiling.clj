@@ -8,7 +8,7 @@
 (defn merge-fn-metrics
   [& rest]
   (apply merge-with
-         #(apply merge-with + % %2)
+         #(merge-with + % %2)
          rest))
 
 (defn finalize-metrics
@@ -30,8 +30,9 @@
             {:count 1
              :gross-time-sum gross-time
              :net-time-sum net-time}}
-           (map get-fn-metrics* (:children tree)))
-    (merge-with + {:a 2} nil)))
+           (some->> tree
+                    :children
+                    (map get-fn-metrics)))))
 
 (defn get-fn-metrics-finalized
   [tree]
@@ -42,14 +43,14 @@
 (defn add-durations-to-tree
   [tree]
   (let [gross-time (->> tree
-                      ((juxt :ended-at :started-at))
-                      (apply util/diff-dates-in-sec))
+                        ((juxt :ended-at :started-at))
+                        (apply util/diff-dates-in-msec))
         children (->> tree
                       :children
                       (mapv add-durations-to-tree))
         kids-time (->> children
-                           (map :duration)
-                           (apply +))
+                       (map (comp :gross-time :profiling))
+                       (apply +))
         net-time (- gross-time kids-time)]
     (merge tree
            {:children children
@@ -69,6 +70,8 @@
         (apply merge-fn-metrics)
         finalize-metrics
         (assoc rec' :fn-metrics))))
+
+
 
 (defn get-report
   [rec])

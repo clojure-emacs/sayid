@@ -1,6 +1,7 @@
 (ns com.billpiel.mem-tracer.util.other
   (require [clj-time.core :as time]
-           [clj-time.coerce :as time-c]))
+           [clj-time.coerce :as time-c]
+           [clojure.walk :as walk]))
 
 (defn def-ns-var
   [ws-ns-sym sym v]
@@ -94,7 +95,20 @@
       (obj-pred-action-else symbol? :t-fn #(ns-resolve ns-sym %))
       derefable?->))
 
-(defn diff-dates-in-sec
+(defn diff-dates-in-msec
   [a b]
-  (- (-> a time-c/from-date time-c/to-epoch)
-     (-> b time-c/from-date time-c/to-epoch)))
+  (- (-> a time-c/from-date time-c/to-long)
+     (-> b time-c/from-date time-c/to-long)))
+
+(defn replace$
+  [form]
+  (let [$sym `$#
+        form' (walk/prewalk-replace {'$ $sym}
+                                    form)]
+    (if (= form form')
+      form
+      `((fn [~$sym] ~form')))))
+
+(defmacro $-
+  [m & body]
+  `(~m ~@(map replace$ body)))

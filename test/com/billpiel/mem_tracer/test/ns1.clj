@@ -1,5 +1,5 @@
-(ns com.billpiel.mem-tracer.test.ns1)
-
+(ns com.billpiel.mem-tracer.test.ns1
+  (require [com.billpiel.mem-tracer.util.other :refer [$-]]))
 
 (defn func2
   [arg1]
@@ -37,6 +37,21 @@
   (+ 2
      (func3-2 arg2)))
 
-(defn func-identity
-  [& rest]
-  (first rest))
+(defn print-sleep
+  [n]
+  (println "Sleeping " n)
+  (Thread/sleep n))
+
+(defn func-sleep-30 []
+  (Thread/sleep 30))
+
+(defn func-sleep-20 []
+  (Thread/sleep 20)
+  (func-sleep-30)
+  (func-sleep-30))
+
+(defn func-sleep-10 []
+  (Thread/sleep 10)
+  (func-sleep-20)
+  (func-sleep-30)
+  (func-sleep-20))
