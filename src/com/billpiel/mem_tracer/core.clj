@@ -99,6 +99,10 @@
               slot
               force))
 
+(defn ws-show-traced
+  [& [ws]]
+  (:traced (or ws
+               (ws-get-current!))))
 
 ;; === END Workspace functions
 
