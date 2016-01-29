@@ -121,9 +121,11 @@
 (defn rec-save-as!
   "Saves active recording to the recording shelf namespace in the specified `slot`."
   [slot]
-  (#'rec/save-as! recording
-                 (:rec-ns @config)
-                 slot))
+  (->>  (#'rec/save-as! recording
+                        (:rec-ns @config)
+                        slot)
+        ((juxt :id :rec-slot))
+        (apply format "Saved recording with id '%s' to slot '%s'.")))
 
 (defn rec-load!
   "Loads a recording from the shelf namespace into the active
@@ -138,10 +140,12 @@
 (defn rec-load-from!
   "Loads a recording from the provided source. Source may be a workspace"
   [src & [force]]
-  (#'rec/coerce&load! recording
-                      src
-                      (:rec-ns @config)
-                      force))
+  (->> (#'rec/coerce&load! recording
+                           src
+                           (:rec-ns @config)
+                           force)
+       ((juxt :id :rec-slot))
+       (apply format "Loaded recording with id '%s', slot '%s' to active position.")))
 
 (defn rec-load-from-ws!
   [& [force]]
