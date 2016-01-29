@@ -67,16 +67,15 @@
 (defn deref!
   [ws]
   (walk-1.8/prewalk #(if (and (-> %
-                                      meta
-                                      ::trace/tree)
-                                  (-> %
-                                      :children
-                                      util/atom?))
-                           (update-in % [:children] deref)
-                           %)
-                        (if (util/atom? ws)
-                          @ws
-                          ws)))
+                                  meta
+                                  ::trace/tree)
+                              (-> %
+                                  :children
+                                  util/atom?))
+                       (do (-> % :arg-map force)
+                           (update-in % [:children] deref))
+                       %)
+                    (util/atom?-> ws)))
 
 (defn save!
   [ws ws-shelf]

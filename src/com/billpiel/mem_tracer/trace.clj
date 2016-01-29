@@ -24,10 +24,10 @@
          {:name name
           :args (vec args)
           :meta meta
-          :arg-map (util/arg-match (-> meta
-                                       :arglists
-                                       vec)
-                                   args)
+          :arg-map  (delay (util/arg-match (-> meta
+                                               :arglists
+                                               vec)
+                                           args))
           :started-at (now)}))
 
 (defn StackTraceElement->map
