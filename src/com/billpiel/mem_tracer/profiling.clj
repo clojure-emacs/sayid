@@ -5,40 +5,54 @@
 
 (defn calculate-log-score [])
 
+(defn merge-metric-values
+  [a b]
+  ((cond (number? a) +
+         (set? a) clojure.set/union
+         :default (throw (Exception. (format "Cant' merge this: '%s'" a))))
+   a b))
+
 (defn merge-fn-metrics
   [& rest]
   (apply merge-with
-         #(merge-with + % %2)
+         #(merge-with merge-metric-values % %2)
          rest))
 
 (defn finalize-metrics
   [fn-ms]
-  (util/apply-to-map-vals #(merge %
-                                  {:gross-time-avg (/ (:gross-time-sum %)
-                                                      (:count %)
-                                                      1.0)
-                                   :net-time-avg  (/ (:net-time-sum %)
-                                                     (:count %)
-                                                     1.0)})
+  (util/apply-to-map-vals (fn [metrics]
+                            (let [arg-cardinality (-> metrics :arg-set count)
+                                  call-count (:count metrics)
+                                  gross-time-sum (:gross-time-sum metrics)
+                                  repeat-arg-pct (- 1 (/ arg-cardinality
+                                                         call-count
+                                                         1.0))]
+                              (-> metrics
+                                  (dissoc :arg-set)
+                                  (merge {:gross-time-avg (/ gross-time-sum
+                                                             call-count
+                                                             1.0)
+                                          :net-time-avg  (/ (:net-time-sum metrics)
+                                                            call-count
+                                                            1.0)
+                                          :arg-cardinality arg-cardinality
+                                          :repeat-arg-pct repeat-arg-pct
+                                          :gross-of-repeats (* gross-time-sum
+                                                               repeat-arg-pct)}))))
                           fn-ms))
 
 (defn get-fn-metrics
   [tree]
-  (let [{{:keys [gross-time net-time]} :profiling} tree]
+  (let [{{:keys [gross-time net-time arg-set]} :profiling} tree]
     (apply merge-fn-metrics
            {(-> tree :name keyword)
             {:count 1
              :gross-time-sum gross-time
-             :net-time-sum net-time}}
+             :net-time-sum net-time
+             :arg-set arg-set}}
            (some->> tree
                     :children
                     (map get-fn-metrics)))))
-
-(defn get-fn-metrics-finalized
-  [tree]
-  (-> tree
-      get-fn-metrics
-      finalize-metrics))
 
 (defn add-durations-to-tree
   [tree]
@@ -56,7 +70,8 @@
            {:children children
             :profiling {:gross-time gross-time
                         :net-time net-time
-                        :kids-time kids-time}})))
+                        :kids-time kids-time
+                        :arg-set #{(:args tree)}}})))
 
 (defn add-metrics-to-rec
   [rec]
