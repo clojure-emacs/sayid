@@ -136,3 +136,24 @@
                                                    (name '~source)
                                                    %))))
        #'~alias))
+
+(defn hunt-down-source-str
+  [fn-var]
+  (let [{:keys [source file line]} (meta fn-var)]
+    (or source
+        (with-out-str (clojure.repl/source-fn fn-var))
+        (->> file
+             slurp
+             clojure.string/split-lines
+             (drop (- line 1))
+             clojure.string/join))))
+
+#_ (do
+     (defn ff [] 1)
+
+     (->> #'ff
+          meta ((juxt :ns
+                      (constantly "/")
+                      :name))
+          (apply str)
+          symbol))
