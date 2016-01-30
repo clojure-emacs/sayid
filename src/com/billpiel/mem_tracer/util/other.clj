@@ -112,3 +112,27 @@
 (defmacro $-
   [m & body]
   `(~m ~@(map replace$ body)))
+
+(defmacro defalias
+  [alias source]
+  `(do (def ~alias ~source)
+       (alter-meta! #'~alias merge
+                    (-> #'~source
+                        meta
+                        (select-keys [:arglists
+                                      :doc])
+                        (update-in [:doc] #(format "An alias for `%s`.\n%s"
+                                                   (name '~source)
+                                                   %))))))
+(defmacro defalias-macro
+  [alias source]
+  `(do (defmacro ~alias [& body#] `(~'~source '~@body#))
+       (alter-meta! #'~alias merge
+                    (-> #'~source
+                        meta
+                        (select-keys [:arglists
+                                      :doc])
+                        (update-in [:doc] #(format "An alias for `%s`.\n%s"
+                                                   (name '~source)
+                                                   %))))
+       #'~alias))
