@@ -578,19 +578,16 @@ x ws-load bug???
 - profiling features
   x use joda
   x arg cardinality
-- have all core fns optionally take an arg
-  - ws
-  - rec
-  - ws ns and rec ns fns should not take atoms
-- aliases for core fns
+x aliases for core fns
+- have all core rec fns optionally take an arg
 - never return ws or recs from core fns
+- deep trace (inside fn)
 - cursors
    - bisect recording trees to find bugs
 - split ns and fn name in trace rec and output
 - some kind of string output length limit options?
 - trace individual fns
 - show file and line num in output
-- deep trace (inside fn)
 - wrap args that are funcs
  - and deep search values for funcs?
 - wrap returns that are funcs
