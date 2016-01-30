@@ -576,7 +576,14 @@ x query evals (rather than gets) a `set`
   -- add pmap mode to walk18???
 x ws-load bug???
 - profiling features
-  - use joda
+  x use joda
+  x arg cardinality
+- have all core fns optionally take an arg
+  - ws
+  - rec
+  - ws ns and rec ns fns should not take atoms
+- aliases for core fns
+- never return ws or recs from core fns
 - cursors
    - bisect recording trees to find bugs
 - split ns and fn name in trace rec and output
