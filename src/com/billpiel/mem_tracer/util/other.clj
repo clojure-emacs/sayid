@@ -137,16 +137,43 @@
                                                    %))))
        #'~alias))
 
-(defn hunt-down-source-str
+(defn source-fn-var
   [fn-var]
-  (let [{:keys [source file line]} (meta fn-var)]
+  (->> fn-var
+       meta ((juxt :ns
+                   (constantly "/")
+                   :name))
+       (apply str)
+       symbol
+       clojure.repl/source-fn))
+
+(defn hunt-down-source
+  [fn-sym]
+  (let [{:keys [source file line]} (-> fn-sym
+                                       resolve
+                                       meta)]
     (or source
-        (with-out-str (clojure.repl/source-fn fn-var))
-        (->> file
-             slurp
-             clojure.string/split-lines
-             (drop (- line 1))
-             clojure.string/join))))
+        (read-string (or
+                      (clojure.repl/source-fn fn-sym)
+                      (->> file
+                           slurp
+                           clojure.string/split-lines
+                           (drop (- line 1))
+                           clojure.string/join)
+                      "nil")))))
+
+(defmacro src-in-meta
+  [& body]
+  `(alter-meta! ~body assoc :source '~body))
+
+(src-in-meta
+ defn fff
+ [x] (-> x
+         inc
+         inc))
+
+(-> fff var meta :source clojure.walk/macroexpand-all)
+(eval '(do (declare x) (let [x 4] (eval '(inc x)))))
 
 #_ (do
      (defn ff [] 1)
@@ -156,4 +183,33 @@
                       (constantly "/")
                       :name))
           (apply str)
-          symbol))
+          symbol
+          clojure.repl/source-fn)
+
+     (defn f1
+       [a b c]
+       (inc (let [d 4
+                  e 5]
+              (-> a
+                  inc
+                  (+ d)))))
+
+     (f1 1 2 3)
+
+     (clojure.pprint/pprint (clojure.walk/macroexpand-all '(defn f1
+                                                             [a b c]
+                                                             (inc (let [d 4
+                                                                        e 5]
+                                                                    (-> a
+                                                                        inc
+                                                                        (+ d)))))))
+     (def f1
+       (fn* ([a b c]
+             (inc (let* [d 4
+                         e 5]
+                        (+
+                         (inc a)
+                         d))))))
+
+
+     (comment))
