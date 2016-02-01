@@ -82,8 +82,8 @@
         (fn' obj))
       (let [fn' (cond
                   f-fn f-fn
-                  t (constantly obj)
-                  t-fn (constantly obj)
+                  (and t (not f)) (constantly obj)
+                  (and t-fn (not f)) (constantly obj)
                   :else (constantly f))]
         (fn' obj)))))
 
