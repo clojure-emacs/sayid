@@ -137,6 +137,23 @@
                                                    %))))
        #'~alias))
 
+(defn macro?
+  [v]
+  (try (-> v
+           (obj-pred-action-else symbol?
+                                 :t-fn
+                                 find-var)
+           meta
+           :macro)
+       (catch java.lang.IllegalArgumentException e
+         (macro? (qualify-sym 'clojure.core v)))))
+
+(defn special-operator?
+  [v]
+  ((some-fn macro?
+            special-symbol?)
+   v))
+
 (defn source-fn-var
   [fn-var]
   (->> fn-var
@@ -172,44 +189,82 @@
          inc
          inc))
 
-(-> fff var meta :source clojure.walk/macroexpand-all)
-(eval '(do (declare x) (let [x 4] (eval '(inc x)))))
+(defn back-into
+  [orig noob]
+
+  (let [r ((if (seq? orig)
+             reverse
+             identity)
+           (into  (or (empty orig)
+                      [])
+                  noob))
+        ]
+    r))
+
+(defn swap-in-path-syms
+  [form & [path]]
+  (cond
+    (special-operator? form) form
+    (coll? form)  (back-into form (doall (map-indexed #(swap-in-path-syms %2
+                                                                          (conj (or path
+                                                                                    [])
+                                                                                %))
+                                                      form)))
+    :else (symbol (apply str
+                         "___"
+                         (clojure.string/join "-"
+                                              path)))))
+
+(defn deep-zipmap
+       [a b]
+       (zipmap (filter (comp not coll?) (tree-seq coll? seq a))
+               (filter (comp not coll?) (tree-seq coll? seq b))))
 
 #_ (do
-     (defn ff [] 1)
+     (clojure.walk/macroexpand-all
+      (swap-in-path-syms
+       '(defn f1 [a] (let [b 4] {a (-> a (+ b))})))
 
-     (->> #'ff
-          meta ((juxt :ns
-                      (constantly "/")
-                      :name))
-          (apply str)
-          symbol
-          clojure.repl/source-fn)
-
-     (defn f1
-       [a b c]
-       (inc (let [d 4
-                  e 5]
-              (-> a
-                  inc
-                  (+ d)))))
-
-     (f1 1 2 3)
-
-     (clojure.pprint/pprint (clojure.walk/macroexpand-all '(defn f1
-                                                             [a b c]
-                                                             (inc (let [d 4
-                                                                        e 5]
-                                                                    (-> a
-                                                                        inc
-                                                                        (+ d)))))))
-     (def f1
-       (fn* ([a b c]
-             (inc (let* [d 4
-                         e 5]
-                        (+
-                         (inc a)
-                         d))))))
+      )
 
 
-     (comment))
+
+     (def src '(defn f1 [a] (let [[b] [4 5]] {a (-> a (+ b) dec)})))
+     '(def f1 (fn* ([a]
+                    (let* [vec__21418 [4 5]
+                           b (clojure.core/nth vec__21418 0
+                                               nil)]
+                          {a (dec (+ a
+                                     b))}))))
+
+     {[2 1 1 1 3 0] {:type :expr
+                     :provides [3 1 0 0] ; some info about mapping to '[4 5]  ??
+                     :coordinates [2 1 1 1 3 0]
+                     :expanded '(clojure.core/nth vec__21418 0 nil)}
+      [2 1 1 2 0 1 0] {:type :expr
+                       :provides [3 2 0 1 3]
+                       :coordinates [2 1 1 2 0 1 0]
+                       :original '(-> a (+ b) dec)
+                       :expanded '(dec (+ a b))}
+      [2 1 1 2 0 1 1 0] {:type :expr
+                         :provides [3 2 0 1 2 0]
+                         :coordinates [2 1 1 2 0 1 1 0]
+                         :original '(+ b)
+                         :expanded '(+ a b)}}
+
+     '(def f1_1234 (fn* ([a]
+                         (let* [vec__21418 [4 5]
+                                b ((f* nth [2 1 1 1 3 0])
+                                   vec__21418 0
+                                   nil)]
+                               {a ((f* dec [2 1 1 2 0 1 0])
+                                   ((f* + [2 1 1 2 0 1 1 0])
+                                    a b))}))))
+
+     (deep-zipmap (clojure.walk/macroexpand-all
+                   (swap-in-path-syms src))
+                  (swap-in-path-syms
+                   (clojure.walk/macroexpand-all src)))
+
+     (swap-in-path-syms
+      (clojure.walk/macroexpand-all src)))
