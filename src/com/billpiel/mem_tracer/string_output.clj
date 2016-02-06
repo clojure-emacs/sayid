@@ -20,36 +20,6 @@
                                                            :class-delimiter [:cyan]
                                                            :class-name      [:cyan]}}))
 
-(defn base-indent-slinky
-  [& {:keys [override underride]
-      :or {override [] underride []}}]
-  (concat override
-          [:start " "
-           :end " "
-           :default (fn [i]
-                      {:fg* i :text "|"})]
-          underride))
-
-(defn arg-indent-slinky
-  [& {:keys [start end]
-      :or {start " "
-           end " "}}]
-  (base-indent-slinky :override [:start start
-                                 -1 "-"
-                                 :end end]))
-
-(defn fn-header-indent-slinky
-  [& [start?]]
-  (apply base-indent-slinky (when start?
-                              [:override
-                               [-1 (fn [i]
-                                     {:fg* i :text "v"})]])))
-
-(defn fn-footer-indent-slinky
-  []
-  (base-indent-slinky :override [-1 (fn [i]
-                                      {:fg* i :text "^"})]))
-
 (defn apply-color-palette
   [n]
   (nth [1 3 2 6 4 5]
@@ -67,133 +37,103 @@
          (clojure.string/join ";")
          (format "\33[%sm"))))
 
-(defn first-wins
-  [kv-coll]
-  (->> kv-coll
-       (partition 2)
-       reverse
-       (map vec)
-       (into {})))
+(def color-code-MZ  (memoize color-code))
 
-(defn slicky-match
-  [i len sl]
-  (when-not (-> sl first #{:start :end})
-    (let [[fi se] sl
-          [lo hi] (cond (sequential? fi) fi
-                        (= :default fi) [java.lang.Integer/MIN_VALUE java.lang.Integer/MAX_VALUE]
-                        (number? fi) [fi fi])]
-      (when (or (<= lo i hi)
-                (<= lo (- i len) hi))
-        se))))
+(defn mk-lazy-color-fg*
+  [& [i]]
+  (lazy-cat [(color-code-MZ :fg* i)]
+            (mk-lazy-color-fg* (inc i))))
 
-(defn slinky-first-match
-  [sl i len]
-  (some (partial slicky-match i len)
-        (partition 2 sl)))
+(def lazy-color-fg* (mk-lazy-color-fg* 0))
 
-(defn slinky-map->str
-  [m]
-  (str (->> (dissoc m :text)
-            (mapcat identity)
-            (apply color-code))
-       (:text m)))
+(defn mk-lazy-color-fg*-str
+  [s]
+  (interleave lazy-color-fg*
+              (repeat s)))
 
-(defn slinky-part->str
-  [p n]
-  (cond
-    (string? p) p
-    (fn? p) (recur (p n) n)
-    (map? p) (slinky-map->str p)))
+(def lazy-color-fg*-pipes (mk-lazy-color-fg*-str "|"))
 
-(defn slinky->str
-  [sl n]
-  (let [{:keys [start end]} (first-wins sl)]
-    (->> [[(slinky-part->str start nil)]
-          (map #(slinky-part->str
-                 (slinky-first-match sl
-                                     %
-                                     n)
-                 %)
-               (range 0 n))
-          [(slinky-part->str end nil)]]
-         (apply concat)
-         (apply str))))
+(defn slinky-pipes
+  [len & {:keys [start end]}]
+  (apply str
+         (concat
+          (take (- (* 2 len) (count end)) lazy-color-fg*-pipes)
+          (if end
+            [(color-code :fg* (dec len))
+             end]
+            [])
+          [" "])))
 
-(def reset-color-code (color-code))
+(def slinky-pipes-MZ (memoize slinky-pipes))
+
+(def reset-color-code (color-code-MZ))
 
 (defn indent
-  [depth & rest]
-  (slinky->str (apply base-indent-slinky rest)
-               depth))
+  [depth & {:keys [end]}]
+  (slinky-pipes-MZ depth
+                :end end))
 
-(def ^:dynamic *indent* indent)
+(def indent-MZ indent #_ (memoize indent))
 
 (defn indent-line-breaks
   [s depth & rest]
-  (clojure.string/join ""
-                       (mapcat (fn [line] [(apply *indent* depth rest)
-                                           line
-                                           reset-color-code
-                                           "\n"])
-                               (clojure.string/split-lines s))))
+  [""
+    (mapv (fn [line] [(apply indent-MZ depth rest)
+                      line
+                      reset-color-code
+                      "\n"])
+          (clojure.string/split-lines s))])
 
 (defn name->string
   [tree start?]
   (let [{:keys [depth name]} tree]
     (if name
-      (clojure.string/join "" [(slinky->str (fn-header-indent-slinky start?) depth)
-                               (color-code :fg* (dec depth) :bg 0 :bold false)
-                               (:name tree)
-                               "  "
-                               (color-code :fg 7)
-                               (:id tree)
-                               reset-color-code]))))
+      ["" (slinky-pipes-MZ depth :end (when start? "v"))
+       (color-code-MZ :fg* (dec depth) :bg 0 :bold false)
+       (:name tree)
+       "  "
+       (color-code-MZ :fg 7)
+       (:id tree)
+       reset-color-code])))
 
 (defn multi-line-indent
   [& {:keys [label value indent-base indent-offset]}]
   (let [s (pprint-str value)
         mline (some #{\newline} s)]
-    (str (*indent* indent-base)
-         label
-         (if mline
-           (str "\n"
-                (indent-line-breaks (str s "\n")
-                                    indent-base
-                                    :override [:end (apply str
-                                                           (repeat indent-offset
-                                                                   " "))]))
-           (str s "\n")))))
+    [ (indent-MZ indent-base)
+      label
+      (if mline
+        ["\n"
+          (indent-line-breaks (str s "\n")
+                              indent-base
+                              :end
+                              (apply str
+                                     (repeat indent-offset
+                                             " ")))]
+        (str s "\n"))]))
+
+(def multi-line-indent-MZ  (memoize multi-line-indent))
 
 (defn return-str
   [tree & {pos :pos}]
   (when-let [return (:return tree)]
-    (multi-line-indent :label (str (condp = pos
-                                     :before "returns"
-                                     :after "returned")
-                                   " => ")
-                       :value  return
-                       :indent-base (:depth tree)
-                       :indent-offset  3)))
+    (multi-line-indent-MZ :label (str (condp = pos
+                                        :before "returns"
+                                        :after "returned")
+                                      " => ")
+                          :value  return
+                          :indent-base (:depth tree)
+                          :indent-offset  3)))
 
 (defn args-map-str
   [tree]
-  (when-let [args @(:arg-map tree)]
-    (apply str
-           (map #(multi-line-indent :label (str (first %) " => ")
-                                    :value  (second %)
-                                    :indent-base (:depth tree)
-                                    :indent-offset  2)
-                args))))
-
-#_ (defn args-map-str
-     [tree]
-     (when-let [args (:arg-map tree)]
-       (let [lines (map (fn [[a v]] (str a " => " (pprint-str v)))
-                        args)]
-         (indent-line-breaks (clojure.string/join "\n"
-                                                  lines)
-                             (:depth tree)
-                             :end "   "))))
+  (when-let [arg-map-ref (:arg-map tree)]
+    (let [arg-map arg-map-ref] ;; not a future anymore
+      (mapv #(multi-line-indent-MZ :label (str (first %) " => ")
+                                   :value  (second %)
+                                   :indent-base (:depth tree)
+                                   :indent-offset  2)
+            arg-map))))
 
 (defn args-str
   [tree]
@@ -207,59 +147,61 @@
 (defn throw-str
   [tree]
   (when-let [thrown (:throw tree)]
-    (str (*indent* (:depth tree))
-         (color-code :fg 7 :bg 1 :bold true)
-         "THROW"
-         reset-color-code
-         " => "
-         (pprint-str (:cause thrown))
-         "\n"
-         (indent-line-breaks
-          (->> thrown
-               :via
-               (mapv (fn [v]
-                       (let [at (:at v)
-                             [c f l] ((juxt :class-name
-                                            :file-name
-                                            :line-number)
-                                      at)]
-                         (format "%s %s:%s" c f l))))
-               pprint-str)
-          (:depth tree))
-         "\n")))
+    [ (indent-MZ (:depth tree))
+      (color-code-MZ :fg 7 :bg 1 :bold true)
+      "THROW"
+      reset-color-code
+      " => "
+      (pprint-str (:cause thrown))
+      "\n"
+      (indent-line-breaks
+       (->> thrown
+            :via
+            (mapv (fn [v]
+                    (let [at (:at v)
+                          [c f l] ((juxt :class-name
+                                         :file-name
+                                         :line-number)
+                                   at)]
+                      (format "%s %s:%s" c f l))))
+            pprint-str)
+       (:depth tree))
+      "\n"]))
+
+(defn tree->string*
+  [tree]
+  (let [has-children (some-> tree
+                             :children
+                             not-empty)]
+    [(name->string tree true) "\n"
+     (args-map-str tree)
+     (when has-children
+       [(return-str tree :pos :before)
+        (throw-str tree)
+        (mapv tree->string* (:children tree))
+        (name->string tree false) "\n"
+        (args-map-str tree)])
+     (return-str tree :pos :after)
+     (throw-str tree)
+     (when (-> tree :depth nil? not)
+       (slinky-pipes-MZ (:depth tree)
+                     :end "^"))
+     reset-color-code
+     "\n"]))
+
+(defn timey
+  [f]
+  (fn [& r]
+    (time (apply f r))))
 
 (defn tree->string
-  [tree & {:keys [post-head pre-args post-args pre-ret post-ret pre-ex post-ex children]
-           :or {post-head true pre-args true post-args true pre-ret true post-ret true pre-ex true post-ex true children true}}]
-  (binding [*indent* (memoize indent)]
-    (let [has-children (some-> tree
-                               :children
-                               not-empty)]
-      (->> [[(name->string tree true) "\n"]
-            (when pre-args
-              (args-map-str tree))
-            (when has-children
-              [(when pre-ret
-                 (return-str tree :pos :before))
-               (when pre-ex
-                 (throw-str tree))
-               (mapcat tree->string
-                       (:children tree))
-               (when post-head
-                 [(name->string tree false) "\n"])
-               (when pre-args
-                 (args-map-str tree))])
-            (when post-ret
-              (return-str tree :pos :after))
-            (when post-ex
-              (throw-str tree))
-            (slinky->str (fn-footer-indent-slinky)
-                         (:depth tree))
-            reset-color-code
-            "\n"]
-           flatten
-           (remove nil?)
-           (clojure.string/join "")))))
+  [tree]
+  (->> tree
+       tree->string*
+       ((timey flatten))
+       ((timey #(remove nil? %)))
+       ((timey #(clojure.string/join "" %)))))
+
 
 (defn print-tree
   [tree]

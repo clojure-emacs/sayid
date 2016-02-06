@@ -73,12 +73,12 @@
      (shelf/load! rec
                   shelf
                   :rec-slot
-                  (delay (try (-> source
-                                  util/atom?->
-                                  ->recording)
-                              (catch Exception ex
-                                (if (-> ex ex-data ::code (= :unknown-type))
-                                  (throw (Exception. (.getMessage ex))) ;; uh... prob get rid of this
-                                  (throw ex)))))
+                  (try (-> source
+                           util/atom?->
+                           ->recording)
+                       (catch Exception ex
+                         (if (-> ex ex-data ::code (= :unknown-type))
+                           (throw (Exception. (.getMessage ex))) ;; uh... prob get rid of this
+                           (throw ex))))
                   load-over-unsaved
                   force))
