@@ -29,7 +29,7 @@
                                                          1.0))]
                               (-> metrics
                                   (dissoc :arg-set)
-                                  (merge {:gross-time-avg (/ gross-time-sum
+                                  (assoc :gross-time-avg (/ gross-time-sum
                                                              call-count
                                                              1.0)
                                           :net-time-avg  (/ (:net-time-sum metrics)
@@ -38,7 +38,7 @@
                                           :arg-cardinality arg-cardinality
                                           :repeat-arg-pct repeat-arg-pct
                                           :gross-of-repeats (* gross-time-sum
-                                                               repeat-arg-pct)}))))
+                                                               repeat-arg-pct)))))
                           fn-ms))
 
 (defn get-fn-metrics
@@ -66,12 +66,12 @@
                        (map (comp :gross-time :profiling))
                        (apply +))
         net-time (- gross-time kids-time)]
-    (merge tree
-           {:children children
-            :profiling {:gross-time gross-time
-                        :net-time net-time
-                        :kids-time kids-time
-                        :arg-set #{(:args tree)}}})))
+    (assoc tree
+           :children children
+           :profiling {:gross-time gross-time
+                       :net-time net-time
+                       :kids-time kids-time
+                       :arg-set #{(:args tree)}})))
 
 (defn add-metrics-to-rec
   [rec]
