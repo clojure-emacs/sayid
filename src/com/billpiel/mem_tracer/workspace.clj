@@ -64,18 +64,27 @@
   (disable-all-traces! ws)
   (swap! ws assoc :traced #{}))
 
-(defn deref!
-  [ws]
-  (walk-1.8/prewalk #(if (and (-> %
-                                  meta
-                                  ::trace/tree)
-                              (-> %
-                                  :children
-                                  util/atom?))
-                       (do (-> % :arg-map force)
-                           (update-in % [:children] deref))
-                       %)
-                    (util/atom?-> ws)))
+#_ (defn deref!
+     [ws]
+     (walk-1.8/prewalk #(if (and (-> %
+                                     meta
+                                     ::trace/tree)
+                                 (-> %
+                                     :children
+                                     util/atom?))
+                          (do (-> % :arg-map force)
+                              (update-in % [:children] deref))
+                          %)
+                       (util/atom?-> ws)))
+
+(defn deep-deref!
+  [tree]
+  (let [dr-kids (-> tree :children util/atom?->)
+        forced-arg-map (-> tree :arg-map force)
+        kids (mapv deep-deref! dr-kids)]
+    (assoc tree
+           :children kids
+           :arg-map forced-arg-map)))
 
 (defn save!
   [ws ws-shelf]
