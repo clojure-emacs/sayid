@@ -42,8 +42,8 @@
 
 (defn qualify-sym
   [ns sym]
-  (symbol (name ns)
-          (name sym)))
+  (symbol (str ns)
+          (str sym)))
 
 (defn atom?
   [v]
@@ -132,18 +132,32 @@
                         (update-in [:doc] #(format "An alias for `%s`.\n%s"
                                                    (name '~source)
                                                    %))))))
+
 (defmacro defalias-macro
   [alias source]
-  `(do (defmacro ~alias [& body#] `(~'~source '~@body#))
-       (alter-meta! #'~alias merge
-                    (-> #'~source
-                        meta
-                        (select-keys [:arglists
-                                      :doc])
-                        (update-in [:doc] #(format "An alias for `%s`.\n%s"
-                                                   (name '~source)
-                                                   %))))
-       #'~alias))
+  (let [body-sym (gensym "body")
+        qualified-source (qualify-sym *ns* source)
+        source-meta (->> source
+                         (ns-resolve *ns*)
+                         meta)
+        arglists (:arglists source-meta)
+        forms (map (fn [args]
+                     `(~args
+                       (clojure.core/seq
+                        (clojure.core/concat
+                         (clojure.core/list '~qualified-source)
+                         ~args))))
+                   arglists)]
+    `(do (defmacro ~alias ~@forms)
+         (alter-meta! #'~alias merge
+                      (-> (var ~qualified-source)
+                          meta
+                          (select-keys [:arglists
+                                        :doc])
+                          (update-in [:doc] #(format "An alias for `%s`.\n%s"
+                                                     (name '~source)
+                                                     %))))
+         #'~alias)))
 
 (defn macro?
   [v]
@@ -190,12 +204,6 @@
 (defmacro src-in-meta
   [& body]
   `(alter-meta! ~body assoc :source '~body))
-
-(src-in-meta
- defn fff
- [x] (-> x
-         inc
-         inc))
 
 (defn back-into
   [orig noob]
