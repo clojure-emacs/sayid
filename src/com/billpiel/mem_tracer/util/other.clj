@@ -18,17 +18,25 @@
   (into {} (map (fn [[k v]] [k (f v)])
                 m)))
 
+(defn arg-matcher-fn
+  [arglists]
+  (when (not-empty arglists)
+    (let [arities (map #(list % '(com.billpiel.mem-tracer.util.other/get-env)) ;; NOTE!  NS/get-env must match this ns
+                       arglists)
+          fn1  `(fn ~@arities)]
+      (eval fn1))))
+
+(def arg-matcher-fn-memo (memoize arg-matcher-fn))
+
 (defn arg-match
   [arglists args]
   (if (not-empty arglists)
-    (let [arities (map #(list % '(com.billpiel.mem-tracer.util.other/get-env) ) ;; NOTE!  NS/get-env must match this ns
-                       arglists)
-          args-v (vec args)
-          fn1  `(fn ~@arities)]
+    (let [args-v (vec args)
+          matcher-fn (arg-matcher-fn-memo arglists)]
       (apply-to-map-vals #(if (seq? %) ;; Resolve LazySeqs
                             (apply list %)
                             %)
-                         (apply (eval fn1)
+                         (apply matcher-fn
                                 args-v)))
     (zipmap (range) args)))
 
