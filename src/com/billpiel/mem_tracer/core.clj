@@ -25,10 +25,18 @@
   @(ws-init! :quiet))
 (util/defalias w-gc! ws-get-current!)
 
+(defn ws-show-traced
+  [& [ws]]
+  (:traced (or ws
+               (ws-get-current!))))
+(util/defalias w-st ws-show-traced)
+
 (defn ws-remove-all-traces!
   "Disables and removes all traces in the active workspace."
-  [] (#'ws/remove-all-traces! workspace))
-(util/defalias w-rat! ws-remove-trace-ns!)
+  []
+  (#'ws/remove-all-traces! workspace)
+  (ws-show-traced))
+(util/defalias w-rat! ws-remove-all-traces!)
 
 (defn ws-reset!
   "Removes all traces set by active workspace. Resets the active workspace to nil."
@@ -102,7 +110,8 @@
   [slot]
   (#'ws/save-as! workspace
                  (:ws-ns @config)
-                 slot))
+                 slot)
+  true)
 (util/defalias w-sa! ws-save-as!)
 
 (defn ws-load!
@@ -113,14 +122,9 @@
   (#'ws/load! workspace
               (:ws-ns @config)
               slot
-              force))
+              force)
+  true)
 (util/defalias w-l! ws-load!)
-
-(defn ws-show-traced
-  [& [ws]]
-  (:traced (or ws
-               (ws-get-current!))))
-(util/defalias w-st ws-show-traced)
 
 ;; === END Workspace functions
 
@@ -135,7 +139,8 @@
 (defn rec-save!
   "Saves active recording to the recording shelf namespace in the pre-specified slot."
   []
-  (#'rec/save! recording (:rec-ns @config)))
+  (#'rec/save! recording (:rec-ns @config))
+  true)
 (util/defalias r-s! rec-save!)
 
 (defn rec-save-as!
@@ -172,7 +177,8 @@
 
 (defn rec-load-from-ws!
   [& [force]]
-  (rec-load-from! (ws-get-current!) force))
+  (rec-load-from! (ws-get-current!) force)
+  true)
 (util/defalias r-lfw! rec-load-from-ws!)
 
 ;; === END Recording functions
@@ -227,7 +233,8 @@
   [coll]
   (-> coll
       get-trees
-      so/print-trees))
+      (#'so/print-trees)))
+(util/defalias p-t print-trees)
 
 (defn ws-print
   [& [ws]]
