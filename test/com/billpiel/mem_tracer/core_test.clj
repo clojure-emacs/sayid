@@ -575,11 +575,19 @@ x query evals (rather than gets) a `set`
 - use pmap all over the place?
   -- add pmap mode to walk18???
 x ws-load bug???
-- profiling features
+x profiling features
   x use joda
   x arg cardinality
 x aliases for core fns
-- have all core rec fns optionally take an arg
+? have all core rec fns optionally take an arg
+x split out and memoize arg map fn
+  - was this actually an improvement???
+- speed up
+  - load recording from ws
+  - string out
+  - querying
+  - deref?
+- rec-save-as should accept keyword or string
 - never return ws or recs from core fns
 - deep trace (inside fn)
 - cursors
