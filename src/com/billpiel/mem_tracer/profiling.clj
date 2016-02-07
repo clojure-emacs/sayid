@@ -12,11 +12,12 @@
          :default (throw (Exception. (format "Cant' merge this: '%s'" a))))
    a b))
 
-(defn merge-fn-metrics
-  [& rest]
-  (apply merge-with
-         #(merge-with merge-metric-values % %2)
-         rest))
+(def merge-fn-metrics
+  (memoize
+   (fn [& rest]
+     (apply merge-with
+            #(merge-with merge-metric-values % %2)
+            rest))))
 
 (defn finalize-metrics
   [fn-ms]
@@ -43,22 +44,26 @@
 
 (defn get-fn-metrics
   [tree]
-  (let [{{:keys [gross-time net-time arg-set]} :profiling} tree]
-    (apply merge-fn-metrics
-           {(-> tree :name keyword)
-            {:count 1
-             :gross-time-sum gross-time
-             :net-time-sum net-time
-             :arg-set arg-set}}
-           (some->> tree
-                    :children
-                    (map get-fn-metrics)))))
+  (let [{{:keys [gross-time net-time arg-set]} :profiling
+         name :name
+         children :children} tree
+         entry {(keyword name)
+                {:count 1
+                 :gross-time-sum gross-time
+                 :net-time-sum net-time
+                 :arg-set arg-set}}]
+    (if children
+      (apply merge-fn-metrics
+             entry
+             (map get-fn-metrics
+                  children))
+      entry)))
 
 (defn add-durations-to-tree
   [tree]
   (let [gross-time (->> tree
                         ((juxt :ended-at :started-at))
-                        (apply util/diff-dates-in-msec))
+                        (apply -))
         children (->> tree
                       :children
                       (mapv add-durations-to-tree))

@@ -3,7 +3,7 @@
 
 (def ^:dynamic *trace-log-parent* nil)
 
-(defn now [] (java.util.Date.))
+(defn now [] (System/currentTimeMillis))
 
 (defn mk-tree
   [& {:keys [id-prefix parent]}]
