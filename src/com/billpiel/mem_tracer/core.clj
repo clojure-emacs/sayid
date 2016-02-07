@@ -96,7 +96,7 @@
   "Returns the value of the active workspace, but with all children
   recursively dereferenced. This workspace value will not receive new
   trace entries."
-  [] (#'ws/deref! workspace))
+  [] (#'ws/deep-deref! workspace))
 (util/defalias w-drf! ws-deref!)
 
 (defn ws-save!
