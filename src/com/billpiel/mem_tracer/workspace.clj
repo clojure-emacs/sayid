@@ -79,10 +79,11 @@
 
 (defn deep-deref!
   [tree]
-  (let [dr-kids (-> tree :children util/atom?->)
-        forced-arg-map (-> tree :arg-map force)
+  (let [tree' (util/atom?-> tree)
+        dr-kids (-> tree' :children util/atom?->)
+        forced-arg-map (-> tree' :arg-map force)
         kids (mapv deep-deref! dr-kids)]
-    (assoc tree
+    (assoc tree'
            :children kids
            :arg-map forced-arg-map)))
 
