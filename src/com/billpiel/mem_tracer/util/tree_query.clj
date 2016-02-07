@@ -101,20 +101,21 @@
              (or #{})
              (apply conj* <> tag))})
 
-(defn get-children-tag-summary*
-  [zipr pred-map]
-  (let [this-tags (-> zipr
-                      z/node
-                      (get-tags' pred-map))]
-    (insert-tag-into-children-tag-summary this-tags
-                                          (if-let [ch-zips (-> zipr
-                                                               children-zips
-                                                               not-empty)]
-                                            (->> ch-zips
-                                                 (map #(get-children-tag-summary* %
-                                                                                  pred-map))
-                                                 (apply merge-children-tag-summary))
-                                            (merge-children-tag-summary)))))
+(def get-children-tag-summary*
+  (memoize
+   (fn [zipr pred-map]
+     (let [this-tags (-> zipr
+                         z/node
+                         (get-tags' pred-map))]
+       (insert-tag-into-children-tag-summary this-tags
+                                             (if-let [ch-zips (-> zipr
+                                                                  children-zips
+                                                                  not-empty)]
+                                               (->> ch-zips
+                                                    (map #(get-children-tag-summary* %
+                                                                                     pred-map))
+                                                    (apply merge-children-tag-summary))
+                                               (merge-children-tag-summary)))))))
 
 (defn get-children-tag-summary ;; memoize?
   [zipr pred-map]
@@ -128,17 +129,17 @@
                                    {:a #(-> % :id #{1 2 3 4}) :even #(-> (do %)
                                                                          :id
                                                                          even?)}))
-
-(defn seq->tag-summary ;; memoize?
-  [zips pred-map]
-  (let [[fst & rest] (or zips [])]
-    (insert-tags-into-summary
-     (when fst
-       (get-tags' (z/node fst)
-                  pred-map))
-     (when rest
-       (seq->tag-summary rest
-                         pred-map)))))
+(def seq->tag-summary
+  (memoize
+   (fn [zips pred-map]
+     (let [[fst & rest] (or zips [])]
+       (insert-tags-into-summary
+        (when fst
+          (get-tags' (z/node fst)
+                     pred-map))
+        (when rest
+          (seq->tag-summary rest
+                            pred-map)))))))
 
 (defn tag*
   [zipr pred-map]
