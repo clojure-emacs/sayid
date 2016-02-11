@@ -571,7 +571,7 @@ x change query syntax -- single vector and get-some
 x destructure arglist
   - filter out dummy __ args
 x query evals (rather than gets) a `set`
-- rendering strings is deadly slow?
+x rendering strings is deadly slow?
 - use pmap all over the place?
   -- add pmap mode to walk18???
 x ws-load bug???
@@ -583,10 +583,12 @@ x aliases for core fns
 x split out and memoize arg map fn
   - was this actually an improvement???
 - speed up
-  - load recording from ws
-  - string out
+  x string out
+  ~ load recording from ws
+    x refactor deref
+    - arg-map slow?
+  x profiling
   - querying
-  - deref?
 - rec-save-as should accept keyword or string
 - never return ws or recs from core fns
 - deep trace (inside fn)

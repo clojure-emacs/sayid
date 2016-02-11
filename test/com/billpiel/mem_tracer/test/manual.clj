@@ -1,17 +1,19 @@
 (ns com.billpiel.mem-tracer.test.manual
   (:require [com.billpiel.mem-tracer.core :as mm]
-            [com.billpiel.mem-tracer.profiling :as pro]))
+            [com.billpiel.mem-tracer.profiling :as pro]
+            [com.billpiel.mem-tracer.query2 :as q2]))
 
 (defn go-deep [n & r]
   (if (> n 0)
-    (->> n
-         (range 0)
-         (map #(concat [n %]
-                       (range 0 n)))
-         (mapv #(apply go-deep (dec n) %))
+     (->> (range (dec n) n)
+         (concat r)
+         (map #(go-deep (dec n) %))
          flatten
          (apply +))
     r))
+
+
+
 
 (defn trace-go-deep
   [n rec-sym]
@@ -51,8 +53,6 @@
   [n rec-sym]
   (trace-go-deep n 'dummy)
   (mm/w-rat!)
-  (mm/w-cl!
-   )
   (mm/w-atn! 'com.billpiel.mem-tracer.profiling)
   (println (mm/ws-show-traced))
 
@@ -73,6 +73,50 @@
   (println "(time (mm/r-sa! rec-sym))")
   (time (mm/r-sa! rec-sym))
   (println "done"))
+
+
+(defn trace-and-prof-querying-go-deep
+  [n rec-sym]
+  (trace-go-deep n 'dummy)
+  (mm/w-rat!)
+  (mm/w-atn! 'com.billpiel.mem-tracer.query)
+  (mm/w-atn! 'com.billpiel.mem-tracer.util.tree-query)
+  (println (mm/ws-show-traced))
+
+  (println "(def temp-qr (mm/qw [depth #{3 4}]))")
+  (time (def temp-qr (mm/qw [:depth #{3 4}])))
+
+  (println "(mm/r-lfw!)")
+  (time (mm/r-lfw! :f))
+  (println "(mm/r-sa! 'temp)")
+  (time (mm/r-sa! 'temp))
+  (println "(mm/r-lf! (pro/add-metrics-to-rec $rec/temp) :f)")
+  (time (mm/r-lf! (pro/add-metrics-to-rec @(ns-resolve '$rec 'temp)) :f))
+  (println "(time (mm/r-sa! rec-sym))")
+  (time (mm/r-sa! rec-sym))
+  (println "done"))
+
+(defn trace-and-prof-querying2-go-deep
+  [n rec-sym]
+  (trace-go-deep n 'dummy)
+  (mm/w-rat!)
+  (mm/w-atn! 'com.billpiel.mem-tracer.query2)
+  (mm/w-atn! 'com.billpiel.mem-tracer.util.tree-query)
+  (println (mm/ws-show-traced))
+  (println "(def temp-qr (q2/query $rec/dummy #(-> % :depth #{3}))")
+  (time (def temp-qr (q2/query $rec/dummy #(-> %
+                                               :depth
+                                               #{3 4}))))
+  (println "(mm/r-lfw!)")
+  (time (mm/r-lfw! :f))
+  (println "(mm/r-sa! 'temp)")
+  (time (mm/r-sa! 'temp))
+  (println "(mm/r-lf! (pro/add-metrics-to-rec $rec/temp) :f)")
+  (time (mm/r-lf! (pro/add-metrics-to-rec @(ns-resolve '$rec 'temp)) :f))
+  (println "(time (mm/r-sa! rec-sym))")
+  (time (mm/r-sa! rec-sym))
+  (println "done"))
+
 
 (defn pp-sort-fn-metrics
   [sort-key rec]

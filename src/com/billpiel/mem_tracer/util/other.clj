@@ -159,6 +159,14 @@
                                                      %))))
          #'~alias)))
 
+(defn ns-unmap-all
+  [ns']
+  (->> ns'
+       ns-map
+       keys
+       (map (partial ns-unmap ns'))
+       dorun))
+
 (defn macro?
   [v]
   (try (-> v
