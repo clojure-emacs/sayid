@@ -3,8 +3,6 @@
            [com.billpiel.mem-tracer.recording :as rec]
            [com.billpiel.mem-tracer.util.other :as util]))
 
-(defn calculate-log-score [])
-
 (defn merge-metric-values
   [a b]
   ((cond (number? a) +

@@ -213,3 +213,5 @@
   [trees]
   (doseq [o (pmap tree->string trees)]
     (print o)))
+
+#_ (com.billpiel.mem-tracer.test.manual/ns-unmap-all *ns*)
