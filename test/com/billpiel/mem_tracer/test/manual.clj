@@ -12,16 +12,15 @@
          (apply +))
     r))
 
-
-
-
 (defn trace-go-deep
   [n rec-sym]
   (mm/ws-reset!)
   (mm/ws-add-trace-ns! com.billpiel.mem-tracer.test.manual)
-  (go-deep n)
+  (println "(go-deep n)")
+  (time (go-deep n))
   (mm/ws-remove-all-traces!)
-  (mm/rec-load-from-ws! :f)
+  (println "(mm/rec-load-from-ws! :f)")
+  (time (mm/rec-load-from-ws! :f))
   (mm/rec-save-as! rec-sym))
 
 (declare rp-output)
@@ -104,9 +103,10 @@
   (mm/w-atn! 'com.billpiel.mem-tracer.util.tree-query)
   (println (mm/ws-show-traced))
   (println "(def temp-qr (q2/query $rec/dummy #(-> % :depth #{3}))")
-  (time (def temp-qr (q2/query $rec/dummy #(-> %
-                                               :depth
-                                               #{3 4}))))
+  (time (def temp-qr (q2/query @(ns-resolve '$rec 'dummy)
+                               #(-> %
+                                    :depth
+                                    #{3 4}))))
   (println "(mm/r-lfw!)")
   (time (mm/r-lfw! :f))
   (println "(mm/r-sa! 'temp)")

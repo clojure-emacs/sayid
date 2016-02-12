@@ -37,7 +37,7 @@
    :method-name (.getMethodName o)
    :line-number (.getLineNumber o)})
 
-(defn Throwable->map
+(defn Throwable->map**
   "Constructs a data representation for a Throwable."
   {:added "1.7"}
   [^Throwable o]
