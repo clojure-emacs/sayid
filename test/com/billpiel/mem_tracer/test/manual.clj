@@ -1,27 +1,27 @@
 (ns com.billpiel.mem-tracer.test.manual
   (:require [com.billpiel.mem-tracer.core :as mm]
             [com.billpiel.mem-tracer.profiling :as pro]
-            [com.billpiel.mem-tracer.query2 :as q2]))
-
-(defn go-deep [n & r]
-  (if (> n 0)
-     (->> (range (dec n) n)
-         (concat r)
-         (map #(go-deep (dec n) %))
-         flatten
-         (apply +))
-    r))
+            [com.billpiel.mem-tracer.query2 :as q2]
+            [com.billpiel.mem-tracer.test.go-deep :as gd]))
 
 (defn trace-go-deep
   [n rec-sym]
   (mm/ws-reset!)
-  (mm/ws-add-trace-ns! com.billpiel.mem-tracer.test.manual)
-  (println "(go-deep n)")
-  (time (go-deep n))
+  (println (mm/ws-add-trace-ns! com.billpiel.mem-tracer.test.go-deep))
+  (println "traced: (go-deep n)")
+  (time (gd/go-deep n))
   (mm/ws-remove-all-traces!)
   (println "(mm/rec-load-from-ws! :f)")
   (time (mm/rec-load-from-ws! :f))
   (mm/rec-save-as! rec-sym))
+
+(defn compare-trace-go-deep
+  [n rec-sym]
+  (mm/ws-remove-all-traces!)
+  (mm/ws-reset!)
+  (println "(go-deep n)")
+  (time (gd/go-deep n))
+  (trace-go-deep n rec-sym))
 
 (declare rp-output)
 
