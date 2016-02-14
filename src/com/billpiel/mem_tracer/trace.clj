@@ -1,5 +1,6 @@
 (ns com.billpiel.mem-tracer.trace
-  (require [com.billpiel.mem-tracer.util.other :as util]))
+  (require [com.billpiel.mem-tracer.util.other :as util]
+           [taoensso.timbre.profiling :refer [p]]))
 
 (def ^:dynamic *trace-log-parent* nil)
 
@@ -20,15 +21,17 @@
 
 (defn mk-fn-tree
   [& {:keys [parent name args meta]}]
-  (merge (mk-tree :parent parent)
-         {:name name
-          :args (vec args)
+  (assoc  (p :c-mk-tree
+             (mk-tree :parent parent)) ;; 3 sec
+          :name name
+          :args (p :mft-vec-args (vec args))
           :meta meta
-          :arg-map  (delay (util/arg-match (-> meta
-                                               :arglists
-                                               vec)
-                                           args))
-          :started-at (now)}))
+          :arg-map {} #_ (p :ftr-arg-match
+                      (delay (util/arg-match (-> meta
+                                                 :arglists
+                                                 vec)
+                                             args)))
+          :started-at (p :now (now))))
 
 (defn StackTraceElement->map
   [^StackTraceElement o]
@@ -84,7 +87,6 @@ may be rebound to do anything you like. 'name' is optional."
   "Traces a single call to a function f with args. 'name' is the
 symbol name of the function."
   [workspace name f args meta']
-
   (let [parent (or *trace-log-parent*
                    workspace)
         this    (mk-fn-tree :parent parent  ;; mk-fn-tree = 200ms
