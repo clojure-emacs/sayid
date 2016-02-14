@@ -1,6 +1,5 @@
 (ns com.billpiel.mem-tracer.query2
-  (require [com.billpiel.mem-tracer.trace :as tr]
-           [clojure.zip :as z]))
+  (require [clojure.zip :as z]))
 
 ;; === zipper iterators
 
@@ -128,6 +127,51 @@
   ([tree pred-fn] (query-uno tree pred-fn))
   ([tree pred-map pred-final-fn] (query-dos tree pred-map pred-final-fn)))
 
+;; === macro interface
+
+
+(defn get-some
+  [coll v]
+  (loop [coll coll
+         v v]
+    (if ((some-fn empty? nil?) coll)
+      v
+      (let [[f & r] coll]
+        (when-let [v' (get-some* f v)]
+          (recur r v'))))))
+
+(defn eq* [pred v]
+  (cond (fn? pred)
+        (pred v)
+
+        (set? pred)
+        (pred v)
+
+        (instance? java.util.regex.Pattern pred)
+        (->> v
+             str
+             (re-matches pred))
+
+        :default (= pred v)))
+
+(defn mk-query-fn
+  [query-coll]
+  (let [path (drop-last query-coll)
+        pred (last query-coll)]
+    (fn [v]
+      (->> v
+           (get-some path)
+           (eq* pred)))))
+
+
+(defn q
+  [tree & body]
+  (let [[arg r] (if (-> body
+                        first
+                        vector?)
+                  [nil body]
+                  [(first body) (rest body)])]
+    (exec-query arg zipr r)))
 
 ;; === helpers
 
