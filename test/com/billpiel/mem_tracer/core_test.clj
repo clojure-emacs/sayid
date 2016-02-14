@@ -588,7 +588,7 @@ x split out and memoize arg map fn
     x refactor deref
     - arg-map slow?
   x profiling
-  - querying
+  x querying
 - rec-save-as should accept keyword or string
 - never return ws or recs from core fns
 - deep trace (inside fn)

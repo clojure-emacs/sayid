@@ -219,10 +219,9 @@
   (let [r ((if (seq? orig)
              reverse
              identity)
-           (into  (or (empty orig)
-                      [])
-                  noob))
-        ]
+           (into (or (empty orig)
+                     [])
+                 noob))]
     r))
 
 (defn swap-in-path-syms
@@ -245,6 +244,8 @@
                (filter (comp not coll?) (tree-seq coll? seq b))))
 
 #_ (do
+
+
      (clojure.walk/macroexpand-all
       (swap-in-path-syms
        '(defn f1 [a] (let [b 4] {a (-> a (+ b))})))
@@ -285,6 +286,7 @@
                                    ((f* + [2 1 1 2 0 1 1 0])
                                     a b))}))))
 
+     ;; maps symbol paths between original and expanded forms
      (deep-zipmap (clojure.walk/macroexpand-all
                    (swap-in-path-syms src))
                   (swap-in-path-syms
