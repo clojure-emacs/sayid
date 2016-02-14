@@ -1,33 +1,52 @@
 (ns com.billpiel.mem-tracer.query2
   (require [com.billpiel.mem-tracer.trace :as tr]
-           [clojure.zip :as z]
-           [com.billpiel.mem-tracer.util.tree-query :as tq]))
+           [clojure.zip :as z]))
+
+;; === zipper iterators
+
+(defn iter-while-identity
+  [f v]
+  (->> v
+       (iterate f)
+       (take-while identity)))
+
+(defn right-sib-zips
+  [z]
+  (->> z
+       (iter-while-identity z/right)
+       rest))
+
+(defn left-sib-zips
+  [z]
+  (->> z
+       (iter-while-identity z/left)
+       rest))
+
+(defn all-sib-zips [z]
+  (->> z
+       z/leftmost
+       right-sib-zips
+       (filter #(not (= % z)))))
+
+(defn parent-zips
+  [z]
+  (->> z
+       (iter-while-identity z/up)
+       rest))
+
+(defn children-zips [z]
+  (->> z
+       z/down
+       (iter-while-identity z/right)))
 
 
-
-(defn query-tree
-  [qry-fn tree]
-  (let [e' (update-in tree [:children]
-                      (partial mapcat
-                               (partial query-tree
-                                        qry-fn)))]
-    (if (qry-fn tree)
-      [e']
-      (:children e'))))
-
+;; === tags
 
 (defn get-tags
   [node pred-map]
   (vec (for [[kw pred] pred-map
              :when (pred node)]
          kw)))
-
-#_ (defn tag-tree
-  [tree pred-map-fn]
-  (-> tree
-      (with-meta {::tags (get-tags tree)})
-      (update-in [:children] #(mapv tag-tree
-                                    %))))
 
 (defn get-tag-map
   [tree pred-map]
@@ -45,6 +64,8 @@
         :id
         tag-map)))
 
+;; === zippers
+
 (defn tree->zipper
   [tree]
   (z/zipper map?
@@ -60,14 +81,13 @@
                (z/edit assoc :zipper zipr)
                z/next))))
 
-
 (defn traverse-tree-assoc-zipper
   [tree]
   (-> tree
       tree->zipper
       traverse-assoc-zipper))
 
-;; move this to trace or utils
+;; move this to trace or utils?
 (defn traverse-tree
   [tree f]
   (assoc (f tree)
@@ -77,6 +97,18 @@
 (defn traverse-tree-dissoc-zipper
   [tree]
   (traverse-tree tree #(dissoc % :zipper)))
+
+;; === query
+
+(defn query-tree
+  [qry-fn tree]
+  (let [e' (update-in tree [:children]
+                      (partial mapcat
+                               (partial query-tree
+                                        qry-fn)))]
+    (if (qry-fn tree)
+      [e']
+      (:children e'))))
 
 (defn query-dos
   [tree pred-map pred-final-fn] ;; pred-final-fn takes a node (w/ :zipper) and fn to retrieve tags from a node
@@ -97,6 +129,7 @@
   ([tree pred-map pred-final-fn] (query-dos tree pred-map pred-final-fn)))
 
 
+;; === helpers
 
 (defn some-zippers
   [zipr-seq node tags-fn pred-fn]
@@ -105,18 +138,26 @@
        (map tags-fn)
        (some pred-fn)))
 
-(defn lazy-ancestor-zipr-seq
-  [node]
-  (->> node
-       :zipper
-       tq/parent-zips))
+(defmacro defn-zipper->>
+  [name & body]
+  `(defn ~name
+     [node#]
+     (->> node#
+          :zipper
+          ~@body)))
 
-(defn lazy-ancestor-tag-seq
-  [node tags-fn]
-  (->> node
-       lazy-ancestor-zipr-seq
-       (map z/node)
-       (map tags-fn)))
+(defmacro defn-tags-functor
+  [name & body]
+  `(defn ~name
+     [node# tags-fn#]
+     (->> node#
+          ~@body
+          (map z/node)
+          (map tags-fn#))))
+
+(defn-zipper->> lazy-ancestor-tag-seq parent-zips)
+
+(defn-tags-functor lazy-ancestor-tag-seq lazy-ancestor-zipr-seq)
 
 (defn some-tags
   [tag-set tag-seq]
