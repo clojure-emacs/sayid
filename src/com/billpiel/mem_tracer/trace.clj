@@ -84,30 +84,33 @@ may be rebound to do anything you like. 'name' is optional."
   "Traces a single call to a function f with args. 'name' is the
 symbol name of the function."
   [workspace name f args meta']
+
   (let [parent (or *trace-log-parent*
                    workspace)
-        this (mk-fn-tree :parent parent
-                          :name name
-                          :args args
-                          :meta meta')
-        idx (-> (start-trace (:children parent)
-                             this)
-                count
-                dec)]
-    (let [value (binding [*trace-log-parent* this]
+        this    (mk-fn-tree :parent parent  ;; mk-fn-tree = 200ms
+                               :name name
+                               :args args
+                               :meta meta')
+        idx  (-> (start-trace (:children parent) ;; start-trace = 20ms
+                                   this)
+                      count
+                      dec)]
+    (let [value (binding [*trace-log-parent* this]  ;; binding = 50ms
                   (try
                     (apply f args)
                     (catch Throwable t
                       (end-trace (:children parent)
                                  idx
-                                 {:throw (Throwable->map t)
+                                 {:throw (Throwable->map** t)
                                   :ended-at (now)})
                       (throw t))))]
-      (end-trace (:children parent)
+       (end-trace (:children parent)   ;; end-trace = 75ms
                  idx
                  {:return value
                   :ended-at (now)})
       value)))
+
+;; mk-fn-tree + start-trace + binding + end-trace = 345ms
 
 (defn apply-trace-to-var
   [^clojure.lang.Var v workspace]
