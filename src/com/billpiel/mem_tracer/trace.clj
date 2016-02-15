@@ -2,6 +2,7 @@
   (require [com.billpiel.mem-tracer.util.other :as util]
            [taoensso.timbre.profiling :refer [p]]))
 
+
 (def ^:dynamic *trace-log-parent* nil)
 
 (defn now [] (System/currentTimeMillis))
