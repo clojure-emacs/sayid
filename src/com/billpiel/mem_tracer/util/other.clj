@@ -95,6 +95,8 @@
                   :else (constantly f))]
         (fn' obj)))))
 
+(def opae obj-pred-action-else)
+
 (defn just-get-whatever-you-can
   [ns-sym clue]
   (-> clue

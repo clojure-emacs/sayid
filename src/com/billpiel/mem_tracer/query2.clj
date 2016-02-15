@@ -1,5 +1,7 @@
 (ns com.billpiel.mem-tracer.query2
-  (require [clojure.zip :as z]))
+  (require [clojure.zip :as z]
+           [com.billpiel.mem-tracer.util.other :as util]
+           ))
 
 ;; === zipper iterators
 
@@ -27,7 +29,7 @@
        right-sib-zips
        (filter #(not (= % z)))))
 
-(defn parent-zips
+(defn ancestor-zips
   [z]
   (->> z
        (iter-while-identity z/up)
@@ -38,6 +40,11 @@
        z/down
        (iter-while-identity z/right)))
 
+(defn descendant-depth-firstish-zips [z]
+  (let [kids (children-zips z)]
+    (lazy-cat kids
+              (mapcat descendant-depth-first-zip
+                      kids))))
 
 ;; === tags
 
@@ -130,6 +137,18 @@
 ;; === macro interface
 
 
+(defn get-some*
+  [f v]
+  (cond
+    (fn? f)
+    (f v)
+
+    (set? f)
+    (f v)
+
+    :default
+    (get v f)))
+
 (defn get-some
   [coll v]
   (loop [coll coll
@@ -163,15 +182,59 @@
            (get-some path)
            (eq* pred)))))
 
+(defn some-mk-query-fn
+  [queries]
+  (->> queries
+       (map mk-query-fn)
+       (apply some-fn)))
+
+(defn relatives-dispatch
+  [_ opts _ _]
+  (cond
+    (= opts '(:r)) :range
+    (= opts '(:w)) :simple
+
+    (every? #{:a :s :d}
+            opts)
+    :simple
+
+    :else (throw (Exception. (format "Unknown query type: '%s'"
+                                     opts)))))
+
+(defmulti exec-relatives-query relatives-dispatch)
+
+(defmethod exec-relatives-query :simple
+  [tree opts dist pred-vecs]
+  (query tree
+         (some-mk-query-fn pred-vecs)
+))
+
+(defmulti exec-query (fn [_ body] (-> body first type)))
+
+(defmethod exec-query clojure.lang.PersistentVector
+  [tree body]
+  (query tree
+         (some-mk-query-fn body)))
+
+(defmethod exec-query clojure.lang.Symbol
+  [tree [syms & r :as body]]
+  (let [[fr & rr] r
+        [dist pred-vecs] (if (number? fr)
+                           [fr rr]
+                           [nil r])
+        opts (->> syms
+                  name
+                  seq
+                  (map str)
+                  (map keyword))]
+    (exec-relatives-query tree
+                          opts
+                          dist
+                          pred-vecs)))
 
 (defn q
   [tree & body]
-  (let [[arg r] (if (-> body
-                        first
-                        vector?)
-                  [nil body]
-                  [(first body) (rest body)])]
-    (exec-query arg zipr r)))
+  (exec-query tree body))
 
 ;; === helpers
 
@@ -199,9 +262,15 @@
           (map z/node)
           (map tags-fn#))))
 
-(defn-zipper->> lazy-ancestor-tag-seq parent-zips)
-
+(defn-zipper->> lazy-ancestor-zipr-seq ancestor-zips)
 (defn-tags-functor lazy-ancestor-tag-seq lazy-ancestor-zipr-seq)
+
+(defn-zipper->> lazy-descendant-zipr-seq descendant-depth-firstish-zips)
+(defn-tags-functor lazy-descendant-tag-seq lazy-descendant-zipr-seq)
+
+(defn-zipper->> lazy-sibling-zipr-seq all-sib-zips)
+(defn-tags-functor lazy-sibling-tag-seq lazy-sibling-zipr-seq)
+
 
 (defn some-tags
   [tag-set tag-seq]
