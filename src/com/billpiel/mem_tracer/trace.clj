@@ -1,6 +1,5 @@
 (ns com.billpiel.mem-tracer.trace
-  (require [com.billpiel.mem-tracer.util.other :as util]
-           [taoensso.timbre.profiling :refer [p]]))
+  (require [com.billpiel.mem-tracer.util.other :as util]))
 
 
 (def ^:dynamic *trace-log-parent* nil)
@@ -22,17 +21,15 @@
 
 (defn mk-fn-tree
   [& {:keys [parent name args meta]}]
-  (assoc  (p :c-mk-tree
-             (mk-tree :parent parent)) ;; 3 sec
+  (assoc  (mk-tree :parent parent) ;; 3 sec
           :name name
-          :args (p :mft-vec-args (vec args))
+          :args (vec args)
           :meta meta
-          :arg-map {} #_ (p :ftr-arg-match
-                      (delay (util/arg-match (-> meta
-                                                 :arglists
-                                                 vec)
-                                             args)))
-          :started-at (p :now (now))))
+          :arg-map (delay (util/arg-match (-> meta
+                                              :arglists
+                                              vec)
+                                          args))
+          :started-at (now)))
 
 (defn StackTraceElement->map
   [^StackTraceElement o]

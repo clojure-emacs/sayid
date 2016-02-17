@@ -3,7 +3,7 @@
             [com.billpiel.mem-tracer.trace :as trace]
             [com.billpiel.mem-tracer.workspace :as ws]
             [com.billpiel.mem-tracer.recording :as rec]
-            [com.billpiel.mem-tracer.query :as q]
+            [com.billpiel.mem-tracer.query2 :as q]
             [com.billpiel.mem-tracer.util.find-ns :as find-ns]
             [com.billpiel.mem-tracer.string-output :as so]
             [com.billpiel.mem-tracer.util.other :as util]))
@@ -187,14 +187,19 @@
 ;; === Query functions
 
 (defmacro qw
-"Queries the trace record of the active workspace."
- [& body] `(q/q (q/trace->zipper (ws-deref!))
-                           ~@body))
+  "Queries the trace record of the active workspace."
+  [& body] `(q/q (ws-deref!)
+                 ~@body))
 
 (defmacro qr
-"Queries the active trace recording."
- [& body] `(q/q (q/trace->zipper @recording)
-                           ~@body))
+  "Queries the active trace recording."
+  [& body] `(q/q @recording
+                 ~@body))
+
+(defmacro qt
+  "Queries the trace record of the active workspace."
+  [tree & body] `(q/q ~tree
+                      ~@body))
 
 ;; === END Query functions
 

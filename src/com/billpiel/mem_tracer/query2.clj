@@ -43,8 +43,62 @@
 (defn descendant-depth-firstish-zips [z]
   (let [kids (children-zips z)]
     (lazy-cat kids
-              (mapcat descendant-depth-first-zip
+              (mapcat descendant-depth-firstish-zips
                       kids))))
+
+;; === helpers
+
+(defn some-zippers
+  [zipr-seq node tags-fn pred-fn]
+  (->> zipr-seq
+       (map z/node)
+       (map tags-fn)
+       (some pred-fn)))
+
+(defmacro defn-zipper->>
+  [name & body]
+  `(defn ~name
+     [node#]
+     (->> node#
+          :zipper
+          ~@body)))
+
+(defmacro defn-tags-functor
+  [name & body]
+  `(defn ~name
+     [node# tags-fn#]
+     (->> node#
+          ~@body
+          (map z/node)
+          (map tags-fn#))))
+
+(defn-zipper->> lazy-ancestor-zipr-seq ancestor-zips)
+(defn-tags-functor lazy-ancestor-tag-seq lazy-ancestor-zipr-seq)
+
+(defn-zipper->> lazy-descendant-zipr-seq descendant-depth-firstish-zips)
+(defn-tags-functor lazy-descendant-tag-seq lazy-descendant-zipr-seq)
+
+(defn-zipper->> lazy-sibling-zipr-seq all-sib-zips)
+(defn-tags-functor lazy-sibling-tag-seq lazy-sibling-zipr-seq)
+
+
+(defn some-tags
+  [tag-set tag-seq]
+  (some (partial some
+                 tag-set)
+        tag-seq))
+
+(defn mk-some-tags-in-seq-fn
+  [tag-set tag-seq-functor]
+  (fn [node tag-fn]
+    (->> (tag-seq-functor node tag-fn)
+         (some-tags tag-set))))
+
+(defn prepend-node-to-lazy-tag-seq-functor
+  [tag-seq-fnr]
+  (fn [node tags-fn]
+    (lazy-cat [(tags-fn node)]
+              (tag-seq-fnr node tags-fn))))
 
 ;; === tags
 
@@ -118,7 +172,7 @@
 
 (defn query-dos
   [tree pred-map pred-final-fn] ;; pred-final-fn takes a node (w/ :zipper) and fn to retrieve tags from a node
-  (let [tag-map (get-tag-map tree pred-map)
+  (let [tag-map #spy/d (get-tag-map tree #spy/d pred-map)
         get-tag-fn (mk-get-tag-fn tag-map)
         pred-final-fn' #(pred-final-fn % get-tag-fn)]
     (->> tree
@@ -188,96 +242,91 @@
        (map mk-query-fn)
        (apply some-fn)))
 
-(defn relatives-dispatch
-  [_ opts _ _]
-  (cond
-    (= opts '(:r)) :range
-    (= opts '(:w)) :simple
+(defn some-fn-2
+  [& preds]
+  (fn [node tag-fn]
+    (loop [[f & r] preds]
+      (or (f node tag-fn)
+          (when (not-empty r)
+            (recur r))))))
 
-    (every? #{:a :s :d}
-            opts)
-    :simple
+(defn mk-relative-final-qry-fn
+  [opts tag-set]
+  #spy/d opts
+  #spy/d tag-set
+  (let [tag-set (util/obj-pred-action-else tag-set
+                                           (partial some #{:w})
+                                           :t [:a :s :d])
+        rel-seq-map {:a (mk-some-tags-in-seq-fn tag-set
+                                                (prepend-node-to-lazy-tag-seq-functor
+                                                 lazy-descendant-tag-seq))
+                     :s (mk-some-tags-in-seq-fn tag-set
+                                                lazy-sibling-tag-seq)
+                     :d (mk-some-tags-in-seq-fn tag-set
+                                                lazy-descendant-tag-seq)}]
+    (->> opts
+         (map rel-seq-map)
+         (apply some-fn-2))))
 
-    :else (throw (Exception. (format "Unknown query type: '%s'"
-                                     opts)))))
+(defn mk-limited-relative-final-qry-fn
+  [opts tag-set]
+  (throw (Exception. "not implemented")))
 
-(defmulti exec-relatives-query relatives-dispatch)
 
-(defmethod exec-relatives-query :simple
-  [tree opts dist pred-vecs]
-  (query tree
-         (some-mk-query-fn pred-vecs)
-))
+(defn parse-to-kw-chars
+  [s]
+  (->> s
+       name
+       seq
+       (map str)
+       (map keyword)))
 
-(defmulti exec-query (fn [_ body] (-> body first type)))
+(defn query-dispatch-decider
+  [_ body]
+  (let [[f & r] body]
+    (if (-> f
+            type
+            (= clojure.lang.PersistentVector))
+      :simple
+      (let [kws (parse-to-kw-chars f)]
+        (if (every? #{:a :s :d :w :r}
+                    kws)
+          (condp some kws
+            #{:a :s :d :w} :relative
+            #{:r} :range)
+          (throw (Exception. (format "Invalid query type '%s'" kws))))))))
 
-(defmethod exec-query clojure.lang.PersistentVector
+(defmulti exec-query query-dispatch-decider)
+
+(defmethod exec-query :simple
   [tree body]
   (query tree
          (some-mk-query-fn body)))
 
-(defmethod exec-query clojure.lang.Symbol
+(defmethod exec-query :relative
   [tree [syms & r :as body]]
   (let [[fr & rr] r
         [dist pred-vecs] (if (number? fr)
                            [fr rr]
                            [nil r])
-        opts (->> syms
-                  name
-                  seq
-                  (map str)
-                  (map keyword))]
-    (exec-relatives-query tree
-                          opts
-                          dist
-                          pred-vecs)))
+        opts (parse-to-kw-chars syms)
+        qry-final (if dist
+                    (mk-limited-relative-final-qry-fn opts
+                                                      #{:a})
+                    (mk-relative-final-qry-fn opts
+                                              #{:a}))]
+    (query tree
+           {:a (some-mk-query-fn #spy/d pred-vecs)}
+           qry-final)))
+
+(defmethod exec-query :range
+  [tree body]
+  (throw (Exception. "Range queries not implemented.")))
 
 (defn q
   [tree & body]
-  (exec-query tree body))
-
-;; === helpers
-
-(defn some-zippers
-  [zipr-seq node tags-fn pred-fn]
-  (->> zipr-seq
-       (map z/node)
-       (map tags-fn)
-       (some pred-fn)))
-
-(defmacro defn-zipper->>
-  [name & body]
-  `(defn ~name
-     [node#]
-     (->> node#
-          :zipper
-          ~@body)))
-
-(defmacro defn-tags-functor
-  [name & body]
-  `(defn ~name
-     [node# tags-fn#]
-     (->> node#
-          ~@body
-          (map z/node)
-          (map tags-fn#))))
-
-(defn-zipper->> lazy-ancestor-zipr-seq ancestor-zips)
-(defn-tags-functor lazy-ancestor-tag-seq lazy-ancestor-zipr-seq)
-
-(defn-zipper->> lazy-descendant-zipr-seq descendant-depth-firstish-zips)
-(defn-tags-functor lazy-descendant-tag-seq lazy-descendant-zipr-seq)
-
-(defn-zipper->> lazy-sibling-zipr-seq all-sib-zips)
-(defn-tags-functor lazy-sibling-tag-seq lazy-sibling-zipr-seq)
-
-
-(defn some-tags
-  [tag-set tag-seq]
-  (some (partial some
-                 tag-set)
-        tag-seq))
-
+  (vec (exec-query tree
+                   body)))
 
 
 #_ (do

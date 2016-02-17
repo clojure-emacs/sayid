@@ -1,5 +1,6 @@
 (ns com.billpiel.mem-tracer.test.query-test
-  (:require [com.billpiel.mem-tracer.query :as q]
+  (:require [com.billpiel.mem-tracer.core :as mm]
+            [com.billpiel.mem-tracer.query2 :as q]
             [midje.sweet :refer :all]))
 
 (comment "
@@ -12,11 +13,13 @@
 
 ")
 
-(def test-trace {:name "A"
+(def test-trace {:id 1
+                 :name "A"
                  :depth 0
                  :args [1 2]
                  :return 3
-                 :children [{:name "B"
+                 :children [{:id 2
+                             :name "B"
                              :depth 1
                              :args [3 4 5]
                              :return :b-return
@@ -30,47 +33,56 @@
                                          :args [:a 1 :b 2]
                                          :return 5
                                          :children []}]}
-                            {:name "C"
+                            {:id 3
+                             :name "C"
                              :depth 1
                              :args [1 {:a [10 11 12]} 5]
                              :return 8
-                             :children [{:name "F"
+                             :children [{:id 4
+                                         :name "F"
                                          :depth 2
                                          :args [2 5 9]
                                          :return "return F"
-                                         :children [{:name "I"
+                                         :children [{:id 5
+                                                     :name "I"
                                                      :depth 3
                                                      :args []
                                                      :return 0
-                                                     :children [{:name "L"
+                                                     :children [{:id 6
+                                                                 :name "L"
                                                                  :depth 4
                                                                  :args []
                                                                  :return 0
                                                                  :children []}]}]}]}]})
 
-(def test-zipr (q/trace->zipper test-trace))
-
 (fact "simple"
-  (q/q test-zipr [:depth 1]) => [{:name "B"
-                                  :depth 1
-                                  :args [3 4 5]
-                                  :return :b-return
-                                  :children []}
-                                 {:name "C"
-                                  :depth 1
-                                  :args [1 {:a [10 11 12]} 5]
-                                  :return 8
-                                  :children []}])
+  (mm/qt test-trace [:depth 1]) =>
+  [{:args [3 4 5]
+    :children ()
+    :depth 1
+    :id 2
+    :name "B"
+    :return :b-return}
+   {:args [1 {:a [10 11 12]} 5]
+    :children ()
+    :depth 1
+    :id 3
+    :name "C"
+    :return 8}])
 
 (fact "segment"
-  (q/q test-zipr :s
-       [:name "C"]
-       [:name "I"])
+  (mm/qt test-trace :s
+         [:name "C"]
+         [:name "I"])
   => [{:args [1 {:a [10 11 12]} 5],
        :children
        [{:args [2 5 9],
          :children
-         [{:args [], :children [], :depth 3, :name "I", :return 0}],
+         [{:args []
+           :children []
+           :depth 3
+           :name "I"
+           :return 0}],
          :depth 2,
          :name "F",
          :return "return F"}],
@@ -78,28 +90,33 @@
        :name "C",
        :return 8}])
 
-(fact "ancestors"
-  (q/q test-zipr :a
-       [:name "B"]
-       [:name "I"])
-  => [{:args [1 2],
-       :children
-       [{:args [3 4 5],
-         :children [],
-         :depth 1,
-         :name "B",
-         :return :b-return}
-        {:args [1 {:a [10 11 12]} 5],
-         :children
-         [{:args [2 5 9],
-           :children
-           [{:args [], :children [], :depth 3, :name "I", :return 0}],
-           :depth 2,
-           :name "F",
-           :return "return F"}],
-         :depth 1,
-         :name "C",
-         :return 8}],
-       :depth 0,
-       :name "A",
-       :return 3}])
+(fact :dev "ancestors"
+      (mapv q/traverse-tree-dissoc-zipper (mm/qt test-trace :a
+                                                 [:name "B"]
+                                                 [:name "I"]))
+      => [{:args [1 2]
+           :children [{:args [3 4 5]
+                       :children []
+                       :depth 1
+                       :id 2
+                       :name "B"
+                       :return :b-return} {:args [1 {:a [10 11 12]} 5]
+                       :children [{:args [2 5 9]
+                                   :children [{:args []
+                                               :children []
+                                               :depth 3
+                                               :id 5
+                                               :name "I"
+                                               :return 0}]
+                                   :depth 2
+                                   :id 4
+                                   :name "F"
+                                   :return "return F"}]
+                       :depth 1
+                       :id 3
+                       :name "C"
+                       :return 8}]
+           :depth 0
+           :id 1
+           :name "A"
+           :return 3}])
