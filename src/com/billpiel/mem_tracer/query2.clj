@@ -263,9 +263,10 @@
                      :s (mk-some-tags-in-seq-fn tag-set
                                                 lazy-sibling-tag-seq)
                      :d (mk-some-tags-in-seq-fn tag-set
-                                                lazy-descendant-tag-seq)}]
+                                                (prepend-node-to-lazy-tag-seq-functor
+                                                 lazy-ancestor-tag-seq))}]
     (->> opts
-         (map rel-seq-map)
+         (keep rel-seq-map)
          (apply some-fn-2))))
 
 (defn mk-limited-relative-final-qry-fn

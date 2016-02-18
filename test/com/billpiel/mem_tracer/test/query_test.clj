@@ -90,33 +90,64 @@
        :name "C",
        :return 8}])
 
-(fact :dev "ancestors"
-      (mapv q/traverse-tree-dissoc-zipper (mm/qt test-trace :a
-                                                 [:name "B"]
-                                                 [:name "I"]))
-      => [{:args [1 2]
-           :children [{:args [3 4 5]
-                       :children []
-                       :depth 1
-                       :id 2
-                       :name "B"
-                       :return :b-return} {:args [1 {:a [10 11 12]} 5]
-                       :children [{:args [2 5 9]
-                                   :children [{:args []
-                                               :children []
-                                               :depth 3
-                                               :id 5
-                                               :name "I"
-                                               :return 0}]
-                                   :depth 2
-                                   :id 4
-                                   :name "F"
-                                   :return "return F"}]
-                       :depth 1
-                       :id 3
-                       :name "C"
-                       :return 8}]
-           :depth 0
-           :id 1
-           :name "A"
-           :return 3}])
+(fact "ancestors"
+  (mapv q/traverse-tree-dissoc-zipper (mm/qt test-trace :a
+                                             [:name "B"]
+                                             [:name "I"]))
+  => [{:args [1 2]
+       :children [{:args [3 4 5]
+                   :children []
+                   :depth 1
+                   :id 2
+                   :name "B"
+                   :return :b-return} {:args [1 {:a [10 11 12]} 5]
+                   :children [{:args [2 5 9]
+                               :children [{:args []
+                                           :children []
+                                           :depth 3
+                                           :id 5
+                                           :name "I"
+                                           :return 0}]
+                               :depth 2
+                               :id 4
+                               :name "F"
+                               :return "return F"}]
+                   :depth 1
+                   :id 3
+                   :name "C"
+                   :return 8}]
+       :depth 0
+       :id 1
+       :name "A"
+       :return 3}])
+
+(fact "descendants"
+  (mapv q/traverse-tree-dissoc-zipper (mm/qt test-trace :d
+                                             [:name "B"]
+                                             [:name "I"]))
+  => [{:args [3 4 5]
+       :children [{:args []
+                   :children []
+                   :depth 2
+                   :name "D"
+                   :return 4}
+                  {:args [:a 1 :b 2]
+                   :children []
+                   :depth 2
+                   :name "E"
+                   :return 5}]
+       :depth 1
+       :id 2
+       :name "B"
+       :return :b-return}
+      {:args []
+       :children [{:args []
+                   :children []
+                   :depth 4
+                   :id 6
+                   :name "L"
+                   :return 0}]
+       :depth 3
+       :id 5
+       :name "I"
+       :return 0}])
