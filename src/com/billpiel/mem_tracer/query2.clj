@@ -24,10 +24,10 @@
        rest))
 
 (defn all-sib-zips [z]
-  (->> z
-       z/leftmost
-       right-sib-zips
-       (filter #(not (= % z)))))
+  (let [lefty (z/leftmost z)
+        zips (lazy-cat [lefty] (right-sib-zips lefty))
+        not-z #(not (= % z))]
+    (filter not-z zips)))
 
 (defn ancestor-zips
   [z]
@@ -172,7 +172,7 @@
 
 (defn query-dos
   [tree pred-map pred-final-fn] ;; pred-final-fn takes a node (w/ :zipper) and fn to retrieve tags from a node
-  (let [tag-map #spy/d (get-tag-map tree #spy/d pred-map)
+  (let [tag-map (get-tag-map tree pred-map)
         get-tag-fn (mk-get-tag-fn tag-map)
         pred-final-fn' #(pred-final-fn % get-tag-fn)]
     (->> tree
@@ -252,8 +252,6 @@
 
 (defn mk-relative-final-qry-fn
   [opts tag-set]
-  #spy/d opts
-  #spy/d tag-set
   (let [tag-set (util/obj-pred-action-else tag-set
                                            (partial some #{:w})
                                            :t [:a :s :d])
@@ -317,7 +315,7 @@
                     (mk-relative-final-qry-fn opts
                                               #{:a}))]
     (query tree
-           {:a (some-mk-query-fn #spy/d pred-vecs)}
+           {:a (some-mk-query-fn pred-vecs)}
            qry-final)))
 
 (defmethod exec-query :range

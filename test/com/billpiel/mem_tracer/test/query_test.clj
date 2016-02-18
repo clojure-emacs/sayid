@@ -23,12 +23,14 @@
                              :depth 1
                              :args [3 4 5]
                              :return :b-return
-                             :children [{:name "D"
+                             :children [{:id 10
+                                         :name "D"
                                          :depth 2
                                          :args []
                                          :return 4
                                          :children []}
-                                        {:name "E"
+                                        {:id 11
+                                         :name "E"
                                          :depth 2
                                          :args [:a 1 :b 2]
                                          :return 5
@@ -53,7 +55,25 @@
                                                                  :depth 4
                                                                  :args []
                                                                  :return 0
-                                                                 :children []}]}]}]}]})
+                                                                 :children []}]}
+                                                    {:id 7
+                                                     :name "M"
+                                                     :depth 3
+                                                     :args []
+                                                     :return 0
+                                                     :children []}
+                                                    {:id 8
+                                                     :name "N"
+                                                     :depth 3
+                                                     :args []
+                                                     :return 0
+                                                     :children []}
+                                                    {:id 9
+                                                     :name "O"
+                                                     :depth 3
+                                                     :args []
+                                                     :return 0
+                                                     :children []}]}]}]})
 
 (fact "simple"
   (mm/qt test-trace [:depth 1]) =>
@@ -129,11 +149,13 @@
        :children [{:args []
                    :children []
                    :depth 2
+                   :id 10
                    :name "D"
                    :return 4}
                   {:args [:a 1 :b 2]
                    :children []
                    :depth 2
+                   :id 11
                    :name "E"
                    :return 5}]
        :depth 1
@@ -151,3 +173,9 @@
        :id 5
        :name "I"
        :return 0}])
+
+
+(fact :dev "siblings"
+      (mapv q/traverse-tree-dissoc-zipper (mm/qt test-trace :s
+                                                 [:name "E"]))
+      => [{:args [], :children [], :depth 2, :id 10, :name "D", :return 4}])
