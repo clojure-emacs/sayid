@@ -88,19 +88,17 @@
                  tag-set)
         tag-seq))
 
-(defn mk-some-tags-in-seq-fn
-  [tag-set tag-seq-functor]
-  (fn [node tag-fn]
-    #spy/d (:name node)
-    #spy/d tag-fn
-    #spy/d (->> (tag-seq-functor node tag-fn)
-         (some-tags tag-set))))
+(defmacro defn-tag-seq-fnr->>
+  [name args & body]
+  `(defn ~name
+     ~(conj args 'tag-seq-functor)
+     (fn [~'node ~'tag-fn]
+       (->> (~'tag-seq-functor ~'node ~'tag-fn)
+            ~@body))))
 
-(defn prepend-node-to-lazy-tag-seq-functor
-  [tag-seq-fnr]
-  (fn [node tags-fn]
-    (lazy-cat [(tags-fn node)]
-              (tag-seq-fnr node tags-fn))))
+(defn-tag-seq-fnr->> mk-some-tags-in-seq-fn [tag-set] (some-tags tag-set))
+(defn-tag-seq-fnr->> take-lazy-tag-seq-functor [n] (take n))
+(defn-tag-seq-fnr->> prepend-node-to-lazy-tag-seq-functor [] (lazy-cat [(tag-fn node)]))
 
 ;; === tags
 
@@ -122,8 +120,7 @@
 (defn mk-get-tag-fn
   [tag-map]
   (fn [tree]
-    #spy/d (:name tree)
-    #spy/d (-> tree
+    (-> tree
         :id
         tag-map)))
 
@@ -267,15 +264,15 @@
   (let [tag-set (util/obj-pred-action-else tag-set
                                            (partial some #{:w})
                                            :t [:a :s :d])
-        f' (fn [tag-seq]
-             (let [stis (->> tag-seq
+        f' (fn [tag-seq-fnr]
+             (let [taker (if dist
+                           (partial take-lazy-tag-seq-functor dist)
+                           identity)
+                   stis (->> tag-seq-fnr
+                             taker
                              prepend-node-to-lazy-tag-seq-functor
                              (mk-some-tags-in-seq-fn tag-set))]
-               (if dist
-                 (fn [node tags-fn]
-                   #spy/d node
-                   (take dist (stis node tags-fn)))
-                 stis)))
+               stis))
         rel-seq-map {:a lazy-descendant-tag-seq
                      :s lazy-sibling-tag-seq
                      :d lazy-ancestor-tag-seq}]
