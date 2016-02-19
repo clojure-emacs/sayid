@@ -250,6 +250,15 @@
           (when (not-empty r)
             (recur r))))))
 
+(defn every-pred-2
+  [& preds]
+  (fn [node tag-fn]
+    (loop [[f & r] preds]
+      (and (f node tag-fn)
+           (if (not-empty r)
+             (recur r)
+             true)))))
+
 (defn mk-relative-final-qry-fn
   [opts tag-set]
   (let [tag-set (util/obj-pred-action-else tag-set
@@ -319,8 +328,12 @@
            qry-final)))
 
 (defmethod exec-query :range
-  [tree body]
-  (throw (Exception. "Range queries not implemented.")))
+  [tree [_ ancestor descendant]]
+  (query tree
+         {:a (mk-query-fn ancestor)
+          :d (mk-query-fn descendant)}
+         (every-pred-2 (mk-relative-final-qry-fn [:d] #{:a})
+                       (mk-relative-final-qry-fn [:a] #{:d}))))
 
 (defn q
   [tree & body]

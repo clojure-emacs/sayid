@@ -90,25 +90,27 @@
     :name "C"
     :return 8}])
 
-(fact "segment"
-  (mm/qt test-trace :s
-         [:name "C"]
-         [:name "I"])
-  => [{:args [1 {:a [10 11 12]} 5],
-       :children
-       [{:args [2 5 9],
-         :children
-         [{:args []
-           :children []
-           :depth 3
-           :name "I"
-           :return 0}],
-         :depth 2,
-         :name "F",
-         :return "return F"}],
-       :depth 1,
-       :name "C",
-       :return 8}])
+(fact :dev "range"
+      (mapv q/traverse-tree-dissoc-zipper
+            (mm/qt test-trace :r
+                   [:name "C"]
+                   [:name "I"]))
+      => [{:args [1 {:a [10 11 12]} 5]
+           :children [{:args [2 5 9]
+                       :children [{:args []
+                                   :children []
+                                   :depth 3
+                                   :id 5
+                                   :name "I"
+                                   :return 0}]
+                       :depth 2
+                       :id 4
+                       :name "F"
+                       :return "return F"}]
+           :depth 1
+           :id 3
+           :name "C"
+           :return 8}])
 
 (fact "ancestors"
   (mapv q/traverse-tree-dissoc-zipper (mm/qt test-trace :a
@@ -174,8 +176,12 @@
        :name "I"
        :return 0}])
 
-
-(fact :dev "siblings"
-      (mapv q/traverse-tree-dissoc-zipper (mm/qt test-trace :s
-                                                 [:name "E"]))
-      => [{:args [], :children [], :depth 2, :id 10, :name "D", :return 4}])
+(fact "siblings"
+  (mapv q/traverse-tree-dissoc-zipper (mm/qt test-trace :s
+                                             [:name "E"]))
+  => [{:args []
+       :children []
+       :depth 2
+       :id 10
+       :name "D"
+       :return 4}])
