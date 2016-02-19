@@ -91,7 +91,9 @@
 (defn mk-some-tags-in-seq-fn
   [tag-set tag-seq-functor]
   (fn [node tag-fn]
-    (->> (tag-seq-functor node tag-fn)
+    #spy/d (:name node)
+    #spy/d tag-fn
+    #spy/d (->> (tag-seq-functor node tag-fn)
          (some-tags tag-set))))
 
 (defn prepend-node-to-lazy-tag-seq-functor
@@ -120,7 +122,8 @@
 (defn mk-get-tag-fn
   [tag-map]
   (fn [tree]
-    (-> tree
+    #spy/d (:name tree)
+    #spy/d (-> tree
         :id
         tag-map)))
 
@@ -260,26 +263,26 @@
              true)))))
 
 (defn mk-relative-final-qry-fn
-  [opts tag-set]
+  [opts tag-set & [dist]]
   (let [tag-set (util/obj-pred-action-else tag-set
                                            (partial some #{:w})
                                            :t [:a :s :d])
-        rel-seq-map {:a (mk-some-tags-in-seq-fn tag-set
-                                                (prepend-node-to-lazy-tag-seq-functor
-                                                 lazy-descendant-tag-seq))
-                     :s (mk-some-tags-in-seq-fn tag-set
-                                                lazy-sibling-tag-seq)
-                     :d (mk-some-tags-in-seq-fn tag-set
-                                                (prepend-node-to-lazy-tag-seq-functor
-                                                 lazy-ancestor-tag-seq))}]
+        f' (fn [tag-seq]
+             (let [stis (->> tag-seq
+                             prepend-node-to-lazy-tag-seq-functor
+                             (mk-some-tags-in-seq-fn tag-set))]
+               (if dist
+                 (fn [node tags-fn]
+                   #spy/d node
+                   (take dist (stis node tags-fn)))
+                 stis)))
+        rel-seq-map {:a lazy-descendant-tag-seq
+                     :s lazy-sibling-tag-seq
+                     :d lazy-ancestor-tag-seq}]
     (->> opts
          (keep rel-seq-map)
+         (map f')
          (apply some-fn-2))))
-
-(defn mk-limited-relative-final-qry-fn
-  [opts tag-set]
-  (throw (Exception. "not implemented")))
-
 
 (defn parse-to-kw-chars
   [s]
@@ -318,11 +321,9 @@
                            [fr rr]
                            [nil r])
         opts (parse-to-kw-chars syms)
-        qry-final (if dist
-                    (mk-limited-relative-final-qry-fn opts
-                                                      #{:a})
-                    (mk-relative-final-qry-fn opts
-                                              #{:a}))]
+        qry-final (mk-relative-final-qry-fn opts
+                                            #{:a}
+                                            dist)]
     (query tree
            {:a (some-mk-query-fn pred-vecs)}
            qry-final)))

@@ -90,27 +90,27 @@
     :name "C"
     :return 8}])
 
-(fact :dev "range"
-      (mapv q/traverse-tree-dissoc-zipper
-            (mm/qt test-trace :r
-                   [:name "C"]
-                   [:name "I"]))
-      => [{:args [1 {:a [10 11 12]} 5]
-           :children [{:args [2 5 9]
-                       :children [{:args []
-                                   :children []
-                                   :depth 3
-                                   :id 5
-                                   :name "I"
-                                   :return 0}]
-                       :depth 2
-                       :id 4
-                       :name "F"
-                       :return "return F"}]
-           :depth 1
-           :id 3
-           :name "C"
-           :return 8}])
+(fact "range"
+  (mapv q/traverse-tree-dissoc-zipper
+        (mm/qt test-trace :r
+               [:name "C"]
+               [:name "I"]))
+  => [{:args [1 {:a [10 11 12]} 5]
+       :children [{:args [2 5 9]
+                   :children [{:args []
+                               :children []
+                               :depth 3
+                               :id 5
+                               :name "I"
+                               :return 0}]
+                   :depth 2
+                   :id 4
+                   :name "F"
+                   :return "return F"}]
+       :depth 1
+       :id 3
+       :name "C"
+       :return 8}])
 
 (fact "ancestors"
   (mapv q/traverse-tree-dissoc-zipper (mm/qt test-trace :a
@@ -176,6 +176,13 @@
        :name "I"
        :return 0}])
 
+
+(fact :dev "descendants - limited distance"
+      (mapv q/traverse-tree-dissoc-zipper (mm/qt test-trace
+                                                 :d 1
+                                                 [:name "A"]))
+      => [])
+
 (fact "siblings"
   (mapv q/traverse-tree-dissoc-zipper (mm/qt test-trace :s
                                              [:name "E"]))
@@ -184,4 +191,10 @@
        :depth 2
        :id 10
        :name "D"
-       :return 4}])
+       :return 4}
+      {:args [:a 1 :b 2]
+       :children []
+       :depth 2
+       :id 11
+       :name "E"
+       :return 5}])
