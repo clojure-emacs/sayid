@@ -261,9 +261,9 @@
 
 (defn mk-relative-final-qry-fn
   [opts tag-set & [dist]]
-  (let [tag-set (util/obj-pred-action-else tag-set
-                                           (partial some #{:w})
-                                           :t [:a :s :d])
+  (let [opts' (util/obj-pred-action-else opts
+                                        (partial some #{:w})
+                                        :t [:a :s :d])
         f' (fn [tag-seq-fnr]
              (let [taker (if dist
                            (partial take-lazy-tag-seq-functor dist)
@@ -276,7 +276,7 @@
         rel-seq-map {:a lazy-descendant-tag-seq
                      :s lazy-sibling-tag-seq
                      :d lazy-ancestor-tag-seq}]
-    (->> opts
+    (->> opts'
          (keep rel-seq-map)
          (map f')
          (apply some-fn-2))))

@@ -9,7 +9,7 @@
           B     C
         D  E     F
           G H     I  M N O
-             J   K L
+             J    L
 
 ")
 
@@ -323,6 +323,92 @@
        :id 1
        :name "A"
        :return 3}])
+
+
+(fact "wildcard"
+  (mapv q/traverse-tree-dissoc-zipper (mm/qt test-trace
+                                             :w
+                                             [:name "I"]))
+  => [{:args [1 2]
+       :children [{:args [1 {:a [10 11 12]} 5]
+                   :children [{:args [2 5 9]
+                               :children [{:args []
+                                           :children [{:args []
+                                                       :children []
+                                                       :depth 4
+                                                       :id 6
+                                                       :name "L"
+                                                       :return 0}]
+                                           :depth 3
+                                           :id 5
+                                           :name "I"
+                                           :return 0}
+                                          {:args []
+                                           :children []
+                                           :depth 3
+                                           :id 7
+                                           :name "M"
+                                           :return 0}
+                                          {:args []
+                                           :children []
+                                           :depth 3
+                                           :id 8
+                                           :name "N"
+                                           :return 0}
+                                          {:args []
+                                           :children []
+                                           :depth 3
+                                           :id 9
+                                           :name "O"
+                                           :return 0}]
+                               :depth 2
+                               :id 4
+                               :name "F"
+                               :return "return F"}]
+                   :depth 1
+                   :id 3
+                   :name "C"
+                   :return 8}]
+       :depth 0
+       :id 1
+       :name "A"
+       :return 3}])
+
+(fact :dev "wildcard -- limited distance"
+      (mapv q/traverse-tree-dissoc-zipper (mm/qt test-trace
+                                                 :w 1
+                                                 [:name "I"]))
+      => [{:args [2 5 9]
+           :children [{:args []
+                       :children [{:args []
+                                   :children []
+                                   :depth 4
+                                   :id 6
+                                   :name "L"
+                                   :return 0}]
+                       :depth 3
+                       :id 5
+                       :name "I"
+                       :return 0} {:args []
+                       :children []
+                       :depth 3
+                       :id 7
+                       :name "M"
+                       :return 0} {:args []
+                       :children []
+                       :depth 3
+                       :id 8
+                       :name "N"
+                       :return 0} {:args []
+                       :children []
+                       :depth 3
+                       :id 9
+                       :name "O"
+                       :return 0}]
+           :depth 2
+           :id 4
+           :name "F"
+           :return "return F"}])
 
 (fact "siblings"
   (mapv q/traverse-tree-dissoc-zipper (mm/qt test-trace :s
