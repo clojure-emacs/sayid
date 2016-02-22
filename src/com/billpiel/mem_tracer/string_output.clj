@@ -105,7 +105,7 @@
       (if mline
         ["\n"
           (indent-line-breaks (str s "\n")
-                              indent-base
+                              (+ 2 indent-base) ;; Why does this need to be 2?
                               :end
                               (apply str
                                      (repeat indent-offset
@@ -132,7 +132,7 @@
       (mapv #(multi-line-indent-MZ :label (str (first %) " => ")
                                    :value  (second %)
                                    :indent-base (:depth tree)
-                                   :indent-offset  2)
+                                   :indent-offset  3)
             arg-map))))
 
 (defn args-str
