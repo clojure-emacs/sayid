@@ -236,7 +236,7 @@
                                                                            %))
                                                  form)))
     :else (symbol (apply str
-                         "___"
+                         "$"
                          (clojure.string/join "-"
                                               path)))))
 
@@ -254,42 +254,80 @@
 
 (defn get-path->form-maps
   [src]
-  (let [sx #spy/d (-> src swap-in-path-syms clojure.walk/macroexpand-all)
-        sx-seq #spy/d (->> sx
-                           (tree-seq list? seq)
-                           (filter list?))
+  (let [sx-seq (->> src
+                    (tree-seq list? seq)
+                    (filter list?))
         pair-fn (fn [form]
-                  (interleave (seq #spy/d form)
+                  (interleave (seq  form)
                               (repeat form)))]
     (apply hash-map
-           #spy/d (mapcat pair-fn
-                          sx-seq))))
+           (mapcat pair-fn
+                   sx-seq))))
 
 (clojure.pprint/pprint (get-path->form-maps '(a (b 1) c)))
 
-(defn mk-expr-mapping
-  [src]
-  (let [xs->sx (deep-zipmap-all (-> src clojure.walk/macroexpand-all swap-in-path-syms)
-                                (-> src swap-in-path-syms clojure.walk/macroexpand-all))
-        xs->x  (deep-zipmap-all (-> src clojure.walk/macroexpand-all swap-in-path-syms)
-                                (-> src clojure.walk/macroexpand-all))
-        s->o (deep-zipmap (-> src swap-in-path-syms)
-                          src)
-        sx->s (get-path->form-maps src)
-        f (fn [k]
-            {k {:xs k
-                :sx (get xs->sx k)
-                :x  (get xs->x k)
-                :s (->> k
-                        (get xs->sx)
-                        (get sx->s))
-                :o (->> k
-                        (get xs->sx)
-                        (get sx->s)
-                        (get s->o))}})]
-    (apply merge (map f (keys xs->sx)))))
+;;  xl     (-> src clojure.walk/macroexpand-all swap-in-path-syms)
+;;  src   src
+;;  oloc (-> src swap-in-path-syms clojure.walk/macroexpand-all)
+;;  x-form (clojure.walk/macroexpand-all src)
 
-(clojure.pprint/pprint (mk-expr-mapping '(a b c)))
+;;  xloc->oloc (deep-zipmap (-> src clojure.walk/macroexpand-all swap-in-path-syms) (-> src swap-in-path-syms clojure.walk/macroexpand-all))
+;;  xl->src  (deep-zipmap (-> src clojure.walk/macroexpand-all swap-in-path-syms) (clojure.walk/macroexpand-all src))
+;;  ol->olop (-> src swap-in-path-syms get-path->form-maps)
+;;  xl->xlxp (-> src clojure.walk/macroexpand-all swap-in-path-syms get-path->form-maps)
+;;  ol->olxp (-> src swap-in-path-syms clojure.walk/macroexpand-all get-path->form-maps)
+;;  xl->xp (deep-zipmap (-> src clojure.walk/macroexpand-all swap-in-path-syms) (clojure.walk/macroexpand-all src))
+;;  olop->op (deep-zipmap (swap-in-path-syms src) src)
+
+(do
+  (defn mk-expr-mapping
+    [src]
+    (let [xls (->> src
+                   clojure.walk/macroexpand-all
+                   swap-in-path-syms
+                   (tree-seq list? seq)
+                   (remove list?))
+          xloc->oloc (deep-zipmap (-> src clojure.walk/macroexpand-all swap-in-path-syms)
+                                  (-> src swap-in-path-syms clojure.walk/macroexpand-all))
+          xl->src  (deep-zipmap (-> src clojure.walk/macroexpand-all swap-in-path-syms)
+                                (clojure.walk/macroexpand-all src))
+          ol->olop (-> src
+                       swap-in-path-syms
+                       get-path->form-maps)
+          xl->xlxp (-> src
+                       clojure.walk/macroexpand-all
+                       swap-in-path-syms
+                       get-path->form-maps)
+          ol->olxp (-> src
+                       swap-in-path-syms
+                       clojure.walk/macroexpand-all
+                       get-path->form-maps)
+          xlxp->xp (deep-zipmap (-> src clojure.walk/macroexpand-all swap-in-path-syms)
+                                (clojure.walk/macroexpand-all src))
+          olop->op (deep-zipmap (swap-in-path-syms src) src)
+          f (fn [xl]
+              {xl {:xl xl
+                   :sym (xl->src xl)
+                   :xlxp (xl->xlxp xl)
+                   :ol (xloc->oloc xl)
+                   :olop (-> xl
+                             xloc->oloc
+                             ol->olop)
+                   :xp  (-> xl
+                            xl->xlxp
+                            xlxp->xp)
+                   :op (-> xl
+                           xloc->oloc
+                           ol->olop
+                           olop->op)
+                   :olxp (-> xl
+                             xloc->oloc
+                             ol->olxp)
+                   :xlop ()}})]
+      (apply merge (map f #spy/d xls))))
+
+  (clojure.pprint/pprint (mk-expr-mapping '(-> a b))))
+
 
 #_ (do
 
