@@ -251,6 +251,16 @@
        (zipmap (tree-seq coll? seq a)
                (tree-seq coll? seq b)))
 
+(defn deep-replace-symbols
+  [smap coll]
+  (clojure.walk/postwalk #(if (symbol? %)
+                            (or (get smap %)
+                                %)
+                            %)
+                         coll))
+
+(deep-replace-symbols {'aa 'aaa 'a 'aa '(a) '(aa) '(aa) '(aaa)}
+              '(b (a)))
 
 (defn get-path->form-maps
   [src]
@@ -289,6 +299,7 @@
                    (remove list?))
           xloc->oloc (deep-zipmap (-> src clojure.walk/macroexpand-all swap-in-path-syms)
                                   (-> src swap-in-path-syms clojure.walk/macroexpand-all))
+          oloc->xloc (clojure.set/map-invert xloc->oloc)
           xl->src  (deep-zipmap (-> src clojure.walk/macroexpand-all swap-in-path-syms)
                                 (clojure.walk/macroexpand-all src))
           ol->olop (-> src
@@ -323,7 +334,10 @@
                    :olxp (-> xl
                              xloc->oloc
                              ol->olxp)
-                   :xlop ()}})]
+                   :xlop (-> xl
+                             xloc->oloc
+                             ol->olop
+                             ((partial deep-replace-symbols oloc->xloc)))}})]
       (apply merge (map f #spy/d xls))))
 
   (clojure.pprint/pprint (mk-expr-mapping '(-> a b))))
