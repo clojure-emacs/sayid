@@ -189,9 +189,10 @@
 (defn source-fn-var
   [fn-var]
   (->> fn-var
-       meta ((juxt :ns
-                   (constantly "/")
-                   :name))
+       meta
+       ((juxt :ns
+              (constantly "/")
+              :name))
        (apply str)
        symbol
        clojure.repl/source-fn))
@@ -226,12 +227,13 @@
          noob)))
 
 (defn swap-in-path-syms*
-  [form func & [path]]
+  [form func parent & [path]]
   (cond
     (special-operator? form) form
     (coll? form)  (back-into form
                              (doall (map-indexed #(swap-in-path-syms* %2
                                                                       func
+                                                                      form
                                                                       (conj (or (not-empty path)
                                                                                 [])
                                                                             %))
@@ -240,15 +242,17 @@
                                "$"
                                (clojure.string/join "-"
                                                     path)))
+                path
                 form
-                path)))
+                parent)))
 
 (defn swap-in-path-syms
   ([form func]
    (swap-in-path-syms* form
-                       func))
+                       func
+                       nil))
   ([form]
-   (swap-in-path-syms* form
+   (swap-in-path-syms form
                        #(first %&))))
 
 
@@ -270,9 +274,6 @@
                                 %)
                             %)
                          coll))
-
-(deep-replace-symbols {'aa 'aaa 'a 'aa '(a) '(aa) '(aa) '(aaa)}
-              '(b (a)))
 
 (defn get-path->form-maps
   [src]
@@ -354,6 +355,7 @@
 
   (clojure.pprint/pprint (mk-expr-mapping '(-> a b))))
 
+(defn f1 [a] (let [[b] [4 5]] {a (-> a (+ b) dec)}))
 
 #_ (do
 
@@ -366,6 +368,7 @@
 
 
      (def src '(defn f1 [a] (let [[b] [4 5]] {a (-> a (+ b) dec)})))
+
 
      '(def f1 (fn* ([a]
                     (let* [vec__21418 [4 5]
@@ -406,9 +409,16 @@
 
      (clojure.pprint/pprint
       (deep-zipmap-all (swap-in-path-syms src)
-                                         src)
+                       src)
 
-                            )
+      )
 
      (swap-in-path-syms
-      (clojure.walk/macroexpand-all src)))
+      (clojure.walk/macroexpand-all src))
+
+     (defn pf [s path f parent]
+       (if (and (= 0 (last path)) (seq? parent) )
+         `(fff ~f '~(get mmm s {}))
+         f))
+
+     (defn fff [f m] (fn [& x] (println (first m)) (println x) (apply f x))))
