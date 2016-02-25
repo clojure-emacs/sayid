@@ -225,20 +225,32 @@
              [])
          noob)))
 
-(defn swap-in-path-syms
-  [form & [path]]
+(defn swap-in-path-syms*
+  [form func & [path]]
   (cond
     (special-operator? form) form
     (coll? form)  (back-into form
-                             (doall (map-indexed #(swap-in-path-syms %2
-                                                                     (conj (or (not-empty path)
-                                                                               [])
-                                                                           %))
+                             (doall (map-indexed #(swap-in-path-syms* %2
+                                                                      func
+                                                                      (conj (or (not-empty path)
+                                                                                [])
+                                                                            %))
                                                  form)))
-    :else (symbol (apply str
-                         "$"
-                         (clojure.string/join "-"
-                                              path)))))
+    :else (func (symbol (apply str
+                               "$"
+                               (clojure.string/join "-"
+                                                    path)))
+                form
+                path)))
+
+(defn swap-in-path-syms
+  ([form func]
+   (swap-in-path-syms* form
+                       func))
+  ([form]
+   (swap-in-path-syms* form
+                       #(first %&))))
+
 
 (defn deep-zipmap-no-colls
        [a b]
@@ -265,8 +277,8 @@
 (defn get-path->form-maps
   [src]
   (let [sx-seq (->> src
-                    (tree-seq list? seq)
-                    (filter list?))
+                    (tree-seq coll? seq)
+                    (filter coll?))
         pair-fn (fn [form]
                   (interleave (seq  form)
                               (repeat form)))]
@@ -295,8 +307,8 @@
     (let [xls (->> src
                    clojure.walk/macroexpand-all
                    swap-in-path-syms
-                   (tree-seq list? seq)
-                   (remove list?))
+                   (tree-seq coll? seq)
+                   )
           xloc->oloc (deep-zipmap (-> src clojure.walk/macroexpand-all swap-in-path-syms)
                                   (-> src swap-in-path-syms clojure.walk/macroexpand-all))
           oloc->xloc (clojure.set/map-invert xloc->oloc)
