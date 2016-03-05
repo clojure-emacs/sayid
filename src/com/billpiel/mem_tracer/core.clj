@@ -1,6 +1,7 @@
 (ns com.billpiel.mem-tracer.core
   (:require com.billpiel.mem-tracer.string-output
             [com.billpiel.mem-tracer.trace :as trace]
+            [com.billpiel.mem-tracer.deep-trace :as dtrace]
             [com.billpiel.mem-tracer.workspace :as ws]
             [com.billpiel.mem-tracer.recording :as rec]
             [com.billpiel.mem-tracer.query2 :as q]
@@ -46,17 +47,46 @@
 (util/defalias w-rs! ws-reset!)
 
 (defn ws-clear-log!
-"Clears the log of the active workspace, but preserves traces and other
+  "Clears the log of the active workspace, but preserves traces and other
   properties."
-[] (#'ws/clear-log! workspace))
+  [] (#'ws/clear-log! workspace))
 (util/defalias w-cl! ws-clear-log!)
+
+(defn ws-add-trace-fn!*
+  "`fn-sym` is a symbol that references an existing function. Applies an
+  enabled trace to said functions. Adds the traces to the active
+  workspace trace set."
+  [fn-sym]
+  (#'ws/add-trace-*! (ws-init! :quiet)
+                     :fn
+                     fn-sym)
+  fn-sym)
+
+(defmacro ws-add-trace-fn!
+  [fn-sym]
+  `(ws-add-trace-fn!* (util/fully-qualify-sym fn-sym)))
+
+(defn ws-add-deep-trace-fn!*
+  "`fn-sym` is a symbol that references an existing function. Applies an
+  enabled trace to said functions. Adds the traces to the active
+  workspace trace set."
+  [fn-sym]
+  (#'ws/add-trace-*! (ws-init! :quiet)
+                     :deep-fn
+                     fn-sym)
+  fn-sym)
+
+(defmacro ws-add-deep-trace-fn!
+  [fn-sym]
+  `(ws-add-deep-trace-fn!* (util/fully-qualify-sym '~fn-sym)))
 
 (defn ws-add-trace-ns!*
   "`ns-sym` is a symbol that references an existing namespace. Applies an enabled
   trace to all functions in that namespace. Adds the traces to the active workspace trace set."
   [ns-sym]
-  (#'ws/add-trace-ns! (ws-init! :quiet)
-                      ns-sym)
+  (#'ws/add-trace-*! (ws-init! :quiet)
+                     :ns
+                     ns-sym)
   ns-sym)
 
 (defmacro ws-add-trace-ns!
@@ -70,7 +100,8 @@
 (defn ws-remove-trace-ns!
   "`ns-sym` is a symbol that references an existing namespace. Removes all
   traces applied to the namespace."
-  [ns-sym] (#'ws/remove-trace-ns! (ws-init! :quiet)
+  [ns-sym] (#'ws/remove-trace-*! (ws-init! :quiet)
+                                  :ns
                                   ns-sym))
 (util/defalias w-rtn! ws-remove-trace-ns!)
 

@@ -8,25 +8,29 @@
     (let [shelf '$ws
           ws (atom (ws/default-workspace))]
 
-      (ws/deref! (ws/save-as! ws shelf 'test1))
+      (ws/deep-deref! (ws/save-as! ws
+                                   shelf
+                                   'test1))
       => {:children []
           :depth 0
           :id :root10
           :path [:root10]
-          :traced #{}
-          :ws-slot '$ws/test1}
+          :traced {:ns #{}, :fn #{}, :deep-fn #{}}
+          :ws-slot '$ws/test1
+          :arg-map nil}
 
 
       (ws/reset-to-nil! ws)
 
-      (ws/deref! @(ns-resolve (the-ns shelf)
-                                       'test1))
+      (ws/deep-deref! @(ns-resolve (the-ns shelf)
+                                   'test1))
       => {:children []
           :depth 0
           :id :root10
           :path [:root10]
-          :traced #{}
-          :ws-slot '$ws/test1}
+          :traced {:ns #{}, :fn #{}, :deep-fn #{}}
+          :ws-slot '$ws/test1
+          :arg-map nil}
 
       (remove-ns shelf))))
 
@@ -40,13 +44,14 @@
 
       (ws/load! ws shelf 'test1)
 
-      (ws/deref! ws)
+      (ws/deep-deref! ws)
       => {:children []
           :depth 0
           :id :root10
           :path [:root10]
-          :traced #{}
-          :ws-slot '$ws/test1}
+          :traced {:ns #{}, :fn #{}, :deep-fn #{}}
+          :ws-slot '$ws/test1
+          :arg-map nil}
 
       (remove-ns shelf))))
 
@@ -58,18 +63,19 @@
       (ws/save-as! ws shelf 'test1)
       (ws/reset-to-nil! ws)
 
-      (ws/deref! ws)
+      (ws/deep-deref! ws)
       => nil
 
       (ws/load! ws shelf @(ns-resolve '$ws 'test1))
 
-      (ws/deref! ws)
+      (ws/deep-deref! ws)
       => {:children []
           :depth 0
           :id :root10
           :path [:root10]
-          :traced #{}
-          :ws-slot '$ws/test1}
+          :traced {:ns #{}, :fn #{}, :deep-fn #{}}
+          :ws-slot '$ws/test1
+          :arg-map nil}
 
       (remove-ns shelf))))
 
@@ -81,18 +87,19 @@
       (ws/save-as! ws shelf 'test1)
       (ws/reset-to-nil! ws)
 
-      (ws/deref! ws)
+      (ws/deep-deref! ws)
       => nil
 
       (ws/load! ws shelf :test1)
 
-      (ws/deref! ws)
+      (ws/deep-deref! ws)
       => {:children []
           :depth 0
           :id :root10
           :path [:root10]
-          :traced #{}
-          :ws-slot '$ws/test1}
+          :traced {:ns #{}, :fn #{}, :deep-fn #{}}
+          :ws-slot '$ws/test1
+          :arg-map nil}
 
       (remove-ns shelf))))
 
@@ -108,22 +115,24 @@
       (ws/load! ws shelf 'test1)
       => (throws Exception)
 
-      (ws/deref! ws)
+      (ws/deep-deref! ws)
       => {:children []
           :depth 0
           :id :root11
           :path [:root11]
-          :traced #{}
-          :ws-slot nil}
+          :traced {:ns #{}, :fn #{}, :deep-fn #{}}
+          :ws-slot nil
+          :arg-map nil}
 
       (ws/load! ws shelf 'test1 :f)
 
-      (ws/deref! ws)
+      (ws/deep-deref! ws)
       => {:children []
           :depth 0
           :id :root10
           :path [:root10]
-          :traced #{}
-          :ws-slot '$ws/test1}
+          :traced {:ns #{}, :fn #{}, :deep-fn #{}}
+          :ws-slot '$ws/test1
+          :arg-map nil}
 
       (remove-ns shelf))))

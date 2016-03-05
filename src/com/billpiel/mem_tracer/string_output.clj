@@ -144,6 +144,15 @@
                         (:depth tree)
                         :end "   ")))
 
+(defn args*-str
+  [tree]
+  (let [test #(-> tree % not-empty)]
+    ((cond
+       (test :arg-map) args-map-str
+       (test :args) args-str
+       :else (constantly ""))
+     tree)))
+
 (defn throw-str
   [tree]
   (when-let [thrown (:throw tree)]
@@ -174,13 +183,13 @@
                              :children
                              not-empty)]
     [(name->string tree true) "\n"
-     (args-map-str tree)
+     (args*-str tree)
      (when has-children
        [(return-str tree :pos :before)
         (throw-str tree)
         (mapv tree->string* (:children tree))
         (name->string tree false) "\n"
-        (args-map-str tree)])
+        (args*-str tree)])
      (return-str tree :pos :after)
      (throw-str tree)
      (when (-> tree :depth nil? not)

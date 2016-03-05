@@ -1,13 +1,16 @@
 (ns com.billpiel.mem-tracer.workspace
   (:require [com.billpiel.mem-tracer.trace :as trace]
             [com.billpiel.mem-tracer.util.other :as util]
-            [com.billpiel.mem-tracer.shelf :as shelf]
-            [com.billpiel.mem-tracer.util.walk18 :as walk-1.8]))
+            [com.billpiel.mem-tracer.shelf :as shelf]))
+
+(def default-traced {:ns #{}
+                       :fn #{}
+                       :deep-fn #{}})
 
 (defn default-workspace
   []
   (-> (trace/mk-tree :id-prefix "root")
-      (merge {:traced #{}
+      (merge {:traced default-traced
               :ws-slot nil})
       (vary-meta assoc
                  ::workspace
@@ -37,55 +40,60 @@
   [ws]
   (swap! ws assoc :children (atom [])))
 
-(defn add-trace-ns!
-  [ws ns-sym]
-  (swap! ws #(update-in % [:traced] conj [:ns ns-sym]))
-  (trace/trace-ns* ns-sym @ws))
+(defn apply-trace-set-restrictions
+  [sm]
+  (update-in sm
+             [:fn]
+             clojure.set/difference
+             (:deep-fn sm)))
 
-(defn remove-trace-ns!
+(defn add-trace-*!
+  [ws type sym]
+  (swap! ws (fn [ws'] (-> ws'
+                          (update-in [:traced type]
+                                     conj sym)
+                          apply-trace-set-restrictions)))
+  (trace/trace* type sym @ws))
+
+(defn remove-trace-*!
   "Untrace all fns in the given name space."
-  [ws ns-sym]
-  (swap! ws update-in [:traced] disj [:ns ns-sym])
-  (trace/untrace-ns* ns-sym))
+  [ws type sym]
+  (swap! ws update-in
+         [:traced type]
+         disj sym)
+  (trace/untrace* :ns sym))
 
 (defn enable-all-traces!
   [ws]
-  (let [w @ws]
-    (doseq [[type sym] (:traced w)]
-      (trace/trace* type sym w))))
+  (let [w @ws
+        f (fn [type] (doseq [sym (get-in w [:traced type])]
+                       (trace/trace* type sym w)))]
+    (doall (map f [:deep-fn
+                   :fn
+                   :ns]))
+    true))
 
 (defn disable-all-traces!
   [ws]
-  (doseq [t (:traced @ws)]
+  (doseq [t (-> @ws
+                :traced
+                util/flatten-map-kv-pairs)]
     (apply trace/untrace* t)))
 
 (defn remove-all-traces!
   [ws]
   (disable-all-traces! ws)
-  (swap! ws assoc :traced #{}))
-
-#_ (defn deref!
-     [ws]
-     (walk-1.8/prewalk #(if (and (-> %
-                                     meta
-                                     ::trace/tree)
-                                 (-> %
-                                     :children
-                                     util/atom?))
-                          (do (-> % :arg-map force)
-                              (update-in % [:children] deref))
-                          %)
-                       (util/atom?-> ws)))
+  (swap! ws assoc :traced default-traced))
 
 (defn deep-deref!
   [tree]
-  (let [tree' (util/atom?-> tree)
-        dr-kids (-> tree' :children util/atom?->)
-        forced-arg-map (-> tree' :arg-map force)
-        kids (mapv deep-deref! dr-kids)]
-    (assoc tree'
-           :children kids
-           :arg-map forced-arg-map)))
+  (if-let [tree' (util/atom?-> tree)]
+    (let [dr-kids (-> tree' :children util/atom?->)
+          forced-arg-map (-> tree' :arg-map force)
+          kids (mapv deep-deref! dr-kids)]
+      (assoc tree'
+             :children kids
+             :arg-map forced-arg-map))))
 
 (defn save!
   [ws ws-shelf]

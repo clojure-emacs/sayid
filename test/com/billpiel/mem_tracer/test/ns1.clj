@@ -55,3 +55,20 @@
   (func-sleep-20)
   (func-sleep-30)
   (func-sleep-20))
+
+(defn func-identity
+  [& args]
+  args)
+
+(defn func-complex
+  [a b]
+  (let [c (* a b)]
+    (-> c
+        inc
+        (+ a)
+        vector
+        (conj b))))
+
+(defn func-666
+  [a b]
+  (vector a (+ a (* 2 b))))

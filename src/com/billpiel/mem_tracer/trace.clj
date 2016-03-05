@@ -64,7 +64,7 @@
       m)))
 
 
-(defn ^{:private true} start-trace
+(defn start-trace
   "This function is called by trace. Prints to standard output, but
 may be rebound to do anything you like. 'name' is optional."
   [trace-log tree]
@@ -72,7 +72,7 @@ may be rebound to do anything you like. 'name' is optional."
          conj
          tree))  ;; string!!
 
-(defn ^{:private true} end-trace
+(defn  end-trace
   "This function is called by trace. Prints to standard output, but
 may be rebound to do anything you like. 'name' is optional."
   [trace-log idx tree]
@@ -81,7 +81,7 @@ may be rebound to do anything you like. 'name' is optional."
          [idx]
          #(merge % tree)))
 
-(defn ^{:skip-wiki true} trace-fn-call
+(defn  trace-fn-call
   "Traces a single call to a function f with args. 'name' is the
 symbol name of the function."
   [workspace name f args meta']
@@ -112,16 +112,29 @@ symbol name of the function."
 
 ;; mk-fn-tree + start-trace + binding + end-trace = 345ms
 
+(defn shallow-tracer
+  [workspace vname m original-fn]
+  (fn tracing-wrapper [& args]
+    (trace-fn-call workspace
+                   vname
+                   original-fn
+                   args
+                   m)))
+
+
+
 (defn apply-trace-to-var
-  [^clojure.lang.Var v workspace]
+  [^clojure.lang.Var v tracer-fn workspace]
   (let [ns (.ns v)
         s  (.sym v)
         m (meta v)
         f @v
         vname (str ns "/" s)]
     (doto v
-      (alter-var-root #(fn tracing-wrapper [& args]
-                         (trace-fn-call workspace vname % args m)))
+      (alter-var-root (partial tracer-fn
+                               workspace
+                               vname
+                               m))
       (alter-meta! assoc ::traced [(:id workspace) f]))))
 
 (defn ^{:skip-wiki true} untrace-var*
@@ -133,7 +146,7 @@ symbol name of the function."
   ([ns s]
      (untrace-var* (ns-resolve ns s)))
   ([v]
-     (let [^clojure.lang.Var v (if (var? v) v (resolve v))
+   (let [^clojure.lang.Var v (if (var? v) v (resolve v))
            ns (.ns v)
            s  (.sym v)
            [_ f]  ((meta v) ::traced)]
@@ -152,16 +165,18 @@ symbol name of the function."
 
   In the binary case, ns should be a namespace object or a symbol
   naming a namespace and s a symbol to be resolved in that namespace."
-  ([ns s workspace]
-   (trace-var* (ns-resolve ns s) workspace))
-  ([v workspace]
+  ([ns s tracer-fn workspace]
+   (trace-var* (ns-resolve ns s)
+               tracer-fn
+               workspace))
+  ([v tracer-fn workspace]
    (let [^clojure.lang.Var v (if (var? v) v (resolve v))]
      (when (and (ifn? @v) (-> v meta :macro not))
        (if-let [[traced-id traced-f] (-> v meta ::traced)]
          (when (not= traced-id (:id workspace))
            (untrace-var* v)
-           (apply-trace-to-var v workspace))
-         (apply-trace-to-var v workspace))))))
+           (apply-trace-to-var v tracer-fn workspace))
+         (apply-trace-to-var v tracer-fn workspace))))))
 
 (defn ^{:skip-wiki true} trace-ns*
   "Replaces each function from the given namespace with a version wrapped
@@ -174,7 +189,9 @@ symbol name of the function."
     (when-not ('#{clojure.core com.billpiel.mem-tracer.core} (.name ns))
       (let [ns-fns (->> ns ns-interns vals (filter (comp fn? var-get)))]
         (doseq [f ns-fns]
-          (trace-var* f workspace))))))
+          (trace-var* f
+                      shallow-tracer
+                      workspace))))))
 
 (defn ^{:skip-wiki true} untrace-ns*
   "Reverses the effect of trace-var / trace-vars / trace-ns for the
@@ -193,9 +210,11 @@ symbol name of the function."
   (trace-ns* sym workspace))
 
 (defmethod trace* :fn
-  [_ sym workspace]
-  (throw (Exception. "not implemented")))
-
+  [_ fn-sym workspace]
+  (-> fn-sym
+      resolve
+      (trace-var* shallow-tracer
+                  workspace)))
 
 (defmulti untrace* (fn [type sym] type))
 
@@ -204,5 +223,7 @@ symbol name of the function."
   (untrace-ns* sym))
 
 (defmethod untrace* :fn
-  [_ sym]
-  (throw (Exception. "not implemented")))
+  [_ fn-sym]
+  (-> fn-sym
+      resolve
+      untrace-var*))

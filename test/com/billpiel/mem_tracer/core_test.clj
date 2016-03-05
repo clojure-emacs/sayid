@@ -1,9 +1,8 @@
 (ns com.billpiel.mem-tracer.core-test
   (:require [midje.sweet :refer :all]
-            [com.billpiel.mem-tracer.core :as mt]
-            [com.billpiel.mem-tracer.trace :as mtt]
-            [com.billpiel.mem-tracer.query :as mq]
-            [com.billpiel.mem-tracer.util.tree-query :as mtq]
+            [com.billpiel.mem-tracer.core :as mm]
+            [com.billpiel.mem-tracer.trace :as mt]
+            [com.billpiel.mem-tracer.query2 :as mq]
             [com.billpiel.mem-tracer.test-utils :as t-utils]
             com.billpiel.mem-tracer.test.ns1
             [com.billpiel.mem-tracer.expected-output1 :as ex-o1]
@@ -12,151 +11,195 @@
 
 
 (fact-group "basic test"
-  (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
-  (mt/ws-reset!)
-  (with-redefs [mtt/now (t-utils/mock-now-fn)
+  (mt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
+  (mm/ws-reset!)
+  (with-redefs [mt/now (t-utils/mock-now-fn)
                 gensym (t-utils/mock-gensym-fn)]
-    (mt/ws-add-trace-ns! com.billpiel.mem-tracer.test.ns1)
+    (mm/ws-add-trace-ns! com.billpiel.mem-tracer.test.ns1)
     (com.billpiel.mem-tracer.test.ns1/func1 :a)
-    (let [trace (mt/ws-deref!)
-          expected-trace {:children [{:args [:a]
-                                      :children [{:args [:a]
-                                                  :children []
-                                                  :depth 2
-                                                  :ended-at #inst "2010-01-01T03:00:00.000-00:00"
-                                                  :id :12
-                                                  :name "com.billpiel.mem-tracer.test.ns1/func2"
-                                                  :path [:root10 :11 :12]
-                                                  :return :a
-                                                  :started-at #inst "2010-01-01T02:00:00.000-00:00"}]
-                                      :depth 1
-                                      :ended-at #inst "2010-01-01T04:00:00.000-00:00"
-                                      :id :11
-                                      :name "com.billpiel.mem-tracer.test.ns1/func1"
-                                      :path [:root10 :11]
-                                      :return :a
-                                      :started-at #inst "2010-01-01T01:00:00.000-00:00"}]
-                          :depth 0
-                          :id :root10
-                          :path [:root10]
-                          :traced #{[:ns 'com.billpiel.mem-tracer.test.ns1]}
+    (let [trace (mm/ws-deref!)
+          expected-trace {:arg-map nil,
+                          :children
+                          [{:args [:a],
+                            :path [:root10 :11],
+                            :children
+                            [{:args [:a],
+                              :path [:root10 :11 :12],
+                              :children [],
+                              :meta
+                              {:arglists '([arg1]),
+                               :column 1,
+                               :file "FILE",
+                               :line 4,
+                               :name 'func2,
+                               :ns (the-ns 'com.billpiel.mem-tracer.test.ns1)},
+                              :return :a,
+                              :started-at 1
+                              :name "com.billpiel.mem-tracer.test.ns1/func2",
+                              :arg-map {"arg1" :a},
+                              :id :12,
+                              :ended-at 2
+                              :depth 2}],
+                            :meta
+                            {:arglists '([arg1]),
+                             :column 1,
+                             :file "FILE",
+                             :line 8,
+                             :name 'func1,
+                             :ns (the-ns 'com.billpiel.mem-tracer.test.ns1)},
+                            :return :a,
+                            :started-at 0
+                            :name "com.billpiel.mem-tracer.test.ns1/func1",
+                            :arg-map {"arg1" :a},
+                            :id :11,
+                            :ended-at 3
+                            :depth 1}],
+                          :depth 0,
+                          :fn nil,
+                          :id :root10,
+                          :path [:root10],
+                          :traced
+                          {:deep-fn #{}, :fn #{}, :ns #{'com.billpiel.mem-tracer.test.ns1}},
                           :ws-slot nil}]
 
       (fact "log is correct"
-        trace
+        (-> trace
+            ((t-utils/redact-file-fn [:children 0 :meta :file]
+                                     [:children 0 :children 0 :meta :file])))
         => expected-trace)
 
 
-      (fact "string output is correct"
-        (-> trace
-            mt/tree->string
-            t-utils/replace-ansi)
-        => ["\n " [:red] "v " [:bg-black :red] "com.billpiel.mem-tracer.test.ns1/func1  " [:white] ":11" [nil] "\n " [:red] "| " [:yellow] ":a" [:bold-off] "" [nil] "\n " [:red] "| returns => " [:yellow] ":a" [:bold-off] "\n " [:red] "|" [:yellow] "v " [:bg-black :yellow] "com.billpiel.mem-tracer.test.ns1/func2  " [:white] ":12" [nil] "\n " [:red] "|" [:yellow] "| " [:yellow] ":a" [:bold-off] "" [nil] "\n " [:red] "|" [:yellow] "| returned => " [:yellow] ":a" [:bold-off] "\n " [:red] "|" [:yellow] "^ " [nil] "\n " [:red] "| " [:bg-black :red] "com.billpiel.mem-tracer.test.ns1/func1  " [:white] ":11" [nil] "\n " [:red] "| " [:yellow] ":a" [:bold-off] "" [nil] "\n " [:red] "| returned => " [:yellow] ":a" [:bold-off] "\n " [:red] "^ " [nil] "\n\n  " [nil] "\n"])
-
       (fact "remove trace"
-        (mt/ws-remove-trace-ns! 'com.billpiel.mem-tracer.test.ns1)
+        (mm/ws-remove-trace-ns! 'com.billpiel.mem-tracer.test.ns1)
         (com.billpiel.mem-tracer.test.ns1/func1 :b)
-        (mt/ws-deref!) => (assoc expected-trace
-                                 :traced #{})))
+        (-> (mm/ws-deref!)
+            ((t-utils/redact-file-fn [:children 0 :meta :file]
+                                     [:children 0 :children 0 :meta :file])))
+        => (assoc expected-trace
+                  :traced {:fn #{}, :ns #{}, :deep-fn #{}})))
 
-    (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)))
+    (mt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)))
 
-(fact-group "long values display nicely"
-  (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
-  (mt/ws-reset!)
-  (with-redefs [mtt/now (t-utils/mock-now-fn)
-                gensym (t-utils/mock-gensym-fn)]
+#_ (fact-group "long values display nicely"
+     (mt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
+     (mm/ws-reset!)
+     (with-redefs [mt/now (t-utils/mock-now-fn)
+                   gensym (t-utils/mock-gensym-fn)]
 
-    (mt/ws-add-trace-ns! com.billpiel.mem-tracer.test.ns1)
-    (com.billpiel.mem-tracer.test.ns1/func-identity {:a 1
-                                                     :b 2
-                                                     :c [1 2 3 4 5 6 7]
-                                                     :d [1 2 3 4 5 6 7]
-                                                     :e [1 2 3 4 5 6 7]
-                                                     :f [1 2 3 4 5 6 7]}
-                                                    :hello
-                                                    [1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0])
-    (let [trace (mt/ws-deref!)]
+       (mm/ws-add-trace-ns! com.billpiel.mem-tracer.test.ns1)
+       (com.billpiel.mem-tracer.test.ns1/func-identity {:a 1
+                                                        :b 2
+                                                        :c [1 2 3 4 5 6 7]
+                                                        :d [1 2 3 4 5 6 7]
+                                                        :e [1 2 3 4 5 6 7]
+                                                        :f [1 2 3 4 5 6 7]}
+                                                       :hello
+                                                       [1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0])
+       (let [trace (mm/ws-deref!)]
 
-      (fact "string output is correct"
-        (->> trace
-             mt/tree->string
-             t-utils/replace-ansi)
-        => ex-o1/expected1))
+         (fact "string output is correct"
+           (->> trace
+                mm/tree->string
+                t-utils/replace-ansi)
+           => ex-o1/expected1))
 
-    (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)))
+       (mt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)))
 
 (fact-group "about enable/disable -all-traces!"
-  (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
-  (mt/ws-reset!)
-  (with-redefs [mtt/now (t-utils/mock-now-fn)
+  (mt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
+  (mm/ws-reset!)
+  (with-redefs [mt/now (t-utils/mock-now-fn)
                 gensym (t-utils/mock-gensym-fn)]
 
-    (mt/ws-add-trace-ns! com.billpiel.mem-tracer.test.ns1)
+    (mm/ws-add-trace-ns! com.billpiel.mem-tracer.test.ns1)
 
     (fact "ws-disable-all-traces! works"
-      (mt/ws-disable-all-traces!)
+      (mm/ws-disable-all-traces!)
       (com.billpiel.mem-tracer.test.ns1/func1 :a)
 
-      (mt/ws-deref!)
+      (mm/ws-deref!)
       => {:children []
           :depth 0
           :id :root10
           :path [:root10]
-          :traced #{[:ns 'com.billpiel.mem-tracer.test.ns1]}
-          :ws-slot nil})
+          :traced {:deep-fn #{}, :fn #{}, :ns #{'com.billpiel.mem-tracer.test.ns1}}
+          :ws-slot nil
+          :fn nil
+          :arg-map nil})
 
     (fact "ws-enable-all-traces! works"
-      (mt/ws-enable-all-traces!)
+      (mm/ws-enable-all-traces!)
       (com.billpiel.mem-tracer.test.ns1/func1 :a)
 
-      (mt/ws-deref!)
-      => {:children [{:args [:a]
-                      :children [{:args [:a]
+      (-> (mm/ws-deref!)
+          ((t-utils/redact-file-fn [:children 0 :meta :file]
+                                   [:children 0 :children 0 :meta :file])))
+      => {:arg-map nil
+          :children [{:arg-map {"arg1" :a}
+                      :args [:a]
+                      :children [{:arg-map {"arg1" :a}
+                                  :args [:a]
                                   :children []
                                   :depth 2
-                                  :ended-at #inst "2010-01-01T03:00:00.000-00:00"
+                                  :ended-at 2
                                   :id :12
+                                  :meta {:arglists '([arg1])
+                                         :column 1
+                                         :file "FILE"
+                                         :line 4
+                                         :name 'func2
+                                         :ns (the-ns 'com.billpiel.mem-tracer.test.ns1)}
                                   :name "com.billpiel.mem-tracer.test.ns1/func2"
                                   :path [:root10 :11 :12]
                                   :return :a
-                                  :started-at #inst "2010-01-01T02:00:00.000-00:00"}]
+                                  :started-at 1}]
                       :depth 1
-                      :ended-at #inst "2010-01-01T04:00:00.000-00:00"
+                      :ended-at 3
                       :id :11
+                      :meta {:arglists '([arg1])
+                             :column 1
+                             :file "FILE"
+                             :line 8
+                             :name 'func1
+                             :ns (the-ns 'com.billpiel.mem-tracer.test.ns1)}
                       :name "com.billpiel.mem-tracer.test.ns1/func1"
                       :path [:root10 :11]
                       :return :a
-                      :started-at #inst "2010-01-01T01:00:00.000-00:00"}]
+                      :started-at 0}]
           :depth 0
+          :fn nil
           :id :root10
           :path [:root10]
-          :traced #{[:ns 'com.billpiel.mem-tracer.test.ns1]}
+          :traced {:deep-fn #{}
+                   :fn #{}
+                   :ns #{'com.billpiel.mem-tracer.test.ns1}}
           :ws-slot nil})
 
-    (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)))
+    (mt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)))
 
 (fact-group "about remove-all-traces!"
-  (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
-  (mt/ws-reset!)
-  (with-redefs [mtt/now (t-utils/mock-now-fn)
+  (mt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
+  (mm/ws-reset!)
+  (with-redefs [mt/now (t-utils/mock-now-fn)
                 gensym (t-utils/mock-gensym-fn)]
 
-    (mt/ws-add-trace-ns! com.billpiel.mem-tracer.test.ns1)
+    (mm/ws-add-trace-ns! com.billpiel.mem-tracer.test.ns1)
 
     (fact "remove-all-traces! works"
-      (mt/remove-all-traces!)
+      (mm/ws-remove-all-traces!)
       (com.billpiel.mem-tracer.test.ns1/func1 :a)
 
-      (mt/ws-deref!)
+      (mm/ws-deref!)
       => {:children []
           :depth 0
           :id :root10
           :path [:root10]
-          :traced #{}
-          :ws-slot nil})
+          :traced {:fn #{} :ns #{} :deep-fn #{}}
+          :ws-slot nil
+          :fn nil
+          :arg-map nil})
 
-    (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)))
+    (mt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)))
 
 (def mock-log {:children
                [{:args [:a]
@@ -165,7 +208,7 @@
                  :name "com.billpiel.mem-tracer.test.ns1/func-throws"
                  :id :11
                  :parent-id :root10
-                 :ended-at #inst "2010-01-01T02:00:00.000-00:00"
+                 :ended-at 1
                  :throw
                  {:cause "Exception from func-throws: :a"
                   :via
@@ -366,22 +409,24 @@
 
 (fact-group "exception thrown"
 
-  (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
-  (with-redefs [mtt/now (t-utils/mock-now-fn)
+  (mt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
+  (with-redefs [mt/now (t-utils/mock-now-fn)
                 gensym (t-utils/mock-gensym-fn)]
-    (let [trace-root (mt/ws-add-trace-ns! com.billpiel.mem-tracer.test.ns1)
+    (let [trace-root (mm/ws-add-trace-ns! com.billpiel.mem-tracer.test.ns1)
           _ (try
               (com.billpiel.mem-tracer.test.ns1/func-throws :a)
               (catch Throwable t))
-          trace (mt/ws-deref!)]
+          trace (mm/ws-deref!)]
 
       (fact "log is correct"
         (dissoc trace :children)
         => {:depth 0
             :id :root10
             :path [:root10]
-            :traced #{[:ns 'com.billpiel.mem-tracer.test.ns1]}
-            :ws-slot nil})
+            :traced {:fn #{}, :ns #{'com.billpiel.mem-tracer.test.ns1}, :deep-fn #{}}
+            :ws-slot nil
+            :fn nil
+            :arg-map nil})
 
       (fact "log is correct"
         (-> trace :children count)
@@ -401,154 +446,383 @@
             :type java.lang.Exception})
 
       (fact "log is correct"
-        (-> trace :children first (dissoc :throw))
+        (-> trace
+            :children
+            first
+            (dissoc :throw)
+            ((t-utils/redact-file-fn [:meta :file])))
         => {:args [:a]
             :children []
             :depth 1
-            :ended-at #inst "2010-01-01T02:00:00.000-00:00"
+            :ended-at 1
             :id :11
             :name "com.billpiel.mem-tracer.test.ns1/func-throws"
             :path [:root10 :11]
-            :started-at #inst "2010-01-01T01:00:00.000-00:00"})
+            :started-at 0
+            :meta {:arglists '([arg1])
+                   :column 1
+                   :file "FILE"
+                   :line 12
+                   :name 'func-throws
+                   :ns (the-ns 'com.billpiel.mem-tracer.test.ns1)}
+            :arg-map {"arg1" :a}})
 
-      (fact "string output is correct"
-        (-> trace mt/tree->string t-utils/replace-ansi)
-        => ["\n " [:red] "v " [:bg-black :red] "com.billpiel.mem-tracer.test.ns1/func-throws  " [:white] ":11" [nil] "\n " [:red] "| " [:yellow] ":a" [:bold-off] "" [nil] "\n " [:red] "| " [:bold :white :bg-red] "THROW" [nil] " => " [:magenta] "\"Exception from func-throws: :a\"" [:bold-off] "\n " [:red] "| " [:red] "[" [:bold-off] "" [:magenta] "\"com.billpiel.mem_tracer.test.ns1$func_throws ns1.clj:14\"" [:bold-off] "" [:red] "]" [:bold-off] "" [nil] "\n\n " [:red] "^ " [nil] "\n\n  " [nil] "\n"])
-
-      (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1))))
+      (mt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1))))
 
 (fact-group "querying with query/query"
 
-  (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
-  (mt/ws-clear-log!)
-  (mt/ws-reset!)
-  (with-redefs [mtt/now (t-utils/mock-now-fn)
+  (mt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
+  (mm/ws-clear-log!)
+  (mm/ws-reset!)
+  (with-redefs [mt/now (t-utils/mock-now-fn)
                 gensym (t-utils/mock-gensym-fn)]
-    (let [trace-root (mt/ws-add-trace-ns! com.billpiel.mem-tracer.test.ns1)
+    (let [trace-root (mm/ws-add-trace-ns! com.billpiel.mem-tracer.test.ns1)
           _ (com.billpiel.mem-tracer.test.ns1/func3-1 3 8)
-          trace (mt/ws-deref!)]
+          trace (mm/ws-deref!)]
 
       (fact "find node by name and all parents"
-        (mtq/query (mq/trace->zipper trace)
-                   {:a (mq/mk-query-fn [:name #".*func3-4"]) }
-                   (some-fn (mtq/has-all-tags-fn :a)
-                            (mtq/has-descen-fn :a)))
-        => [{:children [{:args [3 8]
-                         :children [{:args [8]
-                                     :children [{:args [8]
+        (def r  (->> (mm/qt trace
+                            :a
+                            [:name #".*func3-4"])
+                     (mapv mq/traverse-tree-dissoc-zipper)
+                     ((t-utils/redact-file-fn [0 :children 0 :meta :file]
+                                              [0 :children 0 :children 0 :meta :file]
+                                              [0 :children 0 :children 0 :children 0 :meta :file]))))
+        r
+        => [{:arg-map nil
+             :children [{:arg-map {"arg1" 3
+                                   "arg2" 8}
+                         :args [3 8]
+                         :children [{:arg-map {"arg1" 8}
+                                     :args [8]
+                                     :children [{:arg-map {"arg1" 8}
+                                                 :args [8]
                                                  :children []
                                                  :depth 3
-                                                 :ended-at #inst "2010-01-01T04:00:00.000-00:00"
+                                                 :ended-at 7
                                                  :id :15
+                                                 :meta {:arglists '([arg1])
+                                                        :column 1
+                                                        :file "FILE"
+                                                        :line 16
+                                                        :name 'func3-4
+                                                        :ns (the-ns 'com.billpiel.mem-tracer.test.ns1)}
                                                  :name "com.billpiel.mem-tracer.test.ns1/func3-4"
                                                  :path [:root10 :11 :13 :15]
                                                  :return 8
-                                                 :started-at #inst "2010-01-01T04:00:00.000-00:00"}]
+                                                 :started-at 6}]
                                      :depth 2
-                                     :ended-at #inst "2010-01-01T04:00:00.000-00:00"
+                                     :ended-at 8
                                      :id :13
+                                     :meta {:arglists '([arg1])
+                                            :column 1
+                                            :file "FILE"
+                                            :line 28
+                                            :name 'func3-3
+                                            :ns (the-ns 'com.billpiel.mem-tracer.test.ns1)}
                                      :name "com.billpiel.mem-tracer.test.ns1/func3-3"
                                      :path [:root10 :11 :13]
                                      :return 8
-                                     :started-at #inst "2010-01-01T04:00:00.000-00:00"}]
+                                     :started-at 3}]
                          :depth 1
-                         :ended-at #inst "2010-01-01T04:00:00.000-00:00"
+                         :ended-at 11
                          :id :11
+                         :meta {:arglists '([arg1 arg2])
+                                :column 1
+                                :file "FILE"
+                                :line 33
+                                :name 'func3-1
+                                :ns (the-ns 'com.billpiel.mem-tracer.test.ns1)}
                          :name "com.billpiel.mem-tracer.test.ns1/func3-1"
                          :path [:root10 :11]
                          :return 13
-                         :started-at #inst "2010-01-01T01:00:00.000-00:00"}]
+                         :started-at 0}]
              :depth 0
+             :fn nil
              :id :root10
              :path [:root10]
-             :traced #{[:ns 'com.billpiel.mem-tracer.test.ns1]}
+             :traced {:deep-fn #{}
+                      :fn #{}
+                      :ns #{'com.billpiel.mem-tracer.test.ns1}}
              :ws-slot nil}])
 
-      (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1))))
+      (mt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1))))
 
 (fact-group "querying with q macro"
-  (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
-  (mt/ws-clear-log!)
-  (mt/ws-reset!)
-  (with-redefs [mtt/now (t-utils/mock-now-fn)
+  (mt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
+  (mm/ws-clear-log!)
+  (mm/ws-reset!)
+  (with-redefs [mt/now (t-utils/mock-now-fn)
                 gensym (t-utils/mock-gensym-fn)]
-    (let [trace-root (mt/ws-add-trace-ns! com.billpiel.mem-tracer.test.ns1)
+    (let [trace-root (mm/ws-add-trace-ns! com.billpiel.mem-tracer.test.ns1)
           _ (com.billpiel.mem-tracer.test.ns1/func3-1 3 8)
-          trace (mt/ws-deref!)]
+          trace (mm/ws-deref!)]
+
       (fact "find node by name and all parents"
-        (mt/qw :a [:name #".*func3-4"])
-        =>  [{:path [:root10]
-              :children
-              [{:args [3 8]
-                :path [:root10 :11]
-                :children
-                [{:args [8]
-                  :path [:root10 :11 :13]
-                  :children
-                  [{:args [8]
-                    :path [:root10 :11 :13 :15]
-                    :children []
-                    :return 8
-                    :started-at #inst "2010-01-01T04:00:00.000-00:00"
-                    :name "com.billpiel.mem-tracer.test.ns1/func3-4"
-                    :id :15
-                    :ended-at #inst "2010-01-01T04:00:00.000-00:00"
-                    :depth 3}]
-                  :return 8
-                  :started-at #inst "2010-01-01T04:00:00.000-00:00"
-                  :name "com.billpiel.mem-tracer.test.ns1/func3-3"
-                  :id :13
-                  :ended-at #inst "2010-01-01T04:00:00.000-00:00"
-                  :depth 2}]
-                :return 13
-                :started-at #inst "2010-01-01T01:00:00.000-00:00"
-                :name "com.billpiel.mem-tracer.test.ns1/func3-1"
-                :id :11
-                :ended-at #inst "2010-01-01T04:00:00.000-00:00"
-                :depth 1}]
-              :id :root10
+        (->> (mm/qw :a [:name #".*func3-4"])
+             (mapv mq/traverse-tree-dissoc-zipper)
+             ((t-utils/redact-file-fn [0 :children 0 :meta :file]
+                                      [0 :children 0 :children 0 :meta :file]
+                                      [0 :children 0 :children 0 :children 0 :meta :file])))
+        =>  [{:arg-map nil
+              :children [{:arg-map {"arg1" 3
+                                    "arg2" 8}
+                          :args [3 8]
+                          :children [{:arg-map {"arg1" 8}
+                                      :args [8]
+                                      :children [{:arg-map {"arg1" 8}
+                                                  :args [8]
+                                                  :children []
+                                                  :depth 3
+                                                  :ended-at 7
+                                                  :id :15
+                                                  :meta {:arglists '([arg1])
+                                                         :column 1
+                                                         :file "FILE"
+                                                         :line 16
+                                                         :name 'func3-4
+                                                         :ns (the-ns 'com.billpiel.mem-tracer.test.ns1)}
+                                                  :name "com.billpiel.mem-tracer.test.ns1/func3-4"
+                                                  :path [:root10 :11 :13 :15]
+                                                  :return 8
+                                                  :started-at 6}]
+                                      :depth 2
+                                      :ended-at 8
+                                      :id :13
+                                      :meta {:arglists '([arg1])
+                                             :column 1
+                                             :file "FILE"
+                                             :line 28
+                                             :name 'func3-3
+                                             :ns (the-ns 'com.billpiel.mem-tracer.test.ns1)}
+                                      :name "com.billpiel.mem-tracer.test.ns1/func3-3"
+                                      :path [:root10 :11 :13]
+                                      :return 8
+                                      :started-at 3}]
+                          :depth 1
+                          :ended-at 11
+                          :id :11
+                          :meta {:arglists '([arg1 arg2])
+                                 :column 1
+                                 :file "FILE"
+                                 :line 33
+                                 :name 'func3-1
+                                 :ns (the-ns 'com.billpiel.mem-tracer.test.ns1)}
+                          :name "com.billpiel.mem-tracer.test.ns1/func3-1"
+                          :path [:root10 :11]
+                          :return 13
+                          :started-at 0}]
               :depth 0
-              :traced #{[:ns 'com.billpiel.mem-tracer.test.ns1]}
+              :fn nil
+              :id :root10
+              :path [:root10]
+              :traced {:deep-fn #{}
+                       :fn #{}
+                       :ns #{'com.billpiel.mem-tracer.test.ns1}}
               :ws-slot nil}])
-      (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1))))
+      (mt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1))))
 
 (fact-group "trace a namespace by alias"
-  (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
-  (mt/ws-reset!)
+  (mt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
+  (mm/ws-reset!)
 
-  (with-redefs [mtt/now (t-utils/mock-now-fn)
+  (with-redefs [mt/now (t-utils/mock-now-fn)
                 gensym (t-utils/mock-gensym-fn)]
-    (mt/ws-add-trace-ns! ns1)
+    (mm/ws-add-trace-ns! ns1)
     (com.billpiel.mem-tracer.test.ns1/func1 :a)
-    (let [trace (mt/ws-deref!)
-          expected-trace {:children [{:args [:a]
-                                      :children [{:args [:a]
+    (let [trace (mm/ws-deref!)
+          expected-trace {:arg-map nil
+                          :children [{:arg-map {"arg1" :a}
+                                      :args [:a]
+                                      :children [{:arg-map {"arg1" :a}
+                                                  :args [:a]
                                                   :children []
                                                   :depth 2
-                                                  :ended-at #inst "2010-01-01T03:00:00.000-00:00"
+                                                  :ended-at 2
                                                   :id :12
+                                                  :meta {:arglists '([arg1])
+                                                         :column 1
+                                                         :file "FILE"
+                                                         :line 4
+                                                         :name 'func2
+                                                         :ns (the-ns 'com.billpiel.mem-tracer.test.ns1)}
                                                   :name "com.billpiel.mem-tracer.test.ns1/func2"
                                                   :path [:root10 :11 :12]
                                                   :return :a
-                                                  :started-at #inst "2010-01-01T02:00:00.000-00:00"}]
+                                                  :started-at 1}]
                                       :depth 1
-                                      :ended-at #inst "2010-01-01T04:00:00.000-00:00"
+                                      :ended-at 3
                                       :id :11
+                                      :meta {:arglists '([arg1])
+                                             :column 1
+                                             :file "FILE"
+                                             :line 8
+                                             :name 'func1
+                                             :ns (the-ns 'com.billpiel.mem-tracer.test.ns1)}
                                       :name "com.billpiel.mem-tracer.test.ns1/func1"
                                       :path [:root10 :11]
                                       :return :a
-                                      :started-at #inst "2010-01-01T01:00:00.000-00:00"}]
+                                      :started-at 0}]
                           :depth 0
+                          :fn nil
                           :id :root10
                           :path [:root10]
-                          :traced #{[:ns 'com.billpiel.mem-tracer.test.ns1]}
+                          :traced {:deep-fn #{}
+                                   :fn #{}
+                                   :ns #{'com.billpiel.mem-tracer.test.ns1}}
                           :ws-slot nil}]
 
       (fact "log is correct"
-        trace
+        (-> trace
+            ((t-utils/redact-file-fn [:children 0 :meta :file]
+                                     [:children 0 :children 0 :meta :file])))
         => expected-trace))
 
-    (mtt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)))
+    (mt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)))
+
+
+(fact-group "deep trace a single function"
+  (mt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
+  (mm/ws-reset!)
+
+  (with-redefs [mt/now (t-utils/mock-now-fn)
+                gensym (t-utils/mock-gensym-fn)]
+    (mm/ws-add-deep-trace-fn! ns1/func-complex)
+    (com.billpiel.mem-tracer.test.ns1/func-complex 2 3)
+    (let [trace (mm/ws-deref!)
+          expected-trace {:arg-map nil
+                          :children [{:arg-map {"a" 2
+                                                "b" 3}
+                                      :args [2 3]
+                                      :children [{:arg-map {'a 2
+                                                            'b 3}
+                                                  :args [2 3]
+                                                  :children []
+                                                  :depth 2
+                                                  :ended-at 2
+                                                  :id :12
+                                                  :name "(* a b)"
+                                                  :path [:root10 :11 :12]
+                                                  :return 6
+                                                  :src-map {:ol '$3_1_1_0
+                                                            :olop '($3_1_1_0 $3_1_1_1 $3_1_1_2)
+                                                            :olxp '($3_1_1_0 $3_1_1_1 $3_1_1_2)
+                                                            :op '(* a b)
+                                                            :sym '*
+                                                            :xl '$2_1_1_1_1_0
+                                                            :xlop '($2_1_1_1_1_0 $2_1_1_1_1_1 $2_1_1_1_1_2)
+                                                            :xlxp '($2_1_1_1_1_0 $2_1_1_1_1_1 $2_1_1_1_1_2)
+                                                            :xp '(* a b)}
+                                                  :started-at 1}
+                                                 {:arg-map {'c 6}
+                                                  :args [6]
+                                                  :children []
+                                                  :depth 2
+                                                  :ended-at 4
+                                                  :id :13
+                                                  :name "(-> c inc (+ a) vector (conj b))"
+                                                  :path [:root10 :11 :13]
+                                                  :return 7
+                                                  :src-map {:ol '$3_2_2
+                                                            :olop '(-> $3_2_1 $3_2_2 ($3_2_3_0 $3_2_3_1) $3_2_4 ($3_2_5_0 $3_2_5_1))
+                                                            :olxp '($3_2_2 $3_2_1)
+                                                            :op '(-> c inc (+ a) vector (conj b))
+                                                            :sym 'inc
+                                                            :xl '$2_1_1_2_1_1_1_0
+                                                            :xlop '(-> $2_1_1_2_1_1_1_1 $2_1_1_2_1_1_1_0 ($2_1_1_2_1_1_0 $2_1_1_2_1_1_2) $2_1_1_2_1_0 ($2_1_1_2_0 $2_1_1_2_2))
+                                                            :xlxp '($2_1_1_2_1_1_1_0 $2_1_1_2_1_1_1_1)
+                                                            :xp '(inc c)}
+                                                  :started-at 3}
+                                                 {:arg-map {'a 2
+                                                            '(inc c) 7}
+                                                  :args [7 2]
+                                                  :children []
+                                                  :depth 2
+                                                  :ended-at 6
+                                                  :id :14
+                                                  :name "(+ a)"
+                                                  :path [:root10 :11 :14]
+                                                  :return 9
+                                                  :src-map {:ol '$3_2_3_0
+                                                            :olop '($3_2_3_0 $3_2_3_1)
+                                                            :olxp '($3_2_3_0 ($3_2_2 $3_2_1) $3_2_3_1)
+                                                            :op '(+ a)
+                                                            :sym '+
+                                                            :xl '$2_1_1_2_1_1_0
+                                                            :xlop '($2_1_1_2_1_1_0 $2_1_1_2_1_1_2)
+                                                            :xlxp '($2_1_1_2_1_1_0 ($2_1_1_2_1_1_1_0 $2_1_1_2_1_1_1_1) $2_1_1_2_1_1_2)
+                                                            :xp '(+ (inc c) a)}
+                                                  :started-at 5}
+                                                 {:arg-map {'(+ (inc c) a) 9}
+                                                  :args [9]
+                                                  :children []
+                                                  :depth 2
+                                                  :ended-at 8
+                                                  :id :15
+                                                  :name "(-> c inc (+ a) vector (conj b))"
+                                                  :path [:root10 :11 :15]
+                                                  :return [9]
+                                                  :src-map {:ol '$3_2_4
+                                                            :olop '(-> $3_2_1 $3_2_2 ($3_2_3_0 $3_2_3_1) $3_2_4 ($3_2_5_0 $3_2_5_1))
+                                                            :olxp '($3_2_4 ($3_2_3_0 ($3_2_2 $3_2_1) $3_2_3_1))
+                                                            :op '(-> c inc (+ a) vector (conj b))
+                                                            :sym 'vector
+                                                            :xl '$2_1_1_2_1_0
+                                                            :xlop '(-> $2_1_1_2_1_1_1_1 $2_1_1_2_1_1_1_0 ($2_1_1_2_1_1_0 $2_1_1_2_1_1_2) $2_1_1_2_1_0 ($2_1_1_2_0 $2_1_1_2_2))
+                                                            :xlxp '($2_1_1_2_1_0 ($2_1_1_2_1_1_0 ($2_1_1_2_1_1_1_0 $2_1_1_2_1_1_1_1) $2_1_1_2_1_1_2))
+                                                            :xp '(vector (+ (inc c) a))}
+                                                  :started-at 7}
+                                                 {:arg-map {'b 3
+                                                            '(vector (+ (inc c) a)) [9]}
+                                                  :args [[9] 3]
+                                                  :children []
+                                                  :depth 2
+                                                  :ended-at 10
+                                                  :id :16
+                                                  :name "(conj b)"
+                                                  :path [:root10 :11 :16]
+                                                  :return [9 3]
+                                                  :src-map {:ol '$3_2_5_0
+                                                            :olop '($3_2_5_0 $3_2_5_1)
+                                                            :olxp '($3_2_5_0 ($3_2_4 ($3_2_3_0 ($3_2_2 $3_2_1) $3_2_3_1)) $3_2_5_1)
+                                                            :op '(conj b)
+                                                            :sym 'conj
+                                                            :xl '$2_1_1_2_0
+                                                            :xlop '($2_1_1_2_0 $2_1_1_2_2)
+                                                            :xlxp '($2_1_1_2_0 ($2_1_1_2_1_0 ($2_1_1_2_1_1_0 ($2_1_1_2_1_1_1_0 $2_1_1_2_1_1_1_1) $2_1_1_2_1_1_2)) $2_1_1_2_2)
+                                                            :xp '(conj (vector (+ (inc c) a)) b)}
+                                                  :started-at 9}]
+                                      :depth 1
+                                      :ended-at 11
+                                      :id :11
+                                      :meta {:arglists '([a b])
+                                             :column 1
+                                             :file "FILE"
+                                             :line 63
+                                             :name 'func-complex
+                                             :ns (the-ns 'com.billpiel.mem-tracer.test.ns1)}
+                                      :name "com.billpiel.mem-tracer.test.ns1/func-complex"
+                                      :path [:root10 :11]
+                                      :return [9 3]
+                                      :started-at 0}]
+                          :depth 0
+                          :fn nil
+                          :id :root10
+                          :path [:root10]
+                          :traced {:deep-fn #{'com.billpiel.mem-tracer.test.ns1/func-complex}
+                                   :fn #{}
+                                   :ns #{}}
+                          :ws-slot nil}]
+
+      (fact "log is correct"
+        (-> trace
+            ((t-utils/redact-file-fn [:children 0 :meta :file])))
+        => expected-trace))
+
+    (mt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
+    (mm/ws-reset!)))
+
+
 
 (comment "
 TODO
@@ -591,18 +865,23 @@ x split out and memoize arg map fn
   x querying
 - rec-save-as should accept keyword or string
 - never return ws or recs from core fns
-- deep trace (inside fn)
+~ deep trace (inside fn)
+~ trace individual fns
+- re-exec traces
+- query selector funcs
+  - conditional by predicate
+  - special output
+  - toggle output components
+- query output by line/column position -- for emacs plugin
 - cursors
    - bisect recording trees to find bugs
 - split ns and fn name in trace rec and output
 - some kind of string output length limit options?
-- trace individual fns
 - show file and line num in output
 - wrap args that are funcs
  - and deep search values for funcs?
 - wrap returns that are funcs
  - and deep search values for funcs?
-- re-exec traces
 - diff entries
 - search fn syntax for dynamic vars to capture
 - tag vals w meta data and track?

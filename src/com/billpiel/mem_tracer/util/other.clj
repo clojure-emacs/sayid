@@ -8,6 +8,11 @@
   (binding [*ns* (create-ns ws-ns-sym)]
     (eval `(def ~sym '~v))))
 
+(defn eval-in-ns
+  [ns-sym form]
+  (binding [*ns* (create-ns ns-sym)]
+    (eval form)))
+
 (defmacro get-env
   []
   (into {} (for [k (keys &env)]
@@ -44,6 +49,15 @@
   [ns sym]
   (symbol (str ns)
           (str sym)))
+
+(defmacro fully-qualify-sym
+  [sym]
+  `(let [m# (-> ~sym
+                resolve
+                meta)
+         ns# (-> m# :ns str)
+         name# (-> m# :name)]
+     (qualify-sym ns# name#)))
 
 (defn atom?
   [v]
@@ -226,36 +240,6 @@
              [])
          noob)))
 
-(defn swap-in-path-syms*
-  [form func parent & [path]]
-  (cond
-    (special-operator? form) form
-    (coll? form)  (back-into form
-                             (doall (map-indexed #(swap-in-path-syms* %2
-                                                                      func
-                                                                      form
-                                                                      (conj (or (not-empty path)
-                                                                                [])
-                                                                            %))
-                                                 form)))
-    :else (func (symbol (apply str
-                               "$"
-                               (clojure.string/join "-"
-                                                    path)))
-                path
-                form
-                parent)))
-
-(defn swap-in-path-syms
-  ([form func]
-   (swap-in-path-syms* form
-                       func
-                       nil))
-  ([form]
-   (swap-in-path-syms form
-                       #(first %&))))
-
-
 (defn deep-zipmap-no-colls
        [a b]
        (zipmap (filter (comp not coll?) (tree-seq coll? seq a))
@@ -267,158 +251,12 @@
        (zipmap (tree-seq coll? seq a)
                (tree-seq coll? seq b)))
 
-(defn deep-replace-symbols
-  [smap coll]
-  (clojure.walk/postwalk #(if (symbol? %)
-                            (or (get smap %)
-                                %)
-                            %)
-                         coll))
-
-(defn get-path->form-maps
-  [src]
-  (let [sx-seq (->> src
-                    (tree-seq coll? seq)
-                    (filter coll?))
-        pair-fn (fn [form]
-                  (interleave (seq  form)
-                              (repeat form)))]
-    (apply hash-map
-           (mapcat pair-fn
-                   sx-seq))))
-
-(clojure.pprint/pprint (get-path->form-maps '(a (b 1) c)))
-
-;;  xl     (-> src clojure.walk/macroexpand-all swap-in-path-syms)
-;;  src   src
-;;  oloc (-> src swap-in-path-syms clojure.walk/macroexpand-all)
-;;  x-form (clojure.walk/macroexpand-all src)
-
-;;  xloc->oloc (deep-zipmap (-> src clojure.walk/macroexpand-all swap-in-path-syms) (-> src swap-in-path-syms clojure.walk/macroexpand-all))
-;;  xl->src  (deep-zipmap (-> src clojure.walk/macroexpand-all swap-in-path-syms) (clojure.walk/macroexpand-all src))
-;;  ol->olop (-> src swap-in-path-syms get-path->form-maps)
-;;  xl->xlxp (-> src clojure.walk/macroexpand-all swap-in-path-syms get-path->form-maps)
-;;  ol->olxp (-> src swap-in-path-syms clojure.walk/macroexpand-all get-path->form-maps)
-;;  xl->xp (deep-zipmap (-> src clojure.walk/macroexpand-all swap-in-path-syms) (clojure.walk/macroexpand-all src))
-;;  olop->op (deep-zipmap (swap-in-path-syms src) src)
-
-(do
-  (defn mk-expr-mapping
-    [src]
-    (let [xls (->> src
-                   clojure.walk/macroexpand-all
-                   swap-in-path-syms
-                   (tree-seq coll? seq)
-                   )
-          xloc->oloc (deep-zipmap (-> src clojure.walk/macroexpand-all swap-in-path-syms)
-                                  (-> src swap-in-path-syms clojure.walk/macroexpand-all))
-          oloc->xloc (clojure.set/map-invert xloc->oloc)
-          xl->src  (deep-zipmap (-> src clojure.walk/macroexpand-all swap-in-path-syms)
-                                (clojure.walk/macroexpand-all src))
-          ol->olop (-> src
-                       swap-in-path-syms
-                       get-path->form-maps)
-          xl->xlxp (-> src
-                       clojure.walk/macroexpand-all
-                       swap-in-path-syms
-                       get-path->form-maps)
-          ol->olxp (-> src
-                       swap-in-path-syms
-                       clojure.walk/macroexpand-all
-                       get-path->form-maps)
-          xlxp->xp (deep-zipmap (-> src clojure.walk/macroexpand-all swap-in-path-syms)
-                                (clojure.walk/macroexpand-all src))
-          olop->op (deep-zipmap (swap-in-path-syms src) src)
-          f (fn [xl]
-              {xl {:xl xl
-                   :sym (xl->src xl)
-                   :xlxp (xl->xlxp xl)
-                   :ol (xloc->oloc xl)
-                   :olop (-> xl
-                             xloc->oloc
-                             ol->olop)
-                   :xp  (-> xl
-                            xl->xlxp
-                            xlxp->xp)
-                   :op (-> xl
-                           xloc->oloc
-                           ol->olop
-                           olop->op)
-                   :olxp (-> xl
-                             xloc->oloc
-                             ol->olxp)
-                   :xlop (-> xl
-                             xloc->oloc
-                             ol->olop
-                             ((partial deep-replace-symbols oloc->xloc)))}})]
-      (apply merge (map f #spy/d xls))))
-
-  (clojure.pprint/pprint (mk-expr-mapping '(-> a b))))
-
-(defn f1 [a] (let [[b] [4 5]] {a (-> a (+ b) dec)}))
-
-#_ (do
-
-
-     (clojure.walk/macroexpand-all
-      (swap-in-path-syms
-       '(defn f1 [a] (let [b 4] {a (-> a (+ b))})))
-
-      )
-
-
-     (def src '(defn f1 [a] (let [[b] [4 5]] {a (-> a (+ b) dec)})))
-
-
-     '(def f1 (fn* ([a]
-                    (let* [vec__21418 [4 5]
-                           b (clojure.core/nth vec__21418 0
-                                               nil)]
-                          {a (dec (+ a
-                                     b))}))))
-
-     {[2 1 1 1 3 0] {:type :expr
-                     :provides [3 1 0 0] ; some info about mapping to '[4 5]  ??
-                     :coordinates [2 1 1 1 3 0]
-                     :expanded '(clojure.core/nth vec__21418 0 nil)}
-      [2 1 1 2 0 1 0] {:type :expr
-                       :provides [3 2 0 1 3]
-                       :coordinates [2 1 1 2 0 1 0]
-                       :original '(-> a (+ b) dec)
-                       :expanded '(dec (+ a b))}
-      [2 1 1 2 0 1 1 0] {:type :expr
-                         :provides [3 2 0 1 2 0]
-                         :coordinates [2 1 1 2 0 1 1 0]
-                         :original '(+ b)
-                         :expanded '(+ a b)}}
-
-     '(def f1_1234 (fn* ([a]
-                         (let* [vec__21418 [4 5]
-                                b ((f* nth [2 1 1 1 3 0])
-                                   vec__21418 0
-                                   nil)]
-                               {a ((f* dec [2 1 1 2 0 1 0])
-                                   ((f* + [2 1 1 2 0 1 1 0])
-                                    a b))}))))
-
-     ;; maps symbol paths between original and expanded forms
-     (deep-zipmap (clojure.walk/macroexpand-all
-                   (swap-in-path-syms src))
-                  (swap-in-path-syms
-                   (clojure.walk/macroexpand-all src)))
-
-     (clojure.pprint/pprint
-      (deep-zipmap-all (swap-in-path-syms src)
-                       src)
-
-      )
-
-     (swap-in-path-syms
-      (clojure.walk/macroexpand-all src))
-
-     (defn pf [s path f parent]
-       (if (and (= 0 (last path)) (seq? parent) )
-         `(fff ~f '~(get mmm s {}))
-         f))
-
-     (defn fff [f m] (fn [& x] (println (first m)) (println x) (apply f x))))
+(defn flatten-map-kv-pairs
+  [m]
+  (mapcat #(mapv
+            vector
+            (-> %
+                first
+                repeat)
+            (second %))
+          m))

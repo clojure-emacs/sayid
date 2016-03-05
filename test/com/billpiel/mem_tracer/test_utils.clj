@@ -37,18 +37,7 @@
         (apply f (into [v] args))))))
 
 (def mock-now-fn #(make-mock-series-fn identity
-                                       [#inst "2010-01-01T01:00:00.000-00:00"
-                                        #inst "2010-01-01T02:00:00.000-00:00"
-                                        #inst "2010-01-01T03:00:00.000-00:00"
-                                        #inst "2010-01-01T04:00:00.000-00:00"
-                                        #inst "2010-01-01T04:00:00.000-00:00"
-                                        #inst "2010-01-01T04:00:00.000-00:00"
-                                        #inst "2010-01-01T04:00:00.000-00:00"
-                                        #inst "2010-01-01T04:00:00.000-00:00"
-                                        #inst "2010-01-01T04:00:00.000-00:00"
-                                        #inst "2010-01-01T04:00:00.000-00:00"
-                                        #inst "2010-01-01T04:00:00.000-00:00"
-                                        #inst "2010-01-01T04:00:00.000-00:00"]))
+                                       (vec (range 0 1000))))
 
 (def mock-gensym-fn (fn []
                       (make-mock-series-fn
@@ -96,3 +85,13 @@
   [s]
   (let [v (replace-ansi* s [])]
     (mapv tag-ansi v)))
+
+(defn redact-file-fn
+  [& paths]
+  (fn [v]
+    (loop [v v
+           [f & r] paths]
+      (if (nil? f)
+        v
+        (recur (update-in v f (constantly "FILE"))
+               r)))))
