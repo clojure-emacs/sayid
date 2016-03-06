@@ -64,7 +64,7 @@
 
 (defmacro ws-add-trace-fn!
   [fn-sym]
-  `(ws-add-trace-fn!* (util/fully-qualify-sym fn-sym)))
+  `(ws-add-trace-fn!* (util/fully-qualify-sym '~fn-sym)))
 
 (defn ws-add-deep-trace-fn!*
   "`fn-sym` is a symbol that references an existing function. Applies an

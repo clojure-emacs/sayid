@@ -114,13 +114,14 @@ symbol name of the function."
 
 (defn shallow-tracer
   [workspace vname m original-fn]
-  (fn tracing-wrapper [& args]
-    (trace-fn-call workspace
-                   vname
-                   original-fn
-                   args
-                   m)))
-
+  (with-meta
+    (fn tracing-wrapper [& args]
+      (trace-fn-call workspace
+                     vname
+                     original-fn
+                     args
+                     m))
+    {:original-meta m}))
 
 
 (defn apply-trace-to-var

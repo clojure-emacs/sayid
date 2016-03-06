@@ -819,6 +819,10 @@
             ((t-utils/redact-file-fn [:children 0 :meta :file])))
         => expected-trace))
 
+    (fact :dev "print"
+          (mm/w-print)
+          1 => 1)
+
     (mt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
     (mm/ws-reset!)))
 
@@ -863,6 +867,7 @@ x split out and memoize arg map fn
     - arg-map slow?
   x profiling
   x querying
+- FIX adding a deep-trace to existing trace should undo trace before applying deep trace
 - rec-save-as should accept keyword or string
 - never return ws or recs from core fns
 ~ deep trace (inside fn)

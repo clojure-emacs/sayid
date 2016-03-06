@@ -54,11 +54,15 @@
                    sx-seq))))
 
 (defn mk-inner-tree
-  [& {:keys [parent args src-map]}]
+  [& {:keys [parent args src-map fn-meta]}]
+  #spy/d fn-meta
   (assoc (trace/mk-tree :parent parent)
-         :name (-> src-map
-                   :op
-                   str)
+         :name (format "%s/%s : %s"
+                       (-> fn-meta :ns str)
+                       (:name fn-meta)
+                       (-> src-map
+                           :sym
+                           str))
          :args (vec args)
          :arg-map (delay (zipmap (-> src-map
                                      :xp
@@ -68,10 +72,11 @@
          :started-at (trace/now)))
 
 (defn trace-inner-form
-  [f src-map]
+  [f src-map fn-meta]
   (fn [& args]
     (let [parent trace/*trace-log-parent*
           this (mk-inner-tree :parent parent
+                              :fn-meta fn-meta
                               :args args
                               :meta {}
                               :src-map src-map)
@@ -95,14 +100,16 @@
         value))))
 
 (defn swap-in-tracer-fn
-  [src-maps]
-  (fn swap-in-tracer [s path f parent]
-    (if (and (= 0 (last path)) (seq? parent) )
-      (let [s-m (util/$- -> src-maps
-                         (get s {})
-                         (util/apply-to-map-vals (fn [x] `'~x) $))]
-        `(trace-inner-form ~f ~s-m))
-      f)))
+  [src-maps fn-meta]
+  (let [fn-meta' (dissoc fn-meta
+                         :arglists)]
+    (fn swap-in-tracer [s path f parent]
+      (if (and (= 0 (last path)) (seq? parent) )
+        (let [s-m (util/$- -> src-maps
+                           (get s {})
+                           (util/apply-to-map-vals (fn [x] `'~x) $))]
+          `(trace-inner-form ~f ~s-m ~fn-meta'))
+        f))))
 
 ;;  xl     (-> src clojure.walk/macroexpand-all swap-in-path-syms)
 ;;  src   src
@@ -181,16 +188,19 @@
                                    f
                                    (throw (Exception. (format "Expected a defn form, but got this (%s %s ..."
                                                               d s)))))
-        traced-form  (->> src
-                          mk-expr-mapping
-                          swap-in-tracer-fn
-                          (swap-in-path-syms xsrc)
-                          get-fn)]
+        traced-form  (util/$- ->> src
+                              mk-expr-mapping
+                              (swap-in-tracer-fn $ m)
+                              (swap-in-path-syms xsrc)
+                              get-fn)]
     (util/eval-in-ns 'com.billpiel.mem-tracer.test.ns1
                      traced-form)))
 
 (defn composed-tracer-fn
   [workspace vname m original-fn]
+  #spy/d original-fn
+  #spy/d (meta original-fn)
+  #spy/d m
   (->> original-fn
        (deep-tracer workspace
                     vname
