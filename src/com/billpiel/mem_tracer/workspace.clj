@@ -40,19 +40,22 @@
   [ws]
   (swap! ws assoc :children (atom [])))
 
-(defn apply-trace-set-restrictions
-  [sm]
-  (update-in sm
-             [:fn]
-             clojure.set/difference
-             (:deep-fn sm)))
+(defn apply-trace-set-restrictions!
+  [ws]
+  (if-let [dups (->> @ws
+                     :traced
+                     ((juxt :fn :deep-fn))
+                     (apply clojure.set/union)
+                     not-empty)]
+    (doseq [d dups]
+      (remove-trace-*! ws :fn d))))
 
 (defn add-trace-*!
   [ws type sym]
   (swap! ws (fn [ws'] (-> ws'
                           (update-in [:traced type]
-                                     conj sym)
-                          apply-trace-set-restrictions)))
+                                     conj sym))))
+  (apply-trace-set-restrictions! ws)
   (trace/trace* type sym @ws))
 
 (defn remove-trace-*!

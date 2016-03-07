@@ -826,6 +826,80 @@
     (mt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
     (mm/ws-reset!)))
 
+(fact-group "tracing then deep tracing a func results in only a deep trace"
+  (mt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
+  (mm/ws-reset!)
+
+  (with-redefs [mt/now (t-utils/mock-now-fn)
+                gensym (t-utils/mock-gensym-fn)]
+
+    (mm/ws-add-trace-fn! ns1/func-complex)
+
+    (fact :dev "trace is set in workspace"
+          (mm/ws-show-traced) => {:deep-fn #{}
+                                  :fn #{'com.billpiel.mem-tracer.test.ns1/func-complex}
+                                  :ns #{}})
+
+    (fact :dev "trace is correct"
+          (ns1/func-complex  2 3)
+          (:children (mm/ws-deref!)) => [{:arg-map {"a" 2, "b" 3}
+                                          :args [2 3]
+                                          :children []
+                                          :depth 1
+                                          :ended-at 1
+                                          :id :12
+                                          :meta {:arglists '([a b])
+                                                 :column 1
+                                                 :file "com/billpiel/mem_tracer/test/ns1.clj"
+                                                 :line 63
+                                                 :name 'func-complex
+                                                 :ns (the-ns 'com.billpiel.mem-tracer.test.ns1)}
+                                          :name "com.billpiel.mem-tracer.test.ns1/func-complex"
+                                          :path [:root10 :12]
+                                          :return [9 3]
+                                          :started-at 0}])
+
+    (mm/ws-clear-log!)
+
+    (mm/ws-add-deep-trace-fn! ns1/func-complex)
+    (fact :dev "only deep trace is set in workspace"
+          (mm/ws-show-traced) => {:deep-fn #{'com.billpiel.mem-tracer.test.ns1/func-complex}
+                                  :fn #{}
+                                  :ns #{}})
+
+    (fact :dev "deep trace is correct"
+          (ns1/func-complex  2 3)
+          (:children (mm/ws-deref!)) => [{:arg-map {"a" 2, "b" 3}
+                                          :args [2 3]
+                                          :children []
+                                          :depth 1
+                                          :ended-at 1
+                                          :id :12
+                                          :meta {:arglists '([a b])
+                                                 :column 1
+                                                 :file "com/billpiel/mem_tracer/test/ns1.clj"
+                                                 :line 63
+                                                 :name 'func-complex
+                                                 :ns (the-ns 'com.billpiel.mem-tracer.test.ns1)}
+                                          :name "com.billpiel.mem-tracer.test.ns1/func-complex"
+                                          :path [:root10 :12]
+                                          :return [9 3]
+                                          :started-at 0}])
+    (fact :dev "meta shows trace applied"
+      (meta #'ns1/func-complex) => {})
+
+
+    (mm/ws-remove-all-traces!)
+    (mm/ws-clear-log!)
+
+    (fact :dev "all traces gone"
+          (mm/ws-show-traced) => {:deep-fn #{}
+                                  :fn #{}
+                                  :ns #{}})
+
+
+    (mt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
+    (mm/ws-reset!)))
 
 
 (comment "
