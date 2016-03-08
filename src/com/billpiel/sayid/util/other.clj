@@ -149,7 +149,7 @@
                                                    (name '~source)
                                                    %))))))
 
-(defmacro defalias-macro
+(defn defalias-macro*
   [alias source]
   (let [body-sym (gensym "body")
         qualified-source (qualify-sym *ns* source)
@@ -157,12 +157,20 @@
                          (ns-resolve *ns*)
                          meta)
         arglists (:arglists source-meta)
+        split-at-& (fn [arg-vec]
+                     (let [[pre amp post]
+                           (partition-by #{'&} arg-vec)]
+                       (if (-> arg-vec
+                               first
+                               #{'&})
+                         (concat amp)
+                         (concat [(vec pre)] post))))
         forms (map (fn [args]
                      `(~args
                        (clojure.core/seq
                         (clojure.core/concat
                          (clojure.core/list '~qualified-source)
-                         ~args))))
+                         ~@(split-at-& args)))))
                    arglists)]
     `(do (defmacro ~alias ~@forms)
          (alter-meta! #'~alias merge
@@ -174,6 +182,10 @@
                                                      (name '~source)
                                                      %))))
          #'~alias)))
+
+(defmacro defalias-macro
+  [alias source]
+  (defalias-macro* alias source))
 
 (defn ns-unmap-all
   [ns']
