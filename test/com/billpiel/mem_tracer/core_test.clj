@@ -55,7 +55,6 @@
                             :ended-at 3
                             :depth 1}],
                           :depth 0,
-                          :fn nil,
                           :id :root10,
                           :path [:root10],
                           :traced
@@ -80,32 +79,7 @@
 
     (mt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)))
 
-#_ (fact-group "long values display nicely"
-     (mt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
-     (mm/ws-reset!)
-     (with-redefs [mt/now (t-utils/mock-now-fn)
-                   gensym (t-utils/mock-gensym-fn)]
-
-       (mm/ws-add-trace-ns! com.billpiel.mem-tracer.test.ns1)
-       (com.billpiel.mem-tracer.test.ns1/func-identity {:a 1
-                                                        :b 2
-                                                        :c [1 2 3 4 5 6 7]
-                                                        :d [1 2 3 4 5 6 7]
-                                                        :e [1 2 3 4 5 6 7]
-                                                        :f [1 2 3 4 5 6 7]}
-                                                       :hello
-                                                       [1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0])
-       (let [trace (mm/ws-deref!)]
-
-         (fact "string output is correct"
-           (->> trace
-                mm/tree->string
-                t-utils/replace-ansi)
-           => ex-o1/expected1))
-
-       (mt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)))
-
-(fact-group "about enable/disable -all-traces!"
+ (fact-group "about enable/disable -all-traces!"
   (mt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
   (mm/ws-reset!)
   (with-redefs [mt/now (t-utils/mock-now-fn)
@@ -124,8 +98,7 @@
           :path [:root10]
           :traced {:deep-fn #{}, :fn #{}, :ns #{'com.billpiel.mem-tracer.test.ns1}}
           :ws-slot nil
-          :fn nil
-          :arg-map nil})
+                    :arg-map nil})
 
     (fact "ws-enable-all-traces! works"
       (mm/ws-enable-all-traces!)
@@ -167,8 +140,7 @@
                       :return :a
                       :started-at 0}]
           :depth 0
-          :fn nil
-          :id :root10
+                    :id :root10
           :path [:root10]
           :traced {:deep-fn #{}
                    :fn #{}
@@ -196,8 +168,7 @@
           :path [:root10]
           :traced {:fn #{} :ns #{} :deep-fn #{}}
           :ws-slot nil
-          :fn nil
-          :arg-map nil})
+                    :arg-map nil})
 
     (mt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)))
 
@@ -425,8 +396,7 @@
             :path [:root10]
             :traced {:fn #{}, :ns #{'com.billpiel.mem-tracer.test.ns1}, :deep-fn #{}}
             :ws-slot nil
-            :fn nil
-            :arg-map nil})
+                        :arg-map nil})
 
       (fact "log is correct"
         (-> trace :children count)
@@ -538,8 +508,7 @@
                          :return 13
                          :started-at 0}]
              :depth 0
-             :fn nil
-             :id :root10
+                          :id :root10
              :path [:root10]
              :traced {:deep-fn #{}
                       :fn #{}
@@ -613,8 +582,7 @@
                           :return 13
                           :started-at 0}]
               :depth 0
-              :fn nil
-              :id :root10
+                            :id :root10
               :path [:root10]
               :traced {:deep-fn #{}
                        :fn #{}
@@ -623,62 +591,61 @@
       (mt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1))))
 
 (fact-group "trace a namespace by alias"
-  (mt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
-  (mm/ws-reset!)
+     (mt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
+     (mm/ws-reset!)
 
-  (with-redefs [mt/now (t-utils/mock-now-fn)
-                gensym (t-utils/mock-gensym-fn)]
-    (mm/ws-add-trace-ns! ns1)
-    (com.billpiel.mem-tracer.test.ns1/func1 :a)
-    (let [trace (mm/ws-deref!)
-          expected-trace {:arg-map nil
-                          :children [{:arg-map {"arg1" :a}
-                                      :args [:a]
-                                      :children [{:arg-map {"arg1" :a}
-                                                  :args [:a]
-                                                  :children []
-                                                  :depth 2
-                                                  :ended-at 2
-                                                  :id :12
-                                                  :meta {:arglists '([arg1])
-                                                         :column 1
-                                                         :file "FILE"
-                                                         :line 4
-                                                         :name 'func2
-                                                         :ns (the-ns 'com.billpiel.mem-tracer.test.ns1)}
-                                                  :name "com.billpiel.mem-tracer.test.ns1/func2"
-                                                  :path [:root10 :11 :12]
-                                                  :return :a
-                                                  :started-at 1}]
-                                      :depth 1
-                                      :ended-at 3
-                                      :id :11
-                                      :meta {:arglists '([arg1])
-                                             :column 1
-                                             :file "FILE"
-                                             :line 8
-                                             :name 'func1
-                                             :ns (the-ns 'com.billpiel.mem-tracer.test.ns1)}
-                                      :name "com.billpiel.mem-tracer.test.ns1/func1"
-                                      :path [:root10 :11]
-                                      :return :a
-                                      :started-at 0}]
-                          :depth 0
-                          :fn nil
-                          :id :root10
-                          :path [:root10]
-                          :traced {:deep-fn #{}
-                                   :fn #{}
-                                   :ns #{'com.billpiel.mem-tracer.test.ns1}}
-                          :ws-slot nil}]
+     (with-redefs [mt/now (t-utils/mock-now-fn)
+                   gensym (t-utils/mock-gensym-fn)]
+       (mm/ws-add-trace-ns! ns1)
+       (com.billpiel.mem-tracer.test.ns1/func1 :a)
+       (let [trace (mm/ws-deref!)
+             expected-trace {:arg-map nil
+                             :children [{:arg-map {"arg1" :a}
+                                         :args [:a]
+                                         :children [{:arg-map {"arg1" :a}
+                                                     :args [:a]
+                                                     :children []
+                                                     :depth 2
+                                                     :ended-at 2
+                                                     :id :12
+                                                     :meta {:arglists '([arg1])
+                                                            :column 1
+                                                            :file "FILE"
+                                                            :line 4
+                                                            :name 'func2
+                                                            :ns (the-ns 'com.billpiel.mem-tracer.test.ns1)}
+                                                     :name "com.billpiel.mem-tracer.test.ns1/func2"
+                                                     :path [:root10 :11 :12]
+                                                     :return :a
+                                                     :started-at 1}]
+                                         :depth 1
+                                         :ended-at 3
+                                         :id :11
+                                         :meta {:arglists '([arg1])
+                                                :column 1
+                                                :file "FILE"
+                                                :line 8
+                                                :name 'func1
+                                                :ns (the-ns 'com.billpiel.mem-tracer.test.ns1)}
+                                         :name "com.billpiel.mem-tracer.test.ns1/func1"
+                                         :path [:root10 :11]
+                                         :return :a
+                                         :started-at 0}]
+                             :depth 0
+                             :id :root10
+                             :path [:root10]
+                             :traced {:deep-fn #{}
+                                      :fn #{}
+                                      :ns #{'com.billpiel.mem-tracer.test.ns1}}
+                             :ws-slot nil}]
 
-      (fact "log is correct"
-        (-> trace
-            ((t-utils/redact-file-fn [:children 0 :meta :file]
-                                     [:children 0 :children 0 :meta :file])))
-        => expected-trace))
+         (fact "log is correct"
+           (-> trace
+               ((t-utils/redact-file-fn [:children 0 :meta :file]
+                                        [:children 0 :children 0 :meta :file])))
+           => expected-trace))
 
-    (mt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)))
+       (mt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)))
 
 
 (fact-group "deep trace a single function"
@@ -688,140 +655,156 @@
   (with-redefs [mt/now (t-utils/mock-now-fn)
                 gensym (t-utils/mock-gensym-fn)]
     (mm/ws-add-deep-trace-fn! ns1/func-complex)
-    (com.billpiel.mem-tracer.test.ns1/func-complex 2 3)
+    (ns1/func-complex 2 3)
     (let [trace (mm/ws-deref!)
-          expected-trace {:arg-map nil
-                          :children [{:arg-map {"a" 2
-                                                "b" 3}
-                                      :args [2 3]
-                                      :children [{:arg-map {'a 2
-                                                            'b 3}
-                                                  :args [2 3]
-                                                  :children []
-                                                  :depth 2
-                                                  :ended-at 2
-                                                  :id :12
-                                                  :name "(* a b)"
-                                                  :path [:root10 :11 :12]
-                                                  :return 6
-                                                  :src-map {:ol '$3_1_1_0
-                                                            :olop '($3_1_1_0 $3_1_1_1 $3_1_1_2)
-                                                            :olxp '($3_1_1_0 $3_1_1_1 $3_1_1_2)
-                                                            :op '(* a b)
-                                                            :sym '*
-                                                            :xl '$2_1_1_1_1_0
-                                                            :xlop '($2_1_1_1_1_0 $2_1_1_1_1_1 $2_1_1_1_1_2)
-                                                            :xlxp '($2_1_1_1_1_0 $2_1_1_1_1_1 $2_1_1_1_1_2)
-                                                            :xp '(* a b)}
-                                                  :started-at 1}
-                                                 {:arg-map {'c 6}
-                                                  :args [6]
-                                                  :children []
-                                                  :depth 2
-                                                  :ended-at 4
-                                                  :id :13
-                                                  :name "(-> c inc (+ a) vector (conj b))"
-                                                  :path [:root10 :11 :13]
-                                                  :return 7
-                                                  :src-map {:ol '$3_2_2
-                                                            :olop '(-> $3_2_1 $3_2_2 ($3_2_3_0 $3_2_3_1) $3_2_4 ($3_2_5_0 $3_2_5_1))
-                                                            :olxp '($3_2_2 $3_2_1)
-                                                            :op '(-> c inc (+ a) vector (conj b))
-                                                            :sym 'inc
-                                                            :xl '$2_1_1_2_1_1_1_0
-                                                            :xlop '(-> $2_1_1_2_1_1_1_1 $2_1_1_2_1_1_1_0 ($2_1_1_2_1_1_0 $2_1_1_2_1_1_2) $2_1_1_2_1_0 ($2_1_1_2_0 $2_1_1_2_2))
-                                                            :xlxp '($2_1_1_2_1_1_1_0 $2_1_1_2_1_1_1_1)
-                                                            :xp '(inc c)}
-                                                  :started-at 3}
-                                                 {:arg-map {'a 2
-                                                            '(inc c) 7}
-                                                  :args [7 2]
-                                                  :children []
-                                                  :depth 2
-                                                  :ended-at 6
-                                                  :id :14
-                                                  :name "(+ a)"
-                                                  :path [:root10 :11 :14]
-                                                  :return 9
-                                                  :src-map {:ol '$3_2_3_0
-                                                            :olop '($3_2_3_0 $3_2_3_1)
-                                                            :olxp '($3_2_3_0 ($3_2_2 $3_2_1) $3_2_3_1)
-                                                            :op '(+ a)
-                                                            :sym '+
-                                                            :xl '$2_1_1_2_1_1_0
-                                                            :xlop '($2_1_1_2_1_1_0 $2_1_1_2_1_1_2)
-                                                            :xlxp '($2_1_1_2_1_1_0 ($2_1_1_2_1_1_1_0 $2_1_1_2_1_1_1_1) $2_1_1_2_1_1_2)
-                                                            :xp '(+ (inc c) a)}
-                                                  :started-at 5}
-                                                 {:arg-map {'(+ (inc c) a) 9}
-                                                  :args [9]
-                                                  :children []
-                                                  :depth 2
-                                                  :ended-at 8
-                                                  :id :15
-                                                  :name "(-> c inc (+ a) vector (conj b))"
-                                                  :path [:root10 :11 :15]
-                                                  :return [9]
-                                                  :src-map {:ol '$3_2_4
-                                                            :olop '(-> $3_2_1 $3_2_2 ($3_2_3_0 $3_2_3_1) $3_2_4 ($3_2_5_0 $3_2_5_1))
-                                                            :olxp '($3_2_4 ($3_2_3_0 ($3_2_2 $3_2_1) $3_2_3_1))
-                                                            :op '(-> c inc (+ a) vector (conj b))
-                                                            :sym 'vector
-                                                            :xl '$2_1_1_2_1_0
-                                                            :xlop '(-> $2_1_1_2_1_1_1_1 $2_1_1_2_1_1_1_0 ($2_1_1_2_1_1_0 $2_1_1_2_1_1_2) $2_1_1_2_1_0 ($2_1_1_2_0 $2_1_1_2_2))
-                                                            :xlxp '($2_1_1_2_1_0 ($2_1_1_2_1_1_0 ($2_1_1_2_1_1_1_0 $2_1_1_2_1_1_1_1) $2_1_1_2_1_1_2))
-                                                            :xp '(vector (+ (inc c) a))}
-                                                  :started-at 7}
-                                                 {:arg-map {'b 3
-                                                            '(vector (+ (inc c) a)) [9]}
-                                                  :args [[9] 3]
-                                                  :children []
-                                                  :depth 2
-                                                  :ended-at 10
-                                                  :id :16
-                                                  :name "(conj b)"
-                                                  :path [:root10 :11 :16]
-                                                  :return [9 3]
-                                                  :src-map {:ol '$3_2_5_0
-                                                            :olop '($3_2_5_0 $3_2_5_1)
-                                                            :olxp '($3_2_5_0 ($3_2_4 ($3_2_3_0 ($3_2_2 $3_2_1) $3_2_3_1)) $3_2_5_1)
-                                                            :op '(conj b)
-                                                            :sym 'conj
-                                                            :xl '$2_1_1_2_0
-                                                            :xlop '($2_1_1_2_0 $2_1_1_2_2)
-                                                            :xlxp '($2_1_1_2_0 ($2_1_1_2_1_0 ($2_1_1_2_1_1_0 ($2_1_1_2_1_1_1_0 $2_1_1_2_1_1_1_1) $2_1_1_2_1_1_2)) $2_1_1_2_2)
-                                                            :xp '(conj (vector (+ (inc c) a)) b)}
-                                                  :started-at 9}]
-                                      :depth 1
-                                      :ended-at 11
-                                      :id :11
-                                      :meta {:arglists '([a b])
-                                             :column 1
-                                             :file "FILE"
-                                             :line 63
-                                             :name 'func-complex
-                                             :ns (the-ns 'com.billpiel.mem-tracer.test.ns1)}
-                                      :name "com.billpiel.mem-tracer.test.ns1/func-complex"
-                                      :path [:root10 :11]
-                                      :return [9 3]
-                                      :started-at 0}]
-                          :depth 0
-                          :fn nil
-                          :id :root10
-                          :path [:root10]
-                          :traced {:deep-fn #{'com.billpiel.mem-tracer.test.ns1/func-complex}
-                                   :fn #{}
-                                   :ns #{}}
-                          :ws-slot nil}]
+          expected-trace
+          {:arg-map nil
+           :children [{:arg-map {"a" 2
+                                 "b" 3}
+                       :args [2 3]
+                       :children [{:arg-map '{a 2
+                                              b 3}
+                                   :args [2 3]
+                                   :children []
+                                   :depth 2
+                                   :ended-at 2
+                                   :id :12
+                                   :name "*  com.billpiel.mem-tracer.test.ns1/func-complex"
+                                   :path [:root10 :11 :12]
+                                   :return 6
+                                   :src-map '{:ol $3_1_1_0
+                                              :olop ($3_1_1_0 $3_1_1_1 $3_1_1_2)
+                                              :olxp ($3_1_1_0 $3_1_1_1 $3_1_1_2)
+                                              :op (* a b)
+                                              :sym *
+                                              :xl $2_1_1_1_1_0
+                                              :xlop ($2_1_1_1_1_0 $2_1_1_1_1_1 $2_1_1_1_1_2)
+                                              :xlxp ($2_1_1_1_1_0 $2_1_1_1_1_1 $2_1_1_1_1_2)
+                                              :xp (* a b)}
+                                   :started-at 1}
+                                  {:arg-map '{c 6}
+                                   :args [6]
+                                   :children []
+                                   :depth 2
+                                   :ended-at 4
+                                   :id :13
+                                   :name "inc  com.billpiel.mem-tracer.test.ns1/func-complex"
+                                   :path [:root10 :11 :13]
+                                   :return 7
+                                   :src-map '{:ol $3_2_2
+                                              :olop (-> $3_2_1 $3_2_2 ($3_2_3_0 $3_2_3_1) $3_2_4 ($3_2_5_0 [$3_2_5_1_0 $3_2_5_1_1]) ($3_2_6_0 $3_2_6_1))
+                                              :olxp ($3_2_2 $3_2_1)
+                                              :op (-> c inc (+ a) vector (into [11 22]) (conj b))
+                                              :sym inc
+                                              :xl $2_1_1_2_1_1_1_1_0
+                                              :xlop (-> $2_1_1_2_1_1_1_1_1 $2_1_1_2_1_1_1_1_0 ($2_1_1_2_1_1_1_0 $2_1_1_2_1_1_1_2) $2_1_1_2_1_1_0 ($2_1_1_2_1_0 [$2_1_1_2_1_2_0 $2_1_1_2_1_2_1]) ($2_1_1_2_0 $2_1_1_2_2))
+                                              :xlxp ($2_1_1_2_1_1_1_1_0 $2_1_1_2_1_1_1_1_1)
+                                              :xp (inc c)}
+                                   :started-at 3}
+                                  {:arg-map '{a 2
+                                              (inc c) 7}
+                                   :args [7 2]
+                                   :children []
+                                   :depth 2
+                                   :ended-at 6
+                                   :id :14
+                                   :name "+  com.billpiel.mem-tracer.test.ns1/func-complex"
+                                   :path [:root10 :11 :14]
+                                   :return 9
+                                   :src-map '{:ol $3_2_3_0
+                                              :olop ($3_2_3_0 $3_2_3_1)
+                                              :olxp ($3_2_3_0 ($3_2_2 $3_2_1) $3_2_3_1)
+                                              :op (+ a)
+                                              :sym +
+                                              :xl $2_1_1_2_1_1_1_0
+                                              :xlop ($2_1_1_2_1_1_1_0 $2_1_1_2_1_1_1_2)
+                                              :xlxp ($2_1_1_2_1_1_1_0 ($2_1_1_2_1_1_1_1_0 $2_1_1_2_1_1_1_1_1) $2_1_1_2_1_1_1_2)
+                                              :xp (+ (inc c) a)}
+                                   :started-at 5}
+                                  {:arg-map '{(+ (inc c) a) 9}
+                                   :args [9]
+                                   :children []
+                                   :depth 2
+                                   :ended-at 8
+                                   :id :15
+                                   :name "vector  com.billpiel.mem-tracer.test.ns1/func-complex"
+                                   :path [:root10 :11 :15]
+                                   :return [9]
+                                   :src-map '{:ol $3_2_4
+                                              :olop (-> $3_2_1 $3_2_2 ($3_2_3_0 $3_2_3_1) $3_2_4 ($3_2_5_0 [$3_2_5_1_0 $3_2_5_1_1]) ($3_2_6_0 $3_2_6_1))
+                                              :olxp ($3_2_4 ($3_2_3_0 ($3_2_2 $3_2_1) $3_2_3_1))
+                                              :op (-> c inc (+ a) vector (into [11 22]) (conj b))
+                                              :sym vector
+                                              :xl $2_1_1_2_1_1_0
+                                              :xlop (-> $2_1_1_2_1_1_1_1_1 $2_1_1_2_1_1_1_1_0 ($2_1_1_2_1_1_1_0 $2_1_1_2_1_1_1_2) $2_1_1_2_1_1_0 ($2_1_1_2_1_0 [$2_1_1_2_1_2_0 $2_1_1_2_1_2_1]) ($2_1_1_2_0 $2_1_1_2_2))
+                                              :xlxp ($2_1_1_2_1_1_0 ($2_1_1_2_1_1_1_0 ($2_1_1_2_1_1_1_1_0 $2_1_1_2_1_1_1_1_1) $2_1_1_2_1_1_1_2))
+                                              :xp (vector (+ (inc c) a))}
+                                   :started-at 7}
+                                  {:arg-map '{[11 22] [11 22]
+                                              (vector (+ (inc c) a)) [9]}
+                                   :args [[9] [11 22]]
+                                   :children []
+                                   :depth 2
+                                   :ended-at 10
+                                   :id :16
+                                   :name "into  com.billpiel.mem-tracer.test.ns1/func-complex"
+                                   :path [:root10 :11 :16]
+                                   :return [9 11 22]
+                                   :src-map '{:ol $3_2_5_0
+                                              :olop ($3_2_5_0 [$3_2_5_1_0 $3_2_5_1_1])
+                                              :olxp ($3_2_5_0 ($3_2_4 ($3_2_3_0 ($3_2_2 $3_2_1) $3_2_3_1)) [$3_2_5_1_0 $3_2_5_1_1])
+                                              :op (into [11 22])
+                                              :sym into
+                                              :xl $2_1_1_2_1_0
+                                              :xlop ($2_1_1_2_1_0 [$2_1_1_2_1_2_0 $2_1_1_2_1_2_1])
+                                              :xlxp ($2_1_1_2_1_0 ($2_1_1_2_1_1_0 ($2_1_1_2_1_1_1_0 ($2_1_1_2_1_1_1_1_0 $2_1_1_2_1_1_1_1_1) $2_1_1_2_1_1_1_2)) [$2_1_1_2_1_2_0 $2_1_1_2_1_2_1])
+                                              :xp (into (vector (+ (inc c) a)) [11 22])}
+                                   :started-at 9}
+                                  {:arg-map '{b 3
+                                              (into (vector (+ (inc c) a)) [11 22]) [9 11 22]}
+                                   :args [[9 11 22] 3]
+                                   :children []
+                                   :depth 2
+                                   :ended-at 12
+                                   :id :17
+                                   :name "conj  com.billpiel.mem-tracer.test.ns1/func-complex"
+                                   :path [:root10 :11 :17]
+                                   :return [9 11 22 3]
+                                   :src-map '{:ol $3_2_6_0
+                                              :olop ($3_2_6_0 $3_2_6_1)
+                                              :olxp ($3_2_6_0 ($3_2_5_0 ($3_2_4 ($3_2_3_0 ($3_2_2 $3_2_1) $3_2_3_1)) [$3_2_5_1_0 $3_2_5_1_1]) $3_2_6_1)
+                                              :op (conj b)
+                                              :sym conj
+                                              :xl $2_1_1_2_0
+                                              :xlop ($2_1_1_2_0 $2_1_1_2_2)
+                                              :xlxp ($2_1_1_2_0 ($2_1_1_2_1_0 ($2_1_1_2_1_1_0 ($2_1_1_2_1_1_1_0 ($2_1_1_2_1_1_1_1_0 $2_1_1_2_1_1_1_1_1) $2_1_1_2_1_1_1_2)) [$2_1_1_2_1_2_0 $2_1_1_2_1_2_1]) $2_1_1_2_2)
+                                              :xp (conj (into (vector (+ (inc c) a)) [11 22]) b)}
+                                   :started-at 11}]
+                       :depth 1
+                       :ended-at 13
+                       :id :11
+                       :meta {:arglists '([a b])
+                              :column 1
+                              :file "FILE"
+                              :line 63
+                              :name 'func-complex
+                              :ns (the-ns 'com.billpiel.mem-tracer.test.ns1)}
+                       :name "com.billpiel.mem-tracer.test.ns1/func-complex"
+                       :path [:root10 :11]
+                       :return [9 11 22 3]
+                       :started-at 0}]
+           :depth 0
+           :id :root10
+           :path [:root10]
+           :traced {:deep-fn #{'com.billpiel.mem-tracer.test.ns1/func-complex}
+                    :fn #{}
+                    :ns #{}}
+           :ws-slot nil}]
 
-      (fact "log is correct"
+      (fact "deep trace of single func -- log is correct"
         (-> trace
             ((t-utils/redact-file-fn [:children 0 :meta :file])))
         => expected-trace))
-
-    (fact :dev "print"
-          (mm/w-print)
-          1 => 1)
 
     (mt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
     (mm/ws-reset!)))
@@ -832,70 +815,85 @@
 
   (with-redefs [mt/now (t-utils/mock-now-fn)
                 gensym (t-utils/mock-gensym-fn)]
+    (let [original-func-complex com.billpiel.mem-tracer.test.ns1/func-complex]
+      (mm/ws-add-trace-fn! ns1/func-complex)
 
-    (mm/ws-add-trace-fn! ns1/func-complex)
+      (fact "trace is set in workspace"
+        (mm/ws-show-traced) => {:deep-fn #{}
+                                :fn #{'com.billpiel.mem-tracer.test.ns1/func-complex}
+                                :ns #{}})
 
-    (fact :dev "trace is set in workspace"
-          (mm/ws-show-traced) => {:deep-fn #{}
-                                  :fn #{'com.billpiel.mem-tracer.test.ns1/func-complex}
-                                  :ns #{}})
+      (fact "trace is correct"
+        (ns1/func-complex  2 3)
+        (-> (mm/ws-deref!)
+            :children
+            ((t-utils/redact-file-fn [0 :meta :file])))
+        => [{:arg-map {"a" 2, "b" 3}
+             :args [2 3]
+             :children []
+             :depth 1
+             :ended-at 1
+             :id :12
+             :meta {:arglists '([a b])
+                    :column 1
+                    :file "FILE"
+                    :line 63
+                    :name 'func-complex
+                    :ns (the-ns 'com.billpiel.mem-tracer.test.ns1)}
+             :name "com.billpiel.mem-tracer.test.ns1/func-complex"
+             :path [:root10 :12]
+             :return [9 11 22 3]
+             :started-at 0}])
 
-    (fact :dev "trace is correct"
-          (ns1/func-complex  2 3)
-          (:children (mm/ws-deref!)) => [{:arg-map {"a" 2, "b" 3}
-                                          :args [2 3]
-                                          :children []
-                                          :depth 1
-                                          :ended-at 1
-                                          :id :12
-                                          :meta {:arglists '([a b])
-                                                 :column 1
-                                                 :file "com/billpiel/mem_tracer/test/ns1.clj"
-                                                 :line 63
-                                                 :name 'func-complex
-                                                 :ns (the-ns 'com.billpiel.mem-tracer.test.ns1)}
-                                          :name "com.billpiel.mem-tracer.test.ns1/func-complex"
-                                          :path [:root10 :12]
-                                          :return [9 3]
-                                          :started-at 0}])
+      (mm/ws-clear-log!)
 
-    (mm/ws-clear-log!)
+      (mm/ws-add-deep-trace-fn! ns1/func-complex)
+      (fact "only deep trace is set in workspace"
+        (mm/ws-show-traced) => {:deep-fn #{'com.billpiel.mem-tracer.test.ns1/func-complex}
+                                :fn #{}
+                                :ns #{}})
 
-    (mm/ws-add-deep-trace-fn! ns1/func-complex)
-    (fact :dev "only deep trace is set in workspace"
-          (mm/ws-show-traced) => {:deep-fn #{'com.billpiel.mem-tracer.test.ns1/func-complex}
-                                  :fn #{}
-                                  :ns #{}})
+#_      (fact "deep trace is correct"
+        (ns1/func-complex  2 3)
+        (-> (mm/ws-deref!)
+            :children
+            ((t-utils/redact-file-fn [0 :meta :file])))
+        => [{:arg-map {"a" 2, "b" 3}
+             :args [2 3]
+             :children []
+             :depth 1
+             :ended-at 15
+             :id :15
+             :meta {:arglists '([a b])
+                    :column 1
+                    :file "FILE"
+                    :line 63
+                    :name 'func-complex
+                    :ns (the-ns 'com.billpiel.mem-tracer.test.ns1)}
+             :name "com.billpiel.mem-tracer.test.ns1/func-complex"
+             :path [:root10 :15]
+             :return [9 11 22 3]
+             :started-at 2}])
 
-    (fact :dev "deep trace is correct"
-          (ns1/func-complex  2 3)
-          (:children (mm/ws-deref!)) => [{:arg-map {"a" 2, "b" 3}
-                                          :args [2 3]
-                                          :children []
-                                          :depth 1
-                                          :ended-at 1
-                                          :id :12
-                                          :meta {:arglists '([a b])
-                                                 :column 1
-                                                 :file "com/billpiel/mem_tracer/test/ns1.clj"
-                                                 :line 63
-                                                 :name 'func-complex
-                                                 :ns (the-ns 'com.billpiel.mem-tracer.test.ns1)}
-                                          :name "com.billpiel.mem-tracer.test.ns1/func-complex"
-                                          :path [:root10 :12]
-                                          :return [9 3]
-                                          :started-at 0}])
-    (fact :dev "meta shows trace applied"
-      (meta #'ns1/func-complex) => {})
+      (fact "meta shows trace applied"
+        (-> (meta #'ns1/func-complex)
+            ((t-utils/redact-file-fn [:file])))
+        => {:arglists '([a b])
+            :column 1
+            :file "FILE"
+            :line 63
+            :name 'func-complex
+            :ns (the-ns 'com.billpiel.mem-tracer.test.ns1)
+            :com.billpiel.mem-tracer.trace/traced [:root10 original-func-complex]}))
 
 
     (mm/ws-remove-all-traces!)
     (mm/ws-clear-log!)
 
-    (fact :dev "all traces gone"
-          (mm/ws-show-traced) => {:deep-fn #{}
-                                  :fn #{}
-                                  :ns #{}})
+    (fact "all traces gone"
+      (mm/ws-show-traced) => {:deep-fn #{}
+                              :fn #{}
+                              :ns #{}})
 
 
     (mt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
@@ -965,3 +963,147 @@ x split out and memoize arg map fn
 - search fn syntax for dynamic vars to capture
 - tag vals w meta data and track?
 ")
+
+
+{:arg-map nil
+ :children [{:arg-map {"a" 2
+                       "b" 3}
+             :args [2 3]
+             :children [{:arg-map '{a 2
+                                    b 3}
+                         :args [2 3]
+                         :children []
+                         :depth 2
+                         :ended-at 2
+                         :id :12
+                         :name "*  com.billpiel.mem-tracer.test.ns1/func-complex"
+                         :path [:root10 :11 :12]
+                         :return 6
+                         :src-map '{:ol $3_1_1_0
+                                    :olop ($3_1_1_0 $3_1_1_1 $3_1_1_2)
+                                    :olxp ($3_1_1_0 $3_1_1_1 $3_1_1_2)
+                                    :op (* a b)
+                                    :sym *
+                                    :xl $2_1_1_1_1_0
+                                    :xlop ($2_1_1_1_1_0 $2_1_1_1_1_1 $2_1_1_1_1_2)
+                                    :xlxp ($2_1_1_1_1_0 $2_1_1_1_1_1 $2_1_1_1_1_2)
+                                    :xp (* a b)}
+                         :started-at 1}
+                        {:arg-map '{c 6}
+                         :args [6]
+                         :children []
+                         :depth 2
+                         :ended-at 4
+                         :id :13
+                         :name "inc  com.billpiel.mem-tracer.test.ns1/func-complex"
+                         :path [:root10 :11 :13]
+                         :return 7
+                         :src-map '{:ol $3_2_2
+                                    :olop (-> $3_2_1 $3_2_2 ($3_2_3_0 $3_2_3_1) $3_2_4 ($3_2_5_0 [$3_2_5_1_0 $3_2_5_1_1]) ($3_2_6_0 $3_2_6_1))
+                                    :olxp ($3_2_2 $3_2_1)
+                                    :op (-> c inc (+ a) vector (into [11 22]) (conj b))
+                                    :sym inc
+                                    :xl $2_1_1_2_1_1_1_1_0
+                                    :xlop (-> $2_1_1_2_1_1_1_1_1 $2_1_1_2_1_1_1_1_0 ($2_1_1_2_1_1_1_0 $2_1_1_2_1_1_1_2) $2_1_1_2_1_1_0 ($2_1_1_2_1_0 [$2_1_1_2_1_2_0 $2_1_1_2_1_2_1]) ($2_1_1_2_0 $2_1_1_2_2))
+                                    :xlxp ($2_1_1_2_1_1_1_1_0 $2_1_1_2_1_1_1_1_1)
+                                    :xp (inc c)}
+                         :started-at 3}
+                        {:arg-map '{a 2
+                                    (inc c) 7}
+                         :args [7 2]
+                         :children []
+                         :depth 2
+                         :ended-at 6
+                         :id :14
+                         :name "+  com.billpiel.mem-tracer.test.ns1/func-complex"
+                         :path [:root10 :11 :14]
+                         :return 9
+                         :src-map '{:ol $3_2_3_0
+                                    :olop ($3_2_3_0 $3_2_3_1)
+                                    :olxp ($3_2_3_0 ($3_2_2 $3_2_1) $3_2_3_1)
+                                    :op (+ a)
+                                    :sym +
+                                    :xl $2_1_1_2_1_1_1_0
+                                    :xlop ($2_1_1_2_1_1_1_0 $2_1_1_2_1_1_1_2)
+                                    :xlxp ($2_1_1_2_1_1_1_0 ($2_1_1_2_1_1_1_1_0 $2_1_1_2_1_1_1_1_1) $2_1_1_2_1_1_1_2)
+                                    :xp (+ (inc c) a)}
+                         :started-at 5}
+                        {:arg-map '{(+ (inc c) a) 9}
+                         :args [9]
+                         :children []
+                         :depth 2
+                         :ended-at 8
+                         :id :15
+                         :name "vector  com.billpiel.mem-tracer.test.ns1/func-complex"
+                         :path [:root10 :11 :15]
+                         :return [9]
+                         :src-map '{:ol $3_2_4
+                                    :olop (-> $3_2_1 $3_2_2 ($3_2_3_0 $3_2_3_1) $3_2_4 ($3_2_5_0 [$3_2_5_1_0 $3_2_5_1_1]) ($3_2_6_0 $3_2_6_1))
+                                    :olxp ($3_2_4 ($3_2_3_0 ($3_2_2 $3_2_1) $3_2_3_1))
+                                    :op (-> c inc (+ a) vector (into [11 22]) (conj b))
+                                    :sym vector
+                                    :xl $2_1_1_2_1_1_0
+                                    :xlop (-> $2_1_1_2_1_1_1_1_1 $2_1_1_2_1_1_1_1_0 ($2_1_1_2_1_1_1_0 $2_1_1_2_1_1_1_2) $2_1_1_2_1_1_0 ($2_1_1_2_1_0 [$2_1_1_2_1_2_0 $2_1_1_2_1_2_1]) ($2_1_1_2_0 $2_1_1_2_2))
+                                    :xlxp ($2_1_1_2_1_1_0 ($2_1_1_2_1_1_1_0 ($2_1_1_2_1_1_1_1_0 $2_1_1_2_1_1_1_1_1) $2_1_1_2_1_1_1_2))
+                                    :xp (vector (+ (inc c) a))}
+                         :started-at 7}
+                        {:arg-map '{[11 22] [11 22]
+                                    (vector (+ (inc c) a)) [9]}
+                         :args [[9] [11 22]]
+                         :children []
+                         :depth 2
+                         :ended-at 10
+                         :id :16
+                         :name "into  com.billpiel.mem-tracer.test.ns1/func-complex"
+                         :path [:root10 :11 :16]
+                         :return [9 11 22]
+                         :src-map '{:ol $3_2_5_0
+                                    :olop ($3_2_5_0 [$3_2_5_1_0 $3_2_5_1_1])
+                                    :olxp ($3_2_5_0 ($3_2_4 ($3_2_3_0 ($3_2_2 $3_2_1) $3_2_3_1)) [$3_2_5_1_0 $3_2_5_1_1])
+                                    :op (into [11 22])
+                                    :sym into
+                                    :xl $2_1_1_2_1_0
+                                    :xlop ($2_1_1_2_1_0 [$2_1_1_2_1_2_0 $2_1_1_2_1_2_1])
+                                    :xlxp ($2_1_1_2_1_0 ($2_1_1_2_1_1_0 ($2_1_1_2_1_1_1_0 ($2_1_1_2_1_1_1_1_0 $2_1_1_2_1_1_1_1_1) $2_1_1_2_1_1_1_2)) [$2_1_1_2_1_2_0 $2_1_1_2_1_2_1])
+                                    :xp (into (vector (+ (inc c) a)) [11 22])}
+                         :started-at 9}
+                        {:arg-map '{b 3
+                                    (into (vector (+ (inc c) a)) [11 22]) [9 11 22]}
+                         :args [[9 11 22] 3]
+                         :children []
+                         :depth 2
+                         :ended-at 12
+                         :id :17
+                         :name "conj  com.billpiel.mem-tracer.test.ns1/func-complex"
+                         :path [:root10 :11 :17]
+                         :return [9 11 22 3]
+                         :src-map '{:ol $3_2_6_0
+                                    :olop ($3_2_6_0 $3_2_6_1)
+                                    :olxp ($3_2_6_0 ($3_2_5_0 ($3_2_4 ($3_2_3_0 ($3_2_2 $3_2_1) $3_2_3_1)) [$3_2_5_1_0 $3_2_5_1_1]) $3_2_6_1)
+                                    :op (conj b)
+                                    :sym conj
+                                    :xl $2_1_1_2_0
+                                    :xlop ($2_1_1_2_0 $2_1_1_2_2)
+                                    :xlxp ($2_1_1_2_0 ($2_1_1_2_1_0 ($2_1_1_2_1_1_0 ($2_1_1_2_1_1_1_0 ($2_1_1_2_1_1_1_1_0 $2_1_1_2_1_1_1_1_1) $2_1_1_2_1_1_1_2)) [$2_1_1_2_1_2_0 $2_1_1_2_1_2_1]) $2_1_1_2_2)
+                                    :xp (conj (into (vector (+ (inc c) a)) [11 22]) b)}
+                         :started-at 11}]
+             :depth 1
+             :ended-at 13
+             :id :11
+             :meta {:arglists '([a b])
+                    :column 1
+                    :file "FILE"
+                    :line 63
+                    :name 'func-complex
+                    :ns (the-ns 'com.billpiel.mem-tracer.test.ns1)}
+             :name "com.billpiel.mem-tracer.test.ns1/func-complex"
+             :path [:root10 :11]
+             :return [9 11 22 3]
+             :started-at 0}]
+ :depth 0
+ :id :root10
+ :path [:root10]
+ :traced {:deep-fn #{'com.billpiel.mem-tracer.test.ns1/func-complex}
+          :fn #{}
+          :ns #{}}
+ :ws-slot nil}

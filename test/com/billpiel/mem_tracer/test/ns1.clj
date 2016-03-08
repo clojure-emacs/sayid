@@ -67,6 +67,7 @@
         inc
         (+ a)
         vector
+        (into [11 22])
         (conj b))))
 
 (defn func-666

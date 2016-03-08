@@ -161,7 +161,7 @@
        :started-at 0
        :ended-at 1
        :id :10
-       :name "(func2 arg1)"
+       :name "func2  com.billpiel.mem-tracer.test.ns1/func1"
        :path [:10]
        :return 4
        :src-map {:ol '$3_0

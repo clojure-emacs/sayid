@@ -40,31 +40,32 @@
   [ws]
   (swap! ws assoc :children (atom [])))
 
-(defn apply-trace-set-restrictions!
-  [ws]
-  (if-let [dups (->> @ws
-                     :traced
-                     ((juxt :fn :deep-fn))
-                     (apply clojure.set/union)
-                     not-empty)]
-    (doseq [d dups]
-      (remove-trace-*! ws :fn d))))
-
-(defn add-trace-*!
-  [ws type sym]
-  (swap! ws (fn [ws'] (-> ws'
-                          (update-in [:traced type]
-                                     conj sym))))
-  (apply-trace-set-restrictions! ws)
-  (trace/trace* type sym @ws))
-
 (defn remove-trace-*!
   "Untrace all fns in the given name space."
   [ws type sym]
   (swap! ws update-in
          [:traced type]
          disj sym)
-  (trace/untrace* :ns sym))
+  (trace/untrace* type sym))
+
+(defn pre-apply-trace-set-restrictions!
+  [ws op type sym]
+  (cond (and (= op :add)
+             (= type :deep-fn))
+        ;; traces must be removed before deep traces can be applied
+        (if-let [dup (-> @ws
+                          :traced
+                          :fn
+                          (#(% sym)))]
+          (remove-trace-*! ws :fn dup))))
+
+(defn add-trace-*!
+  [ws type sym]
+  (pre-apply-trace-set-restrictions! ws :add type sym)
+  (swap! ws (fn [ws'] (-> ws'
+                          (update-in [:traced type]
+                                     conj sym))))
+  (trace/trace* type sym @ws))
 
 (defn enable-all-traces!
   [ws]

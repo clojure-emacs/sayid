@@ -55,14 +55,13 @@
 
 (defn mk-inner-tree
   [& {:keys [parent args src-map fn-meta]}]
-  #spy/d fn-meta
   (assoc (trace/mk-tree :parent parent)
-         :name (format "%s/%s : %s"
-                       (-> fn-meta :ns str)
-                       (:name fn-meta)
+         :name (format "%s  %s/%s"
                        (-> src-map
                            :sym
-                           str))
+                           str)
+                       (-> fn-meta :ns str)
+                       (:name fn-meta))
          :args (vec args)
          :arg-map (delay (zipmap (-> src-map
                                      :xp
@@ -101,14 +100,13 @@
 
 (defn swap-in-tracer-fn
   [src-maps fn-meta]
-  (let [fn-meta' (dissoc fn-meta
-                         :arglists)]
+  (let [fn-meta' fn-meta]
     (fn swap-in-tracer [s path f parent]
       (if (and (= 0 (last path)) (seq? parent) )
         (let [s-m (util/$- -> src-maps
                            (get s {})
                            (util/apply-to-map-vals (fn [x] `'~x) $))]
-          `(trace-inner-form ~f ~s-m ~fn-meta'))
+          `(trace-inner-form ~f ~s-m '~fn-meta'))
         f))))
 
 ;;  xl     (-> src clojure.walk/macroexpand-all swap-in-path-syms)
@@ -198,9 +196,6 @@
 
 (defn composed-tracer-fn
   [workspace vname m original-fn]
-  #spy/d original-fn
-  #spy/d (meta original-fn)
-  #spy/d m
   (->> original-fn
        (deep-tracer workspace
                     vname
