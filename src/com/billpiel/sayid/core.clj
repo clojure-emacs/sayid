@@ -15,6 +15,25 @@
 (def config (atom {:ws-ns '$ws
                    :rec-ns '$rec}))
 
+;; === Helper functions
+
+(defmacro src-in-meta
+  "Takes a `body` form that evaluates to a var. Alters the var's meta
+  to include the body source in :source. Useful for functions where
+  source is not otherwise available -- ex eval'd outside the context of
+  a file.
+
+ Usage:
+
+user> (sd/src-in-meta defn f1 [a] (inc a))
+{:arglists ([a]), :line 1, :column 1, :file \"/tmp/form-init5170899558834081664.clj\", :name f1, :ns #object[clojure.lang.Namespace 0x7d351966 \"user\"], :source (defn f1 [a] (inc a))}
+
+user> (-> #'f1 meta :source)
+(defn f1 [a] (inc a))
+"
+  [& body]
+  `(util/src-in-meta ~@body))
+
 ;; === Workspace functions
 
 (defn- ws-init! [& [quiet]]
