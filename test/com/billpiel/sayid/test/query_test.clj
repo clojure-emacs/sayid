@@ -1,6 +1,6 @@
-(ns com.billpiel.mem-tracer.test.query-test
-  (:require [com.billpiel.mem-tracer.core :as mm]
-            [com.billpiel.mem-tracer.query2 :as q]
+(ns com.billpiel.sayid.test.query-test
+  (:require [com.billpiel.sayid.core :as mm]
+            [com.billpiel.sayid.query2 :as q]
             [midje.sweet :refer :all]))
 
 (comment "

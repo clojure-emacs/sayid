@@ -1,6 +1,6 @@
-(ns com.billpiel.mem-tracer.query
+(ns com.billpiel.sayid.query
   (require [clojure.zip :as z]
-           [com.billpiel.mem-tracer.util.tree-query :as tq]))
+           [com.billpiel.sayid.util.tree-query :as tq]))
 
 (defn tree->seq
   [tree]

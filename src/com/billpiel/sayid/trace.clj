@@ -1,5 +1,5 @@
-(ns com.billpiel.mem-tracer.trace
-  (require [com.billpiel.mem-tracer.util.other :as util]))
+(ns com.billpiel.sayid.trace
+  (require [com.billpiel.sayid.util.other :as util]))
 
 
 (def ^:dynamic *trace-log-parent* nil)
@@ -187,7 +187,7 @@ symbol name of the function."
   No-op for clojure.core and clojure.tools.trace."
   [ns workspace]
   (let [ns (the-ns ns)]
-    (when-not ('#{clojure.core com.billpiel.mem-tracer.core} (.name ns))
+    (when-not ('#{clojure.core com.billpiel.sayid.core} (.name ns))
       (let [ns-fns (->> ns ns-interns vals (filter (comp fn? var-get)))]
         (doseq [f ns-fns]
           (trace-var* f

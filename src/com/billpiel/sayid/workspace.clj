@@ -1,7 +1,7 @@
-(ns com.billpiel.mem-tracer.workspace
-  (:require [com.billpiel.mem-tracer.trace :as trace]
-            [com.billpiel.mem-tracer.util.other :as util]
-            [com.billpiel.mem-tracer.shelf :as shelf]))
+(ns com.billpiel.sayid.workspace
+  (:require [com.billpiel.sayid.trace :as trace]
+            [com.billpiel.sayid.util.other :as util]
+            [com.billpiel.sayid.shelf :as shelf]))
 
 (def default-traced {:ns #{}
                        :fn #{}

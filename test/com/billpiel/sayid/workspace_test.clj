@@ -1,6 +1,6 @@
-(ns com.billpiel.mem-tracer.workspace-test
-  (:require [com.billpiel.mem-tracer.workspace :as ws]
-            [com.billpiel.mem-tracer.test-utils :as t-utils]
+(ns com.billpiel.sayid.workspace-test
+  (:require [com.billpiel.sayid.workspace :as ws]
+            [com.billpiel.sayid.test-utils :as t-utils]
             [midje.sweet :refer :all]))
 
 (fact "save-as"

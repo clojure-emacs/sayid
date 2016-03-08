@@ -1,7 +1,7 @@
-(ns com.billpiel.mem-tracer.recording-test
-  (:require [com.billpiel.mem-tracer.recording :as r]
-            [com.billpiel.mem-tracer.workspace :as w]
-            [com.billpiel.mem-tracer.test-utils :as t-utils]
+(ns com.billpiel.sayid.recording-test
+  (:require [com.billpiel.sayid.recording :as r]
+            [com.billpiel.sayid.workspace :as w]
+            [com.billpiel.sayid.test-utils :as t-utils]
             [midje.sweet :refer :all]))
 
 (fact-group

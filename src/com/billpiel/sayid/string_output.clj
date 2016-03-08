@@ -1,4 +1,4 @@
-(ns com.billpiel.mem-tracer.string-output
+(ns com.billpiel.sayid.string-output
   (:require [puget.printer :as puget]
             clojure.string))
 
@@ -223,4 +223,4 @@
   (doseq [o (pmap tree->string trees)]
     (print o)))
 
-#_ (com.billpiel.mem-tracer.test.manual/ns-unmap-all *ns*)
+#_ (com.billpiel.sayid.test.manual/ns-unmap-all *ns*)

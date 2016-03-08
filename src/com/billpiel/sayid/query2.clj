@@ -1,6 +1,6 @@
-(ns com.billpiel.mem-tracer.query2
+(ns com.billpiel.sayid.query2
   (require [clojure.zip :as z]
-           [com.billpiel.mem-tracer.util.other :as util]
+           [com.billpiel.sayid.util.other :as util]
            ))
 
 ;; === zipper iterators
@@ -341,7 +341,7 @@
 
 #_ (do
 
-    (com.billpiel.mem-tracer.util.other/ns-unmap-all *ns*)
+    (com.billpiel.sayid.util.other/ns-unmap-all *ns*)
 
 (def ttt {:id 1
           :children [{:id 2

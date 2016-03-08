@@ -1,4 +1,4 @@
-(ns com.billpiel.mem-tracer.util.destructure)
+(ns com.billpiel.sayid.util.destructure)
 
 (declare pb)
 

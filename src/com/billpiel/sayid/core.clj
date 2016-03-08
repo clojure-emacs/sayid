@@ -1,13 +1,13 @@
-(ns com.billpiel.mem-tracer.core
-  (:require com.billpiel.mem-tracer.string-output
-            [com.billpiel.mem-tracer.trace :as trace]
-            [com.billpiel.mem-tracer.deep-trace :as dtrace]
-            [com.billpiel.mem-tracer.workspace :as ws]
-            [com.billpiel.mem-tracer.recording :as rec]
-            [com.billpiel.mem-tracer.query2 :as q]
-            [com.billpiel.mem-tracer.util.find-ns :as find-ns]
-            [com.billpiel.mem-tracer.string-output :as so]
-            [com.billpiel.mem-tracer.util.other :as util]))
+(ns com.billpiel.sayid.core
+  (:require com.billpiel.sayid.string-output
+            [com.billpiel.sayid.trace :as trace]
+            [com.billpiel.sayid.deep-trace :as dtrace]
+            [com.billpiel.sayid.workspace :as ws]
+            [com.billpiel.sayid.recording :as rec]
+            [com.billpiel.sayid.query2 :as q]
+            [com.billpiel.sayid.util.find-ns :as find-ns]
+            [com.billpiel.sayid.string-output :as so]
+            [com.billpiel.sayid.util.other :as util]))
 
 (def workspace (atom nil))
 (def recording (atom nil))
@@ -236,7 +236,7 @@
 
 ;; === String Output functions
 
-(def tree->string #'com.billpiel.mem-tracer.string-output/tree->string)
+(def tree->string #'com.billpiel.sayid.string-output/tree->string)
 
 (defn get-trees
   [v]
@@ -274,13 +274,13 @@
 
 (defn ws-print
   [& [ws]]
-  (#'com.billpiel.mem-tracer.string-output/print-tree (or ws
+  (#'com.billpiel.sayid.string-output/print-tree (or ws
                                                           (ws-deref!))))
 (util/defalias w-print ws-print)
 
 (defn rec-print
   [& [rec]]
-  (#'com.billpiel.mem-tracer.string-output/print-tree (or rec
+  (#'com.billpiel.sayid.string-output/print-tree (or rec
                                                           @recording)))
 (util/defalias r-print rec-print)
 

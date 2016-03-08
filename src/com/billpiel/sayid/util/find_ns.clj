@@ -1,4 +1,4 @@
-(ns com.billpiel.mem-tracer.util.find-ns
+(ns com.billpiel.sayid.util.find-ns
   (:require [swiss.arrows :refer :all]))
 
 (defn unnest-symbol

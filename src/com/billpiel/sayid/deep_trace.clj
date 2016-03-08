@@ -1,6 +1,6 @@
-(ns com.billpiel.mem-tracer.deep-trace
-  (require [com.billpiel.mem-tracer.util.other :as util]
-           [com.billpiel.mem-tracer.trace :as trace]))
+(ns com.billpiel.sayid.deep-trace
+  (require [com.billpiel.sayid.util.other :as util]
+           [com.billpiel.sayid.trace :as trace]))
 
 
 (defn swap-in-path-syms*
@@ -191,7 +191,7 @@
                               (swap-in-tracer-fn $ m)
                               (swap-in-path-syms xsrc)
                               get-fn)]
-    (util/eval-in-ns 'com.billpiel.mem-tracer.test.ns1
+    (util/eval-in-ns 'com.billpiel.sayid.test.ns1
                      traced-form)))
 
 (defn composed-tracer-fn

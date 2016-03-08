@@ -1,5 +1,5 @@
-(ns com.billpiel.mem-tracer.shelf
-  (:require [com.billpiel.mem-tracer.util.other :as util]))
+(ns com.billpiel.sayid.shelf
+  (:require [com.billpiel.sayid.util.other :as util]))
 
 
 (defn save!

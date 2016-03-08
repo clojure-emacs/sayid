@@ -1,4 +1,4 @@
-(ns com.billpiel.mem-tracer.util.other
+(ns com.billpiel.sayid.util.other
   (require [clj-time.core :as time]
            [clj-time.coerce :as time-c]
            [clojure.walk :as walk]))
@@ -26,7 +26,7 @@
 (defn arg-matcher-fn
   [arglists]
   (when (not-empty arglists)
-    (let [arities (map #(list % '(com.billpiel.mem-tracer.util.other/get-env)) ;; NOTE!  NS/get-env must match this ns
+    (let [arities (map #(list % '(com.billpiel.sayid.util.other/get-env)) ;; NOTE!  NS/get-env must match this ns
                        arglists)
           fn1  `(fn ~@arities)]
       (eval fn1))))

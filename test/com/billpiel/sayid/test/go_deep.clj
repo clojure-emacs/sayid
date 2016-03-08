@@ -1,4 +1,4 @@
-(ns com.billpiel.mem-tracer.test.go-deep)
+(ns com.billpiel.sayid.test.go-deep)
 
 (defn go-deep [n & r]
   (if (> n 0)

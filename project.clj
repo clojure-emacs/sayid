@@ -1,4 +1,4 @@
-(defproject com.billpiel.mem-tracer "0.0.1"
+(defproject com.billpiel.sayid "0.0.1"
   :description "FIXME: write description"
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"

@@ -1,9 +1,9 @@
-(ns com.billpiel.mem-tracer.deep-trace-test
-  (:require [com.billpiel.mem-tracer.deep-trace :as dt]
-            [com.billpiel.mem-tracer.trace :as mt]
-            [com.billpiel.mem-tracer.workspace :as mw]
-            [com.billpiel.mem-tracer.util.other :as util]
-            [com.billpiel.mem-tracer.test-utils :as t-utils]
+(ns com.billpiel.sayid.deep-trace-test
+  (:require [com.billpiel.sayid.deep-trace :as dt]
+            [com.billpiel.sayid.trace :as mt]
+            [com.billpiel.sayid.workspace :as mw]
+            [com.billpiel.sayid.util.other :as util]
+            [com.billpiel.sayid.test-utils :as t-utils]
             [midje.sweet :refer :all]))
 
 (def src1 '(defn func1
@@ -146,9 +146,9 @@
                 gensym (t-utils/mock-gensym-fn)]
     (binding [mt/*trace-log-parent* {:children (atom []) :parent {}}]
       ((dt/deep-tracer {}
-                       'com.billpiel.mem-tracer.test.ns1/func1
-                       (meta #'com.billpiel.mem-tracer.test.ns1/func1)
-                       com.billpiel.mem-tracer.test.ns1/func1)
+                       'com.billpiel.sayid.test.ns1/func1
+                       (meta #'com.billpiel.sayid.test.ns1/func1)
+                       com.billpiel.sayid.test.ns1/func1)
        4)
       (->> mt/*trace-log-parent*
            :children
@@ -161,7 +161,7 @@
        :started-at 0
        :ended-at 1
        :id :10
-       :name "func2  com.billpiel.mem-tracer.test.ns1/func1"
+       :name "func2  com.billpiel.sayid.test.ns1/func1"
        :path [:10]
        :return 4
        :src-map {:ol '$3_0

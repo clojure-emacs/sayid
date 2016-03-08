@@ -1,22 +1,22 @@
-(ns com.billpiel.mem-tracer.core-test
+(ns com.billpiel.sayid.core-test
   (:require [midje.sweet :refer :all]
-            [com.billpiel.mem-tracer.core :as mm]
-            [com.billpiel.mem-tracer.trace :as mt]
-            [com.billpiel.mem-tracer.query2 :as mq]
-            [com.billpiel.mem-tracer.test-utils :as t-utils]
-            com.billpiel.mem-tracer.test.ns1
-            [com.billpiel.mem-tracer.expected-output1 :as ex-o1]
-            [com.billpiel.mem-tracer.test.ns1 :as ns1]
-            [com.billpiel.mem-tracer.string-output :as so]))
+            [com.billpiel.sayid.core :as mm]
+            [com.billpiel.sayid.trace :as mt]
+            [com.billpiel.sayid.query2 :as mq]
+            [com.billpiel.sayid.test-utils :as t-utils]
+            com.billpiel.sayid.test.ns1
+            [com.billpiel.sayid.expected-output1 :as ex-o1]
+            [com.billpiel.sayid.test.ns1 :as ns1]
+            [com.billpiel.sayid.string-output :as so]))
 
 
 (fact-group "basic test"
-  (mt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
+  (mt/untrace-ns* 'com.billpiel.sayid.test.ns1)
   (mm/ws-reset!)
   (with-redefs [mt/now (t-utils/mock-now-fn)
                 gensym (t-utils/mock-gensym-fn)]
-    (mm/ws-add-trace-ns! com.billpiel.mem-tracer.test.ns1)
-    (com.billpiel.mem-tracer.test.ns1/func1 :a)
+    (mm/ws-add-trace-ns! com.billpiel.sayid.test.ns1)
+    (com.billpiel.sayid.test.ns1/func1 :a)
     (let [trace (mm/ws-deref!)
           expected-trace {:arg-map nil,
                           :children
@@ -32,10 +32,10 @@
                                :file "FILE",
                                :line 4,
                                :name 'func2,
-                               :ns (the-ns 'com.billpiel.mem-tracer.test.ns1)},
+                               :ns (the-ns 'com.billpiel.sayid.test.ns1)},
                               :return :a,
                               :started-at 1
-                              :name "com.billpiel.mem-tracer.test.ns1/func2",
+                              :name "com.billpiel.sayid.test.ns1/func2",
                               :arg-map {"arg1" :a},
                               :id :12,
                               :ended-at 2
@@ -46,10 +46,10 @@
                              :file "FILE",
                              :line 8,
                              :name 'func1,
-                             :ns (the-ns 'com.billpiel.mem-tracer.test.ns1)},
+                             :ns (the-ns 'com.billpiel.sayid.test.ns1)},
                             :return :a,
                             :started-at 0
-                            :name "com.billpiel.mem-tracer.test.ns1/func1",
+                            :name "com.billpiel.sayid.test.ns1/func1",
                             :arg-map {"arg1" :a},
                             :id :11,
                             :ended-at 3
@@ -58,7 +58,7 @@
                           :id :root10,
                           :path [:root10],
                           :traced
-                          {:deep-fn #{}, :fn #{}, :ns #{'com.billpiel.mem-tracer.test.ns1}},
+                          {:deep-fn #{}, :fn #{}, :ns #{'com.billpiel.sayid.test.ns1}},
                           :ws-slot nil}]
 
       (fact "log is correct"
@@ -69,40 +69,40 @@
 
 
       (fact "remove trace"
-        (mm/ws-remove-trace-ns! 'com.billpiel.mem-tracer.test.ns1)
-        (com.billpiel.mem-tracer.test.ns1/func1 :b)
+        (mm/ws-remove-trace-ns! 'com.billpiel.sayid.test.ns1)
+        (com.billpiel.sayid.test.ns1/func1 :b)
         (-> (mm/ws-deref!)
             ((t-utils/redact-file-fn [:children 0 :meta :file]
                                      [:children 0 :children 0 :meta :file])))
         => (assoc expected-trace
                   :traced {:fn #{}, :ns #{}, :deep-fn #{}})))
 
-    (mt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)))
+    (mt/untrace-ns* 'com.billpiel.sayid.test.ns1)))
 
  (fact-group "about enable/disable -all-traces!"
-  (mt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
+  (mt/untrace-ns* 'com.billpiel.sayid.test.ns1)
   (mm/ws-reset!)
   (with-redefs [mt/now (t-utils/mock-now-fn)
                 gensym (t-utils/mock-gensym-fn)]
 
-    (mm/ws-add-trace-ns! com.billpiel.mem-tracer.test.ns1)
+    (mm/ws-add-trace-ns! com.billpiel.sayid.test.ns1)
 
     (fact "ws-disable-all-traces! works"
       (mm/ws-disable-all-traces!)
-      (com.billpiel.mem-tracer.test.ns1/func1 :a)
+      (com.billpiel.sayid.test.ns1/func1 :a)
 
       (mm/ws-deref!)
       => {:children []
           :depth 0
           :id :root10
           :path [:root10]
-          :traced {:deep-fn #{}, :fn #{}, :ns #{'com.billpiel.mem-tracer.test.ns1}}
+          :traced {:deep-fn #{}, :fn #{}, :ns #{'com.billpiel.sayid.test.ns1}}
           :ws-slot nil
                     :arg-map nil})
 
     (fact "ws-enable-all-traces! works"
       (mm/ws-enable-all-traces!)
-      (com.billpiel.mem-tracer.test.ns1/func1 :a)
+      (com.billpiel.sayid.test.ns1/func1 :a)
 
       (-> (mm/ws-deref!)
           ((t-utils/redact-file-fn [:children 0 :meta :file]
@@ -121,8 +121,8 @@
                                          :file "FILE"
                                          :line 4
                                          :name 'func2
-                                         :ns (the-ns 'com.billpiel.mem-tracer.test.ns1)}
-                                  :name "com.billpiel.mem-tracer.test.ns1/func2"
+                                         :ns (the-ns 'com.billpiel.sayid.test.ns1)}
+                                  :name "com.billpiel.sayid.test.ns1/func2"
                                   :path [:root10 :11 :12]
                                   :return :a
                                   :started-at 1}]
@@ -134,8 +134,8 @@
                              :file "FILE"
                              :line 8
                              :name 'func1
-                             :ns (the-ns 'com.billpiel.mem-tracer.test.ns1)}
-                      :name "com.billpiel.mem-tracer.test.ns1/func1"
+                             :ns (the-ns 'com.billpiel.sayid.test.ns1)}
+                      :name "com.billpiel.sayid.test.ns1/func1"
                       :path [:root10 :11]
                       :return :a
                       :started-at 0}]
@@ -144,22 +144,22 @@
           :path [:root10]
           :traced {:deep-fn #{}
                    :fn #{}
-                   :ns #{'com.billpiel.mem-tracer.test.ns1}}
+                   :ns #{'com.billpiel.sayid.test.ns1}}
           :ws-slot nil})
 
-    (mt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)))
+    (mt/untrace-ns* 'com.billpiel.sayid.test.ns1)))
 
 (fact-group "about remove-all-traces!"
-  (mt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
+  (mt/untrace-ns* 'com.billpiel.sayid.test.ns1)
   (mm/ws-reset!)
   (with-redefs [mt/now (t-utils/mock-now-fn)
                 gensym (t-utils/mock-gensym-fn)]
 
-    (mm/ws-add-trace-ns! com.billpiel.mem-tracer.test.ns1)
+    (mm/ws-add-trace-ns! com.billpiel.sayid.test.ns1)
 
     (fact "remove-all-traces! works"
       (mm/ws-remove-all-traces!)
-      (com.billpiel.mem-tracer.test.ns1/func1 :a)
+      (com.billpiel.sayid.test.ns1/func1 :a)
 
       (mm/ws-deref!)
       => {:children []
@@ -170,13 +170,13 @@
           :ws-slot nil
                     :arg-map nil})
 
-    (mt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)))
+    (mt/untrace-ns* 'com.billpiel.sayid.test.ns1)))
 
 (def mock-log {:children
                [{:args [:a]
                  :children []
                  :started-at #inst "2010-01-01T01:00:00.000-00:00"
-                 :name "com.billpiel.mem-tracer.test.ns1/func-throws"
+                 :name "com.billpiel.sayid.test.ns1/func-throws"
                  :id :11
                  :parent-id :root10
                  :ended-at 1
@@ -187,13 +187,13 @@
                     :at
                     {:method-name "invoke"
                      :file-name "ns1.clj"
-                     :class-name "com.billpiel.mem_tracer.test.ns1$func_throws"
+                     :class-name "com.billpiel.sayid.test.ns1$func_throws"
                      :line-number 14}
                     :message "Exception from func-throws: :a"}]
                   :trace
                   [{:method-name "invoke"
                     :file-name "ns1.clj"
-                    :class-name "com.billpiel.mem_tracer.test.ns1$func_throws"
+                    :class-name "com.billpiel.sayid.test.ns1$func_throws"
                     :line-number 14}
                    {:method-name "applyToHelper"
                     :file-name "AFn.java"
@@ -210,16 +210,16 @@
                    {:method-name "invoke"
                     :file-name "core.clj"
                     :class-name
-                    "com.billpiel.mem_tracer.core$trace_fn_call$fn__22284"
+                    "com.billpiel.sayid.core$trace_fn_call$fn__22284"
                     :line-number 85}
                    {:method-name "invoke"
                     :file-name "core.clj"
-                    :class-name "com.billpiel.mem_tracer.core$trace_fn_call"
+                    :class-name "com.billpiel.sayid.core$trace_fn_call"
                     :line-number 83}
                    {:method-name "doInvoke"
                     :file-name "core.clj"
                     :class-name
-                    "com.billpiel.mem_tracer.core$trace_var_STAR_$fn__22290$tracing_wrapper__22291"
+                    "com.billpiel.sayid.core$trace_var_STAR_$fn__22290$tracing_wrapper__22291"
                     :line-number 120}
                    {:method-name "invoke"
                     :file-name "RestFn.java"
@@ -228,12 +228,12 @@
                    {:method-name "invoke"
                     :file-name "form-init2637533150160036371.clj"
                     :class-name
-                    "com.billpiel.mem_tracer.core_test$eval22994$fn__22995$fn__22996$fn__22997$fn__22998"
+                    "com.billpiel.sayid.core_test$eval22994$fn__22995$fn__22996$fn__22997$fn__22998"
                     :line-number 1}
                    {:method-name "invoke"
                     :file-name "form-init2637533150160036371.clj"
                     :class-name
-                    "com.billpiel.mem_tracer.core_test$eval22994$fn__22995$fn__22996$fn__22997"
+                    "com.billpiel.sayid.core_test$eval22994$fn__22995$fn__22996$fn__22997"
                     :line-number 1}
                    {:method-name "invoke"
                     :file-name "core.clj"
@@ -242,7 +242,7 @@
                    {:method-name "invoke"
                     :file-name "form-init2637533150160036371.clj"
                     :class-name
-                    "com.billpiel.mem_tracer.core_test$eval22994$fn__22995$fn__22996"
+                    "com.billpiel.sayid.core_test$eval22994$fn__22995$fn__22996"
                     :line-number 1}
                    {:method-name "invoke"
                     :file-name "thread_safe_var_nesting.clj"
@@ -252,7 +252,7 @@
                    {:method-name "invoke"
                     :file-name "form-init2637533150160036371.clj"
                     :class-name
-                    "com.billpiel.mem_tracer.core_test$eval22994$fn__22995"
+                    "com.billpiel.sayid.core_test$eval22994$fn__22995"
                     :line-number 1}
                    {:method-name "applyToHelper"
                     :file-name "AFn.java"
@@ -284,7 +284,7 @@
                     :line-number 35}
                    {:method-name "invoke"
                     :file-name "form-init2637533150160036371.clj"
-                    :class-name "com.billpiel.mem_tracer.core_test$eval22994"
+                    :class-name "com.billpiel.sayid.core_test$eval22994"
                     :line-number 1}
                    {:method-name "eval"
                     :file-name "Compiler.java"
@@ -380,12 +380,12 @@
 
 (fact-group "exception thrown"
 
-  (mt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
+  (mt/untrace-ns* 'com.billpiel.sayid.test.ns1)
   (with-redefs [mt/now (t-utils/mock-now-fn)
                 gensym (t-utils/mock-gensym-fn)]
-    (let [trace-root (mm/ws-add-trace-ns! com.billpiel.mem-tracer.test.ns1)
+    (let [trace-root (mm/ws-add-trace-ns! com.billpiel.sayid.test.ns1)
           _ (try
-              (com.billpiel.mem-tracer.test.ns1/func-throws :a)
+              (com.billpiel.sayid.test.ns1/func-throws :a)
               (catch Throwable t))
           trace (mm/ws-deref!)]
 
@@ -394,7 +394,7 @@
         => {:depth 0
             :id :root10
             :path [:root10]
-            :traced {:fn #{}, :ns #{'com.billpiel.mem-tracer.test.ns1}, :deep-fn #{}}
+            :traced {:fn #{}, :ns #{'com.billpiel.sayid.test.ns1}, :deep-fn #{}}
             :ws-slot nil
                         :arg-map nil})
 
@@ -408,7 +408,7 @@
 
       (fact "log is correct"
         (-> trace :children first :throw :via first)
-        => {:at {:class-name "com.billpiel.mem_tracer.test.ns1$func_throws"
+        => {:at {:class-name "com.billpiel.sayid.test.ns1$func_throws"
                  :file-name "ns1.clj"
                  :line-number 14
                  :method-name "invoke"}
@@ -426,7 +426,7 @@
             :depth 1
             :ended-at 1
             :id :11
-            :name "com.billpiel.mem-tracer.test.ns1/func-throws"
+            :name "com.billpiel.sayid.test.ns1/func-throws"
             :path [:root10 :11]
             :started-at 0
             :meta {:arglists '([arg1])
@@ -434,20 +434,20 @@
                    :file "FILE"
                    :line 12
                    :name 'func-throws
-                   :ns (the-ns 'com.billpiel.mem-tracer.test.ns1)}
+                   :ns (the-ns 'com.billpiel.sayid.test.ns1)}
             :arg-map {"arg1" :a}})
 
-      (mt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1))))
+      (mt/untrace-ns* 'com.billpiel.sayid.test.ns1))))
 
 (fact-group "querying with query/query"
 
-  (mt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
+  (mt/untrace-ns* 'com.billpiel.sayid.test.ns1)
   (mm/ws-clear-log!)
   (mm/ws-reset!)
   (with-redefs [mt/now (t-utils/mock-now-fn)
                 gensym (t-utils/mock-gensym-fn)]
-    (let [trace-root (mm/ws-add-trace-ns! com.billpiel.mem-tracer.test.ns1)
-          _ (com.billpiel.mem-tracer.test.ns1/func3-1 3 8)
+    (let [trace-root (mm/ws-add-trace-ns! com.billpiel.sayid.test.ns1)
+          _ (com.billpiel.sayid.test.ns1/func3-1 3 8)
           trace (mm/ws-deref!)]
 
       (fact "find node by name and all parents"
@@ -476,8 +476,8 @@
                                                         :file "FILE"
                                                         :line 16
                                                         :name 'func3-4
-                                                        :ns (the-ns 'com.billpiel.mem-tracer.test.ns1)}
-                                                 :name "com.billpiel.mem-tracer.test.ns1/func3-4"
+                                                        :ns (the-ns 'com.billpiel.sayid.test.ns1)}
+                                                 :name "com.billpiel.sayid.test.ns1/func3-4"
                                                  :path [:root10 :11 :13 :15]
                                                  :return 8
                                                  :started-at 6}]
@@ -489,8 +489,8 @@
                                             :file "FILE"
                                             :line 28
                                             :name 'func3-3
-                                            :ns (the-ns 'com.billpiel.mem-tracer.test.ns1)}
-                                     :name "com.billpiel.mem-tracer.test.ns1/func3-3"
+                                            :ns (the-ns 'com.billpiel.sayid.test.ns1)}
+                                     :name "com.billpiel.sayid.test.ns1/func3-3"
                                      :path [:root10 :11 :13]
                                      :return 8
                                      :started-at 3}]
@@ -502,8 +502,8 @@
                                 :file "FILE"
                                 :line 33
                                 :name 'func3-1
-                                :ns (the-ns 'com.billpiel.mem-tracer.test.ns1)}
-                         :name "com.billpiel.mem-tracer.test.ns1/func3-1"
+                                :ns (the-ns 'com.billpiel.sayid.test.ns1)}
+                         :name "com.billpiel.sayid.test.ns1/func3-1"
                          :path [:root10 :11]
                          :return 13
                          :started-at 0}]
@@ -512,19 +512,19 @@
              :path [:root10]
              :traced {:deep-fn #{}
                       :fn #{}
-                      :ns #{'com.billpiel.mem-tracer.test.ns1}}
+                      :ns #{'com.billpiel.sayid.test.ns1}}
              :ws-slot nil}])
 
-      (mt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1))))
+      (mt/untrace-ns* 'com.billpiel.sayid.test.ns1))))
 
 (fact-group "querying with q macro"
-  (mt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
+  (mt/untrace-ns* 'com.billpiel.sayid.test.ns1)
   (mm/ws-clear-log!)
   (mm/ws-reset!)
   (with-redefs [mt/now (t-utils/mock-now-fn)
                 gensym (t-utils/mock-gensym-fn)]
-    (let [trace-root (mm/ws-add-trace-ns! com.billpiel.mem-tracer.test.ns1)
-          _ (com.billpiel.mem-tracer.test.ns1/func3-1 3 8)
+    (let [trace-root (mm/ws-add-trace-ns! com.billpiel.sayid.test.ns1)
+          _ (com.billpiel.sayid.test.ns1/func3-1 3 8)
           trace (mm/ws-deref!)]
 
       (fact "find node by name and all parents"
@@ -550,8 +550,8 @@
                                                          :file "FILE"
                                                          :line 16
                                                          :name 'func3-4
-                                                         :ns (the-ns 'com.billpiel.mem-tracer.test.ns1)}
-                                                  :name "com.billpiel.mem-tracer.test.ns1/func3-4"
+                                                         :ns (the-ns 'com.billpiel.sayid.test.ns1)}
+                                                  :name "com.billpiel.sayid.test.ns1/func3-4"
                                                   :path [:root10 :11 :13 :15]
                                                   :return 8
                                                   :started-at 6}]
@@ -563,8 +563,8 @@
                                              :file "FILE"
                                              :line 28
                                              :name 'func3-3
-                                             :ns (the-ns 'com.billpiel.mem-tracer.test.ns1)}
-                                      :name "com.billpiel.mem-tracer.test.ns1/func3-3"
+                                             :ns (the-ns 'com.billpiel.sayid.test.ns1)}
+                                      :name "com.billpiel.sayid.test.ns1/func3-3"
                                       :path [:root10 :11 :13]
                                       :return 8
                                       :started-at 3}]
@@ -576,8 +576,8 @@
                                  :file "FILE"
                                  :line 33
                                  :name 'func3-1
-                                 :ns (the-ns 'com.billpiel.mem-tracer.test.ns1)}
-                          :name "com.billpiel.mem-tracer.test.ns1/func3-1"
+                                 :ns (the-ns 'com.billpiel.sayid.test.ns1)}
+                          :name "com.billpiel.sayid.test.ns1/func3-1"
                           :path [:root10 :11]
                           :return 13
                           :started-at 0}]
@@ -586,18 +586,18 @@
               :path [:root10]
               :traced {:deep-fn #{}
                        :fn #{}
-                       :ns #{'com.billpiel.mem-tracer.test.ns1}}
+                       :ns #{'com.billpiel.sayid.test.ns1}}
               :ws-slot nil}])
-      (mt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1))))
+      (mt/untrace-ns* 'com.billpiel.sayid.test.ns1))))
 
 (fact-group "trace a namespace by alias"
-     (mt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
+     (mt/untrace-ns* 'com.billpiel.sayid.test.ns1)
      (mm/ws-reset!)
 
      (with-redefs [mt/now (t-utils/mock-now-fn)
                    gensym (t-utils/mock-gensym-fn)]
        (mm/ws-add-trace-ns! ns1)
-       (com.billpiel.mem-tracer.test.ns1/func1 :a)
+       (com.billpiel.sayid.test.ns1/func1 :a)
        (let [trace (mm/ws-deref!)
              expected-trace {:arg-map nil
                              :children [{:arg-map {"arg1" :a}
@@ -613,8 +613,8 @@
                                                             :file "FILE"
                                                             :line 4
                                                             :name 'func2
-                                                            :ns (the-ns 'com.billpiel.mem-tracer.test.ns1)}
-                                                     :name "com.billpiel.mem-tracer.test.ns1/func2"
+                                                            :ns (the-ns 'com.billpiel.sayid.test.ns1)}
+                                                     :name "com.billpiel.sayid.test.ns1/func2"
                                                      :path [:root10 :11 :12]
                                                      :return :a
                                                      :started-at 1}]
@@ -626,8 +626,8 @@
                                                 :file "FILE"
                                                 :line 8
                                                 :name 'func1
-                                                :ns (the-ns 'com.billpiel.mem-tracer.test.ns1)}
-                                         :name "com.billpiel.mem-tracer.test.ns1/func1"
+                                                :ns (the-ns 'com.billpiel.sayid.test.ns1)}
+                                         :name "com.billpiel.sayid.test.ns1/func1"
                                          :path [:root10 :11]
                                          :return :a
                                          :started-at 0}]
@@ -636,7 +636,7 @@
                              :path [:root10]
                              :traced {:deep-fn #{}
                                       :fn #{}
-                                      :ns #{'com.billpiel.mem-tracer.test.ns1}}
+                                      :ns #{'com.billpiel.sayid.test.ns1}}
                              :ws-slot nil}]
 
          (fact "log is correct"
@@ -645,11 +645,11 @@
                                         [:children 0 :children 0 :meta :file])))
            => expected-trace))
 
-       (mt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)))
+       (mt/untrace-ns* 'com.billpiel.sayid.test.ns1)))
 
 
 (fact-group "deep trace a single function"
-  (mt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
+  (mt/untrace-ns* 'com.billpiel.sayid.test.ns1)
   (mm/ws-reset!)
 
   (with-redefs [mt/now (t-utils/mock-now-fn)
@@ -669,7 +669,7 @@
                                    :depth 2
                                    :ended-at 2
                                    :id :12
-                                   :name "*  com.billpiel.mem-tracer.test.ns1/func-complex"
+                                   :name "*  com.billpiel.sayid.test.ns1/func-complex"
                                    :path [:root10 :11 :12]
                                    :return 6
                                    :src-map '{:ol $3_1_1_0
@@ -688,7 +688,7 @@
                                    :depth 2
                                    :ended-at 4
                                    :id :13
-                                   :name "inc  com.billpiel.mem-tracer.test.ns1/func-complex"
+                                   :name "inc  com.billpiel.sayid.test.ns1/func-complex"
                                    :path [:root10 :11 :13]
                                    :return 7
                                    :src-map '{:ol $3_2_2
@@ -708,7 +708,7 @@
                                    :depth 2
                                    :ended-at 6
                                    :id :14
-                                   :name "+  com.billpiel.mem-tracer.test.ns1/func-complex"
+                                   :name "+  com.billpiel.sayid.test.ns1/func-complex"
                                    :path [:root10 :11 :14]
                                    :return 9
                                    :src-map '{:ol $3_2_3_0
@@ -727,7 +727,7 @@
                                    :depth 2
                                    :ended-at 8
                                    :id :15
-                                   :name "vector  com.billpiel.mem-tracer.test.ns1/func-complex"
+                                   :name "vector  com.billpiel.sayid.test.ns1/func-complex"
                                    :path [:root10 :11 :15]
                                    :return [9]
                                    :src-map '{:ol $3_2_4
@@ -747,7 +747,7 @@
                                    :depth 2
                                    :ended-at 10
                                    :id :16
-                                   :name "into  com.billpiel.mem-tracer.test.ns1/func-complex"
+                                   :name "into  com.billpiel.sayid.test.ns1/func-complex"
                                    :path [:root10 :11 :16]
                                    :return [9 11 22]
                                    :src-map '{:ol $3_2_5_0
@@ -767,7 +767,7 @@
                                    :depth 2
                                    :ended-at 12
                                    :id :17
-                                   :name "conj  com.billpiel.mem-tracer.test.ns1/func-complex"
+                                   :name "conj  com.billpiel.sayid.test.ns1/func-complex"
                                    :path [:root10 :11 :17]
                                    :return [9 11 22 3]
                                    :src-map '{:ol $3_2_6_0
@@ -788,15 +788,15 @@
                               :file "FILE"
                               :line 63
                               :name 'func-complex
-                              :ns (the-ns 'com.billpiel.mem-tracer.test.ns1)}
-                       :name "com.billpiel.mem-tracer.test.ns1/func-complex"
+                              :ns (the-ns 'com.billpiel.sayid.test.ns1)}
+                       :name "com.billpiel.sayid.test.ns1/func-complex"
                        :path [:root10 :11]
                        :return [9 11 22 3]
                        :started-at 0}]
            :depth 0
            :id :root10
            :path [:root10]
-           :traced {:deep-fn #{'com.billpiel.mem-tracer.test.ns1/func-complex}
+           :traced {:deep-fn #{'com.billpiel.sayid.test.ns1/func-complex}
                     :fn #{}
                     :ns #{}}
            :ws-slot nil}]
@@ -806,21 +806,21 @@
             ((t-utils/redact-file-fn [:children 0 :meta :file])))
         => expected-trace))
 
-    (mt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
+    (mt/untrace-ns* 'com.billpiel.sayid.test.ns1)
     (mm/ws-reset!)))
 
 (fact-group "tracing then deep tracing a func results in only a deep trace"
-  (mt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
+  (mt/untrace-ns* 'com.billpiel.sayid.test.ns1)
   (mm/ws-reset!)
 
   (with-redefs [mt/now (t-utils/mock-now-fn)
                 gensym (t-utils/mock-gensym-fn)]
-    (let [original-func-complex com.billpiel.mem-tracer.test.ns1/func-complex]
+    (let [original-func-complex com.billpiel.sayid.test.ns1/func-complex]
       (mm/ws-add-trace-fn! ns1/func-complex)
 
       (fact "trace is set in workspace"
         (mm/ws-show-traced) => {:deep-fn #{}
-                                :fn #{'com.billpiel.mem-tracer.test.ns1/func-complex}
+                                :fn #{'com.billpiel.sayid.test.ns1/func-complex}
                                 :ns #{}})
 
       (fact "trace is correct"
@@ -839,8 +839,8 @@
                     :file "FILE"
                     :line 63
                     :name 'func-complex
-                    :ns (the-ns 'com.billpiel.mem-tracer.test.ns1)}
-             :name "com.billpiel.mem-tracer.test.ns1/func-complex"
+                    :ns (the-ns 'com.billpiel.sayid.test.ns1)}
+             :name "com.billpiel.sayid.test.ns1/func-complex"
              :path [:root10 :12]
              :return [9 11 22 3]
              :started-at 0}])
@@ -849,7 +849,7 @@
 
       (mm/ws-add-deep-trace-fn! ns1/func-complex)
       (fact "only deep trace is set in workspace"
-        (mm/ws-show-traced) => {:deep-fn #{'com.billpiel.mem-tracer.test.ns1/func-complex}
+        (mm/ws-show-traced) => {:deep-fn #{'com.billpiel.sayid.test.ns1/func-complex}
                                 :fn #{}
                                 :ns #{}})
 
@@ -869,8 +869,8 @@
                     :file "FILE"
                     :line 63
                     :name 'func-complex
-                    :ns (the-ns 'com.billpiel.mem-tracer.test.ns1)}
-             :name "com.billpiel.mem-tracer.test.ns1/func-complex"
+                    :ns (the-ns 'com.billpiel.sayid.test.ns1)}
+             :name "com.billpiel.sayid.test.ns1/func-complex"
              :path [:root10 :15]
              :return [9 11 22 3]
              :started-at 2}])
@@ -883,8 +883,8 @@
             :file "FILE"
             :line 63
             :name 'func-complex
-            :ns (the-ns 'com.billpiel.mem-tracer.test.ns1)
-            :com.billpiel.mem-tracer.trace/traced [:root10 original-func-complex]}))
+            :ns (the-ns 'com.billpiel.sayid.test.ns1)
+            :com.billpiel.sayid.trace/traced [:root10 original-func-complex]}))
 
 
     (mm/ws-remove-all-traces!)
@@ -896,7 +896,7 @@
                               :ns #{}})
 
 
-    (mt/untrace-ns* 'com.billpiel.mem-tracer.test.ns1)
+    (mt/untrace-ns* 'com.billpiel.sayid.test.ns1)
     (mm/ws-reset!)))
 
 
@@ -976,7 +976,7 @@ x split out and memoize arg map fn
                          :depth 2
                          :ended-at 2
                          :id :12
-                         :name "*  com.billpiel.mem-tracer.test.ns1/func-complex"
+                         :name "*  com.billpiel.sayid.test.ns1/func-complex"
                          :path [:root10 :11 :12]
                          :return 6
                          :src-map '{:ol $3_1_1_0
@@ -995,7 +995,7 @@ x split out and memoize arg map fn
                          :depth 2
                          :ended-at 4
                          :id :13
-                         :name "inc  com.billpiel.mem-tracer.test.ns1/func-complex"
+                         :name "inc  com.billpiel.sayid.test.ns1/func-complex"
                          :path [:root10 :11 :13]
                          :return 7
                          :src-map '{:ol $3_2_2
@@ -1015,7 +1015,7 @@ x split out and memoize arg map fn
                          :depth 2
                          :ended-at 6
                          :id :14
-                         :name "+  com.billpiel.mem-tracer.test.ns1/func-complex"
+                         :name "+  com.billpiel.sayid.test.ns1/func-complex"
                          :path [:root10 :11 :14]
                          :return 9
                          :src-map '{:ol $3_2_3_0
@@ -1034,7 +1034,7 @@ x split out and memoize arg map fn
                          :depth 2
                          :ended-at 8
                          :id :15
-                         :name "vector  com.billpiel.mem-tracer.test.ns1/func-complex"
+                         :name "vector  com.billpiel.sayid.test.ns1/func-complex"
                          :path [:root10 :11 :15]
                          :return [9]
                          :src-map '{:ol $3_2_4
@@ -1054,7 +1054,7 @@ x split out and memoize arg map fn
                          :depth 2
                          :ended-at 10
                          :id :16
-                         :name "into  com.billpiel.mem-tracer.test.ns1/func-complex"
+                         :name "into  com.billpiel.sayid.test.ns1/func-complex"
                          :path [:root10 :11 :16]
                          :return [9 11 22]
                          :src-map '{:ol $3_2_5_0
@@ -1074,7 +1074,7 @@ x split out and memoize arg map fn
                          :depth 2
                          :ended-at 12
                          :id :17
-                         :name "conj  com.billpiel.mem-tracer.test.ns1/func-complex"
+                         :name "conj  com.billpiel.sayid.test.ns1/func-complex"
                          :path [:root10 :11 :17]
                          :return [9 11 22 3]
                          :src-map '{:ol $3_2_6_0
@@ -1095,15 +1095,15 @@ x split out and memoize arg map fn
                     :file "FILE"
                     :line 63
                     :name 'func-complex
-                    :ns (the-ns 'com.billpiel.mem-tracer.test.ns1)}
-             :name "com.billpiel.mem-tracer.test.ns1/func-complex"
+                    :ns (the-ns 'com.billpiel.sayid.test.ns1)}
+             :name "com.billpiel.sayid.test.ns1/func-complex"
              :path [:root10 :11]
              :return [9 11 22 3]
              :started-at 0}]
  :depth 0
  :id :root10
  :path [:root10]
- :traced {:deep-fn #{'com.billpiel.mem-tracer.test.ns1/func-complex}
+ :traced {:deep-fn #{'com.billpiel.sayid.test.ns1/func-complex}
           :fn #{}
           :ns #{}}
  :ws-slot nil}

@@ -1,7 +1,7 @@
-(ns com.billpiel.mem-tracer.profiling
-  (require [com.billpiel.mem-tracer.trace :as tr]
-           [com.billpiel.mem-tracer.recording :as rec]
-           [com.billpiel.mem-tracer.util.other :as util]))
+(ns com.billpiel.sayid.profiling
+  (require [com.billpiel.sayid.trace :as tr]
+           [com.billpiel.sayid.recording :as rec]
+           [com.billpiel.sayid.util.other :as util]))
 
 (defn merge-metric-values
   [a b]

@@ -30,7 +30,7 @@ the examples.
 Note: \"walk\" supports all Clojure data structures EXCEPT maps
 created with sorted-map-by.  There is no (obvious) way to retrieve
 the sorting function."}
-   com.billpiel.mem-tracer.util.walk18)
+   com.billpiel.sayid.util.walk18)
 
 (defn walk
   "Traverses form, an arbitrary data structure.  inner and outer are

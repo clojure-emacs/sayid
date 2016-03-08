@@ -1,5 +1,5 @@
-(ns com.billpiel.mem-tracer.test.ns1
-  (require [com.billpiel.mem-tracer.util.other :refer [$-]]))
+(ns com.billpiel.sayid.test.ns1
+  (require [com.billpiel.sayid.util.other :refer [$-]]))
 
 (defn func2
   [arg1]

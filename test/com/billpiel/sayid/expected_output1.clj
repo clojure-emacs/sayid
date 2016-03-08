@@ -1,9 +1,9 @@
-(ns com.billpiel.mem-tracer.expected-output1
+(ns com.billpiel.sayid.expected-output1
   (:require [midje.sweet :refer :all]))
 
 (def expected1
   "long values display nicely"
-  ["\n " [:red] "v " [:bg-black :red] "com.billpiel.mem-tracer.test.ns1/func-identity  "
+  ["\n " [:red] "v " [:bg-black :red] "com.billpiel.sayid.test.ns1/func-identity  "
    [:white] ":11" [nil] "\n " [:red] "| " [:red] "{" [:bold-off] "" [:yellow] ":a"
    [:bold-off] " " [:cyan] "1" [:bold-off] "," [nil] "\n " [:red] "| " [:yellow] " :b"
    [:bold-off] " " [:cyan] "2" [:bold-off] "," [nil] "\n " [:red] "| " [:yellow] " :c"

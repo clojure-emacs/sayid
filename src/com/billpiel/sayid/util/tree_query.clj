@@ -1,4 +1,4 @@
-(ns com.billpiel.mem-tracer.util.tree-query
+(ns com.billpiel.sayid.util.tree-query
   (require [clojure.zip :as z]
            [swiss.arrows :refer [-<> -<>>]]))
 

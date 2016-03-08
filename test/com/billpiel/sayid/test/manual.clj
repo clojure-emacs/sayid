@@ -1,13 +1,13 @@
-(ns com.billpiel.mem-tracer.test.manual
-  (:require [com.billpiel.mem-tracer.core :as mm]
-            [com.billpiel.mem-tracer.profiling :as pro]
-            [com.billpiel.mem-tracer.query2 :as q2]
-            [com.billpiel.mem-tracer.test.go-deep :as gd]))
+(ns com.billpiel.sayid.test.manual
+  (:require [com.billpiel.sayid.core :as mm]
+            [com.billpiel.sayid.profiling :as pro]
+            [com.billpiel.sayid.query2 :as q2]
+            [com.billpiel.sayid.test.go-deep :as gd]))
 
 (defn trace-go-deep
   [n rec-sym]
   (mm/ws-reset!)
-  (println (mm/ws-add-trace-ns! com.billpiel.mem-tracer.test.go-deep))
+  (println (mm/ws-add-trace-ns! com.billpiel.sayid.test.go-deep))
   (println "traced: (go-deep n)")
   (time (gd/go-deep n))
   (mm/ws-remove-all-traces!)
@@ -30,7 +30,7 @@
   (trace-go-deep n 'dummy)
   (mm/w-rat!)
 
-  (mm/w-atn! 'com.billpiel.mem-tracer.string-output)
+  (mm/w-atn! 'com.billpiel.sayid.string-output)
   (println (mm/ws-show-traced))
   (println "(with-out-str (mm/r-print)) *****")
   (time (def rp-output (with-out-str (mm/r-print))))
@@ -52,7 +52,7 @@
   [n rec-sym]
   (trace-go-deep n 'dummy)
   (mm/w-rat!)
-  (mm/w-atn! 'com.billpiel.mem-tracer.profiling)
+  (mm/w-atn! 'com.billpiel.sayid.profiling)
   (println (mm/ws-show-traced))
 
   (println "(mm/r-lfw!)")
@@ -78,8 +78,8 @@
   [n rec-sym]
   (trace-go-deep n 'dummy)
   (mm/w-rat!)
-  (mm/w-atn! 'com.billpiel.mem-tracer.query)
-  (mm/w-atn! 'com.billpiel.mem-tracer.util.tree-query)
+  (mm/w-atn! 'com.billpiel.sayid.query)
+  (mm/w-atn! 'com.billpiel.sayid.util.tree-query)
   (println (mm/ws-show-traced))
 
   (println "(def temp-qr (mm/qw [depth #{3 4}]))")
@@ -99,8 +99,8 @@
   [n rec-sym]
   (trace-go-deep n 'dummy)
   (mm/w-rat!)
-  (mm/w-atn! 'com.billpiel.mem-tracer.query2)
-  (mm/w-atn! 'com.billpiel.mem-tracer.util.tree-query)
+  (mm/w-atn! 'com.billpiel.sayid.query2)
+  (mm/w-atn! 'com.billpiel.sayid.util.tree-query)
   (println (mm/ws-show-traced))
   (println "(def temp-qr (q2/query $rec/dummy #(-> % :depth #{3}))")
   (time (def temp-qr (q2/query @(ns-resolve '$rec 'dummy)

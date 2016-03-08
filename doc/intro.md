@@ -1,3 +1,3 @@
-# Introduction to mem-tracer
+# Introduction to sayid
 
 TODO: write [great documentation](http://jacobian.org/writing/what-to-write/)
