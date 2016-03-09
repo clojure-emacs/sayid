@@ -20,10 +20,12 @@
                                                            :class-delimiter [:cyan]
                                                            :class-name      [:cyan]}}))
 
+(def ^:dynamic *color-palette* [1 3 2 6 5])
+
 (defn apply-color-palette
   [n]
-  (nth [1 3 2 6 5]
-       (mod n 5)))
+  (nth *color-palette*
+       (mod n (count *color-palette*))))
 
 (defn color-code
   [& {:keys [fg bg fg* bg* bold]}]
