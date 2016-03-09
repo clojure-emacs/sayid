@@ -56,12 +56,9 @@
 (defn mk-inner-tree
   [& {:keys [parent args src-map fn-meta]}]
   (assoc (trace/mk-tree :parent parent)
-         :name (format "%s  %s/%s"
-                       (-> src-map
-                           :sym
-                           str)
-                       (-> fn-meta :ns str)
-                       (:name fn-meta))
+         :name (:sym src-map)
+         :ns (-> fn-meta :ns str symbol)
+         :parent-name (:name fn-meta)
          :args (vec args)
          :arg-map (delay (zipmap (-> src-map
                                      :xp

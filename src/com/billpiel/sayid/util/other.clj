@@ -16,7 +16,7 @@
 (defmacro get-env
   []
   (into {} (for [k (keys &env)]
-             [(name k) k])))
+             [`'~k k])))
 
 (defn apply-to-map-vals
   [f m]

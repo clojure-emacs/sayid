@@ -86,11 +86,13 @@
 
 (defn name->string
   [tree start?]
-  (let [{:keys [depth name]} tree]
+  (let [{:keys [depth name ns parent-name]} tree]
     (if name
       ["" (slinky-pipes-MZ depth :end (when start? "v"))
        (color-code-MZ :fg* (dec depth) :bg 0 :bold false)
-       (:name tree)
+       name
+       (when parent-name
+         (format "  %s/%s" ns parent-name))
        "  "
        (color-code-MZ :fg 7)
        (:id tree)
@@ -128,7 +130,7 @@
 (defn args-map-str
   [tree]
   (when-let [arg-map-ref (:arg-map tree)]
-    (let [arg-map arg-map-ref] ;; not a future anymore
+    (let [arg-map arg-map-ref]
       (mapv #(multi-line-indent-MZ :label (str (first %) " => ")
                                    :value  (second %)
                                    :indent-base (:depth tree)
