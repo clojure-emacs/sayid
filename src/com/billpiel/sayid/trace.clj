@@ -65,16 +65,12 @@
 
 
 (defn start-trace
-  "This function is called by trace. Prints to standard output, but
-may be rebound to do anything you like. 'name' is optional."
   [trace-log tree]
   (swap! trace-log
          conj
          tree))  ;; string!!
 
 (defn  end-trace
-  "This function is called by trace. Prints to standard output, but
-may be rebound to do anything you like. 'name' is optional."
   [trace-log idx tree]
   (swap! trace-log
          update-in
@@ -82,8 +78,6 @@ may be rebound to do anything you like. 'name' is optional."
          #(merge % tree)))
 
 (defn  trace-fn-call
-  "Traces a single call to a function f with args. 'name' is the
-symbol name of the function."
   [workspace name f args meta']
   (let [parent (or *trace-log-parent*
                    workspace)
@@ -139,11 +133,6 @@ symbol name of the function."
       (alter-meta! assoc ::traced [(:id workspace) f]))))
 
 (defn ^{:skip-wiki true} untrace-var*
-  "Reverses the effect of trace-var / trace-vars / trace-ns for the
-  given Var, replacing the traced function with the original, untraced
-  version. No-op for non-traced Vars.
-
-  Argument types are the same as those for trace-var."
   ([ns s]
      (untrace-var* (ns-resolve ns s)))
   ([v]
@@ -157,15 +146,6 @@ symbol name of the function."
            (alter-meta! dissoc ::traced))))))
 
 (defn ^{:skip-wiki true} trace-var*
-  "If the specified Var holds an IFn and is not marked as a macro, its
-  contents is replaced with a version wrapped in a tracing call;
-  otherwise nothing happens. Can be undone with untrace-var.
-
-  In the unary case, v should be a Var object or a symbol to be
-  resolved in the current namespace.
-
-  In the binary case, ns should be a namespace object or a symbol
-  naming a namespace and s a symbol to be resolved in that namespace."
   ([ns s tracer-fn workspace]
    (trace-var* (ns-resolve ns s)
                tracer-fn
@@ -180,11 +160,6 @@ symbol name of the function."
          (apply-trace-to-var v tracer-fn workspace))))))
 
 (defn ^{:skip-wiki true} trace-ns*
-  "Replaces each function from the given namespace with a version wrapped
-  in a tracing call. Can be undone with untrace-ns. ns should be a namespace
-  object or a symbol.
-
-  No-op for clojure.core and clojure.tools.trace."
   [ns workspace]
   (let [ns (the-ns ns)]
     (when-not ('#{clojure.core com.billpiel.sayid.core} (.name ns))
@@ -195,9 +170,6 @@ symbol name of the function."
                       workspace))))))
 
 (defn ^{:skip-wiki true} untrace-ns*
-  "Reverses the effect of trace-var / trace-vars / trace-ns for the
-  Vars in the given namespace, replacing each traced function from the
-  given namespace with the original, untraced version."
   [ns*]
   (let [ns' (the-ns ns*)
         ns-fns (->> ns' ns-interns vals)]

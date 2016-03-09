@@ -198,19 +198,13 @@
      reset-color-code
      "\n"]))
 
-(defn timey
-  [f]
-  (fn [& r]
-    (time (apply f r))))
-
 (defn tree->string
   [tree]
   (->> tree
        tree->string*
-       ((timey flatten))
-       ((timey #(remove nil? %)))
-       ((timey #(clojure.string/join "" %)))))
-
+       flatten
+       (remove nil?)
+       (clojure.string/join "")))
 
 (defn print-tree
   [tree]
@@ -222,5 +216,3 @@
   [trees]
   (doseq [o (pmap tree->string trees)]
     (print o)))
-
-#_ (com.billpiel.sayid.test.manual/ns-unmap-all *ns*)
