@@ -22,8 +22,8 @@
 
 (defn apply-color-palette
   [n]
-  (nth [1 3 2 6 4 5]
-       (mod n 6)))
+  (nth [1 3 2 6 5]
+       (mod n 5)))
 
 (defn color-code
   [& {:keys [fg bg fg* bg* bold]}]
