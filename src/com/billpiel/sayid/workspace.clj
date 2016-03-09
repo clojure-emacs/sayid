@@ -48,20 +48,12 @@
          disj sym)
   (trace/untrace* type sym))
 
-(defn pre-apply-trace-set-restrictions!
-  [ws op type sym]
-  (cond (and (= op :add)
-             (= type :deep-fn))
-        ;; traces must be removed before deep traces can be applied
-        (if-let [dup (-> @ws
-                          :traced
-                          :fn
-                          (#(% sym)))]
-          (remove-trace-*! ws :fn dup))))
-
 (defn add-trace-*!
   [ws type sym]
-  (pre-apply-trace-set-restrictions! ws :add type sym)
+  (if (= type :deep-fn)
+    (remove-trace-*! ws  ;; deep traces must be applied to a clean surface
+                     :fn
+                     sym))
   (swap! ws (fn [ws'] (-> ws'
                           (update-in [:traced type]
                                      conj sym))))
