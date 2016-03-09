@@ -939,7 +939,11 @@ x split out and memoize arg map fn
     - arg-map slow?
   x profiling
   x querying
-- FIX adding a deep-trace to existing trace should undo trace before applying deep trace
+x FIX adding a deep-trace to existing trace should undo trace before applying deep trace
+- refator some things in string_output to multimethods?
+x deep-trace :name should just be name. Do string concat in presentation logic
+x test querying w/ deep trace
+- test profiling w/ deep trace
 - rec-save-as should accept keyword or string
 - never return ws or recs from core fns
 ~ deep trace (inside fn)
