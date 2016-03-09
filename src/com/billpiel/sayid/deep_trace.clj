@@ -174,8 +174,8 @@
 
 
 (defn deep-tracer
-  [workspace vname m original-fn]
-  (let [src (-> vname
+  [{:keys [workspace qual-sym-str meta' ns']} original-fn]
+  (let [src (-> qual-sym-str
                 symbol
                 util/hunt-down-source)
         xsrc (clojure.walk/macroexpand-all src)
@@ -188,29 +188,24 @@
                                                               d s)))))
         traced-form  (util/$- ->> src
                               mk-expr-mapping
-                              (swap-in-tracer-fn $ m)
+                              (swap-in-tracer-fn $ meta')
                               (swap-in-path-syms xsrc)
                               get-fn)]
-    (util/eval-in-ns 'com.billpiel.sayid.test.ns1
+    (util/eval-in-ns (-> ns' str symbol)
                      traced-form)))
 
 (defn composed-tracer-fn
-  [workspace vname m original-fn]
+  [m original-fn]
   (->> original-fn
-       (deep-tracer workspace
-                    vname
-                    m)
-       (trace/shallow-tracer workspace
-                       vname
-                       m)))
+       (deep-tracer m)
+       (trace/shallow-tracer m)))
 
 (defmethod trace/trace* :deep-fn
   [_ fn-sym workspace]
   (-> fn-sym
       resolve
-      (trace/trace-var*
-       composed-tracer-fn
-       workspace)))
+      (trace/trace-var* composed-tracer-fn workspace)))
+
 
 (defmethod trace/untrace* :deep-fn
   [_ fn-sym]

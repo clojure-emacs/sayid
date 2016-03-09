@@ -107,15 +107,15 @@
 ;; mk-fn-tree + start-trace + binding + end-trace = 345ms
 
 (defn shallow-tracer
-  [workspace vname m original-fn]
+  [{:keys [workspace qual-sym-str meta']} original-fn]
   (with-meta
     (fn tracing-wrapper [& args]
       (trace-fn-call workspace
-                     vname
+                     qual-sym-str
                      original-fn
                      args
-                     m))
-    {:original-meta m}))
+                     meta'))
+    {:original-meta meta'}))
 
 
 (defn apply-trace-to-var
@@ -127,9 +127,11 @@
         vname (str ns "/" s)]
     (doto v
       (alter-var-root (partial tracer-fn
-                               workspace
-                               vname
-                               m))
+                               {:workspace workspace
+                                :ns' ns
+                                :sym s
+                                :qual-sym-str vname
+                                :meta' m}))
       (alter-meta! assoc ::traced [(:id workspace) f]))))
 
 (defn ^{:skip-wiki true} untrace-var*
