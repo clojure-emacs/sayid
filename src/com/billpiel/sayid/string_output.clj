@@ -196,9 +196,13 @@
         (args*-str tree)])
      (return-str tree :pos :after)
      (throw-str tree)
-     (when (-> tree :depth nil? not)
+     (when (and (-> tree :depth nil? not)
+                (-> tree
+                    meta
+                    ::com.billpiel.sayid.workspace/workspace
+                    not))
        (slinky-pipes-MZ (:depth tree)
-                     :end "^"))
+                        :end "^"))
      reset-color-code
      "\n"]))
 
