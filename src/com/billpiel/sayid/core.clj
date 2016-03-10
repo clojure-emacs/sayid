@@ -84,6 +84,7 @@ user> (-> #'f1 meta :source)
 (defmacro ws-add-trace-fn!
   [fn-sym]
   `(ws-add-trace-fn!* (util/fully-qualify-sym '~fn-sym)))
+(util/defalias-macro w-atf! ws-add-trace-fn!)
 
 (defn ws-add-deep-trace-fn!*
   "`fn-sym` is a symbol that references an existing function. Applies an
@@ -98,6 +99,7 @@ user> (-> #'f1 meta :source)
 (defmacro ws-add-deep-trace-fn!
   [fn-sym]
   `(ws-add-deep-trace-fn!* (util/fully-qualify-sym '~fn-sym)))
+(util/defalias-macro w-adtf! ws-add-deep-trace-fn!)
 
 (defn ws-add-trace-ns!*
   "`ns-sym` is a symbol that references an existing namespace. Applies an enabled
@@ -294,13 +296,13 @@ user> (-> #'f1 meta :source)
 (defn ws-print
   [& [ws]]
   (#'com.billpiel.sayid.string-output/print-tree (or ws
-                                                          (ws-deref!))))
-(util/defalias w-print ws-print)
+                                                     (ws-deref!))))
+(util/defalias w-pr ws-print)
 
 (defn rec-print
   [& [rec]]
   (#'com.billpiel.sayid.string-output/print-tree (or rec
-                                                          @recording)))
-(util/defalias r-print rec-print)
+                                                     @recording)))
+(util/defalias r-pr rec-print)
 
 ;; === END String Output functions
