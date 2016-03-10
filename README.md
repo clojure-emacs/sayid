@@ -2,7 +2,7 @@
 
 >  My name is Sayid Jarrah, and I am a torturer. 
 
-Sayid *(siy EED)* is a library for debugging clojure. It extracts secrets from code.
+Sayid *(siy EED)* is a library for debugging clojure. It extracts secrets from code at run-time.
 
 ## License
 
