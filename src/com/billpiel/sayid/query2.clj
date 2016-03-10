@@ -232,9 +232,12 @@
   (let [path (drop-last query-coll)
         pred (last query-coll)]
     (fn [v]
-      (->> v
-           (get-some path)
-           (eq* pred)))))
+      (try
+        (->> v
+             (get-some path)
+             (eq* pred))
+        (catch Exception ex
+          nil)))))
 
 (defn some-mk-query-fn
   [queries]
