@@ -146,20 +146,17 @@
            (alter-meta! dissoc ::traced))))))
 
 (defn trace-var*
-  ([ns s tracer-fn workspace]
-   (trace-var* (ns-resolve ns s)
-               tracer-fn
-               workspace))
-  ([v tracer-fn workspace]
-   (let [^clojure.lang.Var v (if (var? v) v (resolve v))]
-     (when (and (ifn? @v) (-> v meta :macro not))
-       (if-let [[traced-id traced-f] (-> v meta ::traced)]
-         (when (or (not= traced-id (:id workspace))
-                   (not= (-> tracer-fn meta ::trace-type)
-                         (-> v meta ::trace-type)))
-           (untrace-var* v)
-           (apply-trace-to-var v tracer-fn workspace))
-         (apply-trace-to-var v tracer-fn workspace))))))
+  [v tracer-fn workspace & {:keys [no-overwrite]}]
+  (let [^clojure.lang.Var v (if (var? v) v (resolve v))]
+    (when (and (ifn? @v) (-> v meta :macro not))
+      (if-let [[traced-id traced-f] (-> v meta ::traced)]
+        (when (and (not no-overwrite)
+                   (or (not= traced-id (:id workspace))
+                       (not= (-> tracer-fn meta ::trace-type)
+                             (-> v meta ::trace-type))))
+          (untrace-var* v)
+          (apply-trace-to-var v tracer-fn workspace))
+        (apply-trace-to-var v tracer-fn workspace)))))
 
 (defn trace-ns*
   [ns workspace]
