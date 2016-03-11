@@ -191,17 +191,20 @@
     (util/eval-in-ns (-> ns' str symbol)
                      traced-form)))
 
-(defn composed-tracer-fn
+(defn ^{::trace/trace-type :deep-fn} composed-tracer-fn
   [m original-fn]
-  (->> original-fn
-       (deep-tracer m)
-       (trace/shallow-tracer m)))
+  (util/$- ->>
+           original-fn
+           (deep-tracer m)
+           (trace/shallow-tracer m)))
 
 (defmethod trace/trace* :deep-fn
   [_ fn-sym workspace]
   (-> fn-sym
       resolve
-      (trace/trace-var* composed-tracer-fn workspace)))
+      (trace/trace-var* (util/assoc-var-meta-to-fn composed-tracer-fn
+                                                   ::trace/trace-type)
+                        workspace)))
 
 
 (defmethod trace/untrace* :deep-fn

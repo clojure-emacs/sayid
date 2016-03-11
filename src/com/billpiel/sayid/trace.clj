@@ -106,17 +106,14 @@
 
 ;; mk-fn-tree + start-trace + binding + end-trace = 345ms
 
-(defn shallow-tracer
+(defn ^{::trace-type :fn} shallow-tracer
   [{:keys [workspace qual-sym-str meta']} original-fn]
-  (with-meta
-    (fn tracing-wrapper [& args]
-      (trace-fn-call workspace
-                     qual-sym-str
-                     original-fn
-                     args
-                     meta'))
-    {:original-meta meta'}))
-
+  (fn tracing-wrapper [& args]
+    (trace-fn-call workspace
+                   qual-sym-str
+                   original-fn
+                   args
+                   meta')))
 
 (defn apply-trace-to-var
   [^clojure.lang.Var v tracer-fn workspace]
@@ -132,9 +129,10 @@
                                 :sym s
                                 :qual-sym-str vname
                                 :meta' m}))
-      (alter-meta! assoc ::traced [(:id workspace) f]))))
+      (alter-meta! assoc ::traced [(:id workspace) f])
+      (alter-meta! assoc ::trace-type (-> tracer-fn meta ::trace-type)))))
 
-(defn ^{:skip-wiki true} untrace-var*
+(defn untrace-var*
   ([ns s]
      (untrace-var* (ns-resolve ns s)))
   ([v]
@@ -147,7 +145,7 @@
            (alter-var-root (constantly f))
            (alter-meta! dissoc ::traced))))))
 
-(defn ^{:skip-wiki true} trace-var*
+(defn trace-var*
   ([ns s tracer-fn workspace]
    (trace-var* (ns-resolve ns s)
                tracer-fn
@@ -156,22 +154,25 @@
    (let [^clojure.lang.Var v (if (var? v) v (resolve v))]
      (when (and (ifn? @v) (-> v meta :macro not))
        (if-let [[traced-id traced-f] (-> v meta ::traced)]
-         (when (not= traced-id (:id workspace))
+         (when (or (not= traced-id (:id workspace))
+                   (not= (-> tracer-fn meta ::trace-type)
+                         (-> v meta ::trace-type)))
            (untrace-var* v)
            (apply-trace-to-var v tracer-fn workspace))
          (apply-trace-to-var v tracer-fn workspace))))))
 
-(defn ^{:skip-wiki true} trace-ns*
+(defn trace-ns*
   [ns workspace]
   (let [ns (the-ns ns)]
     (when-not ('#{clojure.core com.billpiel.sayid.core} (.name ns))
       (let [ns-fns (->> ns ns-interns vals (filter (comp fn? var-get)))]
         (doseq [f ns-fns]
           (trace-var* f
-                      shallow-tracer
+                      (util/assoc-var-meta-to-fn shallow-tracer
+                                        ::trace-type)
                       workspace))))))
 
-(defn ^{:skip-wiki true} untrace-ns*
+(defn untrace-ns*
   [ns*]
   (let [ns' (the-ns ns*)
         ns-fns (->> ns' ns-interns vals)]
@@ -184,11 +185,14 @@
   [_ sym workspace]
   (trace-ns* sym workspace))
 
+
+
 (defmethod trace* :fn
   [_ fn-sym workspace]
   (-> fn-sym
       resolve
-      (trace-var* shallow-tracer
+      (trace-var* (util/assoc-var-meta-to-fn shallow-tracer
+                                        ::trace-type)
                   workspace)))
 
 (defmulti untrace* (fn [type sym] type))

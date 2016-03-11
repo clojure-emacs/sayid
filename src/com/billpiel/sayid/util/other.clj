@@ -272,3 +272,12 @@
                 repeat)
             (second %))
           m))
+
+(defmacro assoc-var-meta-to-fn
+  [fn-sym meta-key]
+  `(vary-meta ~fn-sym
+              assoc
+              ~meta-key
+              (-> #'~fn-sym
+                  meta
+                  ~meta-key)))
