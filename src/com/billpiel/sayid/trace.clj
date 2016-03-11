@@ -134,16 +134,18 @@
 
 (defn untrace-var*
   ([ns s]
-     (untrace-var* (ns-resolve ns s)))
+   (untrace-var* (ns-resolve ns s)))
   ([v]
    (let [^clojure.lang.Var v (if (var? v) v (resolve v))
-           ns (.ns v)
-           s  (.sym v)
-           [_ f]  ((meta v) ::traced)]
-       (when f
-         (doto v
-           (alter-var-root (constantly f))
-           (alter-meta! dissoc ::traced))))))
+         ns (.ns v)
+         s  (.sym v)
+         [_ f]  ((meta v) ::traced)]
+     (when f
+       (doto v
+         (alter-var-root (constantly f))
+         (alter-meta! dissoc
+                      ::traced
+                      ::trace-type))))))
 
 (defn trace-var*
   [v tracer-fn workspace & {:keys [no-overwrite]}]
