@@ -68,7 +68,7 @@ user> (-> #'f1 meta :source)
 (defn ws-clear-log!
   "Clears the log of the active workspace, but preserves traces and other
   properties."
-  [] (#'ws/clear-log! workspace))
+  [] (#'ws/clear-log! (ws-init! :quiet)))
 (util/defalias w-cl! ws-clear-log!)
 
 (defn ws-add-trace-fn!*

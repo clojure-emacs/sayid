@@ -36,9 +36,14 @@
   [ws]
   (reset! ws nil))
 
-(defn clear-log!
+(defn new-log!
   [ws]
   (swap! ws assoc :children (atom [])))
+
+(defn clear-log!
+  [ws]
+  (reset! (:children @ws)
+          []))
 
 (defn remove-trace-*!
   "Untrace all fns in the given name space."
