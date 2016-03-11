@@ -166,8 +166,9 @@
         (doseq [f ns-fns]
           (trace-var* f
                       (util/assoc-var-meta-to-fn shallow-tracer
-                                        ::trace-type)
-                      workspace))))))
+                                                 ::trace-type)
+                      workspace
+                      :no-overwrite true))))))
 
 (defn untrace-ns*
   [ns*]
