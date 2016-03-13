@@ -55,7 +55,7 @@ h2 {
         background-color: #FFFFFF;
         font-family: sans-serif;
         font-size: 1em;
-        line-height: 1.2em;
+        line-height: 1.5em;
       }
       pre {
         color: #EDEDED;
@@ -69,6 +69,10 @@ h2 {
       code {
         background-color: #DDDDDD;
         font-size: 1.2em;
+        padding: 0.1em 0.2em;
+      }
+      td {
+        padding: 0.5em;
       }
       .ATTRLIST {
         /* (foreground-color . "green3") */
@@ -305,7 +309,10 @@ So, what did we just do? We wrapped every function in the namespace, <code>user<
 
 
 </span><span class="cider-repl-result">nil</span>
-<span class="cider-repl-prompt">user&gt; </span><span class="cider-repl-input">(</span><span class="type"><span class="cider-repl-input">sd</span></span><span class="cider-repl-input">/p-t (</span><span class="type"><span class="cider-repl-input">sd</span></span><span class="cider-repl-input">/qw [</span><span class="clojure-keyword"><span class="cider-repl-input">:name</span></span><span class="cider-repl-input"> 'inc]))</span>
+</pre>
+<p>Whoa. Above we can see each function called within func-example2, the values of the expressions passed to the function and the final return value. This will come in handy while debugging a long threading-macro expression.</p>
+<p>At this point, you may be thinking that in a real debugging scenario a LOT of data may be captured -- much more than you'd want to print out and eyeball over. This is why you'd want to use the query functions. Let's search for all the calls to <code>inc</code>.</p>
+<pre><span class="cider-repl-prompt">user&gt; </span><span class="cider-repl-input">(</span><span class="type"><span class="cider-repl-input">sd</span></span><span class="cider-repl-input">/p-t (</span><span class="type"><span class="cider-repl-input">sd</span></span><span class="cider-repl-input">/qw [</span><span class="clojure-keyword"><span class="cider-repl-input">:name</span></span><span class="cider-repl-input"> 'inc]))</span>
 <span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">v </span></span><span class="cider-repl-output"><span class="ATTRLIST-1"><span class="ATTRLIST-2">inc  user/func-example2  </span></span></span><span class="cider-repl-output"><span class="ATTRLIST-3"><span class="ATTRLIST-2">:25425</span></span></span><span class="cider-repl-output">
 </span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| b =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">1</span></span><span class="cider-repl-output">
 </span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| returned =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">2</span></span><span class="cider-repl-output">
@@ -323,37 +330,57 @@ So, what did we just do? We wrapped every function in the namespace, <code>user<
 </span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| returned =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">4</span></span><span class="cider-repl-output">
 </span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">^ </span></span><span class="cider-repl-output">
 </span><span class="cider-repl-result">nil</span>
+</pre>
+<p>That worked. But, how did we do it? Let's go piece by piece. <code>p-t</code> stands for "print tree". You can use it to print any captured function call tree. <code>qw</code> stands for "query workspace". These functions have confusing short names because I'm a slow typer. Following <code>qw</code> is the actual query. Queries are represented as vectors where each element is a step in a path (think <code>get-in</code>) and the final element is a predicate. Sayid tries to be very understanding when it comes to these predicates. For example, we navigated to <code>:name</code> (where the function name is kept) and then applied the predicate <code>'inc</code>. Sayid (correctly) assumed that we wanted to do a simple equality check here. Most value types will get this treatment, but others such as regexes and functions will be applied in the ways you'd likely expect.
+
+</p><p> Now let's look for each <code>inc</code> and all of its ancestors. We do this by inserting an <code>:a</code> before the query vector.</p>
+<pre>
 <span class="cider-repl-prompt">user&gt; </span><span class="cider-repl-input">(</span><span class="type"><span class="cider-repl-input">sd</span></span><span class="cider-repl-input">/p-t (</span><span class="type"><span class="cider-repl-input">sd</span></span><span class="cider-repl-input">/qw </span><span class="clojure-keyword"><span class="cider-repl-input">:a</span></span><span class="cider-repl-input"> [</span><span class="clojure-keyword"><span class="cider-repl-input">:name</span></span><span class="cider-repl-input"> 'inc]))</span>
 <span class="cider-repl-output">
 </span><span class="cider-repl-output"><span class="ATTRLIST-5">v </span></span><span class="cider-repl-output"><span class="ATTRLIST-5"><span class="ATTRLIST-2">user/func-example2  </span></span></span><span class="cider-repl-output"><span class="ATTRLIST-3"><span class="ATTRLIST-2">:25423</span></span></span><span class="cider-repl-output">
 </span><span class="cider-repl-output"><span class="ATTRLIST-5">| a =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">3</span></span><span class="cider-repl-output">
 </span><span class="cider-repl-output"><span class="ATTRLIST-5">| b =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">1</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5"> | returns =&gt; </span></span><span class="ATTRLIST-5">[</span><span class="cider-repl-output"><span class="ATTRLIST-4">32</span></span><span class="cider-repl-output"> </span><span class="cider-repl-output"><span class="ATTRLIST-4">3</span></span><span class="cider-repl-output"> </span><span class="cider-repl-output"><span class="ATTRLIST-4">4</span></span><span class="ATTRLIST-5">]</span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5"> |</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">v </span></span><span class="cider-repl-output"><span class="ATTRLIST-1"><span class="ATTRLIST-2">inc  user/func-example2  </span></span></span><span class="cider-repl-output"><span class="ATTRLIST-3"><span class="ATTRLIST-2">:25425</span></span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5"> |</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| b =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">1</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5"> |</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| returned =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">2</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5"> |</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">^ </span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5"> |</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">v </span></span><span class="cider-repl-output"><span class="ATTRLIST-1"><span class="ATTRLIST-2">inc  user/func-example2  </span></span></span><span class="cider-repl-output"><span class="ATTRLIST-3"><span class="ATTRLIST-2">:25427</span></span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5"> |</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| b =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">2</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5"> |</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| returned =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">3</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5"> |</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">^ </span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5"> |</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">v </span></span><span class="cider-repl-output"><span class="ATTRLIST-1"><span class="ATTRLIST-2">inc  user/func-example2  </span></span></span><span class="cider-repl-output"><span class="ATTRLIST-3"><span class="ATTRLIST-2">:25429</span></span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5"> |</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| b =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">3</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5"> |</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| returned =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">4</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5"> |</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">^ </span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5"> |</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">v </span></span><span class="cider-repl-output"><span class="ATTRLIST-1"><span class="ATTRLIST-2">inc  user/func-example2  </span></span></span><span class="cider-repl-output"><span class="ATTRLIST-3"><span class="ATTRLIST-2">:25431</span></span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5"> |</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| a =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">3</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5"> |</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| returned =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">4</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5"> |</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">^ </span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5"> | </span></span><span class="cider-repl-output"><span class="ATTRLIST-5"><span class="ATTRLIST-2">user/func-example2  </span></span></span><span class="cider-repl-output"><span class="ATTRLIST-3"><span class="ATTRLIST-2">:25423</span></span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5"> | a =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">3</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5"> | b =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">1</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5"> | returned =&gt; </span></span><span class="ATTRLIST-5">[</span><span class="cider-repl-output"><span class="ATTRLIST-4">32</span></span><span class="cider-repl-output"> </span><span class="cider-repl-output"><span class="ATTRLIST-4">3</span></span><span class="cider-repl-output"> </span><span class="cider-repl-output"><span class="ATTRLIST-4">4</span></span><span class="ATTRLIST-5">]</span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5"> ^ </span></span><span class="cider-repl-output">
+</span><span class="cider-repl-output"><span class="ATTRLIST-5">| returns =&gt; </span></span><span class="ATTRLIST-5">[</span><span class="cider-repl-output"><span class="ATTRLIST-4">32</span></span><span class="cider-repl-output"> </span><span class="cider-repl-output"><span class="ATTRLIST-4">3</span></span><span class="cider-repl-output"> </span><span class="cider-repl-output"><span class="ATTRLIST-4">4</span></span><span class="ATTRLIST-5">]</span><span class="cider-repl-output">
+</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">v </span></span><span class="cider-repl-output"><span class="ATTRLIST-1"><span class="ATTRLIST-2">inc  user/func-example2  </span></span></span><span class="cider-repl-output"><span class="ATTRLIST-3"><span class="ATTRLIST-2">:25425</span></span></span><span class="cider-repl-output">
+</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| b =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">1</span></span><span class="cider-repl-output">
+</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| returned =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">2</span></span><span class="cider-repl-output">
+</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">^ </span></span><span class="cider-repl-output">
+</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">v </span></span><span class="cider-repl-output"><span class="ATTRLIST-1"><span class="ATTRLIST-2">inc  user/func-example2  </span></span></span><span class="cider-repl-output"><span class="ATTRLIST-3"><span class="ATTRLIST-2">:25427</span></span></span><span class="cider-repl-output">
+</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| b =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">2</span></span><span class="cider-repl-output">
+</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| returned =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">3</span></span><span class="cider-repl-output">
+</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">^ </span></span><span class="cider-repl-output">
+</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">v </span></span><span class="cider-repl-output"><span class="ATTRLIST-1"><span class="ATTRLIST-2">inc  user/func-example2  </span></span></span><span class="cider-repl-output"><span class="ATTRLIST-3"><span class="ATTRLIST-2">:25429</span></span></span><span class="cider-repl-output">
+</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| b =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">3</span></span><span class="cider-repl-output">
+</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| returned =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">4</span></span><span class="cider-repl-output">
+</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">^ </span></span><span class="cider-repl-output">
+</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">v </span></span><span class="cider-repl-output"><span class="ATTRLIST-1"><span class="ATTRLIST-2">inc  user/func-example2  </span></span></span><span class="cider-repl-output"><span class="ATTRLIST-3"><span class="ATTRLIST-2">:25431</span></span></span><span class="cider-repl-output">
+</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| a =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">3</span></span><span class="cider-repl-output">
+</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| returned =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">4</span></span><span class="cider-repl-output">
+</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">^ </span></span><span class="cider-repl-output">
+</span><span class="cider-repl-output"><span class="ATTRLIST-5">| </span></span><span class="cider-repl-output"><span class="ATTRLIST-5"><span class="ATTRLIST-2">user/func-example2  </span></span></span><span class="cider-repl-output"><span class="ATTRLIST-3"><span class="ATTRLIST-2">:25423</span></span></span><span class="cider-repl-output">
+</span><span class="cider-repl-output"><span class="ATTRLIST-5">| a =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">3</span></span><span class="cider-repl-output">
+</span><span class="cider-repl-output"><span class="ATTRLIST-5">| b =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">1</span></span><span class="cider-repl-output">
+</span><span class="cider-repl-output"><span class="ATTRLIST-5">| returned =&gt; </span></span><span class="ATTRLIST-5">[</span><span class="cider-repl-output"><span class="ATTRLIST-4">32</span></span><span class="cider-repl-output"> </span><span class="cider-repl-output"><span class="ATTRLIST-4">3</span></span><span class="cider-repl-output"> </span><span class="cider-repl-output"><span class="ATTRLIST-4">4</span></span><span class="ATTRLIST-5">]</span><span class="cider-repl-output">
+</span><span class="cider-repl-output"><span class="ATTRLIST-5">^ </span></span><span class="cider-repl-output">
 
 
 </span><span class="cider-repl-result"> nil</span>
-<span class="cider-repl-prompt"> user&gt; </span><span class="cider-repl-input">(</span><span class="type"><span class="cider-repl-input">sd</span></span><span class="cider-repl-input">/p-t (</span><span class="type"><span class="cider-repl-input">sd</span></span><span class="cider-repl-input">/qw [</span><span class="clojure-keyword"><span class="cider-repl-input">:return</span></span><span class="cider-repl-input"> second 3]))</span>
+</pre>
+<p>Not surprisingly, the call to <code>func-example2</code> was the only ancestor.</p>
+<p>The query functions take a few different modifiers:
+  <table>
+    <tr><td><code>:a</code></td><td>Returns ancestors of matching nodes.</td></tr>
+    <tr><td><code>:d</code></td><td>Returns descendants of matching nodes.</td></tr>
+    <tr><td><code>:s</code></td><td>Returns siblings of matching nodes.</td></tr>
+    <tr><td><code>:w</code></td><td>Wildcard! Returns ancestors, descendants and siblings of matching nodes.</td></tr>
+    <tr><td><code>:r</code></td><td>Range. Takes exactly two query vectors and returns nodes that are both descendants of the first and ancestors of the second.</td></tr>
+  </table>
+
+  Additionally, any of <code>:a</code>, <code>:s</code> and <code>:d</code> can be composed into a single keyword, such as <code>:ad</code>.
+</p>
+<p>Finally, let's find all function calls where the second element of the return value equals 3.</p>
+
+<pre><span class="cider-repl-prompt"> user&gt; </span><span class="cider-repl-input">(</span><span class="type"><span class="cider-repl-input">sd</span></span><span class="cider-repl-input">/p-t (</span><span class="type"><span class="cider-repl-input">sd</span></span><span class="cider-repl-input">/qw [</span><span class="clojure-keyword"><span class="cider-repl-input">:return</span></span><span class="cider-repl-input"> second 3]))</span>
 <span class="cider-repl-output"><span class="ATTRLIST-5"> v </span></span><span class="cider-repl-output"><span class="ATTRLIST-5"><span class="ATTRLIST-2">user/func-example2  </span></span></span><span class="cider-repl-output"><span class="ATTRLIST-3"><span class="ATTRLIST-2">:25423</span></span></span><span class="cider-repl-output">
 </span><span class="cider-repl-output"><span class="ATTRLIST-5"> | a =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">3</span></span><span class="cider-repl-output">
 </span><span class="cider-repl-output"><span class="ATTRLIST-5"> | b =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">1</span></span><span class="cider-repl-output">
@@ -371,6 +398,9 @@ So, what did we just do? We wrapped every function in the namespace, <code>user<
 </span><span class="cider-repl-output"><span class="ATTRLIST-5"> ^ </span></span><span class="cider-repl-output">
 </span><span class="cider-repl-result"> nil</span>
 <span class="cider-repl-prompt"> user&gt; </span></pre>
+
+<p>Ok. That's it.</p>
+
         <!-- end repl -->
                     </div><!-- #content -->
                 </div><!-- #primary -->
