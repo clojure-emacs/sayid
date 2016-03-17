@@ -22,22 +22,22 @@
   (util/apply-to-map-vals (fn [metrics]
                             (let [arg-cardinality (-> metrics :arg-set count)
                                   call-count (:count metrics)
-                                  gross-time-sum (:gross-time-sum metrics)
+                                  gross-time-sum (or (:gross-time-sum metrics) 0)
                                   repeat-arg-pct (- 1 (/ arg-cardinality
                                                          call-count
                                                          1.0))]
                               (-> metrics
                                   (dissoc :arg-set)
                                   (assoc :gross-time-avg (/ gross-time-sum
-                                                             call-count
-                                                             1.0)
-                                          :net-time-avg  (/ (:net-time-sum metrics)
                                                             call-count
                                                             1.0)
-                                          :arg-cardinality arg-cardinality
-                                          :repeat-arg-pct repeat-arg-pct
-                                          :gross-of-repeats (* gross-time-sum
-                                                               repeat-arg-pct)))))
+                                         :net-time-avg  (/ (or (:net-time-sum metrics) 0)
+                                                           call-count
+                                                           1.0)
+                                         :arg-cardinality arg-cardinality
+                                         :repeat-arg-pct repeat-arg-pct
+                                         :gross-of-repeats (* gross-time-sum
+                                                              repeat-arg-pct)))))
                           fn-ms))
 
 (defn get-fn-metrics

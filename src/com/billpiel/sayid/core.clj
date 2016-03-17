@@ -257,7 +257,7 @@ user> (-> #'f1 meta :source)
 
 ;; === String Output functions
 
-(def tree->string #'com.billpiel.sayid.string-output/tree->string)
+(def tree->string #'so/tree->string)
 
 (defn get-trees
   [v]
@@ -293,16 +293,28 @@ user> (-> #'f1 meta :source)
       (#'so/print-trees)))
 (util/defalias p-t print-trees)
 
-(defn ws-print
+(defn ws-print-unlimited
   [& [ws]]
-  (#'com.billpiel.sayid.string-output/print-tree (or ws
-                                                     (ws-deref!))))
+  (#'so/print-tree-unlimited (or ws
+                       (ws-deref!))))
+(util/defalias w-pru ws-print-unlimited)
+
+(defn ws-print
+  [& [ws & {:keys [max-arg-lines mal max-chars mc]}]]
+  (binding [so/*max-chars* (or max-chars
+                               mc
+                               so/*max-chars*)
+            so/*max-arg-lines* (or max-arg-lines
+                                   mal
+                                   so/*max-arg-lines*)]
+    (#'so/print-tree (or ws
+                         (ws-deref!)))))
 (util/defalias w-pr ws-print)
 
 (defn rec-print
   [& [rec]]
-  (#'com.billpiel.sayid.string-output/print-tree (or rec
-                                                     @recording)))
+  (#'so/print-tree (or rec
+                       @recording)))
 (util/defalias r-pr rec-print)
 
 ;; === END String Output functions

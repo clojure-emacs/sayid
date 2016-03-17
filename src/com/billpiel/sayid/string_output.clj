@@ -1,9 +1,19 @@
 (ns com.billpiel.sayid.string-output
   (:require [puget.printer :as puget]
+            [com.billpiel.sayid.workspace :as ws]
+            [com.billpiel.sayid.util.other :as util]
             clojure.string))
 
+(def ^:dynamic *sayid-print-length* 15)
+(def ^:dynamic *max-chars* 5000)
+(def ^:dynamic *max-arg-lines* 15)
+
+(def ^:dynamic *truncate-lines-count* nil)
+
 (def pprint-str #(puget.printer/cprint-str %
-                                           {:color-scheme { ; syntax elements
+                                           {:seq-limit *sayid-print-length*
+                                            :color-scheme {
+                                        ; syntax elements
                                                            :delimiter [:red]
                                                            :tag       [:red]
                                         ; primitive values
@@ -77,14 +87,30 @@
 
 (def indent-MZ indent #_ (memoize indent))
 
+(def truncate-msg (str reset-color-code
+                       "...<truncated>..."))
+
+(defn truncate-lines
+  [strs]
+  (cond
+    (nil? *truncate-lines-count*) strs
+    (> *truncate-lines-count* (count strs)) strs
+    :else (util/$- ->
+                   strs
+                   (take *truncate-lines-count* $)
+                   vec
+                   (conj truncate-msg))))
+
 (defn indent-line-breaks
   [s depth & rest]
   [""
-    (mapv (fn [line] [(apply indent-MZ depth rest)
-                      line
-                      reset-color-code
-                      "\n"])
-          (clojure.string/split-lines s))])
+   (->> s
+        clojure.string/split-lines
+        truncate-lines
+        (mapv (fn [line] [(apply indent-MZ depth rest)
+                          line
+                          reset-color-code
+                          "\n"])))])
 
 (defn name->string
   [tree start?]
@@ -120,24 +146,27 @@
 
 (defn return-str
   [tree & {pos :pos}]
-  (when-let [return (:return tree)]
-    (multi-line-indent-MZ :label (str (condp = pos
-                                        :before "returns"
-                                        :after "returned")
-                                      " => ")
-                          :value  return
-                          :indent-base (:depth tree)
-                          :indent-offset  3)))
+  (binding [*truncate-lines-count* 20]
+    (when-let [return (:return tree)]
+      (multi-line-indent-MZ :label (str (condp = pos
+                                          :before "returns"
+                                          :after "returned")
+                                        " => ")
+                            :value  return
+                            :indent-base (:depth tree)
+                            :indent-offset  3))))
 
 (defn args-map-str
   [tree]
-  (when-let [arg-map-ref (:arg-map tree)]
-    (let [arg-map arg-map-ref]
-      (mapv #(multi-line-indent-MZ :label (str (first %) " => ")
-                                   :value  (second %)
-                                   :indent-base (:depth tree)
-                                   :indent-offset  3)
-            arg-map))))
+  (binding [*truncate-lines-count* *max-arg-lines*]
+    (when-let [arg-map-ref (:arg-map tree)]
+      (let [arg-map arg-map-ref]
+        (->> arg-map
+             (map #(multi-line-indent-MZ :label (str (first %) " => ")
+                                         :value  (second %)
+                                         :indent-base (:depth tree)
+                                         :indent-offset  3))
+             vec)))))
 
 (defn args-str
   [tree]
@@ -199,7 +228,7 @@
      (when (and (-> tree :depth nil? not)
                 (-> tree
                     meta
-                    ::com.billpiel.sayid.workspace/workspace
+                    ::ws/workspace
                     not))
        (slinky-pipes-MZ (:depth tree)
                         :end "^"))
@@ -214,13 +243,34 @@
        (remove nil?)
        (clojure.string/join "")))
 
-(defn print-tree
+(defn print-tree-unlimited
   [tree]
   (-> tree
       tree->string
       print))
 
+(defn print-tree
+  [tree]
+  (let [s (with-out-str (print-tree-unlimited tree))
+        s' (if (<  *max-chars*
+                   (count s))
+             (str (subs s 0 *max-chars*)
+                  truncate-msg)
+             s)]
+    (print s')))
+
 (defn print-trees
   [trees]
-  (doseq [o (pmap tree->string trees)]
-    (print o)))
+  (->> trees
+       (map tree->string)
+       (apply str)
+       print))
+
+#_ (do
+     *print-level*
+     (set! *print-length* 100)
+     puget.printer/*options*
+     (println     (pprint-str (range 1 100)))
+
+
+)
