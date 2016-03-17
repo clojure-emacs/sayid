@@ -76,23 +76,21 @@
                        :kids-time kids-time
                        :arg-set #{(:args tree)}})))
 
-(defn add-metrics-to-rec
-  [rec]
-  (let [rec' (->> rec
+(defn decorate-tree-with-metrics
+  [tree]
+  (let [tree' (->> tree
                   :children
                   (mapv add-durations-to-tree)
                   rec/mk-recording)]
-    (->> rec'
+    (->> tree'
         :children
         (map get-fn-metrics)
         (apply merge-fn-metrics)
         finalize-metrics
-        (assoc rec' :fn-metrics))))
-
-
+        (assoc tree' :fn-metrics))))
 
 (defn get-report
-  [rec])
+  [tree])
 
 (defn print-report
-  [rec])
+  [tree])
