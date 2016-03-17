@@ -234,8 +234,8 @@
                       (->> file
                            slurp
                            clojure.string/split-lines
-                           (drop (- line 1))
-                           clojure.string/join)
+                           (drop (dec line))
+                           (clojure.string/join "\n"))
                       "nil")))))
 
 (defmacro src-in-meta
