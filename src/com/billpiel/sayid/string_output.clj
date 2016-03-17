@@ -252,9 +252,9 @@
 (defn print-tree
   [tree]
   (let [s (with-out-str (print-tree-unlimited tree))
-        s' (if (<  max-len
+        s' (if (<  *max-chars*
                    (count s))
-             (str (subs s 0 max-len)
+             (str (subs s 0 *max-chars*)
                   truncate-msg)
              s)]
     (print s')))
