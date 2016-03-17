@@ -47,8 +47,10 @@ user> (-> #'f1 meta :source)
 
 (defn ws-show-traced
   [& [ws]]
-  (:traced (or ws
-               (ws-get-current!))))
+  (-> ws
+      (or (ws-get-current!))
+      :traced
+      clojure.pprint/pprint))
 (util/defalias w-st ws-show-traced)
 
 (defn ws-remove-all-traces!
