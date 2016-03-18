@@ -281,3 +281,26 @@
               (-> #'~fn-sym
                   meta
                   ~meta-key)))
+
+
+(defn get-some*
+  [f v]
+  (cond
+    (fn? f)
+    (f v)
+
+    (set? f)
+    (f v)
+
+    :default
+    (get v f)))
+
+(defn get-some
+  [coll v]
+  (loop [coll coll
+         v v]
+    (if ((some-fn empty? nil?) coll)
+      v
+      (let [[f & r] coll]
+        (when-let [v' (get-some* f v)]
+          (recur r v'))))))

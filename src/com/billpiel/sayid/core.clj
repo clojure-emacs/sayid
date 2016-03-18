@@ -286,8 +286,6 @@ user> (-> #'f1 meta :source)
                                  (keys v)
                                  (meta v)))))))
 
-; rec-print ws-print print-trees
-
 (defn print-trees
   [coll]
   (-> coll
@@ -318,5 +316,9 @@ user> (-> #'f1 meta :source)
   (#'so/print-tree (or rec
                        @recording)))
 (util/defalias r-pr rec-print)
+
+(defn with-selector*
+  [sel]
+  )
 
 ;; === END String Output functions

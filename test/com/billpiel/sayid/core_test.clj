@@ -947,12 +947,12 @@ x safe print level/length for string out
 x upgrade puget -- use seq-limit
 - FIX adding only deep-trace throws execption on execution -- happened in scheduler
 ~ test profiling w/ deep trace
-- profile simulated tracer fn
+~ profile simulated tracer fn
 - profiling interface in core
 - rec-save-as should accept keyword or string
 - never return ws or recs from core fns
-~ deep trace (inside fn)
-~ trace individual fns
+x deep trace (inside fn)
+x trace individual fns
 - re-exec traces
 - query selector funcs
   - conditional by predicate
