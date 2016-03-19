@@ -5,7 +5,7 @@
             clojure.string))
 
 (def ^:dynamic *sayid-print-length* 15)
-(def ^:dynamic *max-chars* 5000)
+(def ^:dynamic *max-chars* 10000)
 (def ^:dynamic *max-arg-lines* 15)
 (def ^:dynamic *truncate-lines-count* nil)
 (def ^:dynamic *selector* {:args true
