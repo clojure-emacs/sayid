@@ -160,14 +160,15 @@
 (defn return-str
   [tree & {pos :pos}]
   (binding [*truncate-lines-count* 20]
-    (when-let [return (:return tree)]
-      (multi-line-indent-MZ :label (str (condp = pos
-                                          :before "returns"
-                                          :after "returned")
-                                        " => ")
-                            :value  return
-                            :indent-base (:depth tree)
-                            :indent-offset  3))))
+    (when (contains? tree :return)
+      (let [return (:return tree)]
+        (multi-line-indent-MZ :label (str (condp = pos
+                                            :before "returns"
+                                            :after "returned")
+                                          " => ")
+                              :value  return
+                              :indent-base (:depth tree)
+                              :indent-offset  3)))))
 
 (defn args-map-str
   [tree]
@@ -221,7 +222,7 @@
 (defn selects-str
   [tree]
   (let [sel-fn (fn [sel]
-                 (util/get-some #spy/d (if (vector? sel)
+                 (util/get-some (if (vector? sel)
                                   sel
                                   [sel])
                                 tree))
@@ -288,10 +289,13 @@
 
 (defn print-trees
   [trees]
-  (->> trees
-       (map tree->string)
-       (apply str)
-       print))
+  (doseq [t trees]
+    (print-tree t)))
+
+(defn print-trees-unlimited
+  [trees]
+  (doseq [t trees]
+    (print-tree-unlimited t)))
 
 #_ (do
      *print-level*

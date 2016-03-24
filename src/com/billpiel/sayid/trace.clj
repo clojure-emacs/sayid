@@ -81,15 +81,15 @@
   [workspace name f args meta']
   (let [parent (or *trace-log-parent*
                    workspace)
-        this    (mk-fn-tree :parent parent  ;; mk-fn-tree = 200ms
-                               :name name
-                               :args args
-                               :meta meta')
+        this    (mk-fn-tree :parent parent ;; mk-fn-tree = 200ms
+                            :name name
+                            :args args
+                            :meta meta')
         idx  (-> (start-trace (:children parent) ;; start-trace = 20ms
-                                   this)
-                      count
-                      dec)]
-    (let [value (binding [*trace-log-parent* this]  ;; binding = 50ms
+                              this)
+                 count
+                 dec)]
+    (let [value (binding [*trace-log-parent* this] ;; binding = 50ms
                   (try
                     (apply f args)
                     (catch Throwable t
@@ -98,7 +98,7 @@
                                  {:throw (Throwable->map** t)
                                   :ended-at (now)})
                       (throw t))))]
-       (end-trace (:children parent)   ;; end-trace = 75ms
+      (end-trace (:children parent) ;; end-trace = 75ms
                  idx
                  {:return value
                   :ended-at (now)})
@@ -121,7 +121,7 @@
         s  (.sym v)
         m (meta v)
         f @v
-        vname (str ns "/" s)]
+        vname (util/qualify-sym ns s )]
     (doto v
       (alter-var-root (partial tracer-fn
                                {:workspace workspace

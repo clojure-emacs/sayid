@@ -15,6 +15,13 @@
 (def config (atom {:ws-ns '$ws
                    :rec-ns '$rec}))
 
+(def default-printer {:max-chars so/*max-chars*
+                      :max-arg-lines so/*max-arg-lines*
+                      :selector so/*selector*})
+
+(def printer (atom default-printer))
+
+
 ;; === Helper functions
 
 (defmacro src-in-meta
@@ -240,20 +247,27 @@ user> (-> #'f1 meta :source)
 
 ;; === Query functions
 
-(defmacro qw
+(defmacro ws-query
   "Queries the trace record of the active workspace."
   [& body] `(q/q (ws-deref!)
                  ~@body))
+(util/defalias-macro w-q ws-query)
 
-(defmacro qr
+(defmacro rec-query
   "Queries the active trace recording."
   [& body] `(q/q @recording
                  ~@body))
+(util/defalias-macro r-q rec-query)
 
 (defmacro qt
-  "Queries the trace record of the active workspace."
+  "Queries `tree`, a trace record."
   [tree & body] `(q/q ~tree
                       ~@body))
+
+(defmacro query-by-name
+  [s]
+  `[:name ''~(util/fully-qualify-sym s)])
+(util/defalias-macro qbn query-by-name)
 
 ;; === END Query functions
 
@@ -317,8 +331,61 @@ user> (-> #'f1 meta :source)
                        @recording)))
 (util/defalias r-pr rec-print)
 
-(defn with-selector*
-  [sel]
-  )
+(defn with-printer-bindings*
+  [prn-sym body]
+  `[so/*max-chars* (:m)])
+
+(defmacro with-printer
+  ([prn & body]
+   `(let [prn# (mk-printer prn)]
+      (binding )))
+  ([& body]
+   `(binding [so/*max-chars* (or (:max-chars )
+                                 so/*max-chars*)])))
+
+(defn mk-printer-*-list
+  [opts init-prn whitelist?]
+  (loop [prn init-prn
+         opts' opts]
+    (let [[fi se & re] opts'
+          limit ({:mc :max-chars
+                  :mal :max-arg-lines} fi)]
+      (cond
+        (nil? fi) prn
+        limit (recur (assoc prn limit se)
+                     re)
+        (map? fi) (recur (update-in prn
+                                    [:selector
+                                     :selects]
+                                    merge
+                                    fi)
+                         (rest opts'))
+        :else (recur (update-in prn [:selector]
+                                assoc fi whitelist?)
+                     (rest opts'))))))
+
+(defn mk-printer-white-list
+  [opts]
+  (mk-printer-*-list opts
+                     (assoc default-printer
+                            :selector {})
+                     true))
+
+(defn mk-printer-black-list
+  [opts]
+  (mk-printer-*-list opts
+                     default-printer
+                     false))
+
+(defn set-printer!
+  [& opts]
+  (reset! printer
+          (cond
+            (nil? opts) default-printer
+
+            (-> opts first (= :-))
+            (mk-printer-black-list (rest opts))
+
+            :else (mk-printer-white-list opts))))
 
 ;; === END String Output functions

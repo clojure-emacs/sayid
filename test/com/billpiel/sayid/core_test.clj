@@ -948,9 +948,10 @@ x upgrade puget -- use seq-limit
 - FIX adding only deep-trace throws execption on execution -- happened in scheduler
 ~ test profiling w/ deep trace
 ~ profile simulated tracer fn
-- FIX return values of `false` aren't displayed
-- FIX deep-traced fn returning fn blows up
+x FIX return values of `false` aren't displayed
+X should be able to query for func by func
 - profiling interface in core
+- FIX deep-traced fn returning fn blows up -- has no parent context -- throw explaining exception??
 - rec-save-as should accept keyword or string
 - never return ws or recs from core fns
 x deep trace (inside fn)
