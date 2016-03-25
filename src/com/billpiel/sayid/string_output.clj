@@ -280,8 +280,8 @@
 (defn print-tree
   [tree]
   (let [s (with-out-str (print-tree-unlimited tree))
-        s' (if (<  *max-chars*
-                   (count s))
+        s' (if (< *max-chars*
+                  (count s))
              (str (subs s 0 *max-chars*)
                   truncate-msg)
              s)]
@@ -296,12 +296,3 @@
   [trees]
   (doseq [t trees]
     (print-tree-unlimited t)))
-
-#_ (do
-     *print-level*
-     (set! *print-length* 100)
-     puget.printer/*options*
-     (println     (pprint-str (range 1 100)))
-
-
-)

@@ -957,8 +957,7 @@ X should be able to query for func by func
 x deep trace (inside fn)
 x trace individual fns
 - re-exec traces
-- query selector funcs
-  - conditional by predicate
+x query selector funcs
   - special output
   - toggle output components
 - query output by line/column position -- for emacs plugin

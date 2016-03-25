@@ -245,32 +245,6 @@ user> (-> #'f1 meta :source)
 ;; === END Recording functions
 
 
-;; === Query functions
-
-(defmacro ws-query
-  "Queries the trace record of the active workspace."
-  [& body] `(q/q (ws-deref!)
-                 ~@body))
-(util/defalias-macro w-q ws-query)
-
-(defmacro rec-query
-  "Queries the active trace recording."
-  [& body] `(q/q @recording
-                 ~@body))
-(util/defalias-macro r-q rec-query)
-
-(defmacro qt
-  "Queries `tree`, a trace record."
-  [tree & body] `(q/q ~tree
-                      ~@body))
-
-(defmacro query-by-name
-  [s]
-  `[:name ''~(util/fully-qualify-sym s)])
-(util/defalias-macro qbn query-by-name)
-
-;; === END Query functions
-
 ;; === String Output functions
 
 (def tree->string #'so/tree->string)
@@ -331,18 +305,6 @@ user> (-> #'f1 meta :source)
                        @recording)))
 (util/defalias r-pr rec-print)
 
-(defn with-printer-bindings*
-  [prn-sym body]
-  `[so/*max-chars* (:m)])
-
-(defmacro with-printer
-  ([prn & body]
-   `(let [prn# (mk-printer prn)]
-      (binding )))
-  ([& body]
-   `(binding [so/*max-chars* (or (:max-chars )
-                                 so/*max-chars*)])))
-
 (defn mk-printer-*-list
   [opts init-prn whitelist?]
   (loop [prn init-prn
@@ -377,15 +339,80 @@ user> (-> #'f1 meta :source)
                      default-printer
                      false))
 
+(defn mk-printer
+  [opts]
+  (cond
+    (nil? opts) default-printer
+
+    (-> opts first (= :-))
+    (mk-printer-black-list (rest opts))
+
+    :else (mk-printer-white-list opts)))
+
 (defn set-printer!
   [& opts]
   (reset! printer
-          (cond
-            (nil? opts) default-printer
+          (mk-printer opts)))
 
-            (-> opts first (= :-))
-            (mk-printer-black-list (rest opts))
+(defmacro with-printer
+  ([prn & body]
+   `(let [prn# (if (vector? ~prn)
+                 (mk-printer ~prn)
+                 ~prn)]
+      (binding [so/*max-chars* (or (:max-chars prn#)
+                                   so/*max-chars*)
+                so/*max-arg-lines* (or (:max-arg-lines prn#)
+                                       so/*max-arg-lines*)
+                so/*selector* (or (:selector prn#)
+                                  so/*selector*)]
+        ~@body))))
 
-            :else (mk-printer-white-list opts))))
+(defmacro with-printer-default
+  ([& body]
+   `(with-printer @printer ~@body)))
 
 ;; === END String Output functions
+
+
+;; === Query functions
+
+(defmacro query-by-name
+  [s]
+  `[:name '~(util/fully-qualify-sym s)])
+(util/defalias-macro qbn query-by-name)
+
+(defn syms->qbn
+  [form]
+  (map #(if (symbol? %)
+          `(qbn ~%)
+          %)
+       form))
+
+(defmacro ws-query
+  "Queries the trace record of the active workspace."
+  [& body] `(q/q (ws-deref!)
+                 ~@(syms->qbn body)))
+(util/defalias-macro w-q ws-query)
+
+(defmacro ws-query-print
+  "Queries the trace record of the active workspace."
+  [& body]
+  `(with-printer-default
+     (print-trees (q/q (ws-deref!)
+                       ~@(syms->qbn body)))))
+(util/defalias-macro w-qp ws-query-print)
+(util/defalias-macro q ws-query-print)
+
+(defmacro rec-query
+  "Queries the active trace recording."
+  [& body] `(q/q @recording
+                 ~@body))
+(util/defalias-macro r-q rec-query)
+
+(defmacro qt
+  "Queries `tree`, a trace record."
+  [tree & body] `(q/q ~tree
+                      ~@body))
+
+
+;; === END Query functions
