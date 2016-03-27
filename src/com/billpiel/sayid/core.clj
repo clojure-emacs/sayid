@@ -7,6 +7,7 @@
             [com.billpiel.sayid.query2 :as q]
             [com.billpiel.sayid.util.find-ns :as find-ns]
             [com.billpiel.sayid.string-output :as so]
+            [com.billpiel.sayid.profiling :as pro]
             [com.billpiel.sayid.util.other :as util]))
 
 (def workspace (atom nil))
@@ -289,7 +290,6 @@ user> (-> #'f1 meta :source)
   (-> coll
       get-trees
       (#'so/print-trees)))
-(util/defalias p-t print-trees)
 
 (defn ws-print-unlimited
   [& [ws]]
@@ -426,3 +426,53 @@ user> (-> #'f1 meta :source)
 
 
 ;; === END Query functions
+
+;; === Profiling functions
+
+(defn pro-analyze
+  "Takes a tree (workspace, recording, query result) and assocs profile
+  data to it at :profile."
+  [tree]
+  (#'pro/assoc-tree-with-profile tree))
+(util/defalias p-a pro-analyze)
+
+(defn pro-net-time
+  "Takes a tree with profilings data (see `pro-analyze`) and prints a
+  table of functions and their profile metrics, sorted by net time
+  sum. 'Net time sum' is the amount of time spent in a function minus
+  the time spent executing its children. Functions with high net time
+  sum may be candidates for optimization."
+  [tree]
+  (->> tree
+       :profile
+       (map (fn [[k v]]
+              (assoc v
+                     :name k)))
+       (sort-by :net-time-sum)
+       (clojure.pprint/print-table [:name :net-time-sum
+                                    :net-time-avg :count
+                                    :gross-time-sum :gross-time-avg])))
+(util/defalias p-nt pro-net-time)
+
+
+(defn pro-gross-repeats
+  "Takes a tree with profilings data (see `pro-analyze`) and prints a
+  table of functions and their profile metrics, sorted by gross time of
+  repeated arguments. 'Gross of repeats' is the amount of time spent in
+  a function during calls where the args match those of a previous call
+  to the function. Functions with high gross of repeats may be
+  candidates for memoization."
+  [tree]
+  (->> tree
+       :profile
+       (map (fn [[k v]]
+              (assoc v
+                     :name k)))
+       (sort-by :gross-of-repeats)
+       (clojure.pprint/print-table [:name :gross-of-repeats
+                                    :count :arg-cardinality
+                                    :repeat-arg-pct
+                                    :gross-time-sum :gross-time-avg])))
+(util/defalias p-gr pro-gross-repeats)
+
+;; === END Profiling functions
