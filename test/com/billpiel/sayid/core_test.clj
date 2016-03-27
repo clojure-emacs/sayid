@@ -950,16 +950,16 @@ x upgrade puget -- use seq-limit
 ~ profile simulated tracer fn
 x FIX return values of `false` aren't displayed
 X should be able to query for func by func
-- profiling interface in core
+x profiling interface in core
 - FIX deep-traced fn returning fn blows up -- has no parent context -- throw explaining exception??
 - rec-save-as should accept keyword or string
 - never return ws or recs from core fns
 x deep trace (inside fn)
 x trace individual fns
-- re-exec traces
+x re-exec traces
 x query selector funcs
-  - special output
-  - toggle output components
+  x special output
+  x toggle output components
 - query output by line/column position -- for emacs plugin
 - cursors
    - bisect recording trees to find bugs
