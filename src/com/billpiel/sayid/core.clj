@@ -187,6 +187,16 @@ user> (-> #'f1 meta :source)
   true)
 (util/defalias w-l! ws-load!)
 
+(defn ws-replay!
+  "Replays the function call recorded in the active workspace with an id
+  of `id`."
+  [id]
+  (let [t (-> (w-q [:id id]) first)
+        f (-> t :name resolve)
+        a (:args t)]
+    (apply f a)))
+(util/defalias w-rp! ws-replay!)
+
 ;; === END Workspace functions
 
 ;; === Recording functions
