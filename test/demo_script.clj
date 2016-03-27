@@ -24,13 +24,13 @@ sd/src-in-meta
 
 (func-example2 1 2)
 
-(sd/ws-print)  ;; trailing purple arrow
+(sd/ws-print)
 
 (func-example2 3 1)
 
 (sd/ws-print)
 
-(sd/ws-add-deep-trace-fn! func-example2)  ;; first one fails
+(sd/ws-add-deep-trace-fn! func-example2)
 
 (sd/ws-clear-log!)
 

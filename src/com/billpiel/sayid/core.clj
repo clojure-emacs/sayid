@@ -7,6 +7,7 @@
             [com.billpiel.sayid.query2 :as q]
             [com.billpiel.sayid.util.find-ns :as find-ns]
             [com.billpiel.sayid.string-output :as so]
+            [com.billpiel.sayid.profiling :as pro]
             [com.billpiel.sayid.util.other :as util]))
 
 (def workspace (atom nil))
@@ -14,6 +15,13 @@
 
 (def config (atom {:ws-ns '$ws
                    :rec-ns '$rec}))
+
+(def default-printer {:max-chars so/*max-chars*
+                      :max-arg-lines so/*max-arg-lines*
+                      :selector so/*selector*})
+
+(def printer (atom default-printer))
+
 
 ;; === Helper functions
 
@@ -47,8 +55,10 @@ user> (-> #'f1 meta :source)
 
 (defn ws-show-traced
   [& [ws]]
-  (:traced (or ws
-               (ws-get-current!))))
+  (-> ws
+      (or (ws-get-current!))
+      :traced
+      clojure.pprint/pprint))
 (util/defalias w-st ws-show-traced)
 
 (defn ws-remove-all-traces!
@@ -68,7 +78,7 @@ user> (-> #'f1 meta :source)
 (defn ws-clear-log!
   "Clears the log of the active workspace, but preserves traces and other
   properties."
-  [] (#'ws/clear-log! workspace))
+  [] (#'ws/clear-log! (ws-init! :quiet)))
 (util/defalias w-cl! ws-clear-log!)
 
 (defn ws-add-trace-fn!*
@@ -178,6 +188,16 @@ user> (-> #'f1 meta :source)
   true)
 (util/defalias w-l! ws-load!)
 
+(defn ws-replay!
+  "Replays the function call recorded in the active workspace with an id
+  of `id`."
+  [id]
+  (let [t (-> (w-q [:id id]) first)
+        f (-> t :name resolve)
+        a (:args t)]
+    (apply f a)))
+(util/defalias w-rp! ws-replay!)
+
 ;; === END Workspace functions
 
 ;; === Recording functions
@@ -236,25 +256,6 @@ user> (-> #'f1 meta :source)
 ;; === END Recording functions
 
 
-;; === Query functions
-
-(defmacro qw
-  "Queries the trace record of the active workspace."
-  [& body] `(q/q (ws-deref!)
-                 ~@body))
-
-(defmacro qr
-  "Queries the active trace recording."
-  [& body] `(q/q @recording
-                 ~@body))
-
-(defmacro qt
-  "Queries the trace record of the active workspace."
-  [tree & body] `(q/q ~tree
-                      ~@body))
-
-;; === END Query functions
-
 ;; === String Output functions
 
 (def tree->string #'so/tree->string)
@@ -284,14 +285,11 @@ user> (-> #'f1 meta :source)
                                  (keys v)
                                  (meta v)))))))
 
-; rec-print ws-print print-trees
-
 (defn print-trees
   [coll]
   (-> coll
       get-trees
       (#'so/print-trees)))
-(util/defalias p-t print-trees)
 
 (defn ws-print-unlimited
   [& [ws]]
@@ -317,4 +315,164 @@ user> (-> #'f1 meta :source)
                        @recording)))
 (util/defalias r-pr rec-print)
 
+(defn mk-printer-*-list
+  [opts init-prn whitelist?]
+  (loop [prn init-prn
+         opts' opts]
+    (let [[fi se & re] opts'
+          limit ({:mc :max-chars
+                  :mal :max-arg-lines} fi)]
+      (cond
+        (nil? fi) prn
+        limit (recur (assoc prn limit se)
+                     re)
+        (map? fi) (recur (update-in prn
+                                    [:selector
+                                     :selects]
+                                    merge
+                                    fi)
+                         (rest opts'))
+        :else (recur (update-in prn [:selector]
+                                assoc fi whitelist?)
+                     (rest opts'))))))
+
+(defn mk-printer-white-list
+  [opts]
+  (mk-printer-*-list opts
+                     (assoc default-printer
+                            :selector {})
+                     true))
+
+(defn mk-printer-black-list
+  [opts]
+  (mk-printer-*-list opts
+                     default-printer
+                     false))
+
+(defn mk-printer
+  [opts]
+  (cond
+    (nil? opts) default-printer
+
+    (-> opts first (= :-))
+    (mk-printer-black-list (rest opts))
+
+    :else (mk-printer-white-list opts)))
+
+(defn set-printer!
+  [& opts]
+  (reset! printer
+          (mk-printer opts)))
+
+(defmacro with-printer
+  ([prn & body]
+   `(let [prn# (if (vector? ~prn)
+                 (mk-printer ~prn)
+                 ~prn)]
+      (binding [so/*max-chars* (or (:max-chars prn#)
+                                   so/*max-chars*)
+                so/*max-arg-lines* (or (:max-arg-lines prn#)
+                                       so/*max-arg-lines*)
+                so/*selector* (or (:selector prn#)
+                                  so/*selector*)]
+        ~@body))))
+
+(defmacro with-printer-default
+  ([& body]
+   `(with-printer @printer ~@body)))
+
 ;; === END String Output functions
+
+
+;; === Query functions
+
+(defmacro query-by-name
+  [s]
+  `[:name '~(util/fully-qualify-sym s)])
+(util/defalias-macro qbn query-by-name)
+
+(defn syms->qbn
+  [form]
+  (map #(if (symbol? %)
+          `(qbn ~%)
+          %)
+       form))
+
+(defmacro ws-query
+  "Queries the trace record of the active workspace."
+  [& body] `(q/q (ws-deref!)
+                 ~@(syms->qbn body)))
+(util/defalias-macro w-q ws-query)
+
+(defmacro ws-query-print
+  "Queries the trace record of the active workspace."
+  [& body]
+  `(with-printer-default
+     (print-trees (q/q (ws-deref!)
+                       ~@(syms->qbn body)))))
+(util/defalias-macro w-qp ws-query-print)
+(util/defalias-macro q ws-query-print)
+
+(defmacro rec-query
+  "Queries the active trace recording."
+  [& body] `(q/q @recording
+                 ~@body))
+(util/defalias-macro r-q rec-query)
+
+(defmacro qt
+  "Queries `tree`, a trace record."
+  [tree & body] `(q/q ~tree
+                      ~@body))
+
+
+;; === END Query functions
+
+;; === Profiling functions
+
+(defn pro-analyze
+  "Takes a tree (workspace, recording, query result) and assocs profile
+  data to it at :profile."
+  [tree]
+  (#'pro/assoc-tree-with-profile tree))
+(util/defalias p-a pro-analyze)
+
+(defn pro-net-time
+  "Takes a tree with profilings data (see `pro-analyze`) and prints a
+  table of functions and their profile metrics, sorted by net time
+  sum. 'Net time sum' is the amount of time spent in a function minus
+  the time spent executing its children. Functions with high net time
+  sum may be candidates for optimization."
+  [tree]
+  (->> tree
+       :profile
+       (map (fn [[k v]]
+              (assoc v
+                     :name k)))
+       (sort-by :net-time-sum)
+       (clojure.pprint/print-table [:name :net-time-sum
+                                    :net-time-avg :count
+                                    :gross-time-sum :gross-time-avg])))
+(util/defalias p-nt pro-net-time)
+
+
+(defn pro-gross-repeats
+  "Takes a tree with profilings data (see `pro-analyze`) and prints a
+  table of functions and their profile metrics, sorted by gross time of
+  repeated arguments. 'Gross of repeats' is the amount of time spent in
+  a function during calls where the args match those of a previous call
+  to the function. Functions with high gross of repeats may be
+  candidates for memoization."
+  [tree]
+  (->> tree
+       :profile
+       (map (fn [[k v]]
+              (assoc v
+                     :name k)))
+       (sort-by :gross-of-repeats)
+       (clojure.pprint/print-table [:name :gross-of-repeats
+                                    :count :arg-cardinality
+                                    :repeat-arg-pct
+                                    :gross-time-sum :gross-time-avg])))
+(util/defalias p-gr pro-gross-repeats)
+
+;; === END Profiling functions

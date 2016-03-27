@@ -947,17 +947,19 @@ x safe print level/length for string out
 x upgrade puget -- use seq-limit
 - FIX adding only deep-trace throws execption on execution -- happened in scheduler
 ~ test profiling w/ deep trace
-- profile simulated tracer fn
-- profiling interface in core
+~ profile simulated tracer fn
+x FIX return values of `false` aren't displayed
+X should be able to query for func by func
+x profiling interface in core
+- FIX deep-traced fn returning fn blows up -- has no parent context -- throw explaining exception??
 - rec-save-as should accept keyword or string
 - never return ws or recs from core fns
-~ deep trace (inside fn)
-~ trace individual fns
-- re-exec traces
-- query selector funcs
-  - conditional by predicate
-  - special output
-  - toggle output components
+x deep trace (inside fn)
+x trace individual fns
+x re-exec traces
+x query selector funcs
+  x special output
+  x toggle output components
 - query output by line/column position -- for emacs plugin
 - cursors
    - bisect recording trees to find bugs

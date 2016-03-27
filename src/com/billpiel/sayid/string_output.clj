@@ -5,10 +5,14 @@
             clojure.string))
 
 (def ^:dynamic *sayid-print-length* 15)
-(def ^:dynamic *max-chars* 5000)
+(def ^:dynamic *max-chars* 10000)
 (def ^:dynamic *max-arg-lines* 15)
-
 (def ^:dynamic *truncate-lines-count* nil)
+(def ^:dynamic *selector* {:args true
+                           :return true
+                           :children true
+                           :throw true
+                           :selects false})
 
 (def pprint-str #(puget.printer/cprint-str %
                                            {:seq-limit *sayid-print-length*
@@ -130,43 +134,48 @@
   [& {:keys [label value indent-base indent-offset]}]
   (let [s (pprint-str value)
         mline (some #{\newline} s)]
-    [ (indent-MZ indent-base)
-      label
-      (if mline
-        ["\n"
-          (indent-line-breaks (str s "\n")
-                              (+ 2 indent-base) ;; Why does this need to be 2?
-                              :end
-                              (apply str
-                                     (repeat indent-offset
-                                             " ")))]
-        (str s "\n"))]))
+    [(indent-MZ indent-base)
+     label
+     (if mline
+       ["\n"
+        (indent-line-breaks (str s "\n")
+                            (+ 2 indent-base) ;; Why does this need to be 2?
+                            :end
+                            (apply str
+                                   (repeat indent-offset
+                                           " ")))]
+       (str s "\n"))]))
 
 (def multi-line-indent-MZ  (memoize multi-line-indent))
+
+(defn indent-map
+  [tree m]
+  (->> m
+       (map #(multi-line-indent-MZ :label (str (first %) " => ")
+                                   :value  (second %)
+                                   :indent-base (:depth tree)
+                                   :indent-offset  3))
+       vec))
 
 (defn return-str
   [tree & {pos :pos}]
   (binding [*truncate-lines-count* 20]
-    (when-let [return (:return tree)]
-      (multi-line-indent-MZ :label (str (condp = pos
-                                          :before "returns"
-                                          :after "returned")
-                                        " => ")
-                            :value  return
-                            :indent-base (:depth tree)
-                            :indent-offset  3))))
+    (when (contains? tree :return)
+      (let [return (:return tree)]
+        (multi-line-indent-MZ :label (str (condp = pos
+                                            :before "returns"
+                                            :after "returned")
+                                          " => ")
+                              :value  return
+                              :indent-base (:depth tree)
+                              :indent-offset  3)))))
 
 (defn args-map-str
   [tree]
   (binding [*truncate-lines-count* *max-arg-lines*]
     (when-let [arg-map-ref (:arg-map tree)]
       (let [arg-map arg-map-ref]
-        (->> arg-map
-             (map #(multi-line-indent-MZ :label (str (first %) " => ")
-                                         :value  (second %)
-                                         :indent-base (:depth tree)
-                                         :indent-offset  3))
-             vec)))))
+        (indent-map tree arg-map)))))
 
 (defn args-str
   [tree]
@@ -210,21 +219,40 @@
        (:depth tree))
       "\n"]))
 
+(defn selects-str
+  [tree]
+  (let [sel-fn (fn [sel]
+                 (util/get-some (if (vector? sel)
+                                  sel
+                                  [sel])
+                                tree))
+        sel-map (util/apply-to-map-vals sel-fn
+                                        (:selects *selector*))]
+    (indent-map tree sel-map)))
+
+(defmacro when-sel
+  [kw & body]
+  `(when (~kw *selector*)
+     [~@body]))
+
 (defn tree->string*
   [tree]
   (let [has-children (some-> tree
                              :children
                              not-empty)]
     [(name->string tree true) "\n"
-     (args*-str tree)
-     (when has-children
-       [(return-str tree :pos :before)
-        (throw-str tree)
-        (mapv tree->string* (:children tree))
-        (name->string tree false) "\n"
-        (args*-str tree)])
-     (return-str tree :pos :after)
-     (throw-str tree)
+     (when-sel :selects  (selects-str tree))
+     (when-sel :args (args*-str tree))
+     (when-sel :children
+               (when has-children
+                 [(when-sel :return (return-str tree :pos :before))
+                  (when-sel :throw (throw-str tree))
+                  (mapv tree->string* (:children tree))
+                  (name->string tree false) "\n"
+                  (when-sel :args
+                            (args*-str tree))]))
+     (when-sel :return (return-str tree :pos :after))
+     (when-sel :throw (throw-str tree))
      (when (and (-> tree :depth nil? not)
                 (-> tree
                     meta
@@ -252,8 +280,8 @@
 (defn print-tree
   [tree]
   (let [s (with-out-str (print-tree-unlimited tree))
-        s' (if (<  *max-chars*
-                   (count s))
+        s' (if (< *max-chars*
+                  (count s))
              (str (subs s 0 *max-chars*)
                   truncate-msg)
              s)]
@@ -261,16 +289,10 @@
 
 (defn print-trees
   [trees]
-  (->> trees
-       (map tree->string)
-       (apply str)
-       print))
+  (doseq [t trees]
+    (print-tree t)))
 
-#_ (do
-     *print-level*
-     (set! *print-length* 100)
-     puget.printer/*options*
-     (println     (pprint-str (range 1 100)))
-
-
-)
+(defn print-trees-unlimited
+  [trees]
+  (doseq [t trees]
+    (print-tree-unlimited t)))

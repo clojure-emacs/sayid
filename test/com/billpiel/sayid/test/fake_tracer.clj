@@ -1,9 +1,8 @@
-(ns com.billpiel.sayid.trace
-  (require [com.billpiel.sayid.util.other :as util]))
-
+(ns com.billpiel.sayid.test.fake-tracer
+  (:require [com.billpiel.sayid.util.other :as util]
+            [com.billpiel.sayid.test.ns1 :as ns1]))
 
 (def ^:dynamic *trace-log-parent* nil)
-
 (defn now [] (System/currentTimeMillis))
 
 (defn mk-tree
@@ -63,7 +62,6 @@
       (assoc m :data data)
       m)))
 
-
 (defn start-trace
   [trace-log tree]
   (swap! trace-log
@@ -81,15 +79,15 @@
   [workspace name f args meta']
   (let [parent (or *trace-log-parent*
                    workspace)
-        this    (mk-fn-tree :parent parent ;; mk-fn-tree = 200ms
-                            :name name
-                            :args args
-                            :meta meta')
+        this    (mk-fn-tree :parent parent  ;; mk-fn-tree = 200ms
+                               :name name
+                               :args args
+                               :meta meta')
         idx  (-> (start-trace (:children parent) ;; start-trace = 20ms
-                              this)
-                 count
-                 dec)]
-    (let [value (binding [*trace-log-parent* this] ;; binding = 50ms
+                                   this)
+                      count
+                      dec)]
+    (let [value (binding [*trace-log-parent* this]  ;; binding = 50ms
                   (try
                     (apply f args)
                     (catch Throwable t
@@ -98,13 +96,11 @@
                                  {:throw (Throwable->map** t)
                                   :ended-at (now)})
                       (throw t))))]
-      (end-trace (:children parent) ;; end-trace = 75ms
+       (end-trace (:children parent)   ;; end-trace = 75ms
                  idx
                  {:return value
                   :ended-at (now)})
       value)))
-
-;; mk-fn-tree + start-trace + binding + end-trace = 345ms
 
 (defn ^{::trace-type :fn} shallow-tracer
   [{:keys [workspace qual-sym-str meta']} original-fn]
@@ -121,7 +117,7 @@
         s  (.sym v)
         m (meta v)
         f @v
-        vname (util/qualify-sym ns s )]
+        vname (str ns "/" s)]
     (doto v
       (alter-var-root (partial tracer-fn
                                {:workspace workspace
@@ -132,77 +128,16 @@
       (alter-meta! assoc ::traced [(:id workspace) f])
       (alter-meta! assoc ::trace-type (-> tracer-fn meta ::trace-type)))))
 
-(defn untrace-var*
-  ([ns s]
-   (untrace-var* (ns-resolve ns s)))
-  ([v]
-   (let [^clojure.lang.Var v (if (var? v) v (resolve v))
-         ns (.ns v)
-         s  (.sym v)
-         [_ f]  ((meta v) ::traced)]
-     (when f
-       (doto v
-         (alter-var-root (constantly f))
-         (alter-meta! dissoc
-                      ::traced
-                      ::trace-type))))))
+#_ (do
 
-(defn trace-var*
-  [v tracer-fn workspace & {:keys [no-overwrite]}]
-  (let [^clojure.lang.Var v (if (var? v) v (resolve v))]
-    (when (and (ifn? @v) (-> v meta :macro not))
-      (if-let [[traced-id traced-f] (-> v meta ::traced)]
-        (when (and (not no-overwrite)
-                   (or (not= traced-id (:id workspace))
-                       (not= (-> tracer-fn meta ::trace-type)
-                             (-> v meta ::trace-type))))
-          (untrace-var* v)
-          (apply-trace-to-var v tracer-fn workspace))
-        (apply-trace-to-var v tracer-fn workspace)))))
+     (apply-trace-to-var #'ns1/func3-1
+                         shallow-tracer
+                         {:children (atom [])
+                          :depth 0} )
 
-(defn trace-ns*
-  [ns workspace]
-  (let [ns (the-ns ns)]
-    (when-not ('#{clojure.core com.billpiel.sayid.core} (.name ns))
-      (let [ns-fns (->> ns ns-interns vals (filter (comp fn? var-get)))]
-        (doseq [f ns-fns]
-          (trace-var* f
-                      (util/assoc-var-meta-to-fn shallow-tracer
-                                                 ::trace-type)
-                      workspace
-                      :no-overwrite true))))))
+          (apply-trace-to-var #'ns1/func3-2
+                         shallow-tracer
+                         {:children (atom [])
+                          :depth 0} )
 
-(defn untrace-ns*
-  [ns*]
-  (let [ns' (the-ns ns*)
-        ns-fns (->> ns' ns-interns vals)]
-    (doseq [f ns-fns]
-      (untrace-var* f))))
-
-(defmulti trace* (fn [type sym workspace] type))
-
-(defmethod trace* :ns
-  [_ sym workspace]
-  (trace-ns* sym workspace))
-
-
-
-(defmethod trace* :fn
-  [_ fn-sym workspace]
-  (-> fn-sym
-      resolve
-      (trace-var* (util/assoc-var-meta-to-fn shallow-tracer
-                                        ::trace-type)
-                  workspace)))
-
-(defmulti untrace* (fn [type sym] type))
-
-(defmethod untrace* :ns
-  [_ sym]
-  (untrace-ns* sym))
-
-(defmethod untrace* :fn
-  [_ fn-sym]
-  (-> fn-sym
-      resolve
-      untrace-var*))
+     (comment))

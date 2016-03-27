@@ -3,21 +3,21 @@
            [com.billpiel.sayid.recording :as rec]
            [com.billpiel.sayid.util.other :as util]))
 
-(defn merge-metric-values
+(defn merge-profile-values
   [a b]
   ((cond (number? a) +
          (set? a) clojure.set/union
          :default (throw (Exception. (format "Cant' merge this: '%s'" a))))
    a b))
 
-(def merge-fn-metrics
+(def merge-profiles
   (memoize
    (fn [& rest]
      (apply merge-with
-            #(merge-with merge-metric-values % %2)
+            #(merge-with merge-profile-values % %2)
             rest))))
 
-(defn finalize-metrics
+(defn finalize-profiles
   [fn-ms]
   (util/apply-to-map-vals (fn [metrics]
                             (let [arg-cardinality (-> metrics :arg-set count)
@@ -40,7 +40,7 @@
                                                               repeat-arg-pct)))))
                           fn-ms))
 
-(defn get-fn-metrics
+(defn get-profile
   [tree]
   (let [{{:keys [gross-time net-time arg-set]} :profiling
          name :name
@@ -51,9 +51,9 @@
                  :net-time-sum net-time
                  :arg-set arg-set}}]
     (if children
-      (apply merge-fn-metrics
+      (apply merge-profiles
              entry
-             (map get-fn-metrics
+             (map get-profile
                   children))
       entry)))
 
@@ -76,23 +76,21 @@
                        :kids-time kids-time
                        :arg-set #{(:args tree)}})))
 
-(defn add-metrics-to-rec
-  [rec]
-  (let [rec' (->> rec
+(defn assoc-tree-with-profile
+  [tree]
+  (let [tree' (->> tree
                   :children
                   (mapv add-durations-to-tree)
                   rec/mk-recording)]
-    (->> rec'
+    (->> tree'
         :children
-        (map get-fn-metrics)
-        (apply merge-fn-metrics)
-        finalize-metrics
-        (assoc rec' :fn-metrics))))
-
-
+        (map get-profile)
+        (apply merge-profiles)
+        finalize-profiles
+        (assoc tree' :profile))))
 
 (defn get-report
-  [rec])
+  [tree])
 
 (defn print-report
-  [rec])
+  [tree])
