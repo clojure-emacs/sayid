@@ -139,6 +139,9 @@ h2 {
       a:hover {
         text-decoration: underline;
       }
+      li a {
+        color: #0000CC;
+      }
     -->
     </style>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -164,6 +167,18 @@ h2 {
                       <h1>Sayid</h1>
                       <p>Sayid <i>(siy EED)</i> is a library for debugging and profiling clojure code. It extracts secrets from code at run time.<br><br>
                         Sayid works by intercepting and recording the inputs and outputs of functions. It can even record function calls that occur inside of functions. The user can select which functions to trace. Functions can be selected individually or by namespace. The recorded data can be displayed, queried and profiled.</p>
+
+                      <h2>Contents</h2>
+
+                      <ul>
+                        <li><a href="#quickish-start">Quick<i>ish</i> Start</li>
+                        <li><a href="#function-prefixes">Function Prefixes</a></li>
+                        <li><a href="#workspaces">Workspaces</a></li>
+                        <li><a href="#querying">Querying</a></li>
+                        <li><a href="#profiling">Profiling</a></li>
+                        <li><a href="#recordings">Recordings</a></li>
+                      </ul>
+
 
                       <h2>Quick<i>ish</i> Start</h2>
                       <p>
@@ -399,15 +414,6 @@ So, what did we just do? We wrapped every function in the namespace, <code>user<
 </span><span class="cider-repl-output"><span class="ATTRLIST-5"> ^ </span></span><span class="cider-repl-output">
 </span><span class="cider-repl-result"> nil</span>
 <span class="cider-repl-prompt"> user&gt; </span></pre>
-
-<h2>Core Concepts</h2>
-<ul>
-  <li>Function Prefixes</li>
-  <li>Workspaces</li>
-  <li>Querying</li>
-  <li>Profiling</li>
-  <li>Recordings</li>
-</ul>
 
 <h3 id="function-prefixes">Function Prefixes</h3>
 <p>Sayid has multiple namespaces for function implementations, but all
