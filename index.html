@@ -400,6 +400,122 @@ So, what did we just do? We wrapped every function in the namespace, <code>user<
 </span><span class="cider-repl-result"> nil</span>
 <span class="cider-repl-prompt"> user&gt; </span></pre>
 
+<h2>Core Concepts</h2>
+<ul>
+  <li>Function Prefixes</li>
+  <li>Workspaces</li>
+  <li>Querying</li>
+  <li>Profiling</li>
+  <li>Recordings</li>
+</ul>
+
+<h3 id="function-prefixes">Function Prefixes</h3>
+<p>Sayid has multiple namespaces for function implementations, but all
+of the functions intended for use are contained in the <code>core</code>
+namespace. Because these functions are numerous and cleanly separated by
+what values they act on, they can be prefixed for clarity. For example,
+workspaces are discussed in the next section. Functions for working with
+workspaces are prefixed <code>ws-</code>.</p>
+
+<h3 id="workspaces">Workspaces</h3>
+<p>
+  When using Sayid, everything stems from workspaces. Here's an example
+  of what one looks like:
+  <pre>
+    {:id :root22440          ;; unique id
+     :path [:root22440]      ;; unique path
+     :depth 0                ;; depth from root of trace tree
+     :children (atom [])     ;; top-level function traces will go here
+     :traced {:ns #{com.billpiel.sayid.test.ns1}  ;; this ns is traced
+              :fn #{}        ;; no invididually traced functions
+              :deep-fn #{}}  ;; no deep traced functions
+     :ws-slot nil            ;; workspace has not been saved in the shelf
+     :arg-map nil}           ;; not applicable
+  </pre>
+
+  This probably raises more questions than it answers, but let's focus
+  on <code>:traced</code> and <code>:children</code> for now. Workspaces
+  serve two main functions. They keep track of what is traced and they
+  serve as the root of a trace tree.</p>
+
+<p>
+  Sayid maintains an atom for the <b>active</b> workspace. This is the
+  workspace that <code>ws-</code> functions will operate on by
+  default. Much of the functionality of this library is available
+  through the use of just one workspace. However, it is possible to
+  juggle more than one through the use of the <i>shelf.</i> Check these
+  out.
+
+  <pre>
+<span class="cider-repl-prompt"> user&gt; </span><span class="cider-repl-input">(doc ws-save-as!)</span>
+<span class="cider-repl-output"> -------------------------
+ com.billpiel.sayid.core/ws-save-as!
+ ([slot])
+   Saves active workspace to the workspace shelf namespace in the specified `slot`.
+</span><span class="cider-repl-result"> nil</span>
+<span class="cider-repl-prompt"> user&gt; </span><span class="cider-repl-input">(doc ws-load!)</span>
+<span class="cider-repl-output"> -------------------------
+ com.billpiel.sayid.core/ws-load!
+ ([slot &amp; [force]])
+   Loads a workspace from the shelf namespace into the active
+   position. Will not overwrite an un-saved active workspace unless
+   `force` equals :f
+</span><span class="cider-repl-result"> nil</span>
+<span class="cider-repl-prompt"> user&gt; </span></pre>
+
+  Cool.
+</p>
+  <h3 id="querying">Querying</h3>
+<p>Once you have some traces captured, you'll want to examine them. You
+could just print the whole tree out, but that would be overwhelming for
+any non-trivial scenarios. Instead, you can query the tree. To keep
+things terse, the querying function you are likely to use most often is
+aliased as <code>q</code>. It queries the active workspace and prints
+the results. Below is an explanation of querying function arguments
+work.
+</p>
+
+    <pre>
+<span class="cider-repl-prompt"> user&gt; </span><span class="cider-repl-input">(doc query-docs)</span>
+<span class="cider-repl-output"> -------------------------
+ com.billpiel.sayid.core/query-docs
+   There are several querying functions. Many of them take a variadic
+   `body` argument. The syntax of the `body` argument is described
+   below:
+
+   Body may or may not begin with a keyword modifier, followed by one or
+   more vectors or symbols. The keyword modifier expands the query
+   results to include nodes that have a specified type of relationship
+   with any nodes matching the query. The modifiers are listed here:
+
+   :a -- returns ancestors of matching nodes
+   :d -- returns descendants of matching nodes
+   :s -- returns siblings of matching nodes
+   :w -- wildcard! returns ancestors, descendants and siblings of matching nodes
+   :r -- range; takes exactly two query vectors and returns nodes that
+         are both descendants of the first and ancestors of the second
+
+   After the optional keyword modifier is one or more vectors or
+   symbols. These are the queries themselves. A vector is applied in a
+   `get-in` fashion to each trace node, with the final element acting as
+   a matching value or predicate function. If the final value is truthy,
+   the node is included in the query result set. For example, a `body` of
+
+   :a [:arg-map 'fruit :apple]
+
+   would match any trace node where an argument `fruit` took a
+   value :apple, as well as all ancestors of that node.
+
+   If the query is a symbol instead of a vector, the query will match any
+   node whose function name matches the symbol. For example, a `body` of
+
+   'somefunc
+
+   is equivalent to: [:name 'somefunc]
+
+</span><span class="cider-repl-result"> nil</span>
+<span class="cider-repl-prompt"> user&gt; </span></pre>
+
 <p>Ok. That's it.</p>
 
         <!-- end repl -->
