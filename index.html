@@ -520,6 +520,72 @@ work.
 </span><span class="cider-repl-result"> nil</span>
 <span class="cider-repl-prompt"> user&gt; </span></pre>
 
+    <h3 id="profiling">Profiling</h3>
+
+<p> As a trace occurs, Sayid records the execution start and end
+  time. This allows for any number of analyses. Out of the box, Sayid
+  provides the two that I find most useful. See docs below:</p>
+
+    <pre>
+<span class="cider-repl-prompt"> user&gt; </span><span class="cider-repl-input">(doc sd/pro-net-time)</span>
+<span class="cider-repl-output"> -------------------------
+ com.billpiel.sayid.core/pro-net-time
+ ([tree])
+   Takes a tree with profilings data (see `pro-analyze`) and prints a
+   table of functions and their profile metrics, sorted by net time
+   sum. 'Net time sum' is the amount of time spent in a function minus
+   the time spent executing its children. Functions with high net time
+   sum may be candidates for optimization.
+</span><span class="cider-repl-result"> nil</span>
+<span class="cider-repl-prompt"> user&gt; </span><span class="cider-repl-input">(doc sd/pro-gross-repeats)</span>
+<span class="cider-repl-output"> -------------------------
+ com.billpiel.sayid.core/pro-gross-repeats
+ ([tree])
+   Takes a tree with profilings data (see `pro-analyze`) and prints a
+   table of functions and their profile metrics, sorted by gross time of
+   repeated arguments. 'Gross of repeats' is the amount of time spent in
+   a function during calls where the args match those of a previous call
+   to the function. Functions with high gross of repeats may be
+   candidates for memoization.
+</span><span class="cider-repl-result"> nil</span>
+<span class="cider-repl-prompt"> user&gt; </span></pre>
+
+<p>Not bad, but how do you use the damn thing? Once you have a trace
+  tree in your workspace, you can decorate it with profiling data that
+  can then be analysed by the functions above. Happy Holidays.</p>
+
+    <pre>
+<span class="cider-repl-prompt"> user&gt; </span><span class="cider-repl-input">(def ppp (sd/pro-analyse (sd/ws-deref!)))</span>
+<span class="cider-repl-result"> #'user/ppp</span>
+<span class="cider-repl-prompt"> user&gt; </span><span class="cider-repl-input">(sd/pro-net-time ppp)</span>
+<span class="cider-repl-output" style="font-size: 0.8em">
+ |                                :name | :net-time-sum | :net-time-avg | :count | :gross-time-sum | :gross-time-avg |
+ |--------------------------------------+---------------+---------------+--------+-----------------+-----------------|
+ | :com.billpiel.sayid.test.ns1/func3-1 |             0 |           0.0 |      1 |               0 |             0.0 |
+ | :com.billpiel.sayid.test.ns1/func3-2 |             0 |           0.0 |      3 |               0 |             0.0 |
+ | :com.billpiel.sayid.test.ns1/func3-3 |             0 |           0.0 |      1 |               0 |             0.0 |
+ | :com.billpiel.sayid.test.ns1/func3-4 |             0 |           0.0 |      1 |               0 |             0.0 |
+</span><span class="cider-repl-result"> nil</span>
+<span class="cider-repl-prompt"> user&gt; </span><span class="cider-repl-input">(sd/pro-gross-repeats ppp)</span>
+<span class="cider-repl-output" style="font-size:0.7em">
+ |                                :name | :gross-of-repeats | :count | :arg-cardinality | :repeat-arg-pct | :gross-time-sum | :gross-time-avg |
+ |--------------------------------------+-------------------+--------+------------------+-----------------+-----------------+-----------------|
+ | :com.billpiel.sayid.test.ns1/func3-1 |               0.0 |      1 |                1 |             0.0 |               0 |             0.0 |
+ | :com.billpiel.sayid.test.ns1/func3-2 |               0.0 |      3 |                3 |             0.0 |               0 |             0.0 |
+ | :com.billpiel.sayid.test.ns1/func3-3 |               0.0 |      1 |                1 |             0.0 |               0 |             0.0 |
+ | :com.billpiel.sayid.test.ns1/func3-4 |               0.0 |      1 |                1 |             0.0 |               0 |             0.0 |
+</span><span class="cider-repl-result"> nil</span>
+<span class="cider-repl-prompt"> user&gt; </span></pre>
+
+<p>Note that I played an HTML trick and shrank the profiling output to
+fit the width of the page. Also, please ignore all the zeroes. In a
+better example, there'd be more rows and more interesting numbers. The
+key point here is that the table is sorted by the first column, which
+allows you two zero in on the slow guys. Hopefully, you get the idea.</p>
+
+
+
+
 <p>Ok. That's it.</p>
 
         <!-- end repl -->
