@@ -424,7 +424,7 @@ user> (-> #'f1 meta :source)
   If the query is a symbol instead of a vector, the query will match any
   node whose function name matches the symbol. For example, a `body` of
 
-  'somefunc
+  somefunc
 
   is equivalent to: [:name 'somefunc]
 "

@@ -42,4 +42,23 @@ sd/src-in-meta
 
 (sd/p-t (sd/qw :a [:name 'inc]))
 
-(sd/p-t (sd/qw [:return second 3]))
+;; get parent and child
+(sd/q :ad 1 [:return 3])
+
+;; getting a value
+(def ret (-> (sd/qw func)
+             first
+             :return))
+
+;; ### profiling
+
+(doc sd/pro-net-time)
+
+(doc sd/pro-gross-repeats)
+
+(def ppp (sd/pro-analyse (sd/ws-deref!)))
+
+(sd/pro-gross-repeats ppp)
+
+
+;; ### recordings
