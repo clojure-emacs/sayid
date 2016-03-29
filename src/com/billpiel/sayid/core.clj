@@ -391,10 +391,21 @@ user> (-> #'f1 meta :source)
   `body` argument. The syntax of the `body` argument is described
   below:
 
+<<<<<<< HEAD
   Body may or may not begin with a keyword modifier, followed by one or
   more vectors or symbols. The keyword modifier expands the query
   results to include nodes that have a specified type of relationship
   with any nodes matching the query. The modifiers are listed here:
+=======
+  Body may or may not begin with a keyword. If it doesn't, body is one
+  or more vectors which specify a query.
+
+  If it does being with a keyword, the syntax rules of that keyword
+  apply to the args that follow. The keyword acts as a modifier that
+  expands the query results to include nodes that have a specified type
+  of relationship with any nodes matching the query. The modifiers are
+  listed here:
+>>>>>>> master
 
   :a -- returns ancestors of matching nodes
   :d -- returns descendants of matching nodes
@@ -403,21 +414,24 @@ user> (-> #'f1 meta :source)
   :r -- range; takes exactly two query vectors and returns nodes that
         are both descendants of the first and ancestors of the second
 
-  After the optional keyword modifier is one or more vectors or
-  symbols. These are the queries themselves. A vector is applied in a
+  Additionally, the keywords :a, :d, :s and :w take an optional numeric
+  argument which precedes the vector queries. This number specifies a
+  limit on the number of relative hops that will be taken.
+
+  A query clause may be a vector or a symbol. A vector is applied in a
   `get-in` fashion to each trace node, with the final element acting as
   a matching value or predicate function. If the final value is truthy,
   the node is included in the query result set. For example, a `body` of
 
-  :a [:arg-map 'fruit :apple]
+  :a 2 [:arg-map 'fruit :apple]
 
   would match any trace node where an argument `fruit` took a
-  value :apple, as well as all ancestors of that node.
+  value :apple, as well as the parent and grandparent of that node.
 
   If the query is a symbol instead of a vector, the query will match any
   node whose function name matches the symbol. For example, a `body` of
 
-  'somefunc
+  somefunc
 
   is equivalent to: [:name 'somefunc]
 "
