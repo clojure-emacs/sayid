@@ -137,7 +137,7 @@ h3 {
       }
 
       a {
-        color: #0000CC;
+        color: #5050CC;
         background-color: inherit;
         font: inherit;
         text-decoration: inherit;
@@ -437,6 +437,15 @@ what values they act on, they can be prefixed for clarity. For example,
 workspaces are discussed in the next section. Functions for working with
 workspaces are prefixed <code>ws-</code>.</p>
 
+<p>Additionally, there are abbreviated alias functions for those who
+don't have time for a excess of letters. For
+example, <code>ws-add-trace-ns!</code> has a
+matching <code>w-atn!</code> alias. These aliases exist for each public
+function in core. It's like the <code>-</code> and <code>--</code>
+argument convention implemented by many shell commands.
+</p>
+
+
 <h3 id="workspaces">Workspaces</h3>
 <p>
   When using Sayid, everything stems from workspaces. Here's an example
@@ -598,9 +607,18 @@ better fit the page. Sorry if it still doesn't look right in a little
 screen. Also, ignore all the zeroes. In a better example, there'd
 be more rows and more interesting numbers. The key point here is that
 the table is sorted by the first column, which allows you two zero in on
-the slow guys. Hopefully, you get the idea.</p>
+  the slow guys. Hopefully, you get the idea.</p>
 
+<h3 id="recordings">Recordings</h3>
 
+<p>If a workspace is the studio session, then recordings are the hard
+copy -- the CD or mp3 file or whatever the kids are into these
+days. They are static records of the trace tree of a workspace at a
+given time. They have no notion of what is traced, only what was
+captured. Besides that, they are very much like workspaces in that they
+can be queries, printed and put on the shelf. The default shelf
+namespace for recordings is <code>$rec</code>.
+</p>
 
 
 <p>Ok. That's it.</p>
