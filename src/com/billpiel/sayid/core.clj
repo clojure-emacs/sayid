@@ -386,6 +386,50 @@ user> (-> #'f1 meta :source)
 
 ;; === Query functions
 
+(def query-docs
+  "There are several querying functions. Many of them take a variadic
+  `body` argument. The syntax of the `body` argument is described
+  below:
+
+  Body may or may not begin with a keyword. If it doesn't, body is one
+  or more vectors which specify a query.
+
+  If it does being with a keyword, the syntax rules of that keyword
+  apply to the args that follow. The keyword acts as a modifier that
+  expands the query results to include nodes that have a specified type
+  of relationship with any nodes matching the query. The modifiers are
+  listed here:
+
+  :a -- returns ancestors of matching nodes
+  :d -- returns descendants of matching nodes
+  :s -- returns siblings of matching nodes
+  :w -- wildcard! returns ancestors, descendants and siblings of matching nodes
+  :r -- range; takes exactly two query vectors and returns nodes that
+        are both descendants of the first and ancestors of the second
+
+  Additionally, the keywords :a, :d, :s and :w take an optional numeric
+  argument which precedes the vector queries. This number specifies a
+  limit on the number of relative hops that will be taken.
+
+  A query clause may be a vector or a symbol. A vector is applied in a
+  `get-in` fashion to each trace node, with the final element acting as
+  a matching value or predicate function. If the final value is truthy,
+  the node is included in the query result set. For example, a `body` of
+
+  :a 2 [:arg-map 'fruit :apple]
+
+  would match any trace node where an argument `fruit` took a
+  value :apple, as well as the parent and grandparent of that node.
+
+  If the query is a symbol instead of a vector, the query will match any
+  node whose function name matches the symbol. For example, a `body` of
+
+  'somefunc
+
+  is equivalent to: [:name 'somefunc]
+"
+  nil)
+
 (defmacro query-by-name
   [s]
   `[:name '~(util/fully-qualify-sym s)])
