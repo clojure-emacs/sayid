@@ -145,6 +145,16 @@ h3 {
       a:hover {
         text-decoration: underline;
       }
+
+      #contents-link {
+        position: fixed;
+        top: 1em;
+        right: 1em;
+        font-size: 0.9em;
+        padding: 0.1em 0.3em;
+        background-color: #FFFFFF;
+        border: solid 1px #333333;
+      }
     -->
     </style>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -171,7 +181,7 @@ h3 {
                       <p>Sayid <i>(siy EED)</i> is a library for debugging and profiling clojure code. It extracts secrets from code at run time.<br><br>
                         Sayid works by intercepting and recording the inputs and outputs of functions. It can even record function calls that occur inside of functions. The user can select which functions to trace. Functions can be selected individually or by namespace. The recorded data can be displayed, queried and profiled.</p>
 
-                      <a href="#contents" style="position:fixed; top:1em; right:1em; font-size:0.9em; padding:0.1em 0.3em; background-color:#DDDDDD">contents</a>
+                      <a id="contents-link" href="#contents" >contents</a>
                       <h2 id="contents">Contents</h2>
 
                       <ul>
@@ -184,7 +194,7 @@ h3 {
                       </ul>
 
 
-                      <h3>Quick<i>ish</i> Start</h3>
+                      <h3 id="quickish-start">Quick<i>ish</i> Start</h3>
                       <p>
                         Below is a tour of some of what's possible with Sayid in the repl. The following transcript shows how to: <br>
                         <ul>
