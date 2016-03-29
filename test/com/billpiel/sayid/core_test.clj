@@ -964,7 +964,7 @@ x query selector funcs
 - cursors
    - bisect recording trees to find bugs
 - split ns and fn name in trace rec and output
-- some kind of string output length limit options?
+x some kind of string output length limit options?
 - show file and line num in output
 - wrap args that are funcs
  - and deep search values for funcs?
