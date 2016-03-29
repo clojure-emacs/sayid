@@ -2,6 +2,7 @@
   (:require [demo-script :refer :all]
             [midje.sweet :refer :all]))
 
+;; ### quick start
 
 (require '[com.billpiel.sayid.core :as sd])
 
@@ -20,26 +21,44 @@ sd/src-in-meta
         (vector a b))
     (recur a (inc b))))
 
-(sd/ws-add-trace-ns! user)
-
-(func-example2 1 2)
-
-(sd/ws-print)
-
-(func-example2 3 1)
-
-(sd/ws-print)
+(sd/ws-clear-log!)
 
 (sd/ws-add-deep-trace-fn! func-example2)
 
-(sd/ws-clear-log!)
-
 (func-example2 3 1)
 
 (sd/ws-print)
 
-(sd/p-t (sd/qw [:name 'inc]))
+(sd/q inc)
 
-(sd/p-t (sd/qw :a [:name 'inc]))
+(sd/q :a inc)
 
-(sd/p-t (sd/qw [:return second 3]))
+(sq/q [:return second 3])
+
+
+;; ### workspace
+
+{:id :root22440          ;; unique id
+ :path [:root22440]      ;; unique path
+ :depth 0                ;; depth from root of trace tree
+ :children (atom [])     ;; top-level function traces will go here
+ :traced {:ns #{com.billpiel.sayid.test.ns1} ;; this ns is traced
+          :fn #{}           ;; no invididually traced functions
+          :deep-fn #{}}     ;; no deep traced functions
+ :ws-slot nil               ;; workspace has not been saved in the shelf
+ :arg-map nil}              ;; not applicable
+
+
+(doc ws-save-as!)
+
+(doc ws-load!)
+
+(sd/ws-save-as! :demo)
+
+;; use tab completion to show contents of $ws
+
+;; ### querying
+
+(doc query-docs)
+
+;; there's got to be more to say or show here
