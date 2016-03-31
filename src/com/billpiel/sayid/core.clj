@@ -22,6 +22,7 @@
 
 (def printer (atom default-printer))
 
+(declare w-q)
 
 ;; === Helper functions
 
@@ -88,7 +89,7 @@ user> (-> #'f1 meta :source)
   [fn-sym]
   (#'ws/add-trace-*! (ws-init! :quiet)
                      :fn
-                     fn-sym)
+                      fn-sym)
   fn-sym)
 
 (defmacro ws-add-trace-fn!

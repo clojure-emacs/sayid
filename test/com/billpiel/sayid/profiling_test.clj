@@ -8,17 +8,17 @@
 
 (fact-group "basic test"
   (tr/untrace-ns* 'com.billpiel.sayid.test.ns1)
-  (mt/ws-reset!)
+  (with-out-str (mt/ws-reset!))
   (mt/rec-reset!)
   (with-redefs [tr/now (t-utils/mock-now-fn)
                 gensym (t-utils/mock-gensym-fn)]
     (mt/ws-add-trace-ns! com.billpiel.sayid.test.ns1)
     (com.billpiel.sayid.test.ns1/func-sleep-10)
     (mt/rec-load-from-ws!)
-    (let  [recp (p/add-metrics-to-rec @mt/recording)]
+    (let  [recp (p/assoc-tree-with-profile @mt/recording)]
 
       (fact "profile function metrics are correct"
-        (:fn-metrics recp)
+        (:profile recp)
         => {:com.billpiel.sayid.test.ns1/func-sleep-10
             {:arg-cardinality 1,
              :count 1,

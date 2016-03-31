@@ -145,9 +145,10 @@
   (with-redefs [mt/now (t-utils/mock-now-fn)
                 gensym (t-utils/mock-gensym-fn)]
     (binding [mt/*trace-log-parent* {:children (atom []) :parent {}}]
-      ((dt/deep-tracer {}
-                       'com.billpiel.sayid.test.ns1/func1
-                       (meta #'com.billpiel.sayid.test.ns1/func1)
+      ((dt/deep-tracer { :workspace {}
+                        :qual-sym-str 'com.billpiel.sayid.test.ns1/func1
+                        :meta' (meta #'com.billpiel.sayid.test.ns1/func1)
+                        :ns' 'com.billpiel.sayid.test.ns1}
                        com.billpiel.sayid.test.ns1/func1)
        4)
       (->> mt/*trace-log-parent*
@@ -161,7 +162,9 @@
        :started-at 0
        :ended-at 1
        :id :10
-       :name "func2  com.billpiel.sayid.test.ns1/func1"
+       :name 'func2
+       :ns 'com.billpiel.sayid.test.ns1
+       :parent-name 'func1,
        :path [:10]
        :return 4
        :src-map {:ol '$3_0
