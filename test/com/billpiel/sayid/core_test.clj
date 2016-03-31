@@ -960,6 +960,8 @@ x re-exec traces
 x query selector funcs
   x special output
   x toggle output components
+- switch to earlier clojure version -- deps too
+  - get tests passing in all versions too
 - query output by line/column position -- for emacs plugin
 - cursors
    - bisect recording trees to find bugs
