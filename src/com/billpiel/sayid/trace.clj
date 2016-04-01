@@ -107,10 +107,10 @@
 ;; mk-fn-tree + start-trace + binding + end-trace = 345ms
 
 (defn ^{::trace-type :fn} shallow-tracer
-  [{:keys [workspace qual-sym-str meta']} original-fn]
+  [{:keys [workspace qual-sym meta']} original-fn]
   (fn tracing-wrapper [& args]
     (trace-fn-call workspace
-                   qual-sym-str
+                   qual-sym
                    original-fn
                    args
                    meta')))
@@ -127,7 +127,7 @@
                                {:workspace workspace
                                 :ns' ns
                                 :sym s
-                                :qual-sym-str vname
+                                :qual-sym vname
                                 :meta' m}))
       (alter-meta! assoc ::traced [(:id workspace) f])
       (alter-meta! assoc ::trace-type (-> tracer-fn meta ::trace-type)))))

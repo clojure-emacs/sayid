@@ -109,7 +109,8 @@ user> (-> #'f1 meta :source)
 
 (defmacro ws-add-deep-trace-fn!
   [fn-sym]
-  `(ws-add-deep-trace-fn!* (util/fully-qualify-sym '~fn-sym)))
+  `(ws-add-deep-trace-fn!* (util/fully-qualify-sym ~(util/quote-if-sym fn-sym))))
+
 (util/defalias-macro w-adtf! ws-add-deep-trace-fn!)
 
 (defn ws-add-trace-ns!*
@@ -159,7 +160,8 @@ user> (-> #'f1 meta :source)
   "Returns the value of the active workspace, but with all children
   recursively dereferenced. This workspace value will not receive new
   trace entries."
-  [] (#'ws/deep-deref! workspace))
+  [& [w]] (#'ws/deep-deref! (or w
+                                workspace)))
 (util/defalias w-drf! ws-deref!)
 
 (defn ws-save!
@@ -193,11 +195,36 @@ user> (-> #'f1 meta :source)
   "Replays the function call recorded in the active workspace with an id
   of `id`."
   [id]
-  (let [t (-> (w-q [:id id]) first)
+  (let [t (-> (ws-query [:id id]) first)
         f (-> t :name resolve)
         a (:args t)]
     (apply f a)))
 (util/defalias w-rp! ws-replay!)
+
+(defn ws-deep-trace-replay
+  [qual-sym args]
+  (let [meta' (-> qual-sym
+                  resolve
+                  meta)
+        ns' (-> meta'
+                :ns
+                str)
+        workspace (ws/default-workspace)
+        dtraced-fn (dtrace/deep-tracer {:workspace nil
+                                        :qual-sym qual-sym
+                                        :meta' meta'
+                                        :ns' ns'}
+                                       nil)]
+    (binding [trace/*trace-log-parent* workspace]
+      (apply dtraced-fn args)
+      (ws-deref! workspace))))
+(util/defalias w-dtr ws-deep-trace-replay)
+
+(defn ws-deep-trace-replay-print
+  [qual-sym args]
+  (ws-print (ws-deep-trace-replay qual-sym
+                                  args)))
+(util/defalias w-dtrp ws-deep-trace-replay-print)
 
 ;; === END Workspace functions
 

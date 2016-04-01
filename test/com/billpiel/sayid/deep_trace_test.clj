@@ -146,7 +146,7 @@
                 gensym (t-utils/mock-gensym-fn)]
     (binding [mt/*trace-log-parent* {:children (atom []) :parent {}}]
       ((dt/deep-tracer { :workspace {}
-                        :qual-sym-str 'com.billpiel.sayid.test.ns1/func1
+                        :qual-sym 'com.billpiel.sayid.test.ns1/func1
                         :meta' (meta #'com.billpiel.sayid.test.ns1/func1)
                         :ns' 'com.billpiel.sayid.test.ns1}
                        com.billpiel.sayid.test.ns1/func1)

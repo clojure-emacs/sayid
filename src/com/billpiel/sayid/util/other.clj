@@ -304,3 +304,10 @@
       (let [[f & r] coll]
         (when-let [v' (get-some* f v)]
           (recur r v'))))))
+
+
+(defn quote-if-sym
+  [v]
+  (if (symbol? v)
+    `'~v
+    v))
