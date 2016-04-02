@@ -82,7 +82,7 @@ user> (-> #'f1 meta :source)
   [] (#'ws/clear-log! (ws-init! :quiet)))
 (util/defalias w-cl! ws-clear-log!)
 
-(defn ws-add-trace-fn!*
+(defn- ws-add-trace-fn!*
   "`fn-sym` is a symbol that references an existing function. Applies an
   enabled trace to said functions. Adds the traces to the active
   workspace trace set."
@@ -97,7 +97,7 @@ user> (-> #'f1 meta :source)
   `(ws-add-trace-fn!* (util/fully-qualify-sym '~fn-sym)))
 (util/defalias-macro w-atf! ws-add-trace-fn!)
 
-(defn ws-add-deep-trace-fn!*
+(defn- ws-add-deep-trace-fn!*
   "`fn-sym` is a symbol that references an existing function. Applies an
   enabled trace to said functions. Adds the traces to the active
   workspace trace set."
@@ -113,7 +113,7 @@ user> (-> #'f1 meta :source)
 
 (util/defalias-macro w-adtf! ws-add-deep-trace-fn!)
 
-(defn ws-add-trace-ns!*
+(defn- ws-add-trace-ns!*
   "`ns-sym` is a symbol that references an existing namespace. Applies an enabled
   trace to all functions in that namespace. Adds the traces to the active workspace trace set."
   [ns-sym]
@@ -226,7 +226,7 @@ user> (-> #'f1 meta :source)
                          name
                          args))
     (ws-deref! workspace)))
-
+(util/defalias w-qdtr ws-query-deep-trace-replay)
 
 (defn ws-deep-trace-apply
   [qual-sym args]
@@ -304,9 +304,9 @@ user> (-> #'f1 meta :source)
 
 ;; === String Output functions
 
-(def tree->string #'so/tree->string)
+(def- tree->string #'so/tree->string)
 
-(defn get-trees
+(defn- get-trees
   [v]
   (let [mk (meta v)]
     (cond
@@ -336,6 +336,7 @@ user> (-> #'f1 meta :source)
   (-> coll
       get-trees
       (#'so/print-trees)))
+(util/defalias t-pr trees-print)
 
 (defn ws-print-unlimited
   [& [ws]]
@@ -361,7 +362,7 @@ user> (-> #'f1 meta :source)
                        @recording)))
 (util/defalias r-pr rec-print)
 
-(defn mk-printer-*-list
+(defn- mk-printer-*-list
   [opts init-prn whitelist?]
   (loop [prn init-prn
          opts' opts]
@@ -382,20 +383,20 @@ user> (-> #'f1 meta :source)
                                 assoc fi whitelist?)
                      (rest opts'))))))
 
-(defn mk-printer-white-list
+(defn- mk-printer-white-list
   [opts]
   (mk-printer-*-list opts
                      (assoc default-printer
                             :selector {})
                      true))
 
-(defn mk-printer-black-list
+(defn- mk-printer-black-list
   [opts]
   (mk-printer-*-list opts
                      default-printer
                      false))
 
-(defn mk-printer
+(defn- mk-printer
   [opts]
   (cond
     (nil? opts) default-printer
@@ -481,14 +482,14 @@ user> (-> #'f1 meta :source)
   `[:name '~(util/fully-qualify-sym s)])
 (util/defalias-macro qbn query-by-name)
 
-(defn syms->qbn
+(defn- syms->qbn
   [form]
   (map #(if (symbol? %)
           `(qbn ~%)
           %)
        form))
 
-(defn ws-query*
+(defn- ws-query*
   [& query]
   (apply q/q
          (ws-deref!)
@@ -513,10 +514,11 @@ user> (-> #'f1 meta :source)
                  ~@body))
 (util/defalias-macro r-q rec-query)
 
-(defmacro qt
+(defmacro tree-query
   "Queries `tree`, a trace record."
   [tree & body] `(q/q ~tree
                       ~@body))
+(util/defalias-macro t-query tree-query)
 
 ;; === END Query functions
 
