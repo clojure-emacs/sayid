@@ -191,7 +191,7 @@ user> (-> #'f1 meta :source)
   true)
 (util/defalias w-l! ws-load!)
 
-(defn ws-replay!
+(defn ws-replay-id!
   "Replays the function call recorded in the active workspace with an id
   of `id`."
   [id]
@@ -199,32 +199,50 @@ user> (-> #'f1 meta :source)
         f (-> t :name resolve)
         a (:args t)]
     (apply f a)))
-(util/defalias w-rp! ws-replay!)
+(util/defalias w-rpi! ws-replay!)
 
-(defn ws-deep-trace-replay
-  [qual-sym args]
+(defn- deep-trace-apply*
+  [workspace qual-sym args]
   (let [meta' (-> qual-sym
                   resolve
                   meta)
         ns' (-> meta'
                 :ns
                 str)
-        workspace (ws/default-workspace)
         dtraced-fn (dtrace/deep-tracer {:workspace nil
                                         :qual-sym qual-sym
                                         :meta' meta'
                                         :ns' ns'}
                                        nil)]
     (binding [trace/*trace-log-parent* workspace]
-      (apply dtraced-fn args)
-      (ws-deref! workspace))))
-(util/defalias w-dtr ws-deep-trace-replay)
+      (apply dtraced-fn args))))
 
-(defn ws-deep-trace-replay-print
+(defn ws-query-deep-trace-replay
+  [query]
+  (let [results (ws-query* query)
+        workspace (ws/default-workspace)]
+    (doseq [{:keys [name args]} results]
+      (deep-trace-apply* workspace
+                         name
+                         args))
+    (ws-deref! workspace)))
+
+
+(defn ws-deep-trace-apply
+  [qual-sym args]
+  (let [workspace (ws/default-workspace)]
+    (deep-trace-apply* workspace
+                       qual-sym
+                       args)
+    (ws-deref! workspace)))
+(util/defalias w-dta ws-deep-trace-apply)
+
+(defn ws-deep-trace-apply-print
   [qual-sym args]
   (ws-print (ws-deep-trace-replay qual-sym
                                   args)))
-(util/defalias w-dtrp ws-deep-trace-replay-print)
+(util/defalias w-dtap ws-deep-trace-apply-print)
+
 
 ;; === END Workspace functions
 
@@ -313,7 +331,7 @@ user> (-> #'f1 meta :source)
                                  (keys v)
                                  (meta v)))))))
 
-(defn print-trees
+(defn trees-print
   [coll]
   (-> coll
       get-trees
@@ -470,18 +488,22 @@ user> (-> #'f1 meta :source)
           %)
        form))
 
+(defn ws-query*
+  [& query]
+  (apply q/q
+         (ws-deref!)
+         query))
+
 (defmacro ws-query
   "Queries the trace record of the active workspace."
-  [& body] `(q/q (ws-deref!)
-                 ~@(syms->qbn body)))
+  [& body] `(ws-query* ~@(syms->qbn body)))
 (util/defalias-macro w-q ws-query)
 
 (defmacro ws-query-print
   "Queries the trace record of the active workspace."
   [& body]
   `(with-printer-default
-     (print-trees (q/q (ws-deref!)
-                       ~@(syms->qbn body)))))
+     (trees-print (ws-query ~@body))))
 (util/defalias-macro w-qp ws-query-print)
 (util/defalias-macro q ws-query-print)
 
@@ -495,7 +517,6 @@ user> (-> #'f1 meta :source)
   "Queries `tree`, a trace record."
   [tree & body] `(q/q ~tree
                       ~@body))
-
 
 ;; === END Query functions
 
