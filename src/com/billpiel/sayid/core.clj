@@ -22,7 +22,9 @@
 
 (def printer (atom default-printer))
 
-(declare w-q)
+(declare ws-query*)
+(declare ws-query)
+(declare ws-print)
 
 ;; === Helper functions
 
@@ -82,7 +84,7 @@ user> (-> #'f1 meta :source)
   [] (#'ws/clear-log! (ws-init! :quiet)))
 (util/defalias w-cl! ws-clear-log!)
 
-(defn- ws-add-trace-fn!*
+(defn ws-add-trace-fn!*
   "`fn-sym` is a symbol that references an existing function. Applies an
   enabled trace to said functions. Adds the traces to the active
   workspace trace set."
@@ -97,7 +99,7 @@ user> (-> #'f1 meta :source)
   `(ws-add-trace-fn!* (util/fully-qualify-sym '~fn-sym)))
 (util/defalias-macro w-atf! ws-add-trace-fn!)
 
-(defn- ws-add-deep-trace-fn!*
+(defn ws-add-deep-trace-fn!*
   "`fn-sym` is a symbol that references an existing function. Applies an
   enabled trace to said functions. Adds the traces to the active
   workspace trace set."
@@ -113,7 +115,7 @@ user> (-> #'f1 meta :source)
 
 (util/defalias-macro w-adtf! ws-add-deep-trace-fn!)
 
-(defn- ws-add-trace-ns!*
+(defn ws-add-trace-ns!*
   "`ns-sym` is a symbol that references an existing namespace. Applies an enabled
   trace to all functions in that namespace. Adds the traces to the active workspace trace set."
   [ns-sym]
@@ -199,9 +201,9 @@ user> (-> #'f1 meta :source)
         f (-> t :name resolve)
         a (:args t)]
     (apply f a)))
-(util/defalias w-rpi! ws-replay!)
+(util/defalias w-rpi! ws-replay-id!)
 
-(defn- deep-trace-apply*
+(defn deep-trace-apply*
   [workspace qual-sym args]
   (let [meta' (-> qual-sym
                   resolve
@@ -239,7 +241,7 @@ user> (-> #'f1 meta :source)
 
 (defn ws-deep-trace-apply-print
   [qual-sym args]
-  (ws-print (ws-deep-trace-replay qual-sym
+  (ws-print (ws-deep-trace-apply qual-sym
                                   args)))
 (util/defalias w-dtap ws-deep-trace-apply-print)
 
@@ -304,7 +306,7 @@ user> (-> #'f1 meta :source)
 
 ;; === String Output functions
 
-(def- tree->string #'so/tree->string)
+(def tree->string #'so/tree->string)
 
 (defn- get-trees
   [v]
@@ -489,7 +491,7 @@ user> (-> #'f1 meta :source)
           %)
        form))
 
-(defn- ws-query*
+(defn ws-query*
   [& query]
   (apply q/q
          (ws-deref!)

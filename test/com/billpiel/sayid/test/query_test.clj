@@ -76,7 +76,7 @@
                                                      :children []}]}]}]})
 
 (fact "simple"
-  (mm/qt test-trace [:depth 1]) =>
+  (mm/tree-query test-trace [:depth 1]) =>
   [{:args [3 4 5]
     :children ()
     :depth 1
@@ -92,7 +92,7 @@
 
 (fact "range"
   (mapv q/traverse-tree-dissoc-zipper
-        (mm/qt test-trace :r
+        (mm/tree-query test-trace :r
                [:name "C"]
                [:name "I"]))
   => [{:args [1 {:a [10 11 12]} 5]
@@ -113,7 +113,7 @@
        :return 8}])
 
 (fact "ancestors"
-  (mapv q/traverse-tree-dissoc-zipper (mm/qt test-trace :a
+  (mapv q/traverse-tree-dissoc-zipper (mm/tree-query test-trace :a
                                              [:name "B"]
                                              [:name "I"]))
   => [{:args [1 2]
@@ -145,7 +145,7 @@
        :return 3}])
 
 (fact "descendants"
-  (mapv q/traverse-tree-dissoc-zipper (mm/qt test-trace :d
+  (mapv q/traverse-tree-dissoc-zipper (mm/tree-query test-trace :d
                                              [:name "B"]
                                              [:name "I"]))
   => [{:args [3 4 5]
@@ -179,7 +179,7 @@
 
 
 (fact "descendants - limited distance"
-  (mapv q/traverse-tree-dissoc-zipper (mm/qt test-trace
+  (mapv q/traverse-tree-dissoc-zipper (mm/tree-query test-trace
                                              :d 1
                                              [:name "A"]
                                              [:name "C"]))
@@ -207,7 +207,7 @@
        :return 3}])
 
 (fact "ancestors and descendants"
-  (mapv q/traverse-tree-dissoc-zipper (mm/qt test-trace
+  (mapv q/traverse-tree-dissoc-zipper (mm/tree-query test-trace
                                              :ad
                                              [:name "E"]
                                              [:name "C"]))
@@ -269,7 +269,7 @@
 
 
 (fact "ancestors and descendants -- limited distance"
-  (mapv q/traverse-tree-dissoc-zipper (mm/qt test-trace
+  (mapv q/traverse-tree-dissoc-zipper (mm/tree-query test-trace
                                              :ad 2
                                              [:name "E"]
                                              [:name "C"]))
@@ -326,7 +326,7 @@
 
 
 (fact "wildcard"
-  (mapv q/traverse-tree-dissoc-zipper (mm/qt test-trace
+  (mapv q/traverse-tree-dissoc-zipper (mm/tree-query test-trace
                                              :w
                                              [:name "I"]))
   => [{:args [1 2]
@@ -375,7 +375,7 @@
        :return 3}])
 
 (fact :dev "wildcard -- limited distance"
-      (mapv q/traverse-tree-dissoc-zipper (mm/qt test-trace
+      (mapv q/traverse-tree-dissoc-zipper (mm/tree-query test-trace
                                                  :w 1
                                                  [:name "I"]))
       => [{:args [2 5 9]
@@ -411,7 +411,7 @@
            :return "return F"}])
 
 (fact "siblings"
-  (mapv q/traverse-tree-dissoc-zipper (mm/qt test-trace :s
+  (mapv q/traverse-tree-dissoc-zipper (mm/tree-query test-trace :s
                                              [:name "E"]))
   => [{:args []
        :children []

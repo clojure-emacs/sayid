@@ -451,9 +451,9 @@
           trace (mm/ws-deref!)]
 
       (fact "find node by name and all parents"
-        (def r  (->> (mm/qt trace
-                            :a
-                            [:name #".*func3-4"])
+        (def r  (->> (mm/t-query trace
+                                 :a
+                                 [:name #".*func3-4"])
                      (mapv mq/traverse-tree-dissoc-zipper)
                      ((t-utils/redact-file-fn [0 :children 0 :meta :file]
                                               [0 :children 0 :children 0 :meta :file]
@@ -508,7 +508,7 @@
                          :return 13
                          :started-at 0}]
              :depth 0
-                          :id :root10
+             :id :root10
              :path [:root10]
              :traced {:deep-fn #{}
                       :fn #{}
