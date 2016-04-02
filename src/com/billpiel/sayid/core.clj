@@ -39,7 +39,6 @@
 (declare ws-query*)
 (declare ws-query)
 (declare ws-print)
-(declare with-printer)
 
 ;; === Helper functions
 
@@ -373,6 +372,28 @@ user> (-> #'f1 meta :source)
                                  (keys v)
                                  (meta v)))))))
 
+
+(defmacro with-this-printer
+  "Sets the printer as `prn` for the lexical scope. `prn` may be a
+  printer map or a vector. See `(doc mk-printer)` for details on the
+  latter."
+  ([prn & body]
+   `(let [prn# (if (vector? ~prn)
+                 (mk-printer ~prn)
+                 ~prn)]
+      (binding [so/*max-chars* (or (:max-chars prn#)
+                                   so/*max-chars*)
+                so/*max-arg-lines* (or (:max-arg-lines prn#)
+                                       so/*max-arg-lines*)
+                so/*selector* (or (:selector prn#)
+                                  so/*selector*)]
+        ~@body))))
+
+(defmacro with-printer
+  "Puts the printer in effect for the lexical scope."
+  ([& body]
+   `(with-this-printer @printer ~@body)))
+
 (defn trees-print
   "Prints `trees`, which may be either trace tree, a collection of trace
   trees, or a known structure (workspace, recording) that contains a trace tree."
@@ -455,27 +476,6 @@ user> (-> #'f1 meta :source)
   [& opts]
   (reset! printer
           (mk-printer opts)))
-
-(defmacro with-this-printer
-  "Sets the printer as `prn` for the lexical scope. `prn` may be a
-  printer map or a vector. See `(doc mk-printer)` for details on the
-  latter."
-  ([prn & body]
-   `(let [prn# (if (vector? ~prn)
-                 (mk-printer ~prn)
-                 ~prn)]
-      (binding [so/*max-chars* (or (:max-chars prn#)
-                                   so/*max-chars*)
-                so/*max-arg-lines* (or (:max-arg-lines prn#)
-                                       so/*max-arg-lines*)
-                so/*selector* (or (:selector prn#)
-                                  so/*selector*)]
-        ~@body))))
-
-(defmacro with-printer
-  "Puts the printer in effect for the lexical scope."
-  ([& body]
-   `(with-this-printer @printer ~@body)))
 
 ;; === END String Output functions
 
