@@ -10,21 +10,36 @@
             [com.billpiel.sayid.profiling :as pro]
             [com.billpiel.sayid.util.other :as util]))
 
-(def workspace (atom nil))
-(def recording (atom nil))
+(def workspace
+  "The activce workspace. Used by default in any function prefixed `ws-`
+  or `w-`."
+  (atom nil))
 
-(def config (atom {:ws-ns '$ws
-                   :rec-ns '$rec}))
+(def recording
+  "The active recording. Used by default in any function prefixed `rec-`
+  or `r-`."
+  (atom nil))
 
-(def default-printer {:max-chars so/*max-chars*
-                      :max-arg-lines so/*max-arg-lines*
-                      :selector so/*selector*})
+(def config
+  "Configuration map. Indicates which namespaces should be used to shelf
+  workspaces and recordings."
+  (atom {:ws-ns '$ws
+         :rec-ns '$rec}))
 
-(def printer (atom default-printer))
+(def ^:no-doc
+  default-printer {:max-chars so/*max-chars*
+                   :max-arg-lines so/*max-arg-lines*
+                   :selector so/*selector*})
+
+(def printer
+  "The printer that is applied by `with-printer` and print functions
+  such as `ws-print`."
+  (atom default-printer))
 
 (declare ws-query*)
 (declare ws-query)
 (declare ws-print)
+(declare with-printer)
 
 ;; === Helper functions
 
@@ -50,16 +65,18 @@ user> (-> #'f1 meta :source)
 (defn- ws-init! [& [quiet]]
   (#'ws/init! workspace quiet))
 
-(defn ws-get-current!
-  "Returns the active workspace"
+(defn ws-get-active!
+  "Returns the active workspace with atoms intact."
   []
   @(ws-init! :quiet))
-(util/defalias w-gc! ws-get-current!)
+(util/defalias w-ga! ws-get-active!)
 
 (defn ws-show-traced
+  "Pretty prints the map that contains the traces that are currently in
+  place."
   [& [ws]]
   (-> ws
-      (or (ws-get-current!))
+      (or (ws-get-active!))
       :traced
       clojure.pprint/pprint))
 (util/defalias w-st ws-show-traced)
@@ -85,9 +102,6 @@ user> (-> #'f1 meta :source)
 (util/defalias w-cl! ws-clear-log!)
 
 (defn ws-add-trace-fn!*
-  "`fn-sym` is a symbol that references an existing function. Applies an
-  enabled trace to said functions. Adds the traces to the active
-  workspace trace set."
   [fn-sym]
   (#'ws/add-trace-*! (ws-init! :quiet)
                      :fn
@@ -95,14 +109,14 @@ user> (-> #'f1 meta :source)
   fn-sym)
 
 (defmacro ws-add-trace-fn!
+  "`fn-sym` is a symbol that references an existing function. Applies an
+  enabled trace to said functions. Adds the traces to the active
+  workspace trace set."
   [fn-sym]
   `(ws-add-trace-fn!* (util/fully-qualify-sym '~fn-sym)))
 (util/defalias-macro w-atf! ws-add-trace-fn!)
 
-(defn ws-add-deep-trace-fn!*
-  "`fn-sym` is a symbol that references an existing function. Applies an
-  enabled trace to said functions. Adds the traces to the active
-  workspace trace set."
+(defn ^:no-doc ws-add-deep-trace-fn!*
   [fn-sym]
   (#'ws/add-trace-*! (ws-init! :quiet)
                      :deep-fn
@@ -110,12 +124,16 @@ user> (-> #'f1 meta :source)
   fn-sym)
 
 (defmacro ws-add-deep-trace-fn!
+  "`fn-sym` is a symbol that references an existing function. Applies an
+  enabled *deep* trace to said functions. Adds the traces to the active
+  workspace trace set. Deep traces capture all functions calls that
+  occurr within the traced function."
   [fn-sym]
   `(ws-add-deep-trace-fn!* (util/fully-qualify-sym ~(util/quote-if-sym fn-sym))))
 
 (util/defalias-macro w-adtf! ws-add-deep-trace-fn!)
 
-(defn ws-add-trace-ns!*
+(defn ^:no-doc ws-add-trace-ns!*
   "`ns-sym` is a symbol that references an existing namespace. Applies an enabled
   trace to all functions in that namespace. Adds the traces to the active workspace trace set."
   [ns-sym]
@@ -153,6 +171,8 @@ user> (-> #'f1 meta :source)
 (util/defalias w-dat! ws-disable-all-traces!)
 
 (defn ws-cycle-all-traces!
+  "Disables and enables all traces in active workspace. You shouldn't
+  need to use this, but you might."
   []
   (ws-disable-all-traces!)
   (ws-enable-all-traces!))
@@ -203,7 +223,7 @@ user> (-> #'f1 meta :source)
     (apply f a)))
 (util/defalias w-rpi! ws-replay-id!)
 
-(defn deep-trace-apply*
+(defn ^:no-doc deep-trace-apply*
   [workspace qual-sym args]
   (let [meta' (-> qual-sym
                   resolve
@@ -220,6 +240,9 @@ user> (-> #'f1 meta :source)
       (apply dtraced-fn args))))
 
 (defn ws-query-deep-trace-replay
+  "Queries the current workspace with `query`. Then takes the top-level
+  results, deep traces the functions and replays them. Returns the
+  resulting workspace, which is NOT the active workspace."
   [query]
   (let [results (ws-query* query)
         workspace (ws/default-workspace)]
@@ -231,6 +254,9 @@ user> (-> #'f1 meta :source)
 (util/defalias w-qdtr ws-query-deep-trace-replay)
 
 (defn ws-deep-trace-apply
+  "Deep traces the function indicated by the qualified symbol,
+  `qual-sym`, and then call it with arguments `args`. Returns the
+  resulting workspace, which is NOT the active workspace."
   [qual-sym args]
   (let [workspace (ws/default-workspace)]
     (deep-trace-apply* workspace
@@ -240,6 +266,7 @@ user> (-> #'f1 meta :source)
 (util/defalias w-dta ws-deep-trace-apply)
 
 (defn ws-deep-trace-apply-print
+  "Run `ws-deep-trace-apply` then prints the resulting workspace."
   [qual-sym args]
   (ws-print (ws-deep-trace-apply qual-sym
                                   args)))
@@ -296,8 +323,9 @@ user> (-> #'f1 meta :source)
 (util/defalias r-lf! rec-load-from!)
 
 (defn rec-load-from-ws!
+  "Loads the active workspace into the active record."
   [& [force]]
-  (rec-load-from! (ws-get-current!) force)
+  (rec-load-from! (ws-get-active!) force)
   true)
 (util/defalias r-lfw! rec-load-from-ws!)
 
@@ -334,28 +362,29 @@ user> (-> #'f1 meta :source)
                                  (meta v)))))))
 
 (defn trees-print
-  [coll]
-  (-> coll
+  "Prints `trees`, which may be either trace tree, a collection of trace
+  trees, or a known structure (workspace, recording) that contains a trace tree."
+  [trees]
+  (-> trees
       get-trees
       (#'so/print-trees)))
 (util/defalias t-pr trees-print)
 
 (defn ws-print-unlimited
+  "Prints either the active workspace, or the first argument, but
+  without any restrictions on the output. Don't blow up your buffer!"
   [& [ws]]
   (#'so/print-tree-unlimited (or ws
                        (ws-deref!))))
 (util/defalias w-pru ws-print-unlimited)
 
 (defn ws-print
-  [& [ws & {:keys [max-arg-lines mal max-chars mc]}]]
-  (binding [so/*max-chars* (or max-chars
-                               mc
-                               so/*max-chars*)
-            so/*max-arg-lines* (or max-arg-lines
-                                   mal
-                                   so/*max-arg-lines*)]
-    (#'so/print-tree (or ws
-                         (ws-deref!)))))
+  "Prints either the active workspace, or the first argument, using the
+  default printer, which puts safety restrictions on the output to
+  prevent overwhelming hugeness."
+  [& [ws]]
+  (with-printer (#'so/print-tree (or ws
+                                     (ws-deref!)))))
 (util/defalias w-pr ws-print)
 
 (defn rec-print
@@ -398,7 +427,7 @@ user> (-> #'f1 meta :source)
                      default-printer
                      false))
 
-(defn- mk-printer
+(defn mk-printer
   [opts]
   (cond
     (nil? opts) default-printer
@@ -409,11 +438,16 @@ user> (-> #'f1 meta :source)
     :else (mk-printer-white-list opts)))
 
 (defn set-printer!
+  "Sets the printer that is applied by `with-printer` and used by print
+  functions such as `ws-print`."
   [& opts]
   (reset! printer
           (mk-printer opts)))
 
-(defmacro with-printer
+(defmacro with-this-printer
+  "Sets the printer as `prn` for the lexical scope. `prn` may be a
+  printer map or a vector. See `(doc mk-printer)` for details on the
+  latter."
   ([prn & body]
    `(let [prn# (if (vector? ~prn)
                  (mk-printer ~prn)
@@ -426,9 +460,10 @@ user> (-> #'f1 meta :source)
                                   so/*selector*)]
         ~@body))))
 
-(defmacro with-printer-default
+(defmacro with-printer
+  "Puts the printer in effect for the lexical scope."
   ([& body]
-   `(with-printer @printer ~@body)))
+   `(with-this-printer @printer ~@body)))
 
 ;; === END String Output functions
 
@@ -480,6 +515,8 @@ user> (-> #'f1 meta :source)
   nil)
 
 (defmacro query-by-name
+  "Produces a vector like [:name 'func] for `s` equal to 'func. Just a
+  little shortcut for when querying by a function name."
   [s]
   `[:name '~(util/fully-qualify-sym s)])
 (util/defalias-macro qbn query-by-name)
@@ -503,9 +540,9 @@ user> (-> #'f1 meta :source)
 (util/defalias-macro w-q ws-query)
 
 (defmacro ws-query-print
-  "Queries the trace record of the active workspace."
+  "Queries the trace record of the active workspace and prints the results."
   [& body]
-  `(with-printer-default
+  `(with-printer
      (trees-print (ws-query ~@body))))
 (util/defalias-macro w-qp ws-query-print)
 (util/defalias-macro q ws-query-print)
@@ -517,7 +554,7 @@ user> (-> #'f1 meta :source)
 (util/defalias-macro r-q rec-query)
 
 (defmacro tree-query
-  "Queries `tree`, a trace record."
+  "Queries `tree`, a trace tree."
   [tree & body] `(q/q ~tree
                       ~@body))
 (util/defalias-macro t-query tree-query)
