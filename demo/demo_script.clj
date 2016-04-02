@@ -1,6 +1,4 @@
-(ns demo-script
-  (:require [demo-script :refer :all]
-            [midje.sweet :refer :all]))
+(ns demo-script)
 
 ;; ### quick start
 
@@ -21,13 +19,27 @@ sd/src-in-meta
         (vector a b))
     (recur a (inc b))))
 
-(sd/ws-clear-log!)
-
 (sd/ws-add-deep-trace-fn! func-example2)
 
 (func-example2 3 1)
 
-(sd/ws-print)
+(sd/ws-add-deep-trace-fn! func-example2)
+
+sd/src-in-meta
+(defn func-example2
+  [a b]
+  (if (< a b)
+    (-> a
+        dec ;; was inc
+        (func-example1 b)
+        (* 3) ;; was (* 2)
+        (vector a b))
+    (recur a (inc b))))
+
+(sd/w-$ [:name func-example2])
+
+
+;; ### save this for querying
 
 (sd/q inc)
 
@@ -49,6 +61,7 @@ sd/src-in-meta
  :arg-map nil}              ;; not applicable
 
 
+>>>>>>> Stashed changes
 (doc ws-save-as!)
 
 (doc ws-load!)
