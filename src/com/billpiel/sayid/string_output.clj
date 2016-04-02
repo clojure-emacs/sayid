@@ -121,10 +121,13 @@
   (let [{:keys [depth name ns parent-name]} tree]
     (if name
       ["" (slinky-pipes-MZ depth :end (when start? "v"))
-       (color-code-MZ :fg* (dec depth) :bg 0 :bold false)
-       name
-       (when parent-name
-         (format "  %s/%s" ns parent-name))
+       (if parent-name
+         [(color-code-MZ :fg 0 :bg* (dec depth) :bold false)
+          name
+          (color-code-MZ :fg* (dec depth) :bg 0 :bold false)
+          (format "  %s/%s" ns parent-name)]
+         [(color-code-MZ :fg* (dec depth) :bg 0 :bold false)
+          name])
        "  "
        (color-code-MZ :fg 7)
        (:id tree)

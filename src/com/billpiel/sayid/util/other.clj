@@ -1,7 +1,8 @@
 (ns com.billpiel.sayid.util.other
   (require [clj-time.core :as time]
            [clj-time.coerce :as time-c]
-           [clojure.walk :as walk]))
+           [clojure.walk :as walk]
+           clojure.repl))
 
 (defn def-ns-var
   [ws-ns-sym sym v]
@@ -304,3 +305,10 @@
       (let [[f & r] coll]
         (when-let [v' (get-some* f v)]
           (recur r v'))))))
+
+
+(defn quote-if-sym
+  [v]
+  (if (symbol? v)
+    `'~v
+    v))

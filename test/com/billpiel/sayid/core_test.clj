@@ -10,78 +10,78 @@
             [com.billpiel.sayid.string-output :as so]))
 
 
-(fact-group "basic test"
-  (mt/untrace-ns* 'com.billpiel.sayid.test.ns1)
-  (mm/ws-reset!)
-  (with-redefs [mt/now (t-utils/mock-now-fn)
-                gensym (t-utils/mock-gensym-fn)]
-    (mm/ws-add-trace-ns! com.billpiel.sayid.test.ns1)
-    (com.billpiel.sayid.test.ns1/func1 :a)
-    (let [trace (mm/ws-deref!)
-          expected-trace {:arg-map nil,
-                          :children
-                          [{:args [:a],
-                            :path [:root10 :11],
-                            :children
-                            [{:args [:a],
-                              :path [:root10 :11 :12],
-                              :children [],
-                              :meta
-                              {:arglists '([arg1]),
-                               :column 1,
-                               :file "FILE",
-                               :line 4,
-                               :name 'func2,
-                               :ns (the-ns 'com.billpiel.sayid.test.ns1)},
-                              :return :a,
-                              :started-at 1
-                              :name "com.billpiel.sayid.test.ns1/func2",
-                              :arg-map {"arg1" :a},
-                              :id :12,
-                              :ended-at 2
-                              :depth 2}],
-                            :meta
-                            {:arglists '([arg1]),
-                             :column 1,
-                             :file "FILE",
-                             :line 8,
-                             :name 'func1,
-                             :ns (the-ns 'com.billpiel.sayid.test.ns1)},
-                            :return :a,
-                            :started-at 0
-                            :name "com.billpiel.sayid.test.ns1/func1",
-                            :arg-map {"arg1" :a},
-                            :id :11,
-                            :ended-at 3
-                            :depth 1}],
-                          :depth 0,
-                          :id :root10,
-                          :path [:root10],
-                          :traced
-                          {:deep-fn #{}, :fn #{}, :ns #{'com.billpiel.sayid.test.ns1}},
-                          :ws-slot nil}]
+ (fact-group "basic test"
+   (mt/untrace-ns* 'com.billpiel.sayid.test.ns1)
+   (with-out-str (mm/ws-reset!))
+   (with-redefs [mt/now (t-utils/mock-now-fn)
+                 gensym (t-utils/mock-gensym-fn)]
+     (mm/ws-add-trace-ns! com.billpiel.sayid.test.ns1)
+     (com.billpiel.sayid.test.ns1/func1 :a)
+     (let [trace (mm/ws-deref!)
+              expected-trace {:arg-map nil,
+                              :children
+                              [{:args [:a],
+                                :path [:root10 :11],
+                                :children
+                                [{:args [:a],
+                                  :path [:root10 :11 :12],
+                                  :children [],
+                                  :meta
+                                  {:arglists '([arg1]),
+                                   :column 1,
+                                   :file "FILE",
+                                   :line 4,
+                                   :name 'func2,
+                                   :ns (the-ns 'com.billpiel.sayid.test.ns1)},
+                                  :return :a,
+                                  :started-at 1
+                                  :name 'com.billpiel.sayid.test.ns1/func2,
+                                  :arg-map {'arg1 :a},
+                                  :id :12,
+                                  :ended-at 2
+                                  :depth 2}],
+                                :meta
+                                {:arglists '([arg1]),
+                                 :column 1,
+                                 :file "FILE",
+                                 :line 8,
+                                 :name 'func1,
+                                 :ns (the-ns 'com.billpiel.sayid.test.ns1)},
+                                :return :a,
+                                :started-at 0
+                                :name 'com.billpiel.sayid.test.ns1/func1,
+                                :arg-map {'arg1 :a},
+                                :id :11,
+                                :ended-at 3
+                                :depth 1}],
+                              :depth 0,
+                              :id :root10,
+                              :path [:root10],
+                              :traced
+                              {:deep-fn #{}, :fn #{}, :ns #{'com.billpiel.sayid.test.ns1}},
+                              :ws-slot nil}]
 
-      (fact "log is correct"
-        (-> trace
-            ((t-utils/redact-file-fn [:children 0 :meta :file]
-                                     [:children 0 :children 0 :meta :file])))
-        => expected-trace)
+          (fact "log is correct"
+                    (-> trace
+                        ((t-utils/redact-file-fn [:children 0 :meta :file]
+                                                 [:children 0 :children 0 :meta :file])))
+                    => expected-trace)
 
 
-      (fact "remove trace"
-        (mm/ws-remove-trace-ns! 'com.billpiel.sayid.test.ns1)
-        (com.billpiel.sayid.test.ns1/func1 :b)
-        (-> (mm/ws-deref!)
-            ((t-utils/redact-file-fn [:children 0 :meta :file]
-                                     [:children 0 :children 0 :meta :file])))
-        => (assoc expected-trace
-                  :traced {:fn #{}, :ns #{}, :deep-fn #{}})))
+          (fact "remove trace"
+                  (mm/ws-remove-trace-ns! 'com.billpiel.sayid.test.ns1)
+                  (com.billpiel.sayid.test.ns1/func1 :b)
+                  (-> (mm/ws-deref!)
+                      ((t-utils/redact-file-fn [:children 0 :meta :file]
+                                               [:children 0 :children 0 :meta :file])))
+                  => (assoc expected-trace
+                            :traced {:fn #{}, :ns #{}, :deep-fn #{}})))
 
-    (mt/untrace-ns* 'com.billpiel.sayid.test.ns1)))
+     (mt/untrace-ns* 'com.billpiel.sayid.test.ns1)))
 
  (fact-group "about enable/disable -all-traces!"
   (mt/untrace-ns* 'com.billpiel.sayid.test.ns1)
-  (mm/ws-reset!)
+  (with-out-str (mm/ws-reset!))
   (with-redefs [mt/now (t-utils/mock-now-fn)
                 gensym (t-utils/mock-gensym-fn)]
 
@@ -108,9 +108,9 @@
           ((t-utils/redact-file-fn [:children 0 :meta :file]
                                    [:children 0 :children 0 :meta :file])))
       => {:arg-map nil
-          :children [{:arg-map {"arg1" :a}
+          :children [{:arg-map {'arg1 :a}
                       :args [:a]
-                      :children [{:arg-map {"arg1" :a}
+                      :children [{:arg-map {'arg1 :a}
                                   :args [:a]
                                   :children []
                                   :depth 2
@@ -122,7 +122,7 @@
                                          :line 4
                                          :name 'func2
                                          :ns (the-ns 'com.billpiel.sayid.test.ns1)}
-                                  :name "com.billpiel.sayid.test.ns1/func2"
+                                  :name 'com.billpiel.sayid.test.ns1/func2
                                   :path [:root10 :11 :12]
                                   :return :a
                                   :started-at 1}]
@@ -135,7 +135,7 @@
                              :line 8
                              :name 'func1
                              :ns (the-ns 'com.billpiel.sayid.test.ns1)}
-                      :name "com.billpiel.sayid.test.ns1/func1"
+                      :name 'com.billpiel.sayid.test.ns1/func1
                       :path [:root10 :11]
                       :return :a
                       :started-at 0}]
@@ -151,14 +151,14 @@
 
 (fact-group "about remove-all-traces!"
   (mt/untrace-ns* 'com.billpiel.sayid.test.ns1)
-  (mm/ws-reset!)
+  (with-out-str (mm/ws-reset!))
   (with-redefs [mt/now (t-utils/mock-now-fn)
                 gensym (t-utils/mock-gensym-fn)]
 
     (mm/ws-add-trace-ns! com.billpiel.sayid.test.ns1)
 
     (fact "remove-all-traces! works"
-      (mm/ws-remove-all-traces!)
+      (with-out-str (mm/ws-remove-all-traces!))
       (com.billpiel.sayid.test.ns1/func1 :a)
 
       (mm/ws-deref!)
@@ -176,7 +176,7 @@
                [{:args [:a]
                  :children []
                  :started-at #inst "2010-01-01T01:00:00.000-00:00"
-                 :name "com.billpiel.sayid.test.ns1/func-throws"
+                 :name 'com.billpiel.sayid.test.ns1/func-throws
                  :id :11
                  :parent-id :root10
                  :ended-at 1
@@ -426,7 +426,7 @@
             :depth 1
             :ended-at 1
             :id :11
-            :name "com.billpiel.sayid.test.ns1/func-throws"
+            :name 'com.billpiel.sayid.test.ns1/func-throws
             :path [:root10 :11]
             :started-at 0
             :meta {:arglists '([arg1])
@@ -435,7 +435,7 @@
                    :line 12
                    :name 'func-throws
                    :ns (the-ns 'com.billpiel.sayid.test.ns1)}
-            :arg-map {"arg1" :a}})
+            :arg-map {'arg1 :a}})
 
       (mt/untrace-ns* 'com.billpiel.sayid.test.ns1))))
 
@@ -443,7 +443,7 @@
 
   (mt/untrace-ns* 'com.billpiel.sayid.test.ns1)
   (mm/ws-clear-log!)
-  (mm/ws-reset!)
+  (with-out-str (mm/ws-reset!))
   (with-redefs [mt/now (t-utils/mock-now-fn)
                 gensym (t-utils/mock-gensym-fn)]
     (let [trace-root (mm/ws-add-trace-ns! com.billpiel.sayid.test.ns1)
@@ -451,21 +451,21 @@
           trace (mm/ws-deref!)]
 
       (fact "find node by name and all parents"
-        (def r  (->> (mm/qt trace
-                            :a
-                            [:name #".*func3-4"])
+        (def r  (->> (mm/t-query trace
+                                 :a
+                                 [:name #".*func3-4"])
                      (mapv mq/traverse-tree-dissoc-zipper)
                      ((t-utils/redact-file-fn [0 :children 0 :meta :file]
                                               [0 :children 0 :children 0 :meta :file]
                                               [0 :children 0 :children 0 :children 0 :meta :file]))))
         r
         => [{:arg-map nil
-             :children [{:arg-map {"arg1" 3
-                                   "arg2" 8}
+             :children [{:arg-map {'arg1 3
+                                   'arg2 8}
                          :args [3 8]
-                         :children [{:arg-map {"arg1" 8}
+                         :children [{:arg-map {'arg1 8}
                                      :args [8]
-                                     :children [{:arg-map {"arg1" 8}
+                                     :children [{:arg-map {'arg1 8}
                                                  :args [8]
                                                  :children []
                                                  :depth 3
@@ -477,7 +477,7 @@
                                                         :line 16
                                                         :name 'func3-4
                                                         :ns (the-ns 'com.billpiel.sayid.test.ns1)}
-                                                 :name "com.billpiel.sayid.test.ns1/func3-4"
+                                                 :name 'com.billpiel.sayid.test.ns1/func3-4
                                                  :path [:root10 :11 :13 :15]
                                                  :return 8
                                                  :started-at 6}]
@@ -490,7 +490,7 @@
                                             :line 28
                                             :name 'func3-3
                                             :ns (the-ns 'com.billpiel.sayid.test.ns1)}
-                                     :name "com.billpiel.sayid.test.ns1/func3-3"
+                                     :name 'com.billpiel.sayid.test.ns1/func3-3
                                      :path [:root10 :11 :13]
                                      :return 8
                                      :started-at 3}]
@@ -503,12 +503,12 @@
                                 :line 33
                                 :name 'func3-1
                                 :ns (the-ns 'com.billpiel.sayid.test.ns1)}
-                         :name "com.billpiel.sayid.test.ns1/func3-1"
+                         :name 'com.billpiel.sayid.test.ns1/func3-1
                          :path [:root10 :11]
                          :return 13
                          :started-at 0}]
              :depth 0
-                          :id :root10
+             :id :root10
              :path [:root10]
              :traced {:deep-fn #{}
                       :fn #{}
@@ -520,7 +520,7 @@
 (fact-group "querying with q macro"
   (mt/untrace-ns* 'com.billpiel.sayid.test.ns1)
   (mm/ws-clear-log!)
-  (mm/ws-reset!)
+  (with-out-str (mm/ws-reset!))
   (with-redefs [mt/now (t-utils/mock-now-fn)
                 gensym (t-utils/mock-gensym-fn)]
     (let [trace-root (mm/ws-add-trace-ns! com.billpiel.sayid.test.ns1)
@@ -528,18 +528,18 @@
           trace (mm/ws-deref!)]
 
       (fact "find node by name and all parents"
-        (->> (mm/qw :a [:name #".*func3-4"])
+        (->> (mm/w-q :a [:name #".*func3-4"])
              (mapv mq/traverse-tree-dissoc-zipper)
              ((t-utils/redact-file-fn [0 :children 0 :meta :file]
                                       [0 :children 0 :children 0 :meta :file]
                                       [0 :children 0 :children 0 :children 0 :meta :file])))
         =>  [{:arg-map nil
-              :children [{:arg-map {"arg1" 3
-                                    "arg2" 8}
+              :children [{:arg-map {'arg1 3
+                                    'arg2 8}
                           :args [3 8]
-                          :children [{:arg-map {"arg1" 8}
+                          :children [{:arg-map {'arg1 8}
                                       :args [8]
-                                      :children [{:arg-map {"arg1" 8}
+                                      :children [{:arg-map {'arg1 8}
                                                   :args [8]
                                                   :children []
                                                   :depth 3
@@ -551,7 +551,7 @@
                                                          :line 16
                                                          :name 'func3-4
                                                          :ns (the-ns 'com.billpiel.sayid.test.ns1)}
-                                                  :name "com.billpiel.sayid.test.ns1/func3-4"
+                                                  :name 'com.billpiel.sayid.test.ns1/func3-4
                                                   :path [:root10 :11 :13 :15]
                                                   :return 8
                                                   :started-at 6}]
@@ -564,7 +564,7 @@
                                              :line 28
                                              :name 'func3-3
                                              :ns (the-ns 'com.billpiel.sayid.test.ns1)}
-                                      :name "com.billpiel.sayid.test.ns1/func3-3"
+                                      :name 'com.billpiel.sayid.test.ns1/func3-3
                                       :path [:root10 :11 :13]
                                       :return 8
                                       :started-at 3}]
@@ -577,7 +577,7 @@
                                  :line 33
                                  :name 'func3-1
                                  :ns (the-ns 'com.billpiel.sayid.test.ns1)}
-                          :name "com.billpiel.sayid.test.ns1/func3-1"
+                          :name 'com.billpiel.sayid.test.ns1/func3-1
                           :path [:root10 :11]
                           :return 13
                           :started-at 0}]
@@ -592,7 +592,7 @@
 
 (fact-group "trace a namespace by alias"
      (mt/untrace-ns* 'com.billpiel.sayid.test.ns1)
-     (mm/ws-reset!)
+     (with-out-str (mm/ws-reset!))
 
      (with-redefs [mt/now (t-utils/mock-now-fn)
                    gensym (t-utils/mock-gensym-fn)]
@@ -600,9 +600,9 @@
        (com.billpiel.sayid.test.ns1/func1 :a)
        (let [trace (mm/ws-deref!)
              expected-trace {:arg-map nil
-                             :children [{:arg-map {"arg1" :a}
+                             :children [{:arg-map {'arg1 :a}
                                          :args [:a]
-                                         :children [{:arg-map {"arg1" :a}
+                                         :children [{:arg-map {'arg1 :a}
                                                      :args [:a]
                                                      :children []
                                                      :depth 2
@@ -614,7 +614,7 @@
                                                             :line 4
                                                             :name 'func2
                                                             :ns (the-ns 'com.billpiel.sayid.test.ns1)}
-                                                     :name "com.billpiel.sayid.test.ns1/func2"
+                                                     :name 'com.billpiel.sayid.test.ns1/func2
                                                      :path [:root10 :11 :12]
                                                      :return :a
                                                      :started-at 1}]
@@ -627,7 +627,7 @@
                                                 :line 8
                                                 :name 'func1
                                                 :ns (the-ns 'com.billpiel.sayid.test.ns1)}
-                                         :name "com.billpiel.sayid.test.ns1/func1"
+                                         :name 'com.billpiel.sayid.test.ns1/func1
                                          :path [:root10 :11]
                                          :return :a
                                          :started-at 0}]
@@ -648,170 +648,31 @@
        (mt/untrace-ns* 'com.billpiel.sayid.test.ns1)))
 
 
-(fact-group "deep trace a single function"
-  (mt/untrace-ns* 'com.billpiel.sayid.test.ns1)
-  (mm/ws-reset!)
+#_ (fact-group "deep trace a single function"
+     (mt/untrace-ns* 'com.billpiel.sayid.test.ns1)
+     (with-out-str (mm/ws-reset!))
 
-  (with-redefs [mt/now (t-utils/mock-now-fn)
-                gensym (t-utils/mock-gensym-fn)]
-    (mm/ws-add-deep-trace-fn! ns1/func-complex)
-    (ns1/func-complex 2 3)
-    (let [trace (mm/ws-deref!)
-          expected-trace
-          {:arg-map nil
-           :children [{:arg-map {"a" 2
-                                 "b" 3}
-                       :args [2 3]
-                       :children [{:arg-map '{a 2
-                                              b 3}
-                                   :args [2 3]
-                                   :children []
-                                   :depth 2
-                                   :ended-at 2
-                                   :id :12
-                                   :name "*  com.billpiel.sayid.test.ns1/func-complex"
-                                   :path [:root10 :11 :12]
-                                   :return 6
-                                   :src-map '{:ol $3_1_1_0
-                                              :olop ($3_1_1_0 $3_1_1_1 $3_1_1_2)
-                                              :olxp ($3_1_1_0 $3_1_1_1 $3_1_1_2)
-                                              :op (* a b)
-                                              :sym *
-                                              :xl $2_1_1_1_1_0
-                                              :xlop ($2_1_1_1_1_0 $2_1_1_1_1_1 $2_1_1_1_1_2)
-                                              :xlxp ($2_1_1_1_1_0 $2_1_1_1_1_1 $2_1_1_1_1_2)
-                                              :xp (* a b)}
-                                   :started-at 1}
-                                  {:arg-map '{c 6}
-                                   :args [6]
-                                   :children []
-                                   :depth 2
-                                   :ended-at 4
-                                   :id :13
-                                   :name "inc  com.billpiel.sayid.test.ns1/func-complex"
-                                   :path [:root10 :11 :13]
-                                   :return 7
-                                   :src-map '{:ol $3_2_2
-                                              :olop (-> $3_2_1 $3_2_2 ($3_2_3_0 $3_2_3_1) $3_2_4 ($3_2_5_0 [$3_2_5_1_0 $3_2_5_1_1]) ($3_2_6_0 $3_2_6_1))
-                                              :olxp ($3_2_2 $3_2_1)
-                                              :op (-> c inc (+ a) vector (into [11 22]) (conj b))
-                                              :sym inc
-                                              :xl $2_1_1_2_1_1_1_1_0
-                                              :xlop (-> $2_1_1_2_1_1_1_1_1 $2_1_1_2_1_1_1_1_0 ($2_1_1_2_1_1_1_0 $2_1_1_2_1_1_1_2) $2_1_1_2_1_1_0 ($2_1_1_2_1_0 [$2_1_1_2_1_2_0 $2_1_1_2_1_2_1]) ($2_1_1_2_0 $2_1_1_2_2))
-                                              :xlxp ($2_1_1_2_1_1_1_1_0 $2_1_1_2_1_1_1_1_1)
-                                              :xp (inc c)}
-                                   :started-at 3}
-                                  {:arg-map '{a 2
-                                              (inc c) 7}
-                                   :args [7 2]
-                                   :children []
-                                   :depth 2
-                                   :ended-at 6
-                                   :id :14
-                                   :name "+  com.billpiel.sayid.test.ns1/func-complex"
-                                   :path [:root10 :11 :14]
-                                   :return 9
-                                   :src-map '{:ol $3_2_3_0
-                                              :olop ($3_2_3_0 $3_2_3_1)
-                                              :olxp ($3_2_3_0 ($3_2_2 $3_2_1) $3_2_3_1)
-                                              :op (+ a)
-                                              :sym +
-                                              :xl $2_1_1_2_1_1_1_0
-                                              :xlop ($2_1_1_2_1_1_1_0 $2_1_1_2_1_1_1_2)
-                                              :xlxp ($2_1_1_2_1_1_1_0 ($2_1_1_2_1_1_1_1_0 $2_1_1_2_1_1_1_1_1) $2_1_1_2_1_1_1_2)
-                                              :xp (+ (inc c) a)}
-                                   :started-at 5}
-                                  {:arg-map '{(+ (inc c) a) 9}
-                                   :args [9]
-                                   :children []
-                                   :depth 2
-                                   :ended-at 8
-                                   :id :15
-                                   :name "vector  com.billpiel.sayid.test.ns1/func-complex"
-                                   :path [:root10 :11 :15]
-                                   :return [9]
-                                   :src-map '{:ol $3_2_4
-                                              :olop (-> $3_2_1 $3_2_2 ($3_2_3_0 $3_2_3_1) $3_2_4 ($3_2_5_0 [$3_2_5_1_0 $3_2_5_1_1]) ($3_2_6_0 $3_2_6_1))
-                                              :olxp ($3_2_4 ($3_2_3_0 ($3_2_2 $3_2_1) $3_2_3_1))
-                                              :op (-> c inc (+ a) vector (into [11 22]) (conj b))
-                                              :sym vector
-                                              :xl $2_1_1_2_1_1_0
-                                              :xlop (-> $2_1_1_2_1_1_1_1_1 $2_1_1_2_1_1_1_1_0 ($2_1_1_2_1_1_1_0 $2_1_1_2_1_1_1_2) $2_1_1_2_1_1_0 ($2_1_1_2_1_0 [$2_1_1_2_1_2_0 $2_1_1_2_1_2_1]) ($2_1_1_2_0 $2_1_1_2_2))
-                                              :xlxp ($2_1_1_2_1_1_0 ($2_1_1_2_1_1_1_0 ($2_1_1_2_1_1_1_1_0 $2_1_1_2_1_1_1_1_1) $2_1_1_2_1_1_1_2))
-                                              :xp (vector (+ (inc c) a))}
-                                   :started-at 7}
-                                  {:arg-map '{[11 22] [11 22]
-                                              (vector (+ (inc c) a)) [9]}
-                                   :args [[9] [11 22]]
-                                   :children []
-                                   :depth 2
-                                   :ended-at 10
-                                   :id :16
-                                   :name "into  com.billpiel.sayid.test.ns1/func-complex"
-                                   :path [:root10 :11 :16]
-                                   :return [9 11 22]
-                                   :src-map '{:ol $3_2_5_0
-                                              :olop ($3_2_5_0 [$3_2_5_1_0 $3_2_5_1_1])
-                                              :olxp ($3_2_5_0 ($3_2_4 ($3_2_3_0 ($3_2_2 $3_2_1) $3_2_3_1)) [$3_2_5_1_0 $3_2_5_1_1])
-                                              :op (into [11 22])
-                                              :sym into
-                                              :xl $2_1_1_2_1_0
-                                              :xlop ($2_1_1_2_1_0 [$2_1_1_2_1_2_0 $2_1_1_2_1_2_1])
-                                              :xlxp ($2_1_1_2_1_0 ($2_1_1_2_1_1_0 ($2_1_1_2_1_1_1_0 ($2_1_1_2_1_1_1_1_0 $2_1_1_2_1_1_1_1_1) $2_1_1_2_1_1_1_2)) [$2_1_1_2_1_2_0 $2_1_1_2_1_2_1])
-                                              :xp (into (vector (+ (inc c) a)) [11 22])}
-                                   :started-at 9}
-                                  {:arg-map '{b 3
-                                              (into (vector (+ (inc c) a)) [11 22]) [9 11 22]}
-                                   :args [[9 11 22] 3]
-                                   :children []
-                                   :depth 2
-                                   :ended-at 12
-                                   :id :17
-                                   :name "conj  com.billpiel.sayid.test.ns1/func-complex"
-                                   :path [:root10 :11 :17]
-                                   :return [9 11 22 3]
-                                   :src-map '{:ol $3_2_6_0
-                                              :olop ($3_2_6_0 $3_2_6_1)
-                                              :olxp ($3_2_6_0 ($3_2_5_0 ($3_2_4 ($3_2_3_0 ($3_2_2 $3_2_1) $3_2_3_1)) [$3_2_5_1_0 $3_2_5_1_1]) $3_2_6_1)
-                                              :op (conj b)
-                                              :sym conj
-                                              :xl $2_1_1_2_0
-                                              :xlop ($2_1_1_2_0 $2_1_1_2_2)
-                                              :xlxp ($2_1_1_2_0 ($2_1_1_2_1_0 ($2_1_1_2_1_1_0 ($2_1_1_2_1_1_1_0 ($2_1_1_2_1_1_1_1_0 $2_1_1_2_1_1_1_1_1) $2_1_1_2_1_1_1_2)) [$2_1_1_2_1_2_0 $2_1_1_2_1_2_1]) $2_1_1_2_2)
-                                              :xp (conj (into (vector (+ (inc c) a)) [11 22]) b)}
-                                   :started-at 11}]
-                       :depth 1
-                       :ended-at 13
-                       :id :11
-                       :meta {:arglists '([a b])
-                              :column 1
-                              :file "FILE"
-                              :line 63
-                              :name 'func-complex
-                              :ns (the-ns 'com.billpiel.sayid.test.ns1)}
-                       :name "com.billpiel.sayid.test.ns1/func-complex"
-                       :path [:root10 :11]
-                       :return [9 11 22 3]
-                       :started-at 0}]
-           :depth 0
-           :id :root10
-           :path [:root10]
-           :traced {:deep-fn #{'com.billpiel.sayid.test.ns1/func-complex}
-                    :fn #{}
-                    :ns #{}}
-           :ws-slot nil}]
+     (with-redefs [mt/now (t-utils/mock-now-fn)
+                   gensym (t-utils/mock-gensym-fn)]
+       (mm/ws-add-deep-trace-fn! ns1/func-complex)
+       (ns1/func-complex 2 3)
+       (let [trace (mm/ws-deref!)
+             expected-trace
+;; need a better way to clean this up
+             {:arg-map nil, :children [{:arg-map {'a 2, 'b 3}, :args [2 3], :children [{:arg-map {'a 2, 'b 3}, :args [2 3], :children [], :depth 2, :ended-at 2, :id :12, :name *, :ns 'com.billpiel.sayid.test.ns1, :parent-name 'func-complex, :path [:root10 :11 :12], :return 6, :src-map {:ol '$3_1_1_0, :olop ('$3_1_1_0 '$3_1_1_1 '$3_1_1_2), :olxp ('$3_1_1_0 '$3_1_1_1 '$3_1_1_2), :op (* 'a 'b), :sym *, :xl '$2_1_1_1_1_0, :xlop ('$2_1_1_1_1_0 '$2_1_1_1_1_1 '$2_1_1_1_1_2), :xlxp ('$2_1_1_1_1_0 '$2_1_1_1_1_1 '$2_1_1_1_1_2), :xp (* 'a 'b)}, :started-at 1} {:arg-map {c 6}, :args [6], :children [], :depth 2, :ended-at 4, :id :13, :name inc, :ns 'com.billpiel.sayid.test.ns1, :parent-name 'func-complex, :path [:root10 :11 :13], :return 7, :src-map {:ol '$3_2_2, :olop (-> '$3_2_1 '$3_2_2 ('$3_2_3_0 '$3_2_3_1) '$3_2_4 ('$3_2_5_0 [$3_2_5_1_0 '$3_2_5_1_1]) ('$3_2_6_0 '$3_2_6_1)), :olxp ('$3_2_2 '$3_2_1), :op (-> c inc (+ 'a) vector (into [11 22]) (conj 'b)), :sym inc, :xl '$2_1_1_2_1_1_1_1_0, :xlop (-> '$2_1_1_2_1_1_1_1_1 '$2_1_1_2_1_1_1_1_0 ('$2_1_1_2_1_1_1_0 '$2_1_1_2_1_1_1_2) '$2_1_1_2_1_1_0 ('$2_1_1_2_1_0 [$2_1_1_2_1_2_0 '$2_1_1_2_1_2_1]) ('$2_1_1_2_0 '$2_1_1_2_2)), :xlxp ('$2_1_1_2_1_1_1_1_0 '$2_1_1_2_1_1_1_1_1), :xp (inc c)}, :started-at 3} {:arg-map {a 2, (inc c) 7}, :args [7 2], :children [], :depth 2, :ended-at 6, :id :14, :name +, :ns 'com.billpiel.sayid.test.ns1, :parent-name 'func-complex, :path [:root10 :11 :14], :return 9, :src-map {:ol '$3_2_3_0, :olop ('$3_2_3_0 '$3_2_3_1), :olxp ('$3_2_3_0 ('$3_2_2 '$3_2_1) '$3_2_3_1), :op (+ 'a), :sym +, :xl '$2_1_1_2_1_1_1_0, :xlop ('$2_1_1_2_1_1_1_0 '$2_1_1_2_1_1_1_2), :xlxp ('$2_1_1_2_1_1_1_0 ('$2_1_1_2_1_1_1_1_0 '$2_1_1_2_1_1_1_1_1) '$2_1_1_2_1_1_1_2), :xp (+ (inc c) 'a)}, :started-at 5} {:arg-map {(+ (inc c) 'a) 9}, :args [9], :children [], :depth 2, :ended-at 8, :id :15, :name vector, :ns 'com.billpiel.sayid.test.ns1, :parent-name 'func-complex, :path [:root10 :11 :15], :return [9], :src-map {:ol '$3_2_4, :olop (-> '$3_2_1 '$3_2_2 ('$3_2_3_0 '$3_2_3_1) '$3_2_4 ('$3_2_5_0 [$3_2_5_1_0 '$3_2_5_1_1]) ('$3_2_6_0 '$3_2_6_1)), :olxp ('$3_2_4 ('$3_2_3_0 ('$3_2_2 '$3_2_1) '$3_2_3_1)), :op (-> c inc (+ 'a) vector (into [11 22]) (conj 'b)), :sym vector, :xl '$2_1_1_2_1_1_0, :xlop (-> '$2_1_1_2_1_1_1_1_1 '$2_1_1_2_1_1_1_1_0 ('$2_1_1_2_1_1_1_0 '$2_1_1_2_1_1_1_2) '$2_1_1_2_1_1_0 ('$2_1_1_2_1_0 [$2_1_1_2_1_2_0 '$2_1_1_2_1_2_1]) ('$2_1_1_2_0 '$2_1_1_2_2)), :xlxp ('$2_1_1_2_1_1_0 ('$2_1_1_2_1_1_1_0 ('$2_1_1_2_1_1_1_1_0 '$2_1_1_2_1_1_1_1_1) '$2_1_1_2_1_1_1_2)), :xp (vector (+ (inc c) 'a))}, :started-at 7} {:arg-map {[11 22] [11 22], (vector (+ (inc c) 'a)) [9]}, :args [[9] [11 22]], :children [], :depth 2, :ended-at 10, :id :16, :name into, :ns 'com.billpiel.sayid.test.ns1, :parent-name 'func-complex, :path [:root10 :11 :16], :return [9 11 22], :src-map {:ol '$3_2_5_0, :olop ('$3_2_5_0 [$3_2_5_1_0 '$3_2_5_1_1]), :olxp ('$3_2_5_0 ('$3_2_4 ('$3_2_3_0 ('$3_2_2 '$3_2_1) '$3_2_3_1)) [$3_2_5_1_0 '$3_2_5_1_1]), :op (into [11 22]), :sym into, :xl '$2_1_1_2_1_0, :xlop ('$2_1_1_2_1_0 [$2_1_1_2_1_2_0 '$2_1_1_2_1_2_1]), :xlxp ('$2_1_1_2_1_0 ('$2_1_1_2_1_1_0 ('$2_1_1_2_1_1_1_0 ('$2_1_1_2_1_1_1_1_0 '$2_1_1_2_1_1_1_1_1) '$2_1_1_2_1_1_1_2)) [$2_1_1_2_1_2_0 '$2_1_1_2_1_2_1]), :xp (into (vector (+ (inc c) 'a)) [11 22])}, :started-at 9} {:arg-map {b 3, (into (vector (+ (inc c) 'a)) [11 22]) [9 11 22]}, :args [[9 11 22] 3], :children [], :depth 2, :ended-at 12, :id :17, :name conj, :ns 'com.billpiel.sayid.test.ns1, :parent-name 'func-complex, :path [:root10 :11 :17], :return [9 11 22 3], :src-map {:ol '$3_2_6_0, :olop ('$3_2_6_0 '$3_2_6_1), :olxp ('$3_2_6_0 ('$3_2_5_0 ('$3_2_4 ('$3_2_3_0 ('$3_2_2 '$3_2_1) '$3_2_3_1)) [$3_2_5_1_0 '$3_2_5_1_1]) '$3_2_6_1), :op (conj 'b), :sym conj, :xl '$2_1_1_2_0, :xlop ('$2_1_1_2_0 '$2_1_1_2_2), :xlxp ('$2_1_1_2_0 ('$2_1_1_2_1_0 ('$2_1_1_2_1_1_0 ('$2_1_1_2_1_1_1_0 ('$2_1_1_2_1_1_1_1_0 '$2_1_1_2_1_1_1_1_1) '$2_1_1_2_1_1_1_2)) [$2_1_1_2_1_2_0 '$2_1_1_2_1_2_1]) '$2_1_1_2_2), :xp (conj (into (vector (+ (inc c) 'a)) [11 22]) 'b)}, :started-at 11}], :depth 1, :ended-at 13, :id :11, :meta {:arglists ([a 'b]), :column 1, :file "FILE", :line 63, :name func-complex, :ns 'com.billpiel.sayid.test.ns1 }, :name 'com.billpiel.sayid.test.ns1/func-complex, :path [:root10 :11], :return [9 11 22 3], :started-at 0}], :depth 0, :id :root10, :path [:root10], :traced {:deep-fn #{com.billpiel.sayid.test.ns1/func-complex}, :fn #{}, :ns #{}}, :ws-slot nil}
+             ]
 
-      (fact "deep trace of single func -- log is correct"
-        (-> trace
-            ((t-utils/redact-file-fn [:children 0 :meta :file])))
-        => expected-trace))
+         (fact "deep trace of single func -- log is correct"
+           (-> trace
+               ((t-utils/redact-file-fn [:children 0 :meta :file])))
+           => expected-trace))
 
-    (mt/untrace-ns* 'com.billpiel.sayid.test.ns1)
-    (mm/ws-reset!)))
+       (mt/untrace-ns* 'com.billpiel.sayid.test.ns1)
+       (with-out-str (mm/ws-reset!))))
 
 (fact-group "tracing then deep tracing a func results in only a deep trace"
   (mt/untrace-ns* 'com.billpiel.sayid.test.ns1)
-  (mm/ws-reset!)
+  (with-out-str (mm/ws-reset!))
 
   (with-redefs [mt/now (t-utils/mock-now-fn)
                 gensym (t-utils/mock-gensym-fn)]
@@ -819,16 +680,15 @@
       (mm/ws-add-trace-fn! ns1/func-complex)
 
       (fact "trace is set in workspace"
-        (mm/ws-show-traced) => {:deep-fn #{}
-                                :fn #{'com.billpiel.sayid.test.ns1/func-complex}
-                                :ns #{}})
+        (with-out-str (mm/ws-show-traced)) =>
+        "{:ns #{}, :fn #{com.billpiel.sayid.test.ns1/func-complex}, :deep-fn #{}}\n")
 
       (fact "trace is correct"
         (ns1/func-complex  2 3)
         (-> (mm/ws-deref!)
             :children
             ((t-utils/redact-file-fn [0 :meta :file])))
-        => [{:arg-map {"a" 2, "b" 3}
+        => [{:arg-map {'a 2, 'b 3}
              :args [2 3]
              :children []
              :depth 1
@@ -840,7 +700,7 @@
                     :line 63
                     :name 'func-complex
                     :ns (the-ns 'com.billpiel.sayid.test.ns1)}
-             :name "com.billpiel.sayid.test.ns1/func-complex"
+             :name 'com.billpiel.sayid.test.ns1/func-complex
              :path [:root10 :12]
              :return [9 11 22 3]
              :started-at 0}])
@@ -849,31 +709,29 @@
 
       (mm/ws-add-deep-trace-fn! ns1/func-complex)
       (fact "only deep trace is set in workspace"
-        (mm/ws-show-traced) => {:deep-fn #{'com.billpiel.sayid.test.ns1/func-complex}
-                                :fn #{}
-                                :ns #{}})
+        (with-out-str (mm/ws-show-traced)) => "{:ns #{}, :fn #{}, :deep-fn #{com.billpiel.sayid.test.ns1/func-complex}}\n")
 
-#_      (fact "deep trace is correct"
-        (ns1/func-complex  2 3)
-        (-> (mm/ws-deref!)
-            :children
-            ((t-utils/redact-file-fn [0 :meta :file])))
-        => [{:arg-map {"a" 2, "b" 3}
-             :args [2 3]
-             :children []
-             :depth 1
-             :ended-at 15
-             :id :15
-             :meta {:arglists '([a b])
-                    :column 1
-                    :file "FILE"
-                    :line 63
-                    :name 'func-complex
-                    :ns (the-ns 'com.billpiel.sayid.test.ns1)}
-             :name "com.billpiel.sayid.test.ns1/func-complex"
-             :path [:root10 :15]
-             :return [9 11 22 3]
-             :started-at 2}])
+      #_      (fact "deep trace is correct"
+                (ns1/func-complex  2 3)
+                (-> (mm/ws-deref!)
+                    :children
+                    ((t-utils/redact-file-fn [0 :meta :file])))
+                => [{:arg-map {'a 2, 'b 3}
+                     :args [2 3]
+                     :children []
+                     :depth 1
+                     :ended-at 15
+                     :id :15
+                     :meta {:arglists '([a b])
+                            :column 1
+                            :file "FILE"
+                            :line 63
+                            :name 'func-complex
+                            :ns (the-ns 'com.billpiel.sayid.test.ns1)}
+                     :name 'com.billpiel.sayid.test.ns1/func-complex
+                     :path [:root10 :15]
+                     :return [9 11 22 3]
+                     :started-at 2}])
 
       (fact "meta shows trace applied"
         (-> (meta #'ns1/func-complex)
@@ -884,20 +742,19 @@
             :line 63
             :name 'func-complex
             :ns (the-ns 'com.billpiel.sayid.test.ns1)
-            :com.billpiel.sayid.trace/traced [:root10 original-func-complex]}))
+            :com.billpiel.sayid.trace/traced [:root10 original-func-complex]
+            :com.billpiel.sayid.trace/trace-type :deep-fn}))
 
 
-    (mm/ws-remove-all-traces!)
+    (with-out-str (mm/ws-remove-all-traces!))
     (mm/ws-clear-log!)
 
     (fact "all traces gone"
-      (mm/ws-show-traced) => {:deep-fn #{}
-                              :fn #{}
-                              :ns #{}})
+      (with-out-str (mm/ws-show-traced)) => "{:ns #{}, :fn #{}, :deep-fn #{}}\n")
 
 
     (mt/untrace-ns* 'com.billpiel.sayid.test.ns1)
-    (mm/ws-reset!)))
+    (with-out-str (mm/ws-reset!))))
 
 
 (comment "
@@ -960,6 +817,8 @@ x re-exec traces
 x query selector funcs
   x special output
   x toggle output components
+- switch to earlier clojure version -- deps too
+  - get tests passing in all versions too
 - query output by line/column position -- for emacs plugin
 - cursors
    - bisect recording trees to find bugs

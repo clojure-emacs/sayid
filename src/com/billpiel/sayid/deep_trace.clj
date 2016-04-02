@@ -171,8 +171,8 @@
 
 
 (defn deep-tracer
-  [{:keys [workspace qual-sym-str meta' ns']} original-fn]
-  (let [src (-> qual-sym-str
+  [{:keys [workspace qual-sym meta' ns']} original-fn]  ;; original-fn and workspace not used! IS THAT RIGHT??
+  (let [src (-> qual-sym
                 symbol
                 util/hunt-down-source)
         xsrc (clojure.walk/macroexpand-all src)
