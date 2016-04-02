@@ -253,6 +253,18 @@ user> (-> #'f1 meta :source)
     (ws-deref! workspace)))
 (util/defalias w-qdtr ws-query-deep-trace-replay)
 
+(defn ws-query-deep-trace-replay-print
+  "Queries the current workspace with `query`. Then takes the top-level
+  results, deep traces the functions, replays them then PRINTS the
+  resulting workspace, which is NOT the active workspace."
+  [query]
+  (-> query
+      ws-query-deep-trace-replay
+      trees-print
+      with-printer))
+(util/defalias w-qdtrp ws-query-deep-trace-replay-print)
+(util/defalias w-$ ws-query-deep-trace-replay-print)
+
 (defn ws-deep-trace-apply
   "Deep traces the function indicated by the qualified symbol,
   `qual-sym`, and then call it with arguments `args`. Returns the
