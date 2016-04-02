@@ -412,7 +412,7 @@
 
 (fact "siblings"
   (mapv q/traverse-tree-dissoc-zipper (mm/tree-query test-trace :s
-                                             [:name "E"]))
+                                                     [:name "E"]))
   => [{:args []
        :children []
        :depth 2
