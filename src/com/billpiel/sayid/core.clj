@@ -36,9 +36,11 @@
   such as `ws-print`."
   (atom default-printer))
 
+(declare with-printer)
 (declare ws-query*)
 (declare ws-query)
 (declare ws-print)
+(declare trees-print)
 
 ;; === Helper functions
 
@@ -372,6 +374,15 @@ user> (-> #'f1 meta :source)
                                  (keys v)
                                  (meta v)))))))
 
+(defn mk-printer
+  [opts]
+  (cond
+    (nil? opts) default-printer
+
+    (-> opts first (= :-))
+    (mk-printer-black-list (rest opts))
+
+    :else (mk-printer-white-list opts)))
 
 (defmacro with-this-printer
   "Sets the printer as `prn` for the lexical scope. `prn` may be a
@@ -459,16 +470,6 @@ user> (-> #'f1 meta :source)
   (mk-printer-*-list opts
                      default-printer
                      false))
-
-(defn mk-printer
-  [opts]
-  (cond
-    (nil? opts) default-printer
-
-    (-> opts first (= :-))
-    (mk-printer-black-list (rest opts))
-
-    :else (mk-printer-white-list opts)))
 
 (defn set-printer!
   "Sets the printer that is applied by `with-printer` and used by print
