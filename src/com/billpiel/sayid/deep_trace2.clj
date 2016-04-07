@@ -4,6 +4,34 @@
 
 (def trace-fn-set #{`tr-if-ret `tr-if-clause `tr-macro})
 
+(defn form->xform-map*
+  [form]
+  (if (seq? form)
+    (let [x (macroexpand form)]
+      (conj (mapcat form->xform-map* x)
+            {form x}))
+    []))
+
+(defn form->xform-map
+  [form]
+  (apply merge (form->xform-map* form)))
+
+(defn xform->form-map
+  [form]
+  (-> form
+      form->xform-map
+      clojure.set/map-invert))
+
+(defn update-last
+  [vctr f & args]
+  (apply update-in
+         vctr
+         [(-> vctr
+              count
+              dec)]
+         f
+         args))
+
 (defn path->sym
   [path]
   (->> path
@@ -87,6 +115,21 @@
            (mapcat pair-fn
                    sx-seq))))
 
+(defn sym->first-sib
+  [sym]
+  (-> #spy/d sym
+      sym->path
+      (update-last inc)
+      path->sym))
+
+(defn scrub-macros
+  [src-map sub-src-map]
+  (let [xsym (:sym sub-src-map)]
+    (cond
+      (util/macro? #spy/d xsym) (-> xsym sym->first-sib src-map :op first)
+      :else sub-src-map
+      #_ (do         (-> xsym seq? not) sub-src-map
+                     (-> sub-src-map :sym first util/macro?)))))
 
 
 ;;  xl     (-> src clojure.walk/macroexpand-all swap-in-path-syms)
@@ -128,31 +171,33 @@
                                    (clojure.walk/macroexpand-all form))
         olop->op (util/deep-zipmap (swap-in-path-syms form) form)
         f (fn [xl]
-            {(if (seq? xl)
+            {(if (coll? xl)
                (sym-seq->parent xl)
                xl)
-             {:xl xl ;; expanded location
-                             :sym (xl->form xl) ;; original symbol or value
-                             :xlxp (xl->xlxp xl) ;; expanded locations expanded parent
-                             :ol (xloc->oloc xl)
-                             :olop (-> xl
-                                       xloc->oloc
-                                       ol->olop)
-                             :xp  (-> xl
-                                      xl->xlxp
-                                      xlxp->xp)
-                             :op (-> xl
-                                     xloc->oloc
-                                     ol->olop
-                                     olop->op)
-                             :olxp (-> xl
-                                       xloc->oloc
-                                       ol->olxp)
-                             :xlop (-> xl
-                                       xloc->oloc
-                                       ol->olop
-                                       ((partial deep-replace-symbols oloc->xloc)))}})]
-    (apply merge (map f xls))))
+             {:xl xl              ;; expanded location
+              :sym (xl->form xl)  ;; original symbol or value
+              :xlxp (xl->xlxp xl) ;; expanded locations expanded parent
+              :ol (xloc->oloc xl)
+              :olop (-> xl
+                        xloc->oloc
+                        ol->olop)
+              :xp  (-> xl
+                       xl->xlxp
+                       xlxp->xp)
+              :op (-> xl
+                      xloc->oloc
+                      ol->olop
+                      olop->op)
+              :olxp (-> xl
+                        xloc->oloc
+                        ol->olxp)
+              :xlop (-> xl
+                        xloc->oloc
+                        ol->olop
+                        ((partial deep-replace-symbols oloc->xloc)))}})]
+    (util/$- ->> xls
+             (map f)
+             (apply merge))))
 
 (defn tr-macro
   [path [log] mcro v]
@@ -191,19 +236,6 @@
         '$$
         (keyword head)
         form))
-
-#_   (concat
-      (list `tr-if-ret
-            (concat
-             [(list 'if test
-                    (list `tr-if-clause
-                          true
-                          (inject0->1 then)))]
-             (if else
-               [(list `tr-if-clause
-                      false
-                      (inject0->1 else))]
-               []))))
 
 (defn xpand-if
   [[_ test then else] path]
@@ -252,10 +284,10 @@
 (defn find-orig-form
   [path src-map]
   (util/first-match (complement nil?)
-                    [#spy/d (some-> path
-                                    path->sym
-                                    src-map
-                                    :sym)
+                    [(some-> path
+                             path->sym
+                             src-map
+                             :sym)
                      (some-> path
                              (conj 0)
                              path->sym
@@ -276,11 +308,12 @@
                                path->sym
                                src-map)
                         orig (find-orig-form path src-map)]
-                    {:path path ;; make arg map!
+                    {:path path ;; TODO make arg map!
                      :original orig
                      :value val
                      :src-map sm}))
                 @log)))
+
 
 #spy/d (-> (xpand '(let [a 1
                          b 2]
@@ -289,52 +322,13 @@
                        b)))
            eval)
 
-
-
-(clojure.walk/macroexpand-all '(cond a b (-> c d e) f))
-
-
 #_ (do
 
-      (-> (xpand '(let [a 1]
-                     (-> a inc inc dec)))
+     #spy/d (-> (xpand '(let [a 1
+                         b 2]
+                     (if false
+                       a
+                       b)))
            eval)
-
-
-#spy/d (eval (xpand '(cond a b (-> c d e) f)))
-
-
-     ;; 0
-     '(if (even? a)
-        (-> a inc (* 2))
-        0)
-
-     ;; 1
-     '(tr-if-ret (if (even? a)
-                   (tr-if-clause (tr-macro :-> (-> a inc (* 2))) true)
-                   (tr-if-clause 0 false)))
-
-     (clojure.walk/macroexpand-all '(tr-if-ret (if (even? a)
-                                                 (tr-if-clause (tr-macro :->
-                                                                         (-> a inc (* 2)))
-                                                               true)
-                                                 (tr-if-clause 0 false))))
-
-     ;; 2
-     '(tr-if-ret (if (even? a)
-                   (tr-if-clause (tr-macro :->
-                                           (* (inc a)
-                                              2))
-                                 true)
-                   (tr-if-clause 0 false)))
-
-     ;; 3
-     '(tr-if-ret $0 $ (if ((tr-fn $# $ even?) a)
-                        (tr-if-clause (tr-macro :->
-                                                ((tr-fn $# $ *)
-                                                 ((tr-fn $# $ inc) a)
-                                                 2))
-                                      true)
-                        (tr-if-clause 0 false)))
 
      (comment))

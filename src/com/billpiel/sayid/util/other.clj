@@ -320,3 +320,13 @@
           (empty? coll) nil
           (pred head) head
           :else (recur pred tail))))
+
+(defn comp-maps
+  [m1 m2 & [keep-orig?]]
+  (into {}
+        (map (fn [[k1 v1]]
+               [k1
+                (get m2 v1 (if keep-orig?
+                             v1
+                             nil))])
+             m1)))

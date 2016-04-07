@@ -2,7 +2,6 @@
   (require [com.billpiel.sayid.util.other :as util]
            [com.billpiel.sayid.trace :as trace]))
 
-
 (defn swap-in-path-syms*
   [form func parent & [path]]
   (cond
@@ -119,55 +118,54 @@
 ;;  xl->xp (deep-zipmap (-> src clojure.walk/macroexpand-all swap-in-path-syms) (clojure.walk/macroexpand-all src))
 ;;  olop->op (deep-zipmap (swap-in-path-syms src) src)
 
-  (defn mk-expr-mapping
-    [src]
-    (let [xls (->> src
-                   clojure.walk/macroexpand-all
-                   swap-in-path-syms
-                   (tree-seq coll? seq)
-                   )
-          xloc->oloc (util/deep-zipmap (-> src clojure.walk/macroexpand-all swap-in-path-syms)
-                                  (-> src swap-in-path-syms clojure.walk/macroexpand-all))
-          oloc->xloc (clojure.set/map-invert xloc->oloc)
-          xl->src  (util/deep-zipmap (-> src clojure.walk/macroexpand-all swap-in-path-syms)
-                                (clojure.walk/macroexpand-all src))
-          ol->olop (-> src
-                       swap-in-path-syms
-                       get-path->form-maps)
-          xl->xlxp (-> src
-                       clojure.walk/macroexpand-all
-                       swap-in-path-syms
-                       get-path->form-maps)
-          ol->olxp (-> src
-                       swap-in-path-syms
-                       clojure.walk/macroexpand-all
-                       get-path->form-maps)
-          xlxp->xp (util/deep-zipmap (-> src clojure.walk/macroexpand-all swap-in-path-syms)
-                                (clojure.walk/macroexpand-all src))
-          olop->op (util/deep-zipmap (swap-in-path-syms src) src)
-          f (fn [xl]
-              {xl {:xl xl
-                   :sym (xl->src xl)
-                   :xlxp (xl->xlxp xl)
-                   :ol (xloc->oloc xl)
-                   :olop (-> xl
-                             xloc->oloc
-                             ol->olop)
-                   :xp  (-> xl
-                            xl->xlxp
-                            xlxp->xp)
-                   :op (-> xl
+(defn mk-expr-mapping
+  [src]
+  (let [xls (->> src
+                 clojure.walk/macroexpand-all
+                 swap-in-path-syms
+                 (tree-seq coll? seq))
+        xloc->oloc (util/deep-zipmap (-> src clojure.walk/macroexpand-all swap-in-path-syms)
+                                     (-> src swap-in-path-syms clojure.walk/macroexpand-all))
+        oloc->xloc (clojure.set/map-invert xloc->oloc)
+        xl->src  (util/deep-zipmap (-> src clojure.walk/macroexpand-all swap-in-path-syms)
+                                   (clojure.walk/macroexpand-all src))
+        ol->olop (-> src
+                     swap-in-path-syms
+                     get-path->form-maps)
+        xl->xlxp (-> src
+                     clojure.walk/macroexpand-all
+                     swap-in-path-syms
+                     get-path->form-maps)
+        ol->olxp (-> src
+                     swap-in-path-syms
+                     clojure.walk/macroexpand-all
+                     get-path->form-maps)
+        xlxp->xp (util/deep-zipmap (-> src clojure.walk/macroexpand-all swap-in-path-syms)
+                                   (clojure.walk/macroexpand-all src))
+        olop->op (util/deep-zipmap (swap-in-path-syms src) src)
+        f (fn [xl]
+            {xl {:xl xl              ;; expanded location
+                 :sym (xl->src xl)   ;; original symbol or value
+                 :xlxp (xl->xlxp xl) ;; expanded locations expanded parent
+                 :ol (xloc->oloc xl)
+                 :olop (-> xl
+                           xloc->oloc
+                           ol->olop)
+                 :xp  (-> xl
+                          xl->xlxp
+                          xlxp->xp)
+                 :op (-> xl
+                         xloc->oloc
+                         ol->olop
+                         olop->op)
+                 :olxp (-> xl
+                           xloc->oloc
+                           ol->olxp)
+                 :xlop (-> xl
                            xloc->oloc
                            ol->olop
-                           olop->op)
-                   :olxp (-> xl
-                             xloc->oloc
-                             ol->olxp)
-                   :xlop (-> xl
-                             xloc->oloc
-                             ol->olop
-                             ((partial deep-replace-symbols oloc->xloc)))}})]
-      (apply merge (map f xls))))
+                           ((partial deep-replace-symbols oloc->xloc)))}})]
+    (apply merge (map f xls))))
 
 
 (defn deep-tracer
@@ -189,7 +187,7 @@
                               (swap-in-path-syms xsrc)
                               get-fn)]
     (util/eval-in-ns (-> ns' str symbol)
-                     traced-form)))
+              #spy/d traced-form)))
 
 (defn ^{::trace/trace-type :deep-fn} composed-tracer-fn
   [m original-fn]
@@ -212,3 +210,77 @@
   (-> fn-sym
       resolve
       trace/untrace-var*))
+
+
+#_(do
+
+    (util/src-in-meta
+     defn f1 [a]
+     (-> a
+         inc
+         (* 2)))
+
+    (util/src-in-meta
+     defn f2 [a]
+     (inc (try
+            (cond
+              a 1
+              :else 2)
+            (catch Exception e
+              3))))
+
+    (-> #'f2
+        meta
+        :source
+        clojure.walk/macroexpand-all)
+
+    (def f2
+      (fn* ([a]
+            (inc (try
+                   (if a
+                     1
+                     (if :else
+                       2
+                       nil))
+                   (catch Exception e
+                     3))))))
+
+    '(def f2
+       (fn* ([a]
+             ((tif inc)
+              (tr-try
+               (try
+                 (tr-macro 'case '[$#_# $#_#]
+                           (if a
+                             (tr-if 1 'a true)
+                             (tr-if (if :else
+                                      2
+                                      nil)
+                                    'a false)))
+                 (catch Exception e
+                   (tr-catch 3))))))))
+
+
+    (-> #'f1
+        meta
+        :source
+        clojure.walk/macroexpand-all)
+                                        ; =>
+    (def f1 (fn* ([a] (* (inc a) 2))))
+
+    (defn f1' [a]
+      (let [$1_1_1_1 a
+            $1_1_1   (inc $1_1_1_1)
+            $1_1_2   2
+            $1_1     (* $1_1_1 $1_1_2)]
+        $1_1))
+
+
+
+    (def xpand1 [form & [path]]
+      (let [path' (or path [])
+            x (macroexpand form)]
+        ))
+
+
+    (comment))
