@@ -7,10 +7,11 @@
 (defn form->xform-map*
   [form]
   (if (seq? form)
-    (let [x (macroexpand form)]
+    (let [x (macroexpand form)
+          xx (clojure.walk/macroexpand-all form)] ;; TODO better way?
       (conj (mapcat form->xform-map* x)
-            {form x}))
-    []))
+            {form xx}))
+    [[form form]]))
 
 (defn form->xform-map
   [form]
@@ -124,12 +125,12 @@
 
 (defn scrub-macros
   [src-map sub-src-map]
-  (let [xsym (:sym sub-src-map)]
+  (let [xsym (:orig sub-src-map)]
     (cond
       (util/macro? #spy/d xsym) (-> xsym sym->first-sib src-map :op first)
       :else sub-src-map
       #_ (do         (-> xsym seq? not) sub-src-map
-                     (-> sub-src-map :sym first util/macro?)))))
+                     (-> sub-src-map :orig first util/macro?)))))
 
 
 ;;  xl     (-> src clojure.walk/macroexpand-all swap-in-path-syms)
@@ -154,8 +155,9 @@
         xloc->oloc (util/deep-zipmap (-> form clojure.walk/macroexpand-all swap-in-path-syms)
                                      (-> form swap-in-path-syms-skip-macro clojure.walk/macroexpand-all))
         oloc->xloc (clojure.set/map-invert xloc->oloc)
-        xl->form  (util/deep-zipmap (-> form clojure.walk/macroexpand-all swap-in-path-syms)
-                                    (clojure.walk/macroexpand-all form))
+        xl->xform  (util/deep-zipmap (-> form clojure.walk/macroexpand-all swap-in-path-syms)
+                                     (clojure.walk/macroexpand-all form))
+        xform->form #spy/d (xform->form-map form)
         ol->olop (-> form
                      swap-in-path-syms
                      get-path->form-maps)
@@ -175,7 +177,11 @@
                (sym-seq->parent xl)
                xl)
              {:xl xl              ;; expanded location
-              :sym (xl->form xl)  ;; original symbol or value
+              :orig (-> xl
+                       xl->xform
+                       xform->form)  ;; original symbol or value
+              :x (-> xl
+                     xl->xform)
               :xlxp (xl->xlxp xl) ;; expanded locations expanded parent
               :ol (xloc->oloc xl)
               :olop (-> xl
@@ -287,7 +293,7 @@
                     [(some-> path
                              path->sym
                              src-map
-                             :sym)
+                             :orig)
                      (some-> path
                              (conj 0)
                              path->sym
@@ -299,27 +305,50 @@
                              src-map
                              :op)]))
 
+(defn log->tree
+  [log src-map]
+  (loop [[[path val & tags] & tail] log
+         agg {}]
+    (if path
+      (let [path' (interleave (repeat :children) path)
+            sub-map (-> path
+                        path->sym
+                        src-map)
+            agg' (assoc-in agg path {:form (:orig sub-map)
+                                     :value val
+                                     :path path
+                                     :tags tags
+                                     :src-map sub-map})]
+        (recur tail
+               agg'))
+      (-> agg
+          (get nil)
+          (assoc :children
+                 (dissoc agg nil))))))
+
+(let [[[path val & tags] & tail] [[[2] false :macro :->] [[] false :macro :let]]
+      agg {}]
+  tail
+  )
+
 (defn record-trace-tree
   [[log src-map]]
   #spy/d src-map
   (reset! trace
-          (mapv (fn [[path val & tail]]
-                  (let [sm (-> path
-                               path->sym
-                               src-map)
-                        orig (find-orig-form path src-map)]
-                    {:path path ;; TODO make arg map!
-                     :original orig
-                     :value val
-                     :src-map sm}))
-                @log)))
+          (log->tree @log src-map)))
 
-
-#spy/d (-> (xpand '(let [a 1
+ #_ (-> (xpand '(let [a 1
                          b 2]
                      (if false
                        a
                        b)))
+           eval)
+
+#spy/d (-> (xpand '(let [a 1]
+                     (-> a
+                         inc
+                         dec
+                         nil?)))
            eval)
 
 #_ (do
