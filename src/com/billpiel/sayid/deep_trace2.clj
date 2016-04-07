@@ -118,23 +118,6 @@
            (mapcat pair-fn
                    sx-seq))))
 
-(defn sym->first-sib
-  [sym]
-  (-> sym
-      sym->path
-      (update-last inc)
-      path->sym))
-
-(defn scrub-macros
-  [src-map sub-src-map]
-  (let [xsym (:orig sub-src-map)]
-    (cond
-      (util/macro? xsym) (-> xsym sym->first-sib src-map :op first)
-      :else sub-src-map
-      #_ (do         (-> xsym seq? not) sub-src-map
-                     (-> sub-src-map :orig first util/macro?)))))
-
-
 ;;  xl     (-> src clojure.walk/macroexpand-all swap-in-path-syms)
 ;;  src   src
 ;;  oloc (-> src swap-in-path-syms clojure.walk/macroexpand-all)
@@ -207,6 +190,35 @@
              (map f)
              (apply merge))))
 
+(defn capture-fn
+  [f [log src-map] fn-meta]
+  (fn [& args]
+        (let [parent trace/*trace-log-parent*
+          this (mk-inner-tree :parent parent
+                              :fn-meta fn-meta
+                              :args args
+                              :meta {}  ;; TODO what's this for?
+                              :src-map src-map)
+          idx  (-> (trace/start-trace (:children parent)
+                                      this)
+                   count
+                   dec)]
+      (let [value (binding [trace/*trace-log-parent* this]
+                    (try
+                      (apply f args)
+                      (catch Throwable t
+                        (trace/end-trace (:children parent)
+                                         idx
+                                         {:throw (trace/Throwable->map** t)
+                                          :ended-at (trace/now)})
+                        (throw t))))]
+        (trace/end-trace (:children parent)
+                         idx
+                         {:return value
+                          :ended-at (trace/now)})
+        (swap! log conj this)
+        value))))
+
 (defn tr-macro
   [path [log] mcro v]
   (swap! log conj [path v :macro mcro])
@@ -275,7 +287,9 @@
                                             path')
             (= 'if head) (xpand-if (xpand** form path')
                                    path')
-            :else (xpand** form path')))
+            :else (xpand-fn head
+                            (xpand** form path')
+                            path')))
     form))
 
 (defn xpand
@@ -288,24 +302,6 @@
 
 
 (def trace (atom nil))
-
-(defn find-orig-form
-  [path src-map]
-  (util/first-match (complement nil?)
-                    [(some-> path
-                             path->sym
-                             src-map
-                             :orig)
-                     (some-> path
-                             (conj 0)
-                             path->sym
-                             src-map
-                             :op)
-                     (some-> path
-                             (conj 1)
-                             path->sym
-                             src-map
-                             :op)]))
 
 (defn log->tree1
   [log src-map]
