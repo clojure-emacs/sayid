@@ -312,3 +312,11 @@
   (if (symbol? v)
     `'~v
     v))
+
+(defn first-match
+  [pred coll]
+  (let [[head & tail] coll]
+    (cond (nil? coll) nil
+          (empty? coll) nil
+          (pred head) head
+          :else (recur pred tail))))
