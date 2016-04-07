@@ -191,32 +191,32 @@
              (apply merge))))
 
 (defn capture-fn
-  [f [log src-map] fn-meta]
+  [path [log src-map] f fn-meta]
   (fn [& args]
-        (let [parent trace/*trace-log-parent*
-          this (mk-inner-tree :parent parent
-                              :fn-meta fn-meta
-                              :args args
-                              :meta {}  ;; TODO what's this for?
-                              :src-map src-map)
-          idx  (-> (trace/start-trace (:children parent)
-                                      this)
-                   count
-                   dec)]
+    (let [sub-src-map (-> path path->sym src-map)
+          form (:orig sub-src-map)
+          parent trace/*trace-log-parent*
+          this (->  (trace/mk-tree :parent parent)
+                    (assoc :name (if (seq? form) (first form) form)
+                           :form form
+                           :path' path
+                           :parent-name "outer-func" ;; TODO outer func name
+                           :ns nil                   ;;TODO
+                           :args (vec args)          ;;TODO
+                           :arg-map  (delay (zipmap (-> src-map
+                                                        :xp
+                                                        rest)
+                                                    args)))
+                    (update-in [:depth] #(+ % (count path))))]
       (let [value (binding [trace/*trace-log-parent* this]
                     (try
                       (apply f args)
                       (catch Throwable t
-                        (trace/end-trace (:children parent)
-                                         idx
-                                         {:throw (trace/Throwable->map** t)
-                                          :ended-at (trace/now)})
-                        (throw t))))]
-        (trace/end-trace (:children parent)
-                         idx
-                         {:return value
-                          :ended-at (trace/now)})
-        (swap! log conj this)
+                        ;; TODO what's the best we can do here?
+                        (throw t))))
+            this' (assoc this
+                         :return value)]
+        (swap! log conj [path value :fn this'])
         value))))
 
 (defn tr-macro
@@ -248,6 +248,12 @@
                     (doall (map-indexed #(xpand* %2
                                                 (conj path %))
                                         form)))))
+
+(defn xpand-fn
+  [head form path]
+  (cons
+   (list 'capture-fn path '$$ head {}) ;; TODO fn-meta
+   (rest form)))
 
 (defn xpand-macro
   [head form path]
@@ -287,6 +293,7 @@
                                             path')
             (= 'if head) (xpand-if (xpand** form path')
                                    path')
+            (special-symbol? head) (xpand** form path')
             :else (xpand-fn head
                             (xpand** form path')
                             path')))
@@ -329,19 +336,23 @@
 
 (defn tree1->trace-tree
   [tree parent src-map]
-  (let [{:keys [form return children path]} tree
-        trace-tree (assoc (trace/mk-tree :parent parent)
-                          :name (if (seq? form) (first form) form)
-                          :form form
-                          :path' path
-                          :parent-name "outer-func" ;; TODO outer func name
-                          :ns nil                   ;;TODO
-                          :args []                  ;;TODO
-                          :arg-map {}               ;;TODO
-                          ; :src-map src-map
-                          :started-at nil
-                          :ended-at nil
-                          :return return)]
+  (let [{:keys [form return children tags path]} tree
+        trace-tree (if (-> tags
+                           first
+                           #{:fn})
+                     (second tags)
+                     (assoc (trace/mk-tree :parent parent)
+                            :name (if (seq? form) (first form) form)
+                            :form form
+                            :path' path
+                            :parent-name "outer-func" ;; TODO outer func name
+                            :ns nil                   ;;TODO
+                            :args []                  ;;TODO
+                            :arg-map {}               ;;TODO
+                                        ; :src-map src-map
+                            :started-at nil
+                            :ended-at nil
+                            :return return))]
     (assoc trace-tree
            :children
            (mapv #(-> %
@@ -350,17 +361,14 @@
                                          src-map))
                  children))))
 
-(let [[[path val & tags] & tail] [[[2] false :macro :->] [[] false :macro :let]]
-      agg {}]
-  tail
-  )
-
 (defn record-trace-tree
   [[log src-map]]
-  (reset! trace
-          (-> @log
-              (log->tree1 src-map)
-              (tree1->trace-tree {:depth 0} src-map))))
+  (swap! (:children trace/*trace-log-parent*)
+         conj
+         (-> @log
+             (log->tree1 src-map)
+             (tree1->trace-tree trace/*trace-log-parent*
+                                src-map))))
 
  #_ (-> (xpand '(let [a 1
                          b 2]
@@ -369,14 +377,23 @@
                        b)))
            eval)
 
-#_ (-> (xpand '(let [a 1]
-                     (-> a
-                         inc
-                         dec
-                         nil?)))
-           eval)
+#_ (binding [trace/*trace-log-parent* (trace/mk-tree :id-prefix "root" :parent {})]
+     (def tree trace/*trace-log-parent*)
+     (-> #spy/d (xpand '(let [a 1]
+                   (-> a
+                       inc
+                       dec
+                       nil?)))
+         eval))
 
-#_  (-> (xpand '(if (= 1 2) 3 4))
+#_ (binding [trace/*trace-log-parent* (trace/mk-tree :id-prefix "root" :parent {})]
+     (def tree trace/*trace-log-parent*)
+     (-> #spy/d (xpand
+                 '(if (= 1 2) 3 4))
+         eval))
+
+
+#_  (-> (xpand )
            eval)
 
 
