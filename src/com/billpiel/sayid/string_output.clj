@@ -118,12 +118,14 @@
 
 (defn name->string
   [tree start?]
-  (let [{:keys [depth name ns parent-name]} tree]
-    (if name
+  (let [{:keys [depth name form ns parent-name]} tree]
+    (if-not (nil? name)
       ["" (slinky-pipes-MZ depth :end (when start? "v"))
        (if parent-name
          [(color-code-MZ :fg 0 :bg* (dec depth) :bold false)
-          name
+          (if-not (nil? form)
+            (str form)
+            name)
           (color-code-MZ :fg* (dec depth) :bg 0 :bold false)
           (format "  %s/%s" ns parent-name)]
          [(color-code-MZ :fg* (dec depth) :bg 0 :bold false)

@@ -2,6 +2,8 @@
   (require [com.billpiel.sayid.util.other :as util]
            [com.billpiel.sayid.trace :as trace]))
 
+;; TODO exceptions
+
 (def trace-fn-set #{`tr-if-ret `tr-if-clause `tr-macro})
 
 (defn form->xform-map*
@@ -118,7 +120,7 @@
 
 (defn sym->first-sib
   [sym]
-  (-> #spy/d sym
+  (-> sym
       sym->path
       (update-last inc)
       path->sym))
@@ -127,7 +129,7 @@
   [src-map sub-src-map]
   (let [xsym (:orig sub-src-map)]
     (cond
-      (util/macro? #spy/d xsym) (-> xsym sym->first-sib src-map :op first)
+      (util/macro? xsym) (-> xsym sym->first-sib src-map :op first)
       :else sub-src-map
       #_ (do         (-> xsym seq? not) sub-src-map
                      (-> sub-src-map :orig first util/macro?)))))
@@ -157,7 +159,7 @@
         oloc->xloc (clojure.set/map-invert xloc->oloc)
         xl->xform  (util/deep-zipmap (-> form clojure.walk/macroexpand-all swap-in-path-syms)
                                      (clojure.walk/macroexpand-all form))
-        xform->form #spy/d (xform->form-map form)
+        xform->form (xform->form-map form)
         ol->olop (-> form
                      swap-in-path-syms
                      get-path->form-maps)
@@ -305,26 +307,52 @@
                              src-map
                              :op)]))
 
-(defn log->tree
+(defn log->tree1
   [log src-map]
   (loop [[[path val & tags] & tail] log
          agg {}]
     (if path
-      (let [path' (interleave (repeat :children) path)
+      (let [path' (interleave (repeat :children) path) ;; TODO the map won't preserve order
             sub-map (-> path
                         path->sym
                         src-map)
-            agg' (assoc-in agg path {:form (:orig sub-map)
-                                     :value val
+            agg' (update-in agg path'
+                            #(merge %
+                                    {:form (:orig sub-map)
+                                     :return val
                                      :path path
                                      :tags tags
-                                     :src-map sub-map})]
+                                     :src-map sub-map}))]
         (recur tail
                agg'))
       (-> agg
           (get nil)
           (assoc :children
-                 (dissoc agg nil))))))
+                 (dissoc (:children agg)
+                         nil))))))
+
+(defn tree1->trace-tree
+  [tree parent src-map]
+  (let [{:keys [form return children path]} tree
+        trace-tree (assoc (trace/mk-tree :parent parent)
+                          :name (if (seq? form) (first form) form)
+                          :form form
+                          :path' path
+                          :parent-name "outer-func" ;; TODO outer func name
+                          :ns nil                   ;;TODO
+                          :args []                  ;;TODO
+                          :arg-map {}               ;;TODO
+                          ; :src-map src-map
+                          :started-at nil
+                          :ended-at nil
+                          :return return)]
+    (assoc trace-tree
+           :children
+           (mapv #(-> %
+                      second
+                      (tree1->trace-tree trace-tree
+                                         src-map))
+                 children))))
 
 (let [[[path val & tags] & tail] [[[2] false :macro :->] [[] false :macro :let]]
       agg {}]
@@ -333,9 +361,10 @@
 
 (defn record-trace-tree
   [[log src-map]]
-  #spy/d src-map
   (reset! trace
-          (log->tree @log src-map)))
+          (-> @log
+              (log->tree1 src-map)
+              (tree1->trace-tree {:depth 0} src-map))))
 
  #_ (-> (xpand '(let [a 1
                          b 2]
@@ -344,12 +373,16 @@
                        b)))
            eval)
 
-#spy/d (-> (xpand '(let [a 1]
+#_ (-> (xpand '(let [a 1]
                      (-> a
                          inc
                          dec
                          nil?)))
            eval)
+
+#_  (-> (xpand '(if (= 1 2) 3 4))
+           eval)
+
 
 #_ (do
 

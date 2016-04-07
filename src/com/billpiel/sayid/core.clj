@@ -374,6 +374,40 @@ user> (-> #'f1 meta :source)
                                  (keys v)
                                  (meta v)))))))
 
+(defn- mk-printer-*-list
+  [opts init-prn whitelist?]
+  (loop [prn init-prn
+         opts' opts]
+    (let [[fi se & re] opts'
+          limit ({:mc :max-chars
+                  :mal :max-arg-lines} fi)]
+      (cond
+        (nil? fi) prn
+        limit (recur (assoc prn limit se)
+                     re)
+        (map? fi) (recur (update-in prn
+                                    [:selector
+                                     :selects]
+                                    merge
+                                    fi)
+                         (rest opts'))
+        :else (recur (update-in prn [:selector]
+                                assoc fi whitelist?)
+                     (rest opts'))))))
+
+(defn- mk-printer-white-list
+  [opts]
+  (mk-printer-*-list opts
+                     (assoc default-printer
+                            :selector {})
+                     true))
+
+(defn- mk-printer-black-list
+  [opts]
+  (mk-printer-*-list opts
+                     default-printer
+                     false))
+
 (defn mk-printer
   [opts]
   (cond
@@ -436,40 +470,6 @@ user> (-> #'f1 meta :source)
   (#'so/print-tree (or rec
                        @recording)))
 (util/defalias r-pr rec-print)
-
-(defn- mk-printer-*-list
-  [opts init-prn whitelist?]
-  (loop [prn init-prn
-         opts' opts]
-    (let [[fi se & re] opts'
-          limit ({:mc :max-chars
-                  :mal :max-arg-lines} fi)]
-      (cond
-        (nil? fi) prn
-        limit (recur (assoc prn limit se)
-                     re)
-        (map? fi) (recur (update-in prn
-                                    [:selector
-                                     :selects]
-                                    merge
-                                    fi)
-                         (rest opts'))
-        :else (recur (update-in prn [:selector]
-                                assoc fi whitelist?)
-                     (rest opts'))))))
-
-(defn- mk-printer-white-list
-  [opts]
-  (mk-printer-*-list opts
-                     (assoc default-printer
-                            :selector {})
-                     true))
-
-(defn- mk-printer-black-list
-  [opts]
-  (mk-printer-*-list opts
-                     default-printer
-                     false))
 
 (defn set-printer!
   "Sets the printer that is applied by `with-printer` and used by print
