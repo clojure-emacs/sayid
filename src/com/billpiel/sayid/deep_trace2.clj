@@ -191,7 +191,7 @@
              (apply merge))))
 
 (defn capture-fn
-  [path [log src-map] f fn-meta]
+  [path [log src-map fn-meta] f]
   (fn [& args]
     (let [sub-src-map (-> path path->sym src-map)
           form (:orig sub-src-map)
@@ -200,8 +200,8 @@
                     (assoc :name (if (seq? form) (first form) form)
                            :form form
                            :path' path
-                           :parent-name "outer-func" ;; TODO outer func name
-                           :ns nil                   ;;TODO
+                           :parent-name (:name fn-meta)
+                           :ns (-> fn-meta :ns str symbol)
                            :args (vec args)          ;;TODO
                            :arg-map  (delay (zipmap (-> src-map
                                                         :xp
@@ -252,7 +252,7 @@
 (defn xpand-fn
   [head form path]
   (cons
-   (list 'capture-fn path '$$ head {}) ;; TODO fn-meta
+   (list 'capture-fn path '$$ head)
    (rest form)))
 
 (defn xpand-macro
@@ -291,7 +291,7 @@
       (cond (util/macro? head) (xpand-macro head
                                             (xpand* (macroexpand form) path)
                                             path')
-            (= 'if head) (xpand-if (xpand** form path')
+            (= 'if head) (xpand-if (xpand** form path')  ;; TODO the rest of the special forms
                                    path')
             (special-symbol? head) (xpand** form path')
             :else (xpand-fn head
@@ -299,10 +299,11 @@
                             path')))
     form))
 
+;; TODO should take coll of forms?
 (defn xpand
-  [form]
+  [form parent-fn-meta]
   (let [expr-map (mk-expr-mapping form)]
-    `(let [~'$$ [(atom []) '~expr-map]
+    `(let [~'$$ [(atom []) '~expr-map '~parent-fn-meta]
            ~'$return ~(xpand* form)]
        (record-trace-tree ~'$$)
        ~'$return)))
@@ -311,7 +312,7 @@
 (def trace (atom nil))
 
 (defn log->tree1
-  [log src-map]
+  [log src-map fn-meta]
   (loop [[[path val & tags] & tail] log
          agg {}]
     (if path
@@ -325,7 +326,8 @@
                                      :return val
                                      :path path
                                      :tags tags
-                                     :src-map sub-map}))]
+                                     :src-map sub-map
+                                     :fn-meta fn-meta}))]
         (recur tail
                agg'))
       (-> agg
@@ -336,7 +338,7 @@
 
 (defn tree1->trace-tree
   [tree parent src-map]
-  (let [{:keys [form return children tags path]} tree
+  (let [{:keys [form return children tags fn-meta path]} tree
         trace-tree (if (-> tags
                            first
                            #{:fn})
@@ -345,8 +347,8 @@
                             :name (if (seq? form) (first form) form)
                             :form form
                             :path' path
-                            :parent-name "outer-func" ;; TODO outer func name
-                            :ns nil                   ;;TODO
+                            :parent-name (:name fn-meta)
+                            :ns (-> fn-meta :ns str symbol)
                             :args []                  ;;TODO
                             :arg-map {}               ;;TODO
                                         ; :src-map src-map
@@ -362,15 +364,32 @@
                  children))))
 
 (defn record-trace-tree
-  [[log src-map]]
+  [[log src-map fn-meta]]
   (swap! (:children trace/*trace-log-parent*)
          conj
          (-> @log
-             (log->tree1 src-map)
+             (log->tree1 src-map fn-meta)
              (tree1->trace-tree trace/*trace-log-parent*
                                 src-map))))
 
- #_ (-> (xpand '(let [a 1
+;;TODO trace multi-arity works??
+(defn deep-tracer
+  [{:keys [workspace qual-sym meta' ns']} original-fn] ;; original-fn and workspace not used! IS THAT RIGHT??
+  (let [src (-> qual-sym
+                symbol
+                util/hunt-down-source)
+        xsrc (clojure.walk/macroexpand-all src)
+        get-fn (fn [[d s f & r]] (if (and (= d 'def)
+                                          (symbol? s)
+                                          (-> f nil? not)
+                                          (nil? r))
+                                   (throw (Exception. (format "Expected a defn form, but got this (%s %s ..."
+                                                              d s)))))
+        traced-form  (get-fn (xpand src meta'))]
+    (util/eval-in-ns (-> ns' str symbol)
+                     traced-form)))
+
+ #_ (-> #spy/d (xpand '(let [a 1
                          b 2]
                      (if false
                        a
@@ -379,11 +398,12 @@
 
 #_ (binding [trace/*trace-log-parent* (trace/mk-tree :id-prefix "root" :parent {})]
      (def tree trace/*trace-log-parent*)
-     (-> #spy/d (xpand '(let [a 1]
+     (-> (xpand '(let [a 1]
                    (-> a
                        inc
                        dec
-                       nil?)))
+                       nil?))
+                {:name "ofunc" :ns "ns1"})
          eval))
 
 #_ (binding [trace/*trace-log-parent* (trace/mk-tree :id-prefix "root" :parent {})]
