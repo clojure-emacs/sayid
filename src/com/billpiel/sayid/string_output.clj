@@ -178,18 +178,17 @@
 (defn args-map-str
   [tree]
   (binding [*truncate-lines-count* *max-arg-lines*]
-    (when-let [arg-map-ref (:arg-map tree)]
-      (let [arg-map arg-map-ref]
-        (indent-map tree arg-map)))))
+    (when-let [arg-map (:arg-map tree)]
+      (indent-map tree arg-map))))
 
 (defn args-str
   [tree]
   (when-let [args (:args tree)]
-    (indent-line-breaks (clojure.string/join "\n"
-                                             (map pprint-str
-                                                  args))
-                        (:depth tree)
-                        :end "   ")))
+    (->> args
+         (map #(multi-line-indent-MZ :value %
+                                     :indent-base (:depth tree)
+                                     :indent-offset 3))
+         vec)))
 
 (defn args*-str
   [tree]
