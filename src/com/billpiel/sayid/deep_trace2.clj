@@ -13,7 +13,7 @@
           xx (clojure.walk/macroexpand-all form)] ;; TODO better way?
       (conj (mapcat form->xform-map* x)
             {form xx}))
-    [[form form]]))
+    [{form form}]))
 
 (defn form->xform-map
   [form]
@@ -53,11 +53,14 @@
 
 (defn sym-seq->parent
   [syms]
-  (-> syms
-      first
-      sym->path
-      drop-last
-      path->sym))
+  (util/$- -> syms
+           first
+           (if (coll? $)
+             (sym-seq->parent $)
+             $)
+           sym->path
+           drop-last
+           path->sym))
 
 (defn swap-in-path-syms*
   [form func parent path skip-macro?]
@@ -131,7 +134,8 @@
 ;;  xl->xp (deep-zipmap (-> src clojure.walk/macroexpand-all swap-in-path-syms) (clojure.walk/macroexpand-all src))
 ;;  olop->op (deep-zipmap (swap-in-path-syms src) src)
 
-(defn mk-expr-mapping
+(defn mk-expr
+  -mapping
   [form]
   (let [xls (->> form
                  clojure.walk/macroexpand-all
@@ -202,7 +206,7 @@
                            :path' path
                            :parent-name (:name fn-meta)
                            :ns (-> fn-meta :ns str symbol)
-                           :args (vec args)          ;;TODO
+                           :args (vec args)
                            :arg-map  (delay (zipmap (-> src-map
                                                         :xp
                                                         rest)
@@ -252,7 +256,7 @@
 (defn xpand-fn
   [head form path]
   (cons
-   (list 'capture-fn path '$$ head)
+   (list `capture-fn path '$$ head)
    (rest form)))
 
 (defn xpand-macro
@@ -299,7 +303,6 @@
                             path')))
     form))
 
-;; TODO should take coll of forms?
 (defn xpand
   [form parent-fn-meta]
   (let [expr-map (mk-expr-mapping form)]
@@ -308,8 +311,19 @@
        (record-trace-tree ~'$$)
        ~'$return)))
 
+(defn xpand-bod
+  [fn-bod parent-fn-meta]
+  (cons (first fn-bod)
+        (map #(xpand % parent-fn-meta)
+             (rest fn-bod))))
 
-(def trace (atom nil))
+(defn xpand-fn*
+  [form parent-fn-meta]
+  (let [bods (->> form
+                  rest
+                  (map #(xpand-bod % parent-fn-meta)))]
+    (cons (first form)
+          bods)))
 
 (defn log->tree1
   [log src-map fn-meta]
@@ -372,58 +386,48 @@
              (tree1->trace-tree trace/*trace-log-parent*
                                 src-map))))
 
+(defn get-fn
+  [[d s f & r]]
+  (if (and (= d 'def)
+           (symbol? s)
+           (-> f nil? not)
+           (nil? r))
+    f
+    (throw (Exception. (format "Expected a defn form, but got this (%s %s ..."
+                               d s)))))
+
 ;;TODO trace multi-arity works??
 (defn deep-tracer
-  [{:keys [workspace qual-sym meta' ns']} original-fn] ;; original-fn and workspace not used! IS THAT RIGHT??
+  [{:keys [workspace qual-sym meta' ns']}] ;; original-fn and workspace not used! IS THAT RIGHT??
   (let [src (-> qual-sym
                 symbol
                 util/hunt-down-source)
         xsrc (clojure.walk/macroexpand-all src)
-        get-fn (fn [[d s f & r]] (if (and (= d 'def)
-                                          (symbol? s)
-                                          (-> f nil? not)
-                                          (nil? r))
-                                   (throw (Exception. (format "Expected a defn form, but got this (%s %s ..."
-                                                              d s)))))
-        traced-form  (get-fn (xpand src meta'))]
+        traced-form (-> src
+                        macroexpand
+                        get-fn
+                        (xpand-fn* meta'))]
     (util/eval-in-ns (-> ns' str symbol)
                      traced-form)))
 
- #_ (-> #spy/d (xpand '(let [a 1
-                         b 2]
-                     (if false
-                       a
-                       b)))
-           eval)
 
-#_ (binding [trace/*trace-log-parent* (trace/mk-tree :id-prefix "root" :parent {})]
-     (def tree trace/*trace-log-parent*)
-     (-> (xpand '(let [a 1]
-                   (-> a
-                       inc
-                       dec
-                       nil?))
-                {:name "ofunc" :ns "ns1"})
-         eval))
+(defn ^{::trace/trace-type :deep-fn} composed-tracer-fn
+  [m _]
+  (->> m
+       deep-tracer
+       (trace/shallow-tracer m)))
 
-#_ (binding [trace/*trace-log-parent* (trace/mk-tree :id-prefix "root" :parent {})]
-     (def tree trace/*trace-log-parent*)
-     (-> #spy/d (xpand
-                 '(if (= 1 2) 3 4))
-         eval))
+(defmethod trace/trace* :deep-fn
+  [_ fn-sym workspace]
+  (-> fn-sym
+      resolve
+      (trace/trace-var* (util/assoc-var-meta-to-fn composed-tracer-fn
+                                                   ::trace/trace-type)
+                        workspace)))
 
 
-#_  (-> (xpand )
-           eval)
-
-
-#_ (do
-
-     #spy/d (-> (xpand '(let [a 1
-                         b 2]
-                     (if false
-                       a
-                       b)))
-           eval)
-
-     (comment))
+(defmethod trace/untrace* :deep-fn
+  [_ fn-sym]
+  (-> fn-sym
+      resolve
+      trace/untrace-var*))
