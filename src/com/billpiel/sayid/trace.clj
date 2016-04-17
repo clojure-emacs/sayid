@@ -81,10 +81,10 @@
   [workspace name f args meta']
   (let [parent (or *trace-log-parent*
                    workspace)
-        this    (mk-fn-tree :parent parent ;; mk-fn-tree = 200ms
-                            :name name
-                            :args args
-                            :meta meta')
+        this  (mk-fn-tree :parent parent ;; mk-fn-tree = 200ms
+                          :name name
+                          :args args
+                          :meta meta')
         idx  (-> (start-trace (:children parent) ;; start-trace = 20ms
                               this)
                  count

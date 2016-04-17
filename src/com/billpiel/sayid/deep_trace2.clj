@@ -94,12 +94,12 @@
                        #(first %&))))
 
 (defn swap-in-path-syms-skip-macro
-  ([form]
-   (swap-in-path-syms* form
-                       #(first %&)
-                       nil
-                       []
-                       true)))
+  [form]
+  (swap-in-path-syms* form
+                      #(first %&)
+                      nil
+                      []
+                      true))
 
 (defn deep-replace-symbols
   [smap coll]
@@ -134,8 +134,7 @@
 ;;  xl->xp (deep-zipmap (-> src clojure.walk/macroexpand-all swap-in-path-syms) (clojure.walk/macroexpand-all src))
 ;;  olop->op (deep-zipmap (swap-in-path-syms src) src)
 
-(defn mk-expr
-  -mapping
+(defn mk-expr-mapping
   [form]
   (let [xls (->> form
                  clojure.walk/macroexpand-all
@@ -165,7 +164,8 @@
             {(if (coll? xl)
                (sym-seq->parent xl)
                xl)
-             {:xl xl              ;; expanded location
+             {:tree nil    ;; placeholder for trace tree
+              :xl xl              ;; expanded location
               :orig (-> xl
                        xl->xform
                        xform->form)  ;; original symbol or value
@@ -194,34 +194,120 @@
              (map f)
              (apply merge))))
 
+(defn mk-tree-template
+  [src-map fn-meta path parent-path]
+  (let [sub-src-map (-> path
+                        path->sym
+                        src-map)
+        form (:orig sub-src-map)]
+    {:parent-path parent-path
+     :name (if (seq? form)
+             (first form)
+             form)
+     :form form
+     :inner-path path
+     :parent-name (:name fn-meta)
+     :ns (-> fn-meta :ns str symbol)
+     :arg-forms (-> sub-src-map
+                    :xp
+                    rest)}))
+
+(defn get-temp-root-parent
+  []
+  (-> trace/*trace-log-parent*
+      (select-keys [:depth :path])
+      (assoc :children (atom [])
+             :inner-path nil
+             :return ::placeholder)
+      atom))
+
+(declare produce-parent-tree-atom)
+
+(defn get-recent-parent-at-inner-path
+  [path recent-parents]
+  (let [entry (@recent-parents path)]
+    (if (not (some->> entry
+                      deref
+                      keys
+                      (some #{:return :throw})))
+      entry
+      nil)))
+
+(defn assoc-to-recent-parents!
+  [tree-atom parent-tree-atom recent-parents]
+  (swap! recent-parents
+         assoc
+         (:inner-path @tree-atom)
+         tree-atom)
+  (when parent-tree-atom
+    (swap! (-> @parent-tree-atom
+               :inner-path
+               (@recent-parents)
+               deref
+               :children)
+           conj
+           tree-atom)))
+
+(defn mk-recent-parent-at-inner-path
+  [inner-path recent-parents]
+  (if (nil? inner-path)
+    (let [new-parent (get-temp-root-parent)]
+      (assoc-to-recent-parents! new-parent
+                                nil
+                                recent-parents)
+      new-parent)
+    (let [new-grandparent (produce-parent-tree-atom inner-path
+                                                    recent-parents)
+          new-parent (-> (trace/mk-tree :parent new-grandparent)
+                         (assoc :inner-path inner-path)
+                         atom)]
+      (assoc-to-recent-parents! new-parent
+                                new-grandparent
+                                recent-parents)
+      new-parent)))
+
+(defn produce-parent-tree-atom
+  [inner-path recent-parents]
+  (let [parent-inner-path (some-> inner-path
+                                  not-empty
+                                  drop-last
+                                  vec)]
+    (if-let [parent (get-recent-parent-at-inner-path parent-inner-path
+                                                     recent-parents)]
+      parent
+      (mk-recent-parent-at-inner-path parent-inner-path recent-parents))))
+
+(binding [trace/*trace-log-parent* {:depth 0 :path []}]
+  (let [rp (atom {})]
+    (-/p [(produce-parent-tree-atom [1 2] rp)
+          (produce-parent-tree-atom [1 3] rp)
+          rp])))
+
 (defn capture-fn
-  [path [log src-map fn-meta] f]
+  [inner-path [recent-parents src-map] template f]
   (fn [& args]
-    (let [sub-src-map (-> path path->sym src-map)
-          form (:orig sub-src-map)
-          parent trace/*trace-log-parent*
-          this (->  (trace/mk-tree :parent parent)
-                    (assoc :name (if (seq? form) (first form) form)
-                           :form form
-                           :path' path
-                           :parent-name (:name fn-meta)
-                           :ns (-> fn-meta :ns str symbol)
-                           :args (vec args)
-                           :arg-map  (delay (zipmap (-> src-map
-                                                        :xp
-                                                        rest)
-                                                    args)))
-                    (update-in [:depth] #(+ % (count path))))]
-      (let [value (binding [trace/*trace-log-parent* this]
-                    (try
-                      (apply f args)
-                      (catch Throwable t
-                        ;; TODO what's the best we can do here?
-                        (throw t))))
-            this' (assoc this
-                         :return value)]
-        (swap! log conj [path value :fn this'])
-        value))))
+    (let [parent (produce-parent-tree-atom inner-path
+                                           recent-parents)
+          this (-> @parent
+                   (trace/mk-tree :parent)
+                   (assoc :args (vec args)
+                          :arg-map (delay (zipmap (:arg-forms template)
+                                                  args))
+                          :started-at (trace/now)))
+          [value throw] (binding [trace/*trace-log-parent* this]
+                          (try
+                            [(apply f args) nil]
+                            (catch Throwable t
+                              ;; TODO what's the best we can do here?
+                              [nil (trace/Throwable->map** t)])))
+          this' (assoc this
+                       :return value
+                       :throw throw ;;TODO not right
+                       :ended-at (trace/now))]
+      (assoc-to-recent-parents! (atom this')
+                                parent
+                                recent-parents)
+      value)))
 
 (defn tr-macro
   [path [log] mcro v]
@@ -243,73 +329,134 @@
     (swap! log conj [test-path test :if]))
   v)
 
-(declare xpand*)
+(declare xpand-form)
 
-(defn xpand**
-  [form path]
+(defn xpand-all
+  [form src-map fn-meta path parent-path]
   (when-not (nil? form)
     (util/back-into form
-                    (doall (map-indexed #(xpand* %2
-                                                (conj path %))
+                    (doall (map-indexed #(xpand-form %2
+                                                     src-map
+                                                     fn-meta
+                                                     (conj path %)
+                                                     parent-path)
                                         form)))))
 
-(defn xpand-fn
-  [head form path]
-  (cons
-   (list `capture-fn path '$$ head)
-   (rest form)))
+(defn xpand-fn-form
+  [head form path template]
+  (cons (list `capture-fn
+              path
+              '$$
+              `'~template
+              head)
+        (rest form)))
 
-(defn xpand-macro
-  [head form path]
+(defn xpand-macro-form
+  [head form path template]
   (list `tr-macro
         path
         '$$
+        `'~template
         (keyword head)
         form))
 
-(defn xpand-if
-  [[_ test then else] path]
+(defn xpand-if-form
+  [[_ test then else] path template]
   (list `tr-if-ret
         path
         '$$
+        `'~template
         (concat ['if test
                  (list `tr-if-clause
                        (conj path 2)
                        '$$
+                       `'~template
                        true
                        then)]
                 (if-not (nil? else)
                   [(list `tr-if-clause
                          (conj path 3)
                          '$$
+                         `'~template
                          false
                          else)]
                   []))))
 
-(defn xpand*
-  [form & [path]]
-  (if (seq? form)
-    (let [[head] form
-          path' (or path
-                    [])]
-      (cond (util/macro? head) (xpand-macro head
-                                            (xpand* (macroexpand form) path)
-                                            path')
-            (= 'if head) (xpand-if (xpand** form path')  ;; TODO the rest of the special forms
-                                   path')
-            (special-symbol? head) (xpand** form path')
-            :else (xpand-fn head
-                            (xpand** form path')
-                            path')))
-    form))
 
+(defn xpand-fn
+  [head form src-map fn-meta path parent-path]
+  (xpand-fn-form head
+                 (xpand-all form
+                            src-map
+                            fn-meta
+                            path
+                            path)
+                 path
+                 (mk-tree-template src-map
+                                   fn-meta
+                                   path
+                                   parent-path)))
+
+(defn xpand-macro
+  [head form src-map fn-meta path parent-path]
+  (xpand-macro-form head
+                    (xpand-form (macroexpand form)
+                                src-map
+                                fn-meta
+                                path
+                                path)
+                    path
+                    (mk-tree-template src-map
+                                      fn-meta
+                                      path
+                                      parent-path)))
+
+(defn xpand-if
+  [form src-map fn-meta path parent-path]
+  (xpand-if-form (xpand-all form
+                            src-map
+                            fn-meta
+                            path
+                            path)
+                 path
+                 (mk-tree-template src-map
+                                   fn-meta
+                                   path
+                                   parent-path)))
+
+(defn xpand-form
+  [form src-map fn-meta & [path parent-path]]
+  (let [path' (or path [])]
+    (cond
+      (seq? form)
+      (let [head (first form)]
+        (cond (util/macro? head)
+              (xpand-macro head form src-map fn-meta path' parent-path)
+              (= 'if head) (xpand-if form src-map fn-meta path' parent-path)
+              (special-symbol? head) (xpand-all form src-map fn-meta path' parent-path)
+              :else (xpand-fn head form src-map fn-meta path' parent-path)))
+
+      (coll? form) form ;; TODO traverse
+      :else form)))
+
+;;TODO try-catch
 (defn xpand
   [form parent-fn-meta]
-  (let [expr-map (mk-expr-mapping form)]
-    `(let [~'$$ [(atom []) '~expr-map '~parent-fn-meta]
-           ~'$return ~(xpand* form)]
+  (let [expr-map (mk-expr-mapping form)
+        xform (xpand-form form expr-map parent-fn-meta)]
+    `(let [~'$$ [(atom {}) '~expr-map]
+           ~'$return ~xform]
        (record-trace-tree ~'$$)
        ~'$return)))
+
+#(do
+   (def form1 '(-> 1 inc keyword))
+
+   (-/p (xpand form1 {:name "name1" :ns "ns1"} ))
+
+   (-/p (eval (xpand form1 {:name "name1" :ns "ns1"} )))
+
+   (comment))
 
 (defn xpand-bod
   [fn-bod parent-fn-meta]
@@ -377,14 +524,33 @@
                                          src-map))
                  children))))
 
-(defn record-trace-tree
-  [[log src-map fn-meta]]
+#_ (defn record-trace-tree
+  [[log src-map]]
   (swap! (:children trace/*trace-log-parent*)
          conj
          (-> @log
              (log->tree1 src-map fn-meta)
              (tree1->trace-tree trace/*trace-log-parent*
                                 src-map))))
+
+(defn record-trace-tree
+  [[log src-map]]
+(-/p log)
+  #_ (loop [[head & body] log
+         tree-map {}
+         mailbox {}]
+    (if head
+      (let [path (:path head)
+            tree-tmplt (tree-tmplts path)
+            inbox (mailbox path)
+            tree (mk-tree )
+
+
+            (assoc tree-map
+                   path
+                   ()
+                   )])
+      tree-map)))
 
 (defn get-fn
   [[d s f & r]]
