@@ -221,11 +221,11 @@
              :return ::placeholder)
       atom))
 
-(declare produce-parent-tree-atom)
+(declare produce-recent-parent-tree-atom!)
 
-(defn get-recent-parent-at-inner-path
-  [path recent-parents]
-  (let [entry (@recent-parents path)]
+(defn get-recent-tree-at-inner-path
+  [path recent-trees]
+  (let [entry (@recent-trees path)]
     (if (not (some->> entry
                       deref
                       keys
@@ -233,63 +233,64 @@
       entry
       nil)))
 
-(defn assoc-to-recent-parents!
-  [tree-atom parent-tree-atom recent-parents]
-  (swap! recent-parents
+(defn assoc-to-recent-trees!
+  [tree-atom parent-tree-atom recent-trees]
+  (swap! recent-trees
          assoc
          (:inner-path @tree-atom)
          tree-atom)
   (when parent-tree-atom
     (swap! (-> @parent-tree-atom
                :inner-path
-               (@recent-parents)
+               (@recent-trees)
                deref
                :children)
            conj
            tree-atom)))
 
-(defn mk-recent-parent-at-inner-path
-  [inner-path recent-parents]
+(defn mk-recent-tree-at-inner-path
+  [inner-path recent-trees]
   (if (nil? inner-path)
     (let [new-parent (get-temp-root-parent)]
-      (assoc-to-recent-parents! new-parent
+      (assoc-to-recent-trees! new-parent
                                 nil
-                                recent-parents)
+                                recent-trees)
       new-parent)
-    (let [new-grandparent (produce-parent-tree-atom inner-path
-                                                    recent-parents)
+    (let [new-grandparent (produce-recent-parent-tree-atom! inner-path
+                                                    recent-trees)
           new-parent (-> (trace/mk-tree :parent new-grandparent)
                          (assoc :inner-path inner-path)
                          atom)]
-      (assoc-to-recent-parents! new-parent
+      (assoc-to-recent-trees! new-parent
                                 new-grandparent
-                                recent-parents)
+                                recent-trees)
       new-parent)))
 
-(defn produce-parent-tree-atom
-  [inner-path recent-parents]
+(defn produce-recent-tree-atom!
+  [inner-path recent-trees]
+  (if-let [tree-atom (get-recent-tree-at-inner-path inner-path
+                                                      recent-trees)]
+    tree-atom
+    (mk-recent-tree-at-inner-path inner-path
+                                    recent-trees)))
+
+(defn produce-recent-parent-tree-atom!
+  [inner-path recent-trees]
   (let [parent-inner-path (some-> inner-path
                                   not-empty
                                   drop-last
                                   vec)]
-    (if-let [parent (get-recent-parent-at-inner-path parent-inner-path
-                                                     recent-parents)]
+    (if-let [parent (get-recent-tree-at-inner-path parent-inner-path
+                                                     recent-trees)]
       parent
-      (mk-recent-parent-at-inner-path parent-inner-path recent-parents))))
-
-(binding [trace/*trace-log-parent* {:depth 0 :path []}]
-  (let [rp (atom {})]
-    (-/p [(produce-parent-tree-atom [1 2] rp)
-          (produce-parent-tree-atom [1 3] rp)
-          rp])))
+      (mk-recent-tree-at-inner-path parent-inner-path recent-trees))))
 
 (defn capture-fn
-  [inner-path [recent-parents src-map] template f]
+  [inner-path [recent-trees src-map] template f]
   (fn [& args]
-    (let [parent (produce-parent-tree-atom inner-path
-                                           recent-parents)
-          this (-> @parent
-                   (trace/mk-tree :parent)
+    (let [parent (produce-recent-parent-tree-atom! inner-path
+                                                   recent-trees)
+          this (-> (trace/mk-tree :parent @parent)
                    (assoc :args (vec args)
                           :arg-map (delay (zipmap (:arg-forms template)
                                                   args))
@@ -304,19 +305,28 @@
                        :return value
                        :throw throw ;;TODO not right
                        :ended-at (trace/now))]
-      (assoc-to-recent-parents! (atom this')
-                                parent
-                                recent-parents)
+      (assoc-to-recent-trees! (atom this')
+                              parent
+                              recent-trees)
       value)))
 
 (defn tr-macro
-  [path [log] mcro v]
-  (swap! log conj [path v :macro mcro])
+  [path [recent-trees] mcro v]
+  (let [tree-atom (produce-recent-tree-atom! path
+                                    recent-trees)])
+  (swap!
+         assoc
+         :return v
+         :inner-tags [:macro mcro])
   v)
 
 (defn tr-if-ret
-  [path [log] v]
-  (swap! log conj [path v])
+  [path [recent-trees] v]
+  (swap! (produce-recent-tree-atom! path
+                                    recent-trees)
+         assoc
+         :return v
+         :inner-tags [:if])
   v)
 
 (defn tr-if-clause
