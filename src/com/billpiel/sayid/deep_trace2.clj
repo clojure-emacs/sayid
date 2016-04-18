@@ -199,16 +199,19 @@
              (apply merge))))
 
 (defn mk-tree-template
-  [src-map fn-meta path parent-path]
+  [src-map fn-meta path parent-path & {:keys [macro?]}]
   (let [sub-src-map (-> #spy/d path
                         path->sym
                         src-map)
-        form (:orig #spy/d sub-src-map)]
+        form (if macro?
+               (:orig sub-src-map)
+               (:x sub-src-map))]
     {:parent-path parent-path
-     :name #spy/d (if (seq? form)
-                    (first form)
-                    form)
+     :name (if (seq? form)
+              (first form)
+              form)
      :form form
+     :macro? macro?
      :inner-path path
      :parent-name (:name fn-meta)
      :ns (-> fn-meta :ns str symbol)
@@ -246,6 +249,7 @@
     #spy/d tree-atom
     #spy/d parent-tree-atom
     (println "^^^^^")
+    (clojure.stacktrace/print-stack-trace (Exception. "assoc-to-recent-trees!"))
     (swap! (-> @parent-tree-atom
                :inner-path
                (@recent-trees)
@@ -265,7 +269,8 @@
     (let [new-grandparent (produce-recent-parent-tree-atom! inner-path
                                                             recent-trees)
           new-parent (-> (trace/mk-tree :parent new-grandparent)
-                         (assoc :inner-path inner-path)
+                         (assoc :inner-path inner-path
+                                :parent-path (:path new-grandparent))
                          atom)]
       (assoc-to-recent-trees! new-parent
                               new-grandparent
@@ -370,7 +375,7 @@
               path
               '$$
               `'~template
-              head)
+              (first form))
         (rest form)))
 
 (defn xpand-macro-form
@@ -436,7 +441,8 @@
                     (mk-tree-template src-map
                                       fn-meta
                                       path
-                                      parent-path)))
+                                      parent-path
+                                      :macro? true)))
 
 (defn xpand-if
   [form src-map fn-meta path parent-path]
@@ -480,6 +486,10 @@
    (def form1 '(-> 1 inc str))
 
    (-/p (xpand form1 {:name "name1" :ns "ns1"} ))
+
+   (def form2 '(str (inc 1) 3))
+
+   (-/p (xpand form2 {:name "name1" :ns "ns1"} ))
 
    (-/p (eval (xpand form1 {:name "name1" :ns "ns1"} )))
 
