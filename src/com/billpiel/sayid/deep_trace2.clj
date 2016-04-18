@@ -2,6 +2,10 @@
   (require [com.billpiel.sayid.util.other :as util]
            [com.billpiel.sayid.trace :as trace]))
 
+(defn prs
+  [v]
+  (subs (with-out-str (clojure.pprint/pprint v)) 0 1000 ))
+
 ;; TODO exceptions
 
 (def trace-fn-set #{`tr-if-ret `tr-if-clause `tr-macro})
@@ -196,29 +200,27 @@
 
 (defn mk-tree-template
   [src-map fn-meta path parent-path]
-  (let [sub-src-map (-> path
+  (let [sub-src-map (-> #spy/d path
                         path->sym
                         src-map)
-        form (:orig sub-src-map)]
+        form (:orig #spy/d sub-src-map)]
     {:parent-path parent-path
-     :name (if (seq? form)
-             (first form)
-             form)
+     :name #spy/d (if (seq? form)
+                    (first form)
+                    form)
      :form form
      :inner-path path
      :parent-name (:name fn-meta)
      :ns (-> fn-meta :ns str symbol)
-     :arg-forms (-> sub-src-map
-                    :xp
-                    rest)}))
+     :xpanded-parent (:xp sub-src-map)
+     :xpanded-frm (:x sub-src-map)}))
 
 (defn get-temp-root-parent
   []
   (-> trace/*trace-log-parent*
       (select-keys [:depth :path])
       (assoc :children (atom [])
-             :inner-path nil
-             :return ::placeholder)
+             :inner-path nil)
       atom))
 
 (declare produce-recent-parent-tree-atom!)
@@ -240,6 +242,10 @@
          (:inner-path @tree-atom)
          tree-atom)
   (when parent-tree-atom
+    (println "vvvvv")
+    #spy/d tree-atom
+    #spy/d parent-tree-atom
+    (println "^^^^^")
     (swap! (-> @parent-tree-atom
                :inner-path
                (@recent-trees)
@@ -253,26 +259,26 @@
   (if (nil? inner-path)
     (let [new-parent (get-temp-root-parent)]
       (assoc-to-recent-trees! new-parent
-                                nil
-                                recent-trees)
+                              nil
+                              recent-trees)
       new-parent)
     (let [new-grandparent (produce-recent-parent-tree-atom! inner-path
-                                                    recent-trees)
+                                                            recent-trees)
           new-parent (-> (trace/mk-tree :parent new-grandparent)
                          (assoc :inner-path inner-path)
                          atom)]
       (assoc-to-recent-trees! new-parent
-                                new-grandparent
-                                recent-trees)
+                              new-grandparent
+                              recent-trees)
       new-parent)))
 
 (defn produce-recent-tree-atom!
   [inner-path recent-trees]
   (if-let [tree-atom (get-recent-tree-at-inner-path inner-path
-                                                      recent-trees)]
+                                                    recent-trees)]
     tree-atom
     (mk-recent-tree-at-inner-path inner-path
-                                    recent-trees)))
+                                  recent-trees)))
 
 (defn produce-recent-parent-tree-atom!
   [inner-path recent-trees]
@@ -281,16 +287,17 @@
                                   drop-last
                                   vec)]
     (if-let [parent (get-recent-tree-at-inner-path parent-inner-path
-                                                     recent-trees)]
+                                                   recent-trees)]
       parent
       (mk-recent-tree-at-inner-path parent-inner-path recent-trees))))
 
-(defn capture-fn
+(defn tr-fn
   [inner-path [recent-trees src-map] template f]
   (fn [& args]
     (let [parent (produce-recent-parent-tree-atom! inner-path
                                                    recent-trees)
           this (-> (trace/mk-tree :parent @parent)
+                   (merge template)
                    (assoc :args (vec args)
                           :arg-map (delay (zipmap (:arg-forms template)
                                                   args))
@@ -305,20 +312,25 @@
                        :return value
                        :throw throw ;;TODO not right
                        :ended-at (trace/now))]
-      (assoc-to-recent-trees! (atom this')
+      (assoc-to-recent-trees! #spy/d (atom this')
                               parent
                               recent-trees)
       value)))
 
 (defn tr-macro
-  [path [recent-trees] mcro v]
+  [path [recent-trees] template mcro v]
+  (def rt' @recent-trees)
+
   (let [tree-atom (produce-recent-tree-atom! path
-                                    recent-trees)])
-  (swap!
-         assoc
-         :return v
-         :inner-tags [:macro mcro])
-  v)
+                                             recent-trees)]
+
+    (swap! (@recent-trees path)
+           assoc
+           :return v
+           :inner-tags [:macro mcro])
+
+
+    v))
 
 (defn tr-if-ret
   [path [recent-trees] v]
@@ -354,7 +366,7 @@
 
 (defn xpand-fn-form
   [head form path template]
-  (cons (list `capture-fn
+  (cons (list `tr-fn
               path
               '$$
               `'~template
@@ -395,6 +407,11 @@
 
 (defn xpand-fn
   [head form src-map fn-meta path parent-path]
+  #spy/d head
+  #spy/d form
+  #spy/d path
+  #spy/d parent-path
+
   (xpand-fn-form head
                  (xpand-all form
                             src-map
@@ -460,7 +477,7 @@
        ~'$return)))
 
 #(do
-   (def form1 '(-> 1 inc keyword))
+   (def form1 '(-> 1 inc str))
 
    (-/p (xpand form1 {:name "name1" :ns "ns1"} ))
 
@@ -545,8 +562,9 @@
 
 (defn record-trace-tree
   [[log src-map]]
-(-/p log)
-  #_ (loop [[head & body] log
+  (-/p (@log nil))
+  (def log' @log)
+#_  (loop [[head & body] log
          tree-map {}
          mailbox {}]
     (if head
