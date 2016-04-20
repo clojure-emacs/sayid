@@ -218,7 +218,7 @@
      :xpanded-parent (:xp sub-src-map)
      :xpanded-frm (:x sub-src-map)}))
 
-(defn get-temp-root-parent
+(defn get-temp-root-tree
   []
   (-> trace/*trace-log-parent*
       (select-keys [:depth :path])
@@ -229,58 +229,62 @@
 (declare produce-recent-parent-tree-atom!)
 
 (defn get-recent-tree-at-inner-path
-  [path recent-trees]
+  [path recent-trees & {:keys [skip-closed-check]}]
   (let [entry (@recent-trees path)]
-    (if (not (some->> entry
-                      deref
-                      keys
-                      (some #{:return :throw})))
+    (if (or skip-closed-check
+            (not (some->> entry
+                          deref
+                          keys
+                          (some #{:return :throw}))))
       entry
       nil)))
 
-(defn assoc-to-recent-trees!
-  [tree-atom parent-tree-atom recent-trees]
+(defn update-tree!
+  [tree recent-trees]
+  #spy/d @recent-trees
+  (reset! #spy/d (-> tree
+                     :inner-path
+                     (@recent-trees))
+          tree))
+
+(defn conj-to-parent!
+  [tree-atom parent-atom]
+  (swap! (:children @parent-atom)
+         conj
+         tree-atom))
+
+(defn push-to-recent-trees!
+  [tree-atom recent-trees]
   (swap! recent-trees
          assoc
          (:inner-path @tree-atom)
          tree-atom)
-  (when parent-tree-atom
-    (println "vvvvv")
-    #spy/d tree-atom
-    #spy/d parent-tree-atom
-    (println "^^^^^")
-    (clojure.stacktrace/print-stack-trace (Exception. "assoc-to-recent-trees!"))
-    (swap! (-> @parent-tree-atom
-               :inner-path
-               (@recent-trees)
-               deref
-               :children)
-           conj
-           tree-atom)))
+  #spy/d @recent-trees)
 
 (defn mk-recent-tree-at-inner-path
   [inner-path recent-trees]
   (if (nil? inner-path)
-    (let [new-parent (get-temp-root-parent)]
-      (assoc-to-recent-trees! new-parent
-                              nil
+    (let [new-tree (get-temp-root-tree)]
+      (push-to-recent-trees!  new-tree
                               recent-trees)
-      new-parent)
-    (let [new-grandparent (produce-recent-parent-tree-atom! inner-path
-                                                            recent-trees)
-          new-parent (-> (trace/mk-tree :parent new-grandparent)
-                         (assoc :inner-path inner-path
-                                :parent-path (:path new-grandparent))
-                         atom)]
-      (assoc-to-recent-trees! new-parent
-                              new-grandparent
-                              recent-trees)
-      new-parent)))
+      new-tree)
+    (let [parent (produce-recent-parent-tree-atom! inner-path
+                                                   recent-trees)
+          new-tree (-> (trace/mk-tree :parent @parent)
+                       (assoc :inner-path inner-path
+                              :parent-path (:path @parent))
+                       atom)]
+      (push-to-recent-trees! new-tree
+                             recent-trees)
+      (conj-to-parent! new-tree
+                       parent)
+      new-tree)))
 
 (defn produce-recent-tree-atom!
-  [inner-path recent-trees]
+  [inner-path recent-trees & {:keys [skip-closed-check]}]
   (if-let [tree-atom (get-recent-tree-at-inner-path inner-path
-                                                    recent-trees)]
+                                                         recent-trees
+                                                         :skip-closed-check skip-closed-check)]
     tree-atom
     (mk-recent-tree-at-inner-path inner-path
                                   recent-trees)))
@@ -299,14 +303,14 @@
 (defn tr-fn
   [inner-path [recent-trees src-map] template f]
   (fn [& args]
-    (let [parent (produce-recent-parent-tree-atom! inner-path
-                                                   recent-trees)
-          this (-> (trace/mk-tree :parent @parent)
-                   (merge template)
+    (let [this (-> @(produce-recent-tree-atom! #spy/d inner-path
+                                               recent-trees)
+                   (merge #spy/d template)
                    (assoc :args (vec args)
                           :arg-map (delay (zipmap (:arg-forms template)
                                                   args))
                           :started-at (trace/now)))
+          _ (update-tree! this recent-trees)
           [value throw] (binding [trace/*trace-log-parent* this]
                           (try
                             [(apply f args) nil]
@@ -317,43 +321,51 @@
                        :return value
                        :throw throw ;;TODO not right
                        :ended-at (trace/now))]
-      (assoc-to-recent-trees! #spy/d (atom this')
-                              parent
-                              recent-trees)
+      (update-tree! this'
+                    recent-trees)
       value)))
 
 (defn tr-macro
   [path [recent-trees] template mcro v]
   (def rt' @recent-trees)
 
-  (let [tree-atom (produce-recent-tree-atom! path
-                                             recent-trees)]
-
-    (swap! (@recent-trees path)
-           assoc
-           :return v
-           :inner-tags [:macro mcro])
-
-
+  (let [tree @(produce-recent-tree-atom! path
+                                         recent-trees
+                                         :skip-closed-check true)]
+    (-> tree
+        (assoc :return v
+               :inner-tags [:macro mcro])
+        (merge template)
+        (update-tree! recent-trees))
     v))
 
 (defn tr-if-ret
-  [path [recent-trees] v]
-  (swap! (produce-recent-tree-atom! path
-                                    recent-trees)
-         assoc
-         :return v
-         :inner-tags [:if])
+  [path [recent-trees] template v]
+  (-> path
+      (produce-recent-tree-atom! recent-trees)
+      deref
+      (merge template)
+      (assoc :return v
+             :inner-tags [:if])
+      (update-tree! recent-trees))
   v)
 
-(defn tr-if-clause
-  [path [log] test v]
-  (swap! log conj [path v :if test])
-  (let [test-path (-> path
-                      drop-last
-                      vec
-                      (conj 1))]
-    (swap! log conj [test-path test :if]))
+(defn tr-if-test
+  [path [recent-trees] v]
+  (-> path
+      (produce-recent-parent-tree-atom! recent-trees)
+      deref
+      (assoc :args [v])
+      (update-tree! recent-trees))
+  v)
+
+(defn tr-if-branch
+  [path [recent-trees] test v]
+  (-> path
+      (produce-recent-parent-tree-atom! recent-trees)
+      deref
+      (assoc-in [:args 1] v)
+      (update-tree! recent-trees))
   v)
 
 (declare xpand-form)
@@ -389,26 +401,23 @@
 
 (defn xpand-if-form
   [[_ test then else] path template]
-  (list `tr-if-ret
-        path
-        '$$
-        `'~template
-        (concat ['if test
-                 (list `tr-if-clause
-                       (conj path 2)
-                       '$$
-                       `'~template
-                       true
-                       then)]
-                (if-not (nil? else)
-                  [(list `tr-if-clause
-                         (conj path 3)
-                         '$$
-                         `'~template
-                         false
-                         else)]
-                  []))))
-
+  (let [template' (assoc template
+                         :test-form `'~test)]
+    `(tr-if-ret ~path
+                ~'$$
+                '~template'
+                (if (tr-if-test ~(conj path 1)
+                                ~'$$
+                                ~test)
+                  (tr-if-branch ~(conj path 2)
+                                ~'$$
+                                true
+                                ~then)
+                  ~(when-not (nil? else)
+                     `(tr-if-branch ~(conj path 3)
+                                ~'$$
+                                false
+                                ~else))))))
 
 (defn xpand-fn
   [head form src-map fn-meta path parent-path]
@@ -487,11 +496,20 @@
 
    (-/p (xpand form1 {:name "name1" :ns "ns1"} ))
 
+   (-/p (eval (xpand form1 {:name "name1" :ns "ns1"} )))
+
    (def form2 '(str (inc 1) 3))
 
    (-/p (xpand form2 {:name "name1" :ns "ns1"} ))
 
-   (-/p (eval (xpand form1 {:name "name1" :ns "ns1"} )))
+   (-/p (eval (xpand form2 {:name "name1" :ns "ns1"} )))
+
+   (def form3 '(if 1 2 3))
+
+   (-/p (xpand form3 {:name "name1" :ns "ns1"} ))
+
+   (-/p (eval (xpand form3 {:name "name1" :ns "ns1"} )))
+
 
    (comment))
 
@@ -572,7 +590,7 @@
 
 (defn record-trace-tree
   [[log src-map]]
-  (-/p (@log nil))
+  #spy/d (@log nil)
   (def log' @log)
 #_  (loop [[head & body] log
          tree-map {}
