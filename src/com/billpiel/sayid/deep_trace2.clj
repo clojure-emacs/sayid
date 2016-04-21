@@ -200,7 +200,7 @@
 
 (defn mk-tree-template
   [src-map fn-meta path parent-path & {:keys [macro?]}]
-  (let [sub-src-map (-> #spy/d path
+  (let [sub-src-map (-> path
                         path->sym
                         src-map)
         form (if macro?
@@ -208,8 +208,8 @@
                (:x sub-src-map))]
     {:parent-path parent-path
      :name (if (seq? form)
-              (first form)
-              form)
+             (first form)
+             form)
      :form form
      :macro? macro?
      :inner-path path
@@ -241,10 +241,9 @@
 
 (defn update-tree!
   [tree recent-trees]
-  #spy/d @recent-trees
-  (reset! #spy/d (-> tree
-                     :inner-path
-                     (@recent-trees))
+  (reset! (-> tree
+              :inner-path
+              (@recent-trees))
           tree))
 
 (defn conj-to-parent!
@@ -258,8 +257,7 @@
   (swap! recent-trees
          assoc
          (:inner-path @tree-atom)
-         tree-atom)
-  #spy/d @recent-trees)
+         tree-atom))
 
 (defn mk-recent-tree-at-inner-path
   [inner-path recent-trees]
@@ -303,9 +301,9 @@
 (defn tr-fn
   [inner-path [recent-trees src-map] template f]
   (fn [& args]
-    (let [this (-> @(produce-recent-tree-atom! #spy/d inner-path
+    (let [this (-> @(produce-recent-tree-atom! inner-path
                                                recent-trees)
-                   (merge #spy/d template)
+                   (merge template)
                    (assoc :args (vec args)
                           :arg-map (delay (zipmap (:arg-forms template)
                                                   args))
@@ -421,11 +419,6 @@
 
 (defn xpand-fn
   [head form src-map fn-meta path parent-path]
-  #spy/d head
-  #spy/d form
-  #spy/d path
-  #spy/d parent-path
-
   (xpand-fn-form head
                  (xpand-all form
                             src-map
@@ -488,7 +481,7 @@
         xform (xpand-form form expr-map parent-fn-meta)]
     `(let [~'$$ [(atom {}) '~expr-map]
            ~'$return ~xform]
-       (record-trace-tree ~'$$)
+       (record-trace-tree! ~'$$)
        ~'$return)))
 
 #(do
@@ -510,8 +503,35 @@
 
    (-/p (eval (xpand form3 {:name "name1" :ns "ns1"} )))
 
+   (let [parent {:depth 2 :path [:11 :22] :children (atom [])}]
+     (binding [trace/*trace-log-parent* parent]
+       (eval (xpand form3 {:name "name1" :ns "ns1"} )))
+     (-/p parent))
+
+   (let [parent {:depth 2
+                 :path [:11 :22]
+                 :children (atom [])
+                 :args []
+                 :name 'dummy
+                 :return nil
+                 :arg-map {}
+                 :id :22}
+         traced-fn (deep-tracer {:workspace nil
+                                 :qual-sym 'com.billpiel.sayid.deep-trace2/f1
+                                 :meta' (meta #'f1)
+                                 :ns' 'com.billpiel.sayid.deep-trace2})]
+     (binding [trace/*trace-log-parent* parent]
+       (-/p (traced-fn 23)))
+     (def p' parent)
+     (-/p parent))
+
+   ;; ffff
 
    (comment))
+
+(defn f1 [a] (if (= 1 2)
+               (inc a)
+               (-> a dec str keyword)))
 
 (defn xpand-bod
   [fn-bod parent-fn-meta]
@@ -527,86 +547,22 @@
     (cons (first form)
           bods)))
 
-(defn log->tree1
-  [log src-map fn-meta]
-  (loop [[[path val & tags] & tail] log
-         agg {}]
-    (if path
-      (let [path' (interleave (repeat :children) path) ;; TODO the map won't preserve order
-            sub-map (-> path
-                        path->sym
-                        src-map)
-            agg' (update-in agg path'
-                            #(merge %
-                                    {:form (:orig sub-map)
-                                     :return val
-                                     :path path
-                                     :tags tags
-                                     :src-map sub-map
-                                     :fn-meta fn-meta}))]
-        (recur tail
-               agg'))
-      (-> agg
-          (get nil)
-          (assoc :children
-                 (dissoc (:children agg)
-                         nil))))))
+(defn deref-children
+  [tree-atom]
+  (swap! (:children @tree-atom)
+         #(mapv deref-children %))
+  @tree-atom)
 
-(defn tree1->trace-tree
-  [tree parent src-map]
-  (let [{:keys [form return children tags fn-meta path]} tree
-        trace-tree (if (-> tags
-                           first
-                           #{:fn})
-                     (second tags)
-                     (assoc (trace/mk-tree :parent parent)
-                            :name (if (seq? form) (first form) form)
-                            :form form
-                            :path' path
-                            :parent-name (:name fn-meta)
-                            :ns (-> fn-meta :ns str symbol)
-                            :args []                  ;;TODO
-                            :arg-map {}               ;;TODO
-                                        ; :src-map src-map
-                            :started-at nil
-                            :ended-at nil
-                            :return return))]
-    (assoc trace-tree
-           :children
-           (mapv #(-> %
-                      second
-                      (tree1->trace-tree trace-tree
-                                         src-map))
-                 children))))
-
-#_ (defn record-trace-tree
-  [[log src-map]]
-  (swap! (:children trace/*trace-log-parent*)
-         conj
-         (-> @log
-             (log->tree1 src-map fn-meta)
-             (tree1->trace-tree trace/*trace-log-parent*
-                                src-map))))
-
-(defn record-trace-tree
-  [[log src-map]]
-  #spy/d (@log nil)
-  (def log' @log)
-#_  (loop [[head & body] log
-         tree-map {}
-         mailbox {}]
-    (if head
-      (let [path (:path head)
-            tree-tmplt (tree-tmplts path)
-            inbox (mailbox path)
-            tree (mk-tree )
-
-
-            (assoc tree-map
-                   path
-                   ()
-                   )])
-      tree-map)))
+(defn record-trace-tree!
+  [[tree-atom src-map]]
+  (let [children (-> (@tree-atom nil)
+                     deref-children
+                     :children
+                     deref)]
+    (doseq [child children]
+      (swap! (:children trace/*trace-log-parent*)
+             conj
+             child))))
 
 (defn get-fn
   [[d s f & r]]
@@ -624,14 +580,12 @@
   (let [src (-> qual-sym
                 symbol
                 util/hunt-down-source)
-        xsrc (clojure.walk/macroexpand-all src)
-        traced-form (-> src
+        traced-form (-> #spy/d src
                         macroexpand
                         get-fn
                         (xpand-fn* meta'))]
     (util/eval-in-ns (-> ns' str symbol)
                      traced-form)))
-
 
 (defn ^{::trace/trace-type :deep-fn} composed-tracer-fn
   [m _]
