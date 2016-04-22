@@ -2,6 +2,8 @@
   (require [clj-time.core :as time]
            [clj-time.coerce :as time-c]
            [clojure.walk :as walk]
+           [clojure.tools.reader :as r]
+           [clojure.tools.reader.reader-types :as rts]
            clojure.repl))
 
 (defn def-ns-var
@@ -230,14 +232,23 @@
                                        resolve
                                        meta)]
     (or source
-        (read-string (or
-                      (clojure.repl/source-fn fn-sym)
-                      (->> file
-                           slurp
-                           clojure.string/split-lines
-                           (drop (dec line))
-                           (clojure.string/join "\n"))
-                      "nil")))))
+        (r/read (rts/source-logging-push-back-reader
+                 (or
+                  (clojure.repl/source-fn fn-sym)
+                  (->> file
+                       slurp
+                       clojure.string/split-lines
+                       (drop (dec line))
+                       (clojure.string/join "\n"))
+                  "nil")))
+        #_ (read-string (or
+                         (clojure.repl/source-fn fn-sym)
+                         (->> file
+                              slurp
+                              clojure.string/split-lines
+                              (drop (dec line))
+                              (clojure.string/join "\n"))
+                         "nil")))))
 
 (defmacro src-in-meta
   [& body]

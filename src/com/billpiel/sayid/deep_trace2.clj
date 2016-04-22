@@ -199,7 +199,8 @@
              (apply merge))))
 
 (defn mk-tree-template
-  [src-map fn-meta path parent-path & {:keys [macro?]}]
+  [src-map frm-meta fn-meta path parent-path & {:keys [macro?]}]
+
   (let [sub-src-map (-> path
                         path->sym
                         src-map)
@@ -216,7 +217,8 @@
      :parent-name (:name fn-meta)
      :ns (-> fn-meta :ns str symbol)
      :xpanded-parent (:xp sub-src-map)
-     :xpanded-frm (:x sub-src-map)}))
+     :xpanded-frm (:x sub-src-map)
+     :src-pos (select-keys frm-meta [:line :column :end-line :end-column])}))
 
 (defn get-temp-root-tree
   []
@@ -299,7 +301,7 @@
       (mk-recent-tree-at-inner-path parent-inner-path recent-trees))))
 
 (defn tr-fn
-  [inner-path [recent-trees src-map] template f]
+  [inner-path [recent-trees] template f]
   (fn [& args]
     (let [this (-> @(produce-recent-tree-atom! inner-path
                                                recent-trees)
@@ -427,24 +429,29 @@
                             path)
                  path
                  (mk-tree-template src-map
+                                   (or (meta form)
+                                       (-> form first meta))
                                    fn-meta
                                    path
                                    parent-path)))
 
 (defn xpand-macro
   [head form src-map fn-meta path parent-path]
-  (xpand-macro-form head
-                    (xpand-form (macroexpand form)
-                                src-map
-                                fn-meta
-                                path
-                                path)
-                    path
-                    (mk-tree-template src-map
-                                      fn-meta
-                                      path
-                                      parent-path
-                                      :macro? true)))
+  (let [xform (with-meta (macroexpand form) (meta form))] ;; TODO be sure this is doing something
+    (xpand-macro-form head
+                      (xpand-form xform
+                                  src-map
+                                  fn-meta
+                                  path
+                                  path)
+                      path
+                      (mk-tree-template src-map
+                                        (or (meta form)
+                                            (-> form first meta))
+                                        fn-meta
+                                        path
+                                        parent-path
+                                        :macro? true))))
 
 (defn xpand-if
   [form src-map fn-meta path parent-path]
@@ -455,6 +462,8 @@
                             path)
                  path
                  (mk-tree-template src-map
+                                   (or (meta form)
+                                       (-> form first meta))
                                    fn-meta
                                    path
                                    parent-path)))
@@ -479,59 +488,10 @@
   [form parent-fn-meta]
   (let [expr-map (mk-expr-mapping form)
         xform (xpand-form form expr-map parent-fn-meta)]
-    `(let [~'$$ [(atom {}) '~expr-map]
+    `(let [~'$$ [(atom {})]
            ~'$return ~xform]
        (record-trace-tree! ~'$$)
        ~'$return)))
-
-#(do
-   (def form1 '(-> 1 inc str))
-
-   (-/p (xpand form1 {:name "name1" :ns "ns1"} ))
-
-   (-/p (eval (xpand form1 {:name "name1" :ns "ns1"} )))
-
-   (def form2 '(str (inc 1) 3))
-
-   (-/p (xpand form2 {:name "name1" :ns "ns1"} ))
-
-   (-/p (eval (xpand form2 {:name "name1" :ns "ns1"} )))
-
-   (def form3 '(if 1 2 3))
-
-   (-/p (xpand form3 {:name "name1" :ns "ns1"} ))
-
-   (-/p (eval (xpand form3 {:name "name1" :ns "ns1"} )))
-
-   (let [parent {:depth 2 :path [:11 :22] :children (atom [])}]
-     (binding [trace/*trace-log-parent* parent]
-       (eval (xpand form3 {:name "name1" :ns "ns1"} )))
-     (-/p parent))
-
-   (let [parent {:depth 2
-                 :path [:11 :22]
-                 :children (atom [])
-                 :args []
-                 :name 'dummy
-                 :return nil
-                 :arg-map {}
-                 :id :22}
-         traced-fn (deep-tracer {:workspace nil
-                                 :qual-sym 'com.billpiel.sayid.deep-trace2/f1
-                                 :meta' (meta #'f1)
-                                 :ns' 'com.billpiel.sayid.deep-trace2})]
-     (binding [trace/*trace-log-parent* parent]
-       (-/p (traced-fn 23)))
-     (def p' parent)
-     (-/p parent))
-
-   ;; ffff
-
-   (comment))
-
-(defn f1 [a] (if (= 1 2)
-               (inc a)
-               (-> a dec str keyword)))
 
 (defn xpand-bod
   [fn-bod parent-fn-meta]
@@ -580,7 +540,7 @@
   (let [src (-> qual-sym
                 symbol
                 util/hunt-down-source)
-        traced-form (-> #spy/d src
+        traced-form (-> src
                         macroexpand
                         get-fn
                         (xpand-fn* meta'))]
@@ -601,9 +561,59 @@
                                                    ::trace/trace-type)
                         workspace)))
 
-
 (defmethod trace/untrace* :deep-fn
   [_ fn-sym]
   (-> fn-sym
       resolve
       trace/untrace-var*))
+
+
+(defn f1 [a] (let [b 4]
+               (if (= b 2)
+                 (inc a)
+                 (-> a dec str keyword))))
+
+#(do
+   (def form1 '(-> 1 inc str))
+
+   (-/p (xpand form1 {:name "name1" :ns "ns1"} ))
+
+   (-/p (eval (xpand form1 {:name "name1" :ns "ns1"} )))
+
+   (def form2 '(str (inc 1) 3))
+
+   (-/p (xpand form2 {:name "name1" :ns "ns1"} ))
+
+   (-/p (eval (xpand form2 {:name "name1" :ns "ns1"} )))
+
+   (def form3 '(if 1 2 3))
+
+   (-/p (xpand form3 {:name "name1" :ns "ns1"} ))
+
+   (-/p (eval (xpand form3 {:name "name1" :ns "ns1"} )))
+
+   (let [parent {:depth 2 :path [:11 :22] :children (atom [])}]
+     (binding [trace/*trace-log-parent* parent]
+       (eval (xpand form3 {:name "name1" :ns "ns1"} )))
+     (-/p parent))
+
+   (let [parent {:depth 2
+                 :path [:11 :22]
+                 :children (atom [])
+                 :args []
+                 :name 'dummy
+                 :return nil
+                 :arg-map {}
+                 :id :22}
+         traced-fn (deep-tracer {:workspace nil
+                                 :qual-sym 'com.billpiel.sayid.deep-trace2/f1
+                                 :meta' (meta #'f1)
+                                 :ns' 'com.billpiel.sayid.deep-trace2})]
+     (binding [trace/*trace-log-parent* parent]
+       (-/p (traced-fn 23)))
+     (def p' parent)
+     (-/p parent))
+
+   ;; ffff
+
+   (comment))
