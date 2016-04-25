@@ -218,7 +218,7 @@
      :ns (-> fn-meta :ns str symbol)
      :xpanded-parent (:xp sub-src-map)
      :xpanded-frm (:x sub-src-map)
-     :src-pos (select-keys frm-meta [:line :column :end-line :end-column])}))
+     :src-pos (select-keys frm-meta [:line :column :end-line :end-column :file])}))
 
 (defn get-temp-root-tree
   []

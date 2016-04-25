@@ -226,13 +226,27 @@
        symbol
        clojure.repl/source-fn))
 
+(defn mk-dummy-whitespace
+  [lines cols]
+  (apply str
+         (concat (repeat lines "\n")
+                 (repeat cols " "))))
+
+(defn mk-positionalble-src-logging-push-back-rdr
+  [s file line col]
+  (rts/source-logging-push-back-reader (str (mk-dummy-whitespace (dec line) ;;this seem unfortunate
+                                                                 (dec col))
+                                            s)
+                                       (+ 1000 line)  ;; TODO fix awful HACK
+                                       file))
+
 (defn hunt-down-source
   [fn-sym]
-  (let [{:keys [source file line]} (-> fn-sym
-                                       resolve
-                                       meta)]
+  (let [{:keys [source file line column]} (-> fn-sym
+                                              resolve
+                                              meta)]
     (or source
-        (r/read (rts/source-logging-push-back-reader
+        (r/read (mk-positionalble-src-logging-push-back-rdr
                  (or
                   (clojure.repl/source-fn fn-sym)
                   (->> file
@@ -240,15 +254,10 @@
                        clojure.string/split-lines
                        (drop (dec line))
                        (clojure.string/join "\n"))
-                  "nil")))
-        #_ (read-string (or
-                         (clojure.repl/source-fn fn-sym)
-                         (->> file
-                              slurp
-                              clojure.string/split-lines
-                              (drop (dec line))
-                              (clojure.string/join "\n"))
-                         "nil")))))
+                  "nil")
+                 file
+                 line
+                 column)))))
 
 (defmacro src-in-meta
   [& body]
