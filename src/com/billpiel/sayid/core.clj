@@ -1,7 +1,7 @@
 (ns com.billpiel.sayid.core
   (:require com.billpiel.sayid.string-output
             [com.billpiel.sayid.trace :as trace]
-            [com.billpiel.sayid.deep-trace :as dtrace]
+            [com.billpiel.sayid.deep-trace2 :as dtrace]
             [com.billpiel.sayid.workspace :as ws]
             [com.billpiel.sayid.recording :as rec]
             [com.billpiel.sayid.query2 :as q]
