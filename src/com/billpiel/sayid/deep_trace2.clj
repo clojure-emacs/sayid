@@ -339,6 +339,28 @@
         (update-tree! recent-trees))
     v))
 
+
+(defn tr-let-ret
+  [path [recent-trees] template v]
+  (-> path
+      (produce-recent-tree-atom! recent-trees)
+      deref
+      (merge template)
+      (update-in [:let-binds] (comp vec reverse))
+      (assoc :return v
+             :inner-tags [:let])
+      (update-tree! recent-trees))
+  v)
+
+(defn tr-let-bind
+  [path [recent-trees] v bnd-frm val-frm]
+  (-> path
+      (produce-recent-tree-atom! recent-trees)
+      deref
+      (update-in [:let-binds] conj [v bnd-frm val-frm])
+      (#(do #spy/d %))
+      (update-tree! recent-trees)))
+
 (defn tr-if-ret
   [path [recent-trees] template v]
   (-> path
@@ -398,6 +420,23 @@
         `'~template
         (keyword head)
         form))
+
+(defn xpand-let-binds
+  [path binds]
+  (vec (mapcat (fn [[b v]]
+                 `(~b ~v
+                   ~'_ (tr-let-bind ~path ~'$$ ~b '~b '~v)))
+               (partition 2 binds))))
+
+(defn xpand-let-form
+  [[_ binds & frms] path template]
+  (let [template' template]
+    `(tr-let-ret ~path
+                 ~'$$
+                 '~template'
+                 (let ~(xpand-let-binds path
+                                        binds)
+                   ~@frms))))
 
 (defn xpand-if-form
   [[_ test then else] path template]
@@ -468,17 +507,38 @@
                                    path
                                    parent-path)))
 
+(defn xpand-let
+  [form src-map fn-meta path parent-path]
+  (xpand-let-form (xpand-all form
+                             src-map
+                             fn-meta
+                             path
+                             path)
+                  path
+                  (mk-tree-template src-map
+                                    (or (meta form)
+                                        (-> form first meta))
+                                    fn-meta
+                                    path
+                                    parent-path)))
+
 (defn xpand-form
   [form src-map fn-meta & [path parent-path]]
   (let [path' (or path [])]
     (cond
       (seq? form)
       (let [head (first form)]
-        (cond (util/macro? head)
-              (xpand-macro head form src-map fn-meta path' parent-path)
-              (= 'if head) (xpand-if form src-map fn-meta path' parent-path)
-              (special-symbol? head) (xpand-all form src-map fn-meta path' parent-path)
-              :else (xpand-fn head form src-map fn-meta path' parent-path)))
+        (cond
+          (= 'let head) (xpand-let form src-map fn-meta path' parent-path)
+
+          (util/macro? head)
+          (xpand-macro head form src-map fn-meta path' parent-path)
+
+          (= 'if head) (xpand-if form src-map fn-meta path' parent-path)
+
+          (special-symbol? head) (xpand-all form src-map fn-meta path' parent-path)
+
+          :else (xpand-fn head form src-map fn-meta path' parent-path)))
 
       (coll? form) form ;; TODO traverse
       :else form)))
@@ -509,9 +569,12 @@
 
 (defn deref-children
   [tree-atom]
-  (swap! (:children @tree-atom)
-         #(mapv deref-children %))
-  @tree-atom)
+  (if (util/atom? tree-atom)
+    (do
+      (swap! (:children @tree-atom)
+             #(mapv deref-children %))
+      @tree-atom)
+    tree-atom))
 
 (defn record-trace-tree!
   [[tree-atom src-map]]
@@ -568,10 +631,11 @@
       trace/untrace-var*))
 
 
-(defn f1 [a] (let [b 4]
-               (if (= b 2)
-                 (inc a)
-                 (-> a dec str keyword))))
+(defn f1 [a] (let [b 4
+                   c (inc b)]
+               (if (= a b)
+                 (-> c inc str keyword)
+                 (->> [a b c] (map inc) (map even?)))))
 
 #(do
    (def form1 '(-> 1 inc str))

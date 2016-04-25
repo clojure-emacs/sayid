@@ -192,12 +192,26 @@
                                      :indent-offset 3))
          vec)))
 
+(defn let-binds-str
+  [tree]
+  (->> tree
+       :let-binds
+       (map #(multi-line-indent-MZ :label (str (second %)
+                                               " "
+                                               (pprint-str (nth % 2))
+                                               " => ")
+                                   :value (first %)
+                                   :indent-base (:depth tree)
+                                   :indent-offset 3))
+       vec))
+
 (defn args*-str
   [tree]
   (let [test #(-> tree % not-empty)]
     ((cond
        (test :arg-map) args-map-str
        (test :args) args-str
+       (test :let-binds) let-binds-str
        :else (constantly ""))
      tree)))
 
