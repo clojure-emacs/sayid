@@ -348,13 +348,13 @@
   [v]
   (-> (or (:src-pos v)
           (:meta v))
-      (select-keys [:line :column :file])
+      (select-keys [:line :column :file :end-line :end-column])
       (assoc :ids #{(:id v)})))
 
 (defn start-dist
-  [pos-line {:keys [line]}]
-  (when (<= line pos-line)
-       (- pos-line line)))
+  [pos-line {:keys [line end-line]}]
+  (when (<= (or end-line line) pos-line)
+    (- pos-line (or end-line line))))
 
 (defn inside-width
   [pos-line {:keys [line end-line]}]
@@ -384,35 +384,37 @@
 (defn compare-thing
   [line best next]
   (let [best (or best init-best)
-        inside-width-best #spy/d (inside-width line best)
-        inside-width-next #spy/d (inside-width line next)
-        inside-width-best-better #spy/d (compare-metric inside-width-best inside-width-next)
+        inside-width-best (inside-width line best)
+        inside-width-next (inside-width line next)
+        inside-width-best-better (compare-metric inside-width-best inside-width-next)
         inside-width-both-nil (= inside-width-best inside-width-next nil)
         inside-width-equal (= inside-width-best inside-width-next)
-        start-dist-best #spy/d (start-dist line best)
-        start-dist-next #spy/d (start-dist line next)
-        start-dist-best-better #spy/d (compare-metric start-dist-best start-dist-next)
+        start-dist-best (start-dist line best)
+        start-dist-next (start-dist line next)
+        start-dist-best-better (compare-metric start-dist-best start-dist-next)
         start-dist-both-nil (= start-dist-best start-dist-next nil)
         start-dist-equal (= start-dist-best start-dist-next)]
     (cond
-      #spy/d inside-width-best-better #spy/d best
+      inside-width-best-better best
 
-      #spy/d (and (-> inside-width-best nil? not)
+      (and (-> inside-width-best nil? not)
            inside-width-equal)
-      #spy/d (merge-em best next)
+      (merge-em best next)
 
-      #spy/d (false? inside-width-best-better) next
+      (false? inside-width-best-better) next
 
-      #spy/d start-dist-best-better #spy/d best
-      #spy/d start-dist-both-nil #spy/d best
-      #spy/d start-dist-equal #spy/d (merge-em best next)
-      #spy/d (false? start-dist-best-better) #spy/d next)))
+      start-dist-best-better best
+      start-dist-both-nil best
+      start-dist-equal (merge-em best next)
+      (false? start-dist-best-better) next)))
 
 (defn get-best-match-in-tree-seq
   [ts file line]
   (->> ts
        (map get-pos)
-       (filter #(-> % :file (= file)))
+       (filter (fn [v]
+                 (when-let [f (:file v)]
+                   (.endsWith file f))))
        (reduce (partial compare-thing
                         line)
                init-best)))
