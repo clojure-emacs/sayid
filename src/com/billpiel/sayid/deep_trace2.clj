@@ -358,7 +358,6 @@
       (produce-recent-tree-atom! recent-trees)
       deref
       (update-in [:let-binds] conj [v bnd-frm val-frm])
-      (#(do #spy/d %))
       (update-tree! recent-trees)))
 
 (defn tr-if-ret

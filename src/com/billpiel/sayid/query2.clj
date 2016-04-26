@@ -340,3 +340,104 @@
   [tree & body]
   (vec (exec-query tree
                    body)))
+
+
+;; ========================
+
+(defn get-pos
+  [v]
+  (-> (or (:src-pos v)
+          (:meta v))
+      (select-keys [:line :column :file])
+      (assoc :ids #{(:id v)})))
+
+(defn start-dist
+  [pos-line {:keys [line]}]
+  (when (<= line pos-line)
+       (- pos-line line)))
+
+(defn inside-width
+  [pos-line {:keys [line end-line]}]
+  (when (and end-line
+             (<= line pos-line end-line))
+    (- end-line line)))
+
+(defn compare-metric
+  [better worse]
+  (cond
+    (= nil better worse) nil
+    (not better) false
+    (not worse) true
+    :else (< better worse)))
+
+(defn merge-em
+  [a b]
+  (assoc a
+         :ids (->> [a b]
+                   (map :ids)
+                   (apply clojure.set/union))))
+
+(def init-best {:ids #{}
+                :line -1
+                :end-line nil})
+
+(defn compare-thing
+  [line best next]
+  (let [best (or best init-best)
+        inside-width-best #spy/d (inside-width line best)
+        inside-width-next #spy/d (inside-width line next)
+        inside-width-best-better #spy/d (compare-metric inside-width-best inside-width-next)
+        inside-width-both-nil (= inside-width-best inside-width-next nil)
+        inside-width-equal (= inside-width-best inside-width-next)
+        start-dist-best #spy/d (start-dist line best)
+        start-dist-next #spy/d (start-dist line next)
+        start-dist-best-better #spy/d (compare-metric start-dist-best start-dist-next)
+        start-dist-both-nil (= start-dist-best start-dist-next nil)
+        start-dist-equal (= start-dist-best start-dist-next)]
+    (cond
+      #spy/d inside-width-best-better #spy/d best
+
+      #spy/d (and (-> inside-width-best nil? not)
+           inside-width-equal)
+      #spy/d (merge-em best next)
+
+      #spy/d (false? inside-width-best-better) next
+
+      #spy/d start-dist-best-better #spy/d best
+      #spy/d start-dist-both-nil #spy/d best
+      #spy/d start-dist-equal #spy/d (merge-em best next)
+      #spy/d (false? start-dist-best-better) #spy/d next)))
+
+(defn get-best-match-in-tree-seq
+  [ts file line]
+  (->> ts
+       (map get-pos)
+       (filter #(-> % :file (= file)))
+       (reduce (partial compare-thing
+                        line)
+               init-best)))
+
+(defn get-ids-from-file-pos
+  [tree file line]
+  (util/$- ->> tree
+           (tree-seq map? :children)
+           (get-best-match-in-tree-seq $ file line)
+           :ids))
+
+#_ (
+"
+    :inside-width  best-better best-worse both-nil equal
+    :start-dist
+    best-better    b           n          b        a
+    best-worse     b           n          n        a
+    both-nil       b           n          b        a
+    equal          b           n          a        a
+
+
+
+"
+
+
+
+
+    )

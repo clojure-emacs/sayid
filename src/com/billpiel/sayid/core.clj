@@ -623,3 +623,25 @@ user> (-> #'f1 meta :source)
 (util/defalias p-gr pro-gross-repeats)
 
 ;; === END Profiling functions
+
+
+;; === TEMP
+
+(defn mk-src-pos-query-fn
+  [file line]
+  (fn [{:keys [src-pos]}]
+    (and (= (:file src-pos) file)
+         (<= (:line src-pos) line)
+         (>= (:end-line src-pos) line))))
+
+(defn ws-query-by-file-line
+  [file line]
+  (println)
+  (trees-print (ws-query* [(mk-src-pos-query-fn file line)]))
+  (println))
+
+(defn ws-query-by-file-pos
+  [file line]
+  (ws-query* [:id (q/get-ids-from-file-pos (ws-deref!)
+                                           file
+                                           line)]))
