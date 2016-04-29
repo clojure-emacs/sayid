@@ -6,6 +6,7 @@
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [mvxcvi/puget "0.8.1"]
                  [org.clojure/tools.reader "1.0.0-alpha3"]]
+  :repl-options {:nrepl-middleware [com.billpiel.sayid.nrepl-middleware/wrap-sayid]}
   :profiles {:dev {:dependencies [[midje "1.8.3"]]
                    :plugins [[lein-midje "3.1.3"]
                              [lein-codox "0.9.4"]]}

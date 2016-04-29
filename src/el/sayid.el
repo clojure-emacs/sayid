@@ -1,12 +1,15 @@
-(defun sayid-query-point ()
+(defun sayid-query-form-at-point ()
   (interactive)
-  (let ((cmd (concat "(sd/trees-print (sd/ws-query-by-file-pos \""
-                     (buffer-file-name)
-                     "\" "
-                     (number-to-string (line-number-at-pos))
-                     "))")))
-    (set-buffer (cider-current-repl-buffer))
-    (cider-repl--replace-input cmd)
-    (cider-repl-return)
-    (set-window-point (get-buffer-window (cider-get-repl-buffer) t)
-                      (point-max))))
+  (let ((x (read (nrepl-dict-get (nrepl-send-sync-request (list
+                                                             "op" "sayid-query-form-at-point"
+                                                             "file" (buffer-file-name)
+                                                             "line" (line-number-at-pos)))
+                                   "value")))
+          (orig-buf (current-buffer)))
+      (pop-to-buffer "*sayid*")
+      (erase-buffer)
+      (insert x)
+      (recenter -1)
+      (ansi-color-apply-on-region (point-min) (point-max))
+      (print orig-buf)
+      (pop-to-buffer orig-buf)))

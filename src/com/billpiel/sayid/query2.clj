@@ -408,13 +408,19 @@
       start-dist-equal (merge-em best next)
       (false? start-dist-best-better) next)))
 
+(defn file-paths-match?
+  [test path]
+  (let [test' (clojure.string/replace test #"^file:" "")
+        path' (clojure.string/replace path #"^file:" "")]
+    (.endsWith test' path')))
+
 (defn get-best-match-in-tree-seq
   [ts file line]
   (->> ts
        (map get-pos)
        (filter (fn [v]
                  (when-let [f (:file v)]
-                   (.endsWith file f))))
+                   (file-paths-match? file f))))
        (reduce (partial compare-thing
                         line)
                init-best)))
