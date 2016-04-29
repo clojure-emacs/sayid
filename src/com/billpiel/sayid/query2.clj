@@ -432,6 +432,37 @@
            (get-best-match-in-tree-seq $ file line)
            :ids))
 
+(defn compare-positions-against-line-range
+  [start-line line best next]
+  (if (<= start-line
+          (:line next))
+    (compare-thing line
+                   best
+                   next)
+    best))
+
+(defn get-best-match-in-tree-seq-for-line-range
+  [ts file start-line line]
+  (->> ts
+       (map get-pos)
+       (filter (fn [v]
+                 (when-let [f (:file v)]
+                   (file-paths-match? file f))))
+       (reduce (partial compare-positions-against-line-range
+                        start-line
+                        line)
+               init-best)))
+
+(defn get-ids-from-file-line-range
+  [tree file start-line line]
+  (util/$- ->> tree
+           (tree-seq map? :children)
+           (get-best-match-in-tree-seq-for-line-range $
+                                                      file
+                                                      start-line
+                                                      line)
+           :ids))
+
 #_ (
 "
     :inside-width  best-better best-worse both-nil equal

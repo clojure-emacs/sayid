@@ -14,6 +14,7 @@
 (defn eval-in-ns
   [ns-sym form]
   (binding [*ns* (create-ns ns-sym)]
+    (use 'clojure.core)
     (eval form)))
 
 (defmacro get-env
@@ -237,7 +238,7 @@
   (rts/source-logging-push-back-reader (str (mk-dummy-whitespace (dec line) ;;this seem unfortunate
                                                                  (dec col))
                                             s)
-                                       (+ 1000 line)  ;; TODO fix awful HACK
+                                       (+ (count s) line col 1)
                                        file))
 
 (defn hunt-down-source
