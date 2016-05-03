@@ -111,9 +111,9 @@
 (defn sayid-query-form-at-point
   [{:keys [transport file line] :as msg}]
   (t/send transport (response-for msg
-                                          :value (-> (sd/ws-query-by-file-pos file line)
-                                                     sd/trees-print
-                                                     with-out-str)))
+                                  :value (-> (sd/ws-query-by-file-pos file line)
+                                             sd/trees-print
+                                             with-out-str)))
   (t/send transport (response-for msg :status :done)))
 
 (defn sayid-clear-log
@@ -136,7 +136,8 @@
   [{:keys [transport] :as msg}]
   (let [out (so/tree->string+meta (sd/ws-deref!))]
     (t/send transport (response-for msg
-                                    :value (:string out))))
+                                    :value (:string out)
+                                    :meta  (-> out :meta seq))))
   (t/send transport (response-for msg :status :done)))
 
 (def sayid-nrepl-ops

@@ -116,11 +116,19 @@
                           reset-color-code
                           "\n"])))])
 
+(defn get-pos
+  [v]
+  (-> (or (:src-pos v)
+          (:meta v))
+      (select-keys [:line :column :file :end-line :end-column])
+      (assoc :id (:id v))))
+
 (defn name->string
   [tree start?]
   (let [{:keys [depth name form ns parent-name macro? xpanded-frm]} tree]
-    (if-not (nil? name)
-      ["" (slinky-pipes-MZ depth :end (when start? "v"))
+    (when-not (nil? name)
+      [(get-pos tree)
+       (slinky-pipes-MZ depth :end (when start? "v"))
        (if parent-name
          [(color-code-MZ :fg 0 :bg* (dec depth) :bold false)
           (if-not (nil? form)
@@ -145,13 +153,13 @@
      label
      (if mline
        ["\n"
-        (indent-line-breaks (str s "\n")
+        (indent-line-breaks [s "\n"]
                             (+ 2 indent-base) ;; Why does this need to be 2?
                             :end
                             (apply str
                                    (repeat indent-offset
                                            " ")))]
-       (str s "\n"))]))
+       [s "\n"])]))
 
 (def multi-line-indent-MZ  (memoize multi-line-indent))
 
@@ -289,7 +297,38 @@
        tree->string*
        flatten
        (remove nil?)
+       (remove map?)
        (clojure.string/join "")))
+
+(defn tree->meta
+  [tree]
+  (loop [[head & tail] tree
+         pos 0
+         agg (sorted-map)]
+    (cond (nil? head) agg
+
+          (= head "\n")
+          (recur tail (inc pos) agg)
+
+          :else
+          (recur tail pos (assoc agg pos head)))))
+
+(defn tree->string+meta
+  [tree]
+  (let [flat-tree (->> tree
+                       tree->string*
+                       flatten
+                       (remove nil?))
+        tree-str (->> flat-tree
+                      (remove map?)
+                      (clojure.string/join ""))
+        tree-meta (->> flat-tree
+                       (filter #(or (map? %)
+                                    (and (string? %)
+                                         (re-find #"\n+" %))))
+                       tree->meta)]
+    {:string tree-str
+     :meta tree-meta}))
 
 (defn print-tree-unlimited
   [tree]
