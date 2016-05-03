@@ -303,7 +303,7 @@
 (defn tree->meta
   [tree]
   (loop [[head & tail] tree
-         pos 0
+         pos 1
          agg (sorted-map)]
     (cond (nil? head) agg
 
