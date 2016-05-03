@@ -160,9 +160,15 @@
           (apply-trace-to-var v tracer-fn workspace))
         (apply-trace-to-var v tracer-fn workspace)))))
 
+(defn the-ns-safe
+  [ns]
+  (try (the-ns ns)
+       (catch Exception e
+         nil)))
+
 (defn trace-ns*
   [ns workspace]
-  (let [ns (the-ns ns)]
+  (when-let [ns (the-ns-safe ns)]
     (when-not ('#{clojure.core com.billpiel.sayid.core} (.name ns))
       (let [ns-fns (->> ns ns-interns vals (filter (comp fn? var-get)))]
         (doseq [f ns-fns]
@@ -174,10 +180,10 @@
 
 (defn untrace-ns*
   [ns*]
-  (let [ns' (the-ns ns*)
-        ns-fns (->> ns' ns-interns vals)]
-    (doseq [f ns-fns]
-      (untrace-var* f))))
+  (when-let [ns' (the-ns-safe ns*)]
+    (let [ns-fns (->> ns' ns-interns vals)]
+      (doseq [f ns-fns]
+        (untrace-var* f)))))
 
 (defmulti trace* (fn [type sym workspace] type))
 

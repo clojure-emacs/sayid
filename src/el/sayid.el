@@ -1,3 +1,5 @@
+;; Sayid nREPL middleware client
+
 (defun sayid-query-form-at-point ()
   (interactive)
   (let ((x (read (nrepl-dict-get (nrepl-send-sync-request (list "op" "sayid-query-form-at-point"
@@ -33,7 +35,7 @@
   (interactive)
   (nrepl-send-sync-request (list "op" "sayid-clear-log"))
   (nrepl-send-sync-request (list "op" "sayid-trace-all-ns-in-dir"
-                                 "dir"(file-name-directory (buffer-file-name))))
+                                 "dir" (file-name-directory (buffer-file-name))))
   (message (cider-last-sexp))
   (cider-eval-last-sexp)
   (nrepl-send-sync-request (list "op" "sayid-remove-all-traces"))

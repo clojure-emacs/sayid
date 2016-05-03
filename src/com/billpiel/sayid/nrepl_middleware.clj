@@ -4,6 +4,7 @@
             [clojure.tools.nrepl.transport :as t]
             [com.billpiel.sayid.core :as sd]
             [com.billpiel.sayid.query2 :as q]
+            [com.billpiel.sayid.string-output :as so]
             [clojure.tools.reader :as r]
             [clojure.tools.reader.reader-types :as rts]
             [com.billpiel.sayid.util.other :as util]
@@ -96,9 +97,9 @@
 (defn sayid-force-get-inner-trace'
   [{:keys [transport source file line] :as msg}]
   (let [{start-line :line} (get-meta-at-file-pos file line source)
-        matches (query-ws-by-file-line-range #spy/d file
-                                             #spy/d start-line
-                                             #spy/d line)
+        matches (query-ws-by-file-line-range file
+                                             start-line
+                                             line)
         has-inner? (tree-contains-inner-trace? {:children matches})
         matches' (if has-inner?
                    matches
@@ -122,7 +123,8 @@
 
 (defn sayid-trace-all-ns-in-dir
   [{:keys [transport dir] :as msg}]
-  (doall (map sd/ws-add-trace-ns!* (ns-find/find-namespaces-in-dir dir)))
+  (println "**** sayid-trace-all-ns-in-dir")
+  (doall (map sd/ws-add-trace-ns!* (ns-find/find-namespaces-in-dir (java.io.File. dir))))
   (send-status-done transport msg))
 
 (defn sayid-remove-all-traces
@@ -132,15 +134,18 @@
 
 (defn sayid-get-workspace
   [{:keys [transport] :as msg}]
-  (t/send transport (response-for msg
-                                          :value (with-out-str (sd/ws-print))))
+  (let [out (so/tree->string+meta (sd/ws-deref!))]
+    (t/send transport (response-for msg
+                                    :value (:string out))))
   (t/send transport (response-for msg :status :done)))
 
 (def sayid-nrepl-ops
   {"sayid-query-form-at-point" #'sayid-query-form-at-point
    "sayid-force-get-inner-trace" #'sayid-force-get-inner-trace
    "sayid-get-workspace" #'sayid-get-workspace
-   "sayid-clear-log" #'sayid-clear-log})
+   "sayid-clear-log" #'sayid-clear-log
+   "sayid-trace-all-ns-in-dir" #'sayid-trace-all-ns-in-dir
+   "sayid-remove-all-traces" #'sayid-remove-all-traces})
 
 (defn wrap-sayid
   [handler]
