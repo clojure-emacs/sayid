@@ -26,17 +26,16 @@
 
 (defun sayid-force-get-inner-trace ()
   (interactive)
+  (message "START")
   (sayid-send-and-insert (list "op" "sayid-force-get-inner-trace"
                                "source" (buffer-string)
                                "file" (buffer-file-name)
-                               "line" (line-number-at-pos))))
+                               "line" (line-number-at-pos)))
+  (message "END"))
 
 (defun sayid-get-workspace ()
   (interactive)
-  (sayid-send-and-insert (list "op" "sayid-get-workspace"
-                               "source" (buffer-string)
-                               "file" (buffer-file-name)
-                               "line" (line-number-at-pos))))
+  (sayid-send-and-insert (list "op" "sayid-get-workspace")))
 
 (defun sayid-eval-last-sexp ()
   (interactive)
@@ -46,7 +45,7 @@
   (message (cider-last-sexp))
   (cider-eval-last-sexp)
   (nrepl-send-sync-request (list "op" "sayid-remove-all-traces"))
-  (let ((resp (nrepl-send-sync-request (list "op" "sayid-get-workspace")))
+  (let* ((resp (nrepl-send-sync-request (list "op" "sayid-get-workspace")))
         (x (read (nrepl-dict-get resp "value")))
         (m (nrepl-dict-get resp "meta"))
         (orig-buf (current-buffer)))
@@ -70,3 +69,34 @@
                                "line")))
     (pop-to-buffer (find-buffer-visiting file))
     (goto-line line)))
+
+(defun sayid-query-id-w-mod ()
+  (interactive)
+  (sayid-send-and-insert (list "op" "sayid-buf-query-id-w-mod"
+                               "trace-id" (nrepl-dict-get (sayid-get-line-meta (reverse meta)
+                                                                               (line-number-at-pos))
+                                                          "id")
+                               "mod" (read-string "query modifier: "))))
+
+(defun sayid-query-id ()
+  (interactive)
+  (sayid-send-and-insert (list "op" "sayid-buf-query-id-w-mod"
+                               "trace-id" (nrepl-dict-get (sayid-get-line-meta (reverse meta)
+                                                                               (line-number-at-pos))
+                                                          "id")
+                               "mod" "")))
+
+(defun sayid-query-fn-w-mod ()
+  (interactive)
+  (sayid-send-and-insert (list "op" "sayid-buf-query-fn-w-mod"
+                               "fn-name" (nrepl-dict-get (sayid-get-line-meta (reverse meta)
+                                                                               (line-number-at-pos))
+                                                          "fn-name")
+                               "mod" (read-string "query modifier: "))))
+(defun sayid-query-fn ()
+  (interactive)
+  (sayid-send-and-insert (list "op" "sayid-buf-query-fn-w-mod"
+                               "fn-name" (nrepl-dict-get (sayid-get-line-meta (reverse meta)
+                                                                               (line-number-at-pos))
+                                                          "fn-name")
+                               "mod" "")))

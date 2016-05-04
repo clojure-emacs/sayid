@@ -116,18 +116,20 @@
                           reset-color-code
                           "\n"])))])
 
-(defn get-pos
+(defn get-line-meta
   [v]
   (-> (or (:src-pos v)
           (:meta v))
       (select-keys [:line :column :file :end-line :end-column])
-      (assoc :id (:id v))))
+      (assoc :id (:id v))
+      (assoc :fn-name (or (:parent-name v) (:name v)))
+      (update-in [:file] util/get-src-file-path)))
 
 (defn name->string
   [tree start?]
   (let [{:keys [depth name form ns parent-name macro? xpanded-frm]} tree]
     (when-not (nil? name)
-      [(get-pos tree)
+      [(get-line-meta tree)
        (slinky-pipes-MZ depth :end (when start? "v"))
        (if parent-name
          [(color-code-MZ :fg 0 :bg* (dec depth) :bold false)
@@ -137,7 +139,7 @@
           (when macro?
             [(color-code-MZ :fg* (dec depth) :bg 0 :bold false) " => " (str xpanded-frm)])
           (color-code-MZ :fg* (dec depth) :bg 0 :bold false)
-          (format "  %s/%s" ns parent-name)]
+          "  " parent-name]
          [(color-code-MZ :fg* (dec depth) :bg 0 :bold false)
           name])
        "  "

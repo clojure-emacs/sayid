@@ -214,7 +214,9 @@
      :form form
      :macro? macro?
      :inner-path path
-     :parent-name (:name fn-meta)
+     :parent-name (symbol (format "%s/%s"
+                                  (-> fn-meta :ns str)
+                                  (:name fn-meta)))
      :ns (-> fn-meta :ns str symbol)
      :xpanded-parent (:xp sub-src-map)
      :xpanded-frm (:x sub-src-map)

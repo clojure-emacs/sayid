@@ -70,8 +70,6 @@
 
 (defn sayid-force-get-inner-trace
   [{:keys [transport source file line] :as msg}]
-  #_ (t/send transport (response-for msg :value msg))
-  #_ (t/send transport (response-for msg :status :done))
   (try (let [{start-line :line} (get-meta-at-file-pos file line source)
              matches (query-ws-by-file-line-range file start-line line)
              has-inner? (tree-contains-inner-trace? {:children matches})
@@ -82,39 +80,62 @@
                         :else
                         (do  (inner-replay-matches! matches)
                              (query-ws-by-file-line-range file start-line line)))
-             value (if-not (nil? matches')
-                     (with-out-str (sd/trees-print matches'))
-                     (str "No trace records found for function at line: " line))]
+
+             out (if-not (nil? matches')
+                   (-> matches'
+                       util/wrap-kids
+                       so/tree->string+meta)
+                   {:string (str "No trace records found for function at line: " line)})]
          (t/send transport (response-for msg
-                                                 :value value)))
+                                         :value (:string out)
+                                         :meta (-> out :meta seq))))
        (catch Exception e
          (t/send transport (response-for msg
-                                                 :value (with-out-str (clojure.stacktrace/print-stack-trace e)))))
+                                         :value (with-out-str (clojure.stacktrace/print-stack-trace e)))))
        (finally
-         (t/send transport (response-for msg :status :done)))))
-
-
-(defn sayid-force-get-inner-trace'
-  [{:keys [transport source file line] :as msg}]
-  (let [{start-line :line} (get-meta-at-file-pos file line source)
-        matches (query-ws-by-file-line-range file
-                                             start-line
-                                             line)
-        has-inner? (tree-contains-inner-trace? {:children matches})
-        matches' (if has-inner?
-                   matches
-                   (do  (inner-replay-matches! matches)
-                        (query-ws-by-file-line-range file start-line line)))
-        value (with-out-str (sd/trees-print matches'))]
-    value))
+         (send-status-done transport msg))))
 
 (defn sayid-query-form-at-point
   [{:keys [transport file line] :as msg}]
-  (t/send transport (response-for msg
-                                  :value (-> (sd/ws-query-by-file-pos file line)
-                                             sd/trees-print
-                                             with-out-str)))
+  (println "****** sayid-query-form-at-point")
+  (println msg)
+  (let [out (-> (sd/ws-query-by-file-pos file line)
+                util/wrap-kids
+                so/tree->string+meta)]
+    (t/send transport (response-for msg
+                                    :value (:string out)
+                                    :meta (-> out :meta seq))))
   (t/send transport (response-for msg :status :done)))
+
+
+(defn sayid-buf-query
+  [q-vec mod-str]
+  (let [[_ sk sn] (re-find #"(\w+)\s*(\d+)?" mod-str)
+        k (keyword sk)
+        n (util/->int sn)
+        query (remove nil? [k n q-vec])]
+    (-> (apply sd/ws-query* query)
+        util/wrap-kids
+        so/tree->string+meta)))
+
+(defn sayid-buf-query-id-w-mod
+  [{:keys [transport trace-id mod] :as msg}]
+  (let [{v :string
+         m :meta} (sayid-buf-query [:id (keyword trace-id)] mod)]
+    (t/send transport (response-for msg
+                                    :value v
+                                    :meta (seq m))))
+  (send-status-done transport msg))
+
+(defn sayid-buf-query-fn-w-mod
+  [{:keys [transport fn-name mod] :as msg}]
+  (let [out (sayid-buf-query [(some-fn :parent-name :name)
+                              (symbol fn-name)]
+                             mod)]
+    (t/send transport (response-for msg
+                                    :value (:string out)
+                                    :meta (-> out :meta seq))))
+  (send-status-done transport msg))
 
 (defn sayid-clear-log
   [{:keys [transport] :as msg}]
@@ -146,7 +167,10 @@
    "sayid-get-workspace" #'sayid-get-workspace
    "sayid-clear-log" #'sayid-clear-log
    "sayid-trace-all-ns-in-dir" #'sayid-trace-all-ns-in-dir
-   "sayid-remove-all-traces" #'sayid-remove-all-traces})
+   "sayid-remove-all-traces" #'sayid-remove-all-traces
+   "sayid-buf-query-id-w-mod" #'sayid-buf-query-id-w-mod
+   "sayid-buf-query-fn-w-mod" #'sayid-buf-query-fn-w-mod})
+
 
 (defn wrap-sayid
   [handler]

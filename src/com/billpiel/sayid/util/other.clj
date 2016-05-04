@@ -6,6 +6,13 @@
            [clojure.tools.reader.reader-types :as rts]
            clojure.repl))
 
+(defn ->int
+  [v]
+  (try (cond (integer? v) v
+             (string? v) (Integer/parseInt v))
+       (catch Exception e
+         nil)))
+
 (defn def-ns-var
   [ws-ns-sym sym v]
   (binding [*ns* (create-ns ws-ns-sym)]
@@ -341,3 +348,21 @@
           (empty? coll) nil
           (pred head) head
           :else (recur pred tail))))
+
+(defn wrap-kids
+  [children]
+  {:children children})
+
+(defn get-src-file-path
+  [s]
+  (if (.exists (java.io.File. s))
+    s
+    (when-let [r (clojure.java.io/resource s)]
+      (.getPath r))))
+
+(get-src-file-path "com/billpiel/sayid/test/ns1.clj" )
+(get-src-file-path "/home/bill/repos/sayid/test/com/billpiel/sayid/test/ns1.clj" )
+
+(.getPath (clojure.java.io/resource "com/billpiel/sayid/test/ns1.clj"))
+(.getPath (clojure.java.io/resource "/home/bill/repos/sayid/test/com/billpiel/sayid/test/ns1.clj"))
+(.exists (java.io.File. "/home/bill/repos/sayid/test/com/billpiel/sayid/test/ns1.clj"))
