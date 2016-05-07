@@ -355,14 +355,8 @@
 
 (defn get-src-file-path
   [s]
-  (if (.exists (java.io.File. s))
-    s
-    (when-let [r (clojure.java.io/resource s)]
-      (.getPath r))))
-
-(get-src-file-path "com/billpiel/sayid/test/ns1.clj" )
-(get-src-file-path "/home/bill/repos/sayid/test/com/billpiel/sayid/test/ns1.clj" )
-
-(.getPath (clojure.java.io/resource "com/billpiel/sayid/test/ns1.clj"))
-(.getPath (clojure.java.io/resource "/home/bill/repos/sayid/test/com/billpiel/sayid/test/ns1.clj"))
-(.exists (java.io.File. "/home/bill/repos/sayid/test/com/billpiel/sayid/test/ns1.clj"))
+  (let [s' (clojure.string/replace s #"^file:" "")]
+    (if (.exists (java.io.File. s'))
+      s'
+      (when-let [r (clojure.java.io/resource s')]
+        (.getPath r)))))
