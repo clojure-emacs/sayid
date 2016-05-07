@@ -72,7 +72,7 @@
                                "file"))
          (line (nrepl-dict-get line-meta
                                "line")))
-    (pop-to-buffer (find-buffer-visiting file))
+    (pop-to-buffer (find-file-noselect file))
     (goto-line line)))
 
 (defun sayid-query-id-w-mod ()
