@@ -22,6 +22,7 @@
   (setq major-mode 'sayid-mode)
   (setq mode-name "SAYID")
   (read-only-mode t)
+  (setq truncate-lines t)
   (use-local-map sayid-mode-map)
   (set (make-local-variable 'meta) '())
   (run-hooks 'sayid-mode-hook))
