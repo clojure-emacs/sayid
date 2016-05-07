@@ -157,7 +157,7 @@
      label
      (if mline
        ["\n"
-        (indent-line-breaks [s "\n"]
+        (indent-line-breaks (str s "\n")
                             (+ 2 indent-base) ;; Why does this need to be 2?
                             :end
                             (apply str
