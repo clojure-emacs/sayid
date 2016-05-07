@@ -117,12 +117,14 @@
                           "\n"])))])
 
 (defn get-line-meta
-  [v]
+  [v & [path]]
   (-> (or (:src-pos v)
           (:meta v))
       (select-keys [:line :column :file :end-line :end-column])
-      (assoc :id (:id v))
-      (assoc :fn-name (or (:parent-name v) (:name v)))
+      (assoc :id (:id v)
+             :fn-name (or (:parent-name v)
+                          (:name v))
+             :path path)
       (update-in [:file] util/get-src-file-path)))
 
 (defn name->string
@@ -165,13 +167,25 @@
 
 (def multi-line-indent-MZ  (memoize multi-line-indent))
 
+(defn indent-arg-map
+  [tree m]
+  (->> m
+       (map (fn [[label value]]
+              [(get-line-meta tree [:arg-map label])
+               (multi-line-indent-MZ :label (str label " => ")
+                                     :value value
+                                     :indent-base (:depth tree)
+                                     :indent-offset  3)]))
+       vec))
+
 (defn indent-map
   [tree m]
   (->> m
-       (map #(multi-line-indent-MZ :label (str (first %) " => ")
-                                   :value  (second %)
-                                   :indent-base (:depth tree)
-                                   :indent-offset  3))
+       (map (fn [[label value]]
+              (multi-line-indent-MZ :label (str label " => ")
+                                    :value value
+                                    :indent-base (:depth tree)
+                                    :indent-offset  3)))
        vec))
 
 (defn return-str
@@ -179,27 +193,30 @@
   (binding [*truncate-lines-count* 20]
     (when (contains? tree :return)
       (let [return (:return tree)]
-        (multi-line-indent-MZ :label (str (condp = pos
-                                            :before "returns"
-                                            :after "returned")
-                                          " => ")
-                              :value  return
-                              :indent-base (:depth tree)
-                              :indent-offset  3)))))
+        [(get-line-meta tree [:return])
+         (multi-line-indent-MZ :label (str (condp = pos
+                                              :before "returns"
+                                              :after "returned")
+                                            " => ")
+                                :value  return
+                                :indent-base (:depth tree)
+                                :indent-offset  3)]))))
 
 (defn args-map-str
   [tree]
   (binding [*truncate-lines-count* *max-arg-lines*]
     (when-let [arg-map (:arg-map tree)]
-      (indent-map tree arg-map))))
+      (indent-arg-map tree arg-map))))
 
 (defn args-str
   [tree]
   (when-let [args (:args tree)]
     (->> args
-         (map #(multi-line-indent-MZ :value %
-                                     :indent-base (:depth tree)
-                                     :indent-offset 3))
+         (map-indexed (fn [i value]
+                        [(get-line-meta tree [:args i])
+                         (multi-line-indent-MZ :value value
+                                               :indent-base (:depth tree)
+                                               :indent-offset 3)]))
          vec)))
 
 (defn let-binds-str

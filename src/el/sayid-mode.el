@@ -7,6 +7,7 @@
 (setq sayid-mode-map
       (let ((map (make-sparse-keymap)))
         (define-key map  (kbd "<RET>") 'sayid-buffer-nav-from-point)
+        (define-key map  (kbd "d") 'sayid-buf-def-at-point)
         (define-key map  (kbd "f") 'sayid-query-fn)
         (define-key map  (kbd "F") 'sayid-query-fn-w-mod)
         (define-key map  (kbd "i") 'sayid-query-id)

@@ -65,6 +65,14 @@
       (sd/ws-query* [:id ids])
       [])))
 
+(defn process-line-meta
+  [line-meta]
+  (mapv (fn [[n m]]
+          [n
+           (update-in m
+                      [:path]
+                      str)])
+        line-meta))
 
 ;; ======================
 
@@ -88,7 +96,7 @@
                    {:string (str "No trace records found for function at line: " line)})]
          (t/send transport (response-for msg
                                          :value (:string out)
-                                         :meta (-> out :meta seq))))
+                                         :meta (-> out :meta process-line-meta))))
        (catch Exception e
          (t/send transport (response-for msg
                                          :value (with-out-str (clojure.stacktrace/print-stack-trace e)))))
@@ -104,7 +112,7 @@
                 so/tree->string+meta)]
     (t/send transport (response-for msg
                                     :value (:string out)
-                                    :meta (-> out :meta seq))))
+                                    :meta (-> out :meta process-line-meta))))
   (t/send transport (response-for msg :status :done)))
 
 
@@ -124,7 +132,7 @@
          m :meta} (sayid-buf-query [:id (keyword trace-id)] mod)]
     (t/send transport (response-for msg
                                     :value v
-                                    :meta (seq m))))
+                                    :meta (process-line-meta m))))
   (send-status-done transport msg))
 
 (defn sayid-buf-query-fn-w-mod
@@ -134,7 +142,18 @@
                              mod)]
     (t/send transport (response-for msg
                                     :value (:string out)
-                                    :meta (-> out :meta seq))))
+                                    :meta (-> out :meta process-line-meta))))
+  (send-status-done transport msg))
+
+(defn sayid-buf-def-at-point
+  [{:keys [transport trace-id path] :as msg}]
+  (println path)
+  (let [path' (read-string path)]
+    (util/def-ns-var '$s '* (-> [:id (keyword trace-id)]
+                                sd/ws-query*
+                                first
+                                (get-in path'))))
+  (t/send transport (response-for msg :value "Def'd as $s/*"))
   (send-status-done transport msg))
 
 (defn sayid-clear-log
@@ -158,7 +177,7 @@
   (let [out (so/tree->string+meta (sd/ws-deref!))]
     (t/send transport (response-for msg
                                     :value (:string out)
-                                    :meta  (-> out :meta seq))))
+                                    :meta  (-> out :meta process-line-meta))))
   (t/send transport (response-for msg :status :done)))
 
 (def sayid-nrepl-ops
@@ -169,7 +188,8 @@
    "sayid-trace-all-ns-in-dir" #'sayid-trace-all-ns-in-dir
    "sayid-remove-all-traces" #'sayid-remove-all-traces
    "sayid-buf-query-id-w-mod" #'sayid-buf-query-id-w-mod
-   "sayid-buf-query-fn-w-mod" #'sayid-buf-query-fn-w-mod})
+   "sayid-buf-query-fn-w-mod" #'sayid-buf-query-fn-w-mod
+   "sayid-buf-def-at-point" #'sayid-buf-def-at-point})
 
 
 (defn wrap-sayid

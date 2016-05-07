@@ -18,6 +18,11 @@
          (orig-buf (current-buffer)))
     (sayid-do-buffer-stuff x m orig-buf)))
 
+(defun sayid-send-and-message (req)
+  (let* ((resp (nrepl-send-sync-request req))
+         (x (read (nrepl-dict-get resp "value"))))
+    (message x)))
+
 (defun sayid-query-form-at-point ()
   (interactive)
   (sayid-send-and-insert (list "op" "sayid-query-form-at-point"
@@ -100,3 +105,14 @@
                                                                                (line-number-at-pos))
                                                           "fn-name")
                                "mod" "")))
+
+
+(defun sayid-buf-def-at-point ()
+  (interactive)
+  (sayid-send-and-message (list "op" "sayid-buf-def-at-point"
+                                "trace-id" (nrepl-dict-get (sayid-get-line-meta (reverse meta)
+                                                                                (line-number-at-pos))
+                                                           "id")
+                                "path" (nrepl-dict-get (sayid-get-line-meta (reverse meta)
+                                                                            (line-number-at-pos))
+                                                       "path"))))
