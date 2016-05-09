@@ -116,3 +116,10 @@
                                 "path" (nrepl-dict-get (sayid-get-line-meta (reverse meta)
                                                                             (line-number-at-pos))
                                                        "path"))))
+
+(defun sayid-set-clj-mode-keys ()
+    (define-key clojure-mode-map (kbd "C-c s e") 'sayid-eval-last-sexp))
+
+(add-hook 'clojure-mode-hook 'sayid-set-clj-mode-keys)
+
+(sayid-set-clj-mode-keys)
