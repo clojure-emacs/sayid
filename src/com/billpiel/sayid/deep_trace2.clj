@@ -523,6 +523,12 @@
                                     path
                                     parent-path)))
 
+(defn dot-sym?
+  [sym]
+  (-> sym
+       str
+       (.startsWith ".")))
+
 (defn xpand-form
   [form src-map fn-meta & [path parent-path]]
   (let [path' (or path [])]
@@ -537,7 +543,9 @@
 
           (= 'if head) (xpand-if form src-map fn-meta path' parent-path)
 
-          (special-symbol? head) (xpand-all form src-map fn-meta path' parent-path)
+          (or (special-symbol? head)
+              (dot-sym? head)) ;; TODO better way to detect these?
+          (xpand-all form src-map fn-meta path' parent-path)
 
           :else (xpand-fn head form src-map fn-meta path' parent-path)))
 
@@ -608,8 +616,11 @@
                         macroexpand
                         get-fn
                         (xpand-fn* meta'))]
-    (util/eval-in-ns (-> ns' str symbol)
-                     traced-form)))
+    (try (util/eval-in-ns (-> ns' str symbol)
+                          traced-form)
+         (catch Exception e
+           (clojure.pprint/pprint traced-form)
+           (throw e)))))
 
 (defn ^{::trace/trace-type :deep-fn} composed-tracer-fn
   [m _]
