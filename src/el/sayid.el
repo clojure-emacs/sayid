@@ -140,8 +140,7 @@
                                                        "path"))))
 
 (defun sayid-set-clj-mode-keys ()
-    (define-key clojure-mode-map (kbd "C-c s e") 'sayid-eval-last-sexp))
+  (define-key clojure-mode-map (kbd "C-c s e") 'sayid-eval-last-sexp)
+  (define-key clojure-mode-map (kbd "C-c s n") 'sayid-force-get-inner-trace))
 
 (add-hook 'clojure-mode-hook 'sayid-set-clj-mode-keys)
-
-(sayid-set-clj-mode-keys)
