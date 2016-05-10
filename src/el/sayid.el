@@ -1,5 +1,16 @@
 ;; Sayid nREPL middleware client
 
+(defvar sayid-trace-ns-dir nil)
+
+(defun sayid-get-trace-ns-dir ()
+  (interactive)
+  (or sayid-trace-ns-dir
+      (let* ((default-dir (file-name-directory (buffer-file-name)))
+             (input (read-string "Scan dir for namespaces : "
+                                 default-dir)))
+        (setq sayid-trace-ns-dir input)
+        input)))
+
 (defun sayid-do-buffer-stuff (text l-m orig-buf)
     (pop-to-buffer "*sayid*")
     (read-only-mode 0)
@@ -42,11 +53,22 @@
   (interactive)
   (sayid-send-and-insert (list "op" "sayid-get-workspace")))
 
+(defun sayid-outer-trace-on ()
+  (interactive)
+  (nrepl-send-sync-request (list "op" "sayid-trace-all-ns-in-dir"
+                                 "dir" (sayid-get-trace-ns-dir)))
+  (message "Traced some stuff."))
+
+(defun sayid-kill-all-traces ()
+  (interactive)
+  (nrepl-send-sync-request (list "op" "sayid-remove-all-traces"))
+  (message "Killed all traces."))
+
 (defun sayid-eval-last-sexp ()
   (interactive)
   (nrepl-send-sync-request (list "op" "sayid-clear-log"))
   (nrepl-send-sync-request (list "op" "sayid-trace-all-ns-in-dir"
-                                 "dir" (file-name-directory (buffer-file-name))))
+                                 "dir" (sayid-get-trace-ns-dir)))
   (message (cider-last-sexp))
   (cider-eval-last-sexp)
   (nrepl-send-sync-request (list "op" "sayid-remove-all-traces"))

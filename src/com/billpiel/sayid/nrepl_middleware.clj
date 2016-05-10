@@ -86,8 +86,8 @@
                         matches
                         (empty? matches) nil
                         :else
-                        (do  (inner-replay-matches! matches)
-                             (query-ws-by-file-line-range file start-line line)))
+                        (do (inner-replay-matches! matches)
+                            (query-ws-by-file-line-range file start-line line)))
 
              out (if-not (nil? matches')
                    (-> matches'
