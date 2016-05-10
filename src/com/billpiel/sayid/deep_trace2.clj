@@ -588,10 +588,10 @@
 
 (defn record-trace-tree!
   [[tree-atom src-map]]
-  (let [children (-> (@tree-atom nil)
-                     deref-children
-                     :children
-                     deref)]
+  (let [children (some-> (@tree-atom nil)
+                         deref-children
+                         :children
+                         deref)]
     (doseq [child children]
       (swap! (:children trace/*trace-log-parent*)
              conj
