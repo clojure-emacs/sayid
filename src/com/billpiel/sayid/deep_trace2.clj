@@ -459,6 +459,11 @@
                                 false
                                 ~else))))))
 
+(defn get-form-meta-somehow
+  [form]
+  (or (meta form)
+      (-> form first meta)))
+
 (defn xpand-fn
   [head form src-map fn-meta path parent-path]
   (xpand-fn-form head
@@ -469,8 +474,7 @@
                             path)
                  path
                  (mk-tree-template src-map
-                                   (or (meta form)
-                                       (-> form first meta))
+                                   (get-form-meta-somehow form)
                                    fn-meta
                                    path
                                    parent-path)))
@@ -486,8 +490,7 @@
                                   path)
                       path
                       (mk-tree-template src-map
-                                        (or (meta form)
-                                            (-> form first meta))
+                                        (get-form-meta-somehow form)
                                         fn-meta
                                         path
                                         parent-path
@@ -502,8 +505,7 @@
                             path)
                  path
                  (mk-tree-template src-map
-                                   (or (meta form)
-                                       (-> form first meta))
+                                   (get-form-meta-somehow form)
                                    fn-meta
                                    path
                                    parent-path)))
@@ -517,8 +519,7 @@
                              path)
                   path
                   (mk-tree-template src-map
-                                    (or (meta form)
-                                        (-> form first meta))
+                                    (get-form-meta-somehow form)
                                     fn-meta
                                     path
                                     parent-path)))
