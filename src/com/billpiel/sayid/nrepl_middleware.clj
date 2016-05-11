@@ -105,8 +105,6 @@
 
 (defn sayid-query-form-at-point
   [{:keys [transport file line] :as msg}]
-  (println "****** sayid-query-form-at-point")
-  (println msg)
   (let [out (-> (sd/ws-query-by-file-pos file line)
                 util/wrap-kids
                 so/tree->string+meta)]
@@ -176,9 +174,19 @@
   (sd/ws-remove-all-traces!)
   (send-status-done transport msg))
 
+(defn sayid-set-printer
+  [{:keys [transport printer] :as msg}]
+  (println printer)
+  (if (.startsWith printer ".")
+    (reset! sd/printer sd/default-printer)
+    (->> (str "[" printer "]")
+         read-string
+         (apply sd/set-printer!)))
+  (send-status-done transport msg))
+
 (defn sayid-get-workspace
   [{:keys [transport] :as msg}]
-  (let [out (so/tree->string+meta (sd/ws-deref!))]
+  (let [out (sd/with-printer (so/tree->string+meta (sd/ws-deref!)))]
     (t/send transport (response-for msg
                                     :value (:string out)
                                     :meta  (-> out :meta process-line-meta))))
@@ -194,7 +202,8 @@
    "sayid-remove-all-traces" #'sayid-remove-all-traces
    "sayid-buf-query-id-w-mod" #'sayid-buf-query-id-w-mod
    "sayid-buf-query-fn-w-mod" #'sayid-buf-query-fn-w-mod
-   "sayid-buf-def-at-point" #'sayid-buf-def-at-point})
+   "sayid-buf-def-at-point" #'sayid-buf-def-at-point
+   "sayid-set-printer" #'sayid-set-printer})
 
 
 (defn wrap-sayid

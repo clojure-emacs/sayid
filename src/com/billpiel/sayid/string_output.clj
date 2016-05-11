@@ -210,14 +210,15 @@
 
 (defn args-str
   [tree]
-  (when-let [args (:args tree)]
-    (->> args
-         (map-indexed (fn [i value]
-                        [(get-line-meta tree [:args i])
-                         (multi-line-indent-MZ :value value
-                                               :indent-base (:depth tree)
-                                               :indent-offset 3)]))
-         vec)))
+  (binding [*truncate-lines-count* *max-arg-lines*]
+    (when-let [args (:args tree)]
+      (->> args
+           (map-indexed (fn [i value]
+                          [(get-line-meta tree [:args i])
+                           (multi-line-indent-MZ :value value
+                                                 :indent-base (:depth tree)
+                                                 :indent-offset 3)]))
+           vec))))
 
 (defn let-binds-str
   [tree]

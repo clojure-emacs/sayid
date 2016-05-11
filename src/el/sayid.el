@@ -149,6 +149,13 @@
                                                                             (line-number-at-pos))
                                                        "path"))))
 
+(defun sayid-set-printer ()
+  (interactive)
+  (nrepl-send-sync-request (list "op" "sayid-set-printer"
+                                 "printer" (concat (read-string "printer: ")
+                                                   " :children")))
+  (message "Printer set."))
+
 (defun sayid-set-clj-mode-keys ()
   (define-key clojure-mode-map (kbd "C-c s e") 'sayid-eval-last-sexp)
   (define-key clojure-mode-map (kbd "C-c s f") 'sayid-query-form-at-point)
