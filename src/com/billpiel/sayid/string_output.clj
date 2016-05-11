@@ -118,14 +118,16 @@
 
 (defn get-line-meta
   [v & [path]]
-  (-> (or (:src-pos v)
-          (:meta v))
-      (select-keys [:line :column :file :end-line :end-column])
-      (assoc :id (:id v)
-             :fn-name (or (:parent-name v)
-                          (:name v))
-             :path path)
-      (update-in [:file] util/get-src-file-path)))
+  (some-> (or (:src-pos v)
+              (:meta v))
+          (select-keys [:line :column :file :end-line :end-column])
+          (assoc :id (:id v)
+                 :fn-name (or (:parent-name v)
+                              (:name v))
+                 :path path)
+          (update-in [:file] #(if (string? %)
+                                (util/get-src-file-path %)
+                                %))))
 
 (defn name->string
   [tree start?]

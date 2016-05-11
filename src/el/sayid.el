@@ -42,12 +42,10 @@
 
 (defun sayid-force-get-inner-trace ()
   (interactive)
-  (message "START")
   (sayid-send-and-insert (list "op" "sayid-force-get-inner-trace"
                                "source" (buffer-string)
                                "file" (buffer-file-name)
-                               "line" (line-number-at-pos)))
-  (message "END"))
+                               "line" (line-number-at-pos))))
 
 (defun sayid-get-workspace ()
   (interactive)
