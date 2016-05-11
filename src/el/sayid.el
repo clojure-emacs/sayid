@@ -64,6 +64,16 @@
   (nrepl-send-sync-request (list "op" "sayid-remove-all-traces"))
   (message "Killed all traces."))
 
+(defun sayid-clear-log ()
+  (interactive)
+  (nrepl-send-sync-request (list "op" "sayid-clear-log"))
+  (message "Cleared log."))
+
+(defun sayid-reset-workspace ()
+  (interactive)
+  (nrepl-send-sync-request (list "op" "sayid-reset-workspace"))
+  (message "Removed traces. Cleared log."))
+
 (defun sayid-eval-last-sexp ()
   (interactive)
   (nrepl-send-sync-request (list "op" "sayid-clear-log"))
@@ -141,6 +151,12 @@
 
 (defun sayid-set-clj-mode-keys ()
   (define-key clojure-mode-map (kbd "C-c s e") 'sayid-eval-last-sexp)
-  (define-key clojure-mode-map (kbd "C-c s n") 'sayid-force-get-inner-trace))
+  (define-key clojure-mode-map (kbd "C-c s f") 'sayid-query-form-at-point)
+  (define-key clojure-mode-map (kbd "C-c s n") 'sayid-force-get-inner-trace)
+  (define-key clojure-mode-map (kbd "C-c s w") 'sayid-get-workspace)
+  (define-key clojure-mode-map (kbd "C-c s t") 'sayid-outer-trace-on)
+  (define-key clojure-mode-map (kbd "C-c s k") 'sayid-kill-all-traces)
+  (define-key clojure-mode-map (kbd "C-c s c") 'sayid-clear-log)
+  (define-key clojure-mode-map (kbd "C-c s x") 'sayid-reset-workspace))
 
 (add-hook 'clojure-mode-hook 'sayid-set-clj-mode-keys)

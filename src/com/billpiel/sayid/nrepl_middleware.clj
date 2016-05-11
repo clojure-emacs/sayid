@@ -161,9 +161,13 @@
   (sd/ws-clear-log!)
   (send-status-done transport msg))
 
+(defn sayid-reset-workspace
+  [{:keys [transport] :as msg}]
+  (sd/ws-reset!)
+  (send-status-done transport msg))
+
 (defn sayid-trace-all-ns-in-dir
   [{:keys [transport dir] :as msg}]
-  (println "**** sayid-trace-all-ns-in-dir")
   (doall (map sd/ws-add-trace-ns!* (ns-find/find-namespaces-in-dir (java.io.File. dir))))
   (send-status-done transport msg))
 
@@ -185,6 +189,7 @@
    "sayid-force-get-inner-trace" #'sayid-force-get-inner-trace
    "sayid-get-workspace" #'sayid-get-workspace
    "sayid-clear-log" #'sayid-clear-log
+   "sayid-reset-workspace" #'sayid-reset-workspace
    "sayid-trace-all-ns-in-dir" #'sayid-trace-all-ns-in-dir
    "sayid-remove-all-traces" #'sayid-remove-all-traces
    "sayid-buf-query-id-w-mod" #'sayid-buf-query-id-w-mod
