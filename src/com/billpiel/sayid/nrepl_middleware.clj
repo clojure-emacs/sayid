@@ -74,7 +74,25 @@
                       str)])
         line-meta))
 
+(defn clj->nrepl*
+  [v]
+  (cond (coll? v) (vec v)
+        (number? v) v
+        (keyword? v) (name v)
+        :else (str v)))
+
+(defn clj->nrepl
+  [frm]
+  (clojure.walk/postwalk clj->nrepl*
+                         frm))
+
 ;; ======================
+
+
+(defn sayid-show-traced
+  [{:keys [transport] :as msg}]
+  (t/send transport (response-for msg :value (clj->nrepl (sd/ws-show-traced*))))
+  (send-status-done transport msg))
 
 (defn sayid-force-get-inner-trace
   [{:keys [transport source file line] :as msg}]
@@ -203,7 +221,8 @@
    "sayid-buf-query-id-w-mod" #'sayid-buf-query-id-w-mod
    "sayid-buf-query-fn-w-mod" #'sayid-buf-query-fn-w-mod
    "sayid-buf-def-at-point" #'sayid-buf-def-at-point
-   "sayid-set-printer" #'sayid-set-printer})
+   "sayid-set-printer" #'sayid-set-printer
+   "sayid-show-traced" #'sayid-show-traced})
 
 
 (defn wrap-sayid

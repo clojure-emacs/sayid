@@ -1,5 +1,7 @@
 ;; Sayid nREPL middleware client
 
+(require 'sayid-mode)
+
 (defvar sayid-trace-ns-dir nil)
 
 (defun sayid-get-trace-ns-dir ()
@@ -46,6 +48,27 @@
                                "source" (buffer-string)
                                "file" (buffer-file-name)
                                "line" (line-number-at-pos))))
+
+(defun insert-w-props (s p buf)
+  (set-buffer buf)
+  (let ((start (point))
+        (xxx (insert s))
+        (end (- (point) 1)))
+    (print start)
+    (print end)
+    (set-text-properties start end p buf)))
+
+(defun sayid-show-traced ()
+  (interactive)
+  (let* ((req (list "op" "sayid-show-traced"))
+         (resp (nrepl-send-sync-request req))
+         (xxx (print resp))
+         (v (nrepl-dict-get resp "value" ))
+         (xxx (print v))
+         (xxx (print (second (assoc "ns" v))))
+         (orig-buf (current-buffer)))
+    v))
+
 
 (defun sayid-get-workspace ()
   (interactive)

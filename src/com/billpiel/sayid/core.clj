@@ -72,13 +72,18 @@ user> (-> #'f1 meta :source)
   @(ws-init! :quiet))
 (util/defalias w-ga! ws-get-active!)
 
+(defn ws-show-traced*
+  [& [ws]]
+  (-> ws
+      (or (ws-get-active!))
+      :traced))
+
 (defn ws-show-traced
   "Pretty prints the map that contains the traces that are currently in
   place."
   [& [ws]]
   (-> ws
-      (or (ws-get-active!))
-      :traced
+      ws-show-traced*
       clojure.pprint/pprint))
 (util/defalias w-st ws-show-traced)
 
