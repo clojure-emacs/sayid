@@ -24,7 +24,7 @@
   (read-only-mode t)
   (setq truncate-lines t)
   (use-local-map sayid-mode-map)
-  (set (make-local-variable 'meta) '())
+  (set (make-local-variable 'sayid-meta) '())
   (run-hooks 'sayid-mode-hook))
 
 (put 'sayid-mode 'mode-class 'special)

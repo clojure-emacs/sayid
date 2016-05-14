@@ -76,15 +76,15 @@
 
 (defn clj->nrepl*
   [v]
-  (cond (coll? v) (vec v)
+  (cond (coll? v) (list* v)
         (number? v) v
         (keyword? v) (name v)
         :else (str v)))
 
 (defn clj->nrepl
   [frm]
-  (clojure.walk/postwalk clj->nrepl*
-                         frm))
+  (clojure.walk/prewalk clj->nrepl*
+                        frm))
 
 ;; ======================
 

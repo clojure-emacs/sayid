@@ -3,6 +3,7 @@
 (require 'sayid-mode)
 
 (defvar sayid-trace-ns-dir nil)
+(defvar sayid-meta)
 
 (defun sayid-get-trace-ns-dir ()
   (interactive)
@@ -13,23 +14,27 @@
         (setq sayid-trace-ns-dir input)
         input)))
 
-(defun sayid-do-buffer-stuff (text l-m orig-buf)
-    (pop-to-buffer "*sayid*")
-    (read-only-mode 0)
-    (erase-buffer)
-    (insert text)
-    (recenter -1)
-    (ansi-color-apply-on-region (point-min) (point-max))
-    (sayid-mode)
-    (setq meta l-m)
-    (pop-to-buffer orig-buf))
+(defun sayid-init-buf ()
+  (pop-to-buffer "*sayid*")
+  (read-only-mode 0)
+  (erase-buffer)
+  (get-buffer "*sayid*"))
+
+(defun sayid-pop-insert-ansi (text l-m orig-buf)
+  (sayid-init-buf)
+  (insert text)
+  (recenter -1)
+  (ansi-color-apply-on-region (point-min) (point-max))
+  (sayid-mode)
+  (setq sayid-meta l-m)
+  (pop-to-buffer orig-buf))
 
 (defun sayid-send-and-insert (req)
   (let* ((resp (nrepl-send-sync-request req))
          (x (read (nrepl-dict-get resp "value")))
          (m (nrepl-dict-get resp "meta"))
          (orig-buf (current-buffer)))
-    (sayid-do-buffer-stuff x m orig-buf)))
+    (sayid-pop-insert-ansi x m orig-buf)))
 
 (defun sayid-send-and-message (req)
   (let* ((resp (nrepl-send-sync-request req))
@@ -54,21 +59,38 @@
   (let ((start (point))
         (xxx (insert s))
         (end (- (point) 1)))
-    (print start)
-    (print end)
     (set-text-properties start end p buf)))
+
+(defun insert-traced-name (buf s)
+  (insert-w-props (concat "  " s "\n")
+                  (list :name s)
+                  buf))
 
 (defun sayid-show-traced ()
   (interactive)
-  (let* ((req (list "op" "sayid-show-traced"))
-         (resp (nrepl-send-sync-request req))
-         (xxx (print resp))
-         (v (nrepl-dict-get resp "value" ))
-         (xxx (print v))
-         (xxx (print (second (assoc "ns" v))))
-         (orig-buf (current-buffer)))
-    v))
 
+  (let* ((s-buf (get-buffer "*sayid*"))
+         (req (list "op" "sayid-show-traced"))
+         (resp (nrepl-send-sync-request req))
+         (v (read (nrepl-dict-get resp "value" )))
+         (v-ns (second (assoc "ns" v)))
+         (v-fn (second (assoc "fn" v)))
+         (v-ifn (second (assoc "deep-fn" v)))
+         (orig-buf (current-buffer))
+         (s-buf (sayid-init-buf)))
+
+    (insert "Traced Namespaces:\n")
+    (mapc (apply-partially 'insert-traced-name
+                           s-buf)
+          v-ns)
+    (insert "\nOuter Traced Functions:\n")
+    (mapc (apply-partially 'insert-traced-name
+                           s-buf)
+          v-fn)
+    (insert "\nInner Traced Functions:\n")
+    (mapc (apply-partially 'insert-traced-name
+                           s-buf)
+          v-ifn)))
 
 (defun sayid-get-workspace ()
   (interactive)
@@ -107,7 +129,7 @@
         (x (read (nrepl-dict-get resp "value")))
         (m (nrepl-dict-get resp "meta"))
         (orig-buf (current-buffer)))
-    (sayid-do-buffer-stuff x m orig-buf)))
+    (sayid-pop-insert-ansi x m orig-buf)))
 
 (defun sayid-get-line-meta (m n)
   (let ((head (first m))
@@ -119,7 +141,7 @@
 
 (defun sayid-buffer-nav-from-point ()
   (interactive)
-  (let* ((line-meta (sayid-get-line-meta (reverse meta)
+  (let* ((line-meta (sayid-get-line-meta (reverse sayid-meta)
                                          (line-number-at-pos)))
          (file (nrepl-dict-get line-meta
                                "file"))
@@ -131,7 +153,7 @@
 (defun sayid-query-id-w-mod ()
   (interactive)
   (sayid-send-and-insert (list "op" "sayid-buf-query-id-w-mod"
-                               "trace-id" (nrepl-dict-get (sayid-get-line-meta (reverse meta)
+                               "trace-id" (nrepl-dict-get (sayid-get-line-meta (reverse sayid-meta)
                                                                                (line-number-at-pos))
                                                           "id")
                                "mod" (read-string "query modifier: "))))
@@ -139,7 +161,7 @@
 (defun sayid-query-id ()
   (interactive)
   (sayid-send-and-insert (list "op" "sayid-buf-query-id-w-mod"
-                               "trace-id" (nrepl-dict-get (sayid-get-line-meta (reverse meta)
+                               "trace-id" (nrepl-dict-get (sayid-get-line-meta (reverse sayid-meta)
                                                                                (line-number-at-pos))
                                                           "id")
                                "mod" "")))
@@ -147,14 +169,14 @@
 (defun sayid-query-fn-w-mod ()
   (interactive)
   (sayid-send-and-insert (list "op" "sayid-buf-query-fn-w-mod"
-                               "fn-name" (nrepl-dict-get (sayid-get-line-meta (reverse meta)
+                               "fn-name" (nrepl-dict-get (sayid-get-line-meta (reverse sayid-meta)
                                                                                (line-number-at-pos))
                                                           "fn-name")
                                "mod" (read-string "query modifier: "))))
 (defun sayid-query-fn ()
   (interactive)
   (sayid-send-and-insert (list "op" "sayid-buf-query-fn-w-mod"
-                               "fn-name" (nrepl-dict-get (sayid-get-line-meta (reverse meta)
+                               "fn-name" (nrepl-dict-get (sayid-get-line-meta (reverse sayid-meta)
                                                                                (line-number-at-pos))
                                                           "fn-name")
                                "mod" "")))
@@ -163,10 +185,10 @@
 (defun sayid-buf-def-at-point ()
   (interactive)
   (sayid-send-and-message (list "op" "sayid-buf-def-at-point"
-                                "trace-id" (nrepl-dict-get (sayid-get-line-meta (reverse meta)
+                                "trace-id" (nrepl-dict-get (sayid-get-line-meta (reverse sayid-meta)
                                                                                 (line-number-at-pos))
                                                            "id")
-                                "path" (nrepl-dict-get (sayid-get-line-meta (reverse meta)
+                                "path" (nrepl-dict-get (sayid-get-line-meta (reverse sayid-meta)
                                                                             (line-number-at-pos))
                                                        "path"))))
 
