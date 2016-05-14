@@ -12,6 +12,9 @@
         (define-key map  (kbd "F") 'sayid-query-fn-w-mod)
         (define-key map  (kbd "i") 'sayid-query-id)
         (define-key map  (kbd "I") 'sayid-query-id-w-mod)
+        (define-key map  (kbd "w") 'sayid-get-workspace)
+        (define-key map  (kbd "n") 'sayid-buffer-nav-to-next)
+        (define-key map  (kbd "p") 'sayid-buffer-nav-to-prev)
         map))
 
  ;;;###autoload

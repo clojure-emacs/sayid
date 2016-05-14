@@ -117,14 +117,15 @@
                           "\n"])))])
 
 (defn get-line-meta
-  [v & [path]]
+  [v & {:keys [path header?]}]
   (some-> (or (:src-pos v)
               (:meta v))
           (select-keys [:line :column :file :end-line :end-column])
           (assoc :id (:id v)
                  :fn-name (or (:parent-name v)
                               (:name v))
-                 :path path)
+                 :path path
+                 :header header?)
           (update-in [:file] #(if (string? %)
                                 (util/get-src-file-path %)
                                 %))))
@@ -133,7 +134,7 @@
   [tree start?]
   (let [{:keys [depth name form ns parent-name macro? xpanded-frm]} tree]
     (when-not (nil? name)
-      [(get-line-meta tree)
+      [(get-line-meta tree :header? true)
        (slinky-pipes-MZ depth :end (when start? "v"))
        (if parent-name
          [(color-code-MZ :fg 0 :bg* (dec depth) :bold false)
@@ -173,7 +174,8 @@
   [tree m]
   (->> m
        (map (fn [[label value]]
-              [(get-line-meta tree [:arg-map label])
+              [(get-line-meta tree
+                              :path [:arg-map label])
                (multi-line-indent-MZ :label (str label " => ")
                                      :value value
                                      :indent-base (:depth tree)
@@ -195,7 +197,8 @@
   (binding [*truncate-lines-count* 20]
     (when (contains? tree :return)
       (let [return (:return tree)]
-        [(get-line-meta tree [:return])
+        [(get-line-meta tree
+                        :path [:return])
          (multi-line-indent-MZ :label (str (condp = pos
                                               :before "returns"
                                               :after "returned")

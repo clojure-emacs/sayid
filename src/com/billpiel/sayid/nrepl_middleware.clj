@@ -69,9 +69,9 @@
   [line-meta]
   (mapv (fn [[n m]]
           [n
-           (update-in m
-                      [:path]
-                      str)])
+           (-> m
+               (update-in [:path] str)
+               (update-in [:header] #(when % 1)))])
         line-meta))
 
 (defn clj->nrepl*

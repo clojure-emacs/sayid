@@ -131,6 +131,14 @@
         (orig-buf (current-buffer)))
     (sayid-pop-insert-ansi x m orig-buf)))
 
+(defun sayid-search-line-meta (m n f)
+  (let ((head (first m))
+        (tail (rest m)))
+    (cond ((eq nil head) nil)
+          ((funcall f n head)
+           head)
+          (t (sayid-search-line-meta tail n f)))))
+
 (defun sayid-get-line-meta (m n)
   (let ((head (first m))
         (tail (rest m)))
@@ -149,6 +157,32 @@
                                "line")))
     (pop-to-buffer (find-file-noselect file))
     (goto-line line)))
+
+(defun is-header-and-< (n m)
+  (print m)
+  (and (< n (first m))
+       (eq 1 (nrepl-dict-get (second m) "header"))))
+
+(defun is-header-and-> (n m)  ;; I know I know
+  (print m)
+  (and (> n (first m))
+       (eq 1 (nrepl-dict-get (second m) "header"))))
+
+(defun sayid-buffer-nav-to-prev ()
+  (interactive)
+  (let ((next (first (sayid-search-line-meta (reverse sayid-meta)
+                                              (line-number-at-pos)
+                                              'is-header-and->))))
+    (when next
+      (goto-line next))))
+
+(defun sayid-buffer-nav-to-next ()
+  (interactive)
+  (let ((next (first (sayid-search-line-meta sayid-meta
+                                              (line-number-at-pos)
+                                              'is-header-and-<))))
+    (when next
+      (goto-line next))))
 
 (defun sayid-query-id-w-mod ()
   (interactive)
