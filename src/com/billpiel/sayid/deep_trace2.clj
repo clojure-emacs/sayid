@@ -550,7 +550,7 @@
 
           :else (xpand-fn head form src-map fn-meta path' parent-path)))
 
-      (coll? form) form ;; TODO traverse
+      (coll? form) (xpand-all form src-map fn-meta path' parent-path)
       :else form)))
 
 ;;TODO try-catch
