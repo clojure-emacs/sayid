@@ -241,6 +241,8 @@
   (define-key clojure-mode-map (kbd "C-c s t") 'sayid-outer-trace-on)
   (define-key clojure-mode-map (kbd "C-c s k") 'sayid-kill-all-traces)
   (define-key clojure-mode-map (kbd "C-c s c") 'sayid-clear-log)
-  (define-key clojure-mode-map (kbd "C-c s x") 'sayid-reset-workspace))
+  (define-key clojure-mode-map (kbd "C-c s x") 'sayid-reset-workspace)
+  (define-key clojure-mode-map (kbd "C-c s s") 'sayid-show-traced)
+  (define-key clojure-mode-map (kbd "C-c s p s") 'sayid-set-printer))
 
 (add-hook 'clojure-mode-hook 'sayid-set-clj-mode-keys)
