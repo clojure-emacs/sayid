@@ -31,14 +31,14 @@
 
 (defun sayid-send-and-insert (req)
   (let* ((resp (nrepl-send-sync-request req))
-         (x (read (nrepl-dict-get resp "value")))
+         (x (nrepl-dict-get resp "value"))
          (m (nrepl-dict-get resp "meta"))
          (orig-buf (current-buffer)))
     (sayid-pop-insert-ansi x m orig-buf)))
 
 (defun sayid-send-and-message (req)
   (let* ((resp (nrepl-send-sync-request req))
-         (x (read (nrepl-dict-get resp "value"))))
+         (x (nrepl-dict-get resp "value")))
     (message x)))
 
 (defun sayid-query-form-at-point ()
@@ -47,9 +47,22 @@
                                "file" (buffer-file-name)
                                "line" (line-number-at-pos))))
 
+(defun sayid-replay-workspace-query-point ()
+  (interactive)
+
+  (nrepl-send-sync-request (list "op" "sayid-replay-workspace"))
+  (sayid-query-form-at-point))
+
 (defun sayid-force-get-inner-trace ()
   (interactive)
   (sayid-send-and-insert (list "op" "sayid-force-get-inner-trace"
+                               "source" (buffer-string)
+                               "file" (buffer-file-name)
+                               "line" (line-number-at-pos))))
+
+(defun sayid-replay-at-point ()
+  (interactive)
+  (sayid-send-and-insert (list "op" "sayid-replay-at-point"
                                "source" (buffer-string)
                                "file" (buffer-file-name)
                                "line" (line-number-at-pos))))
@@ -122,11 +135,10 @@
   (nrepl-send-sync-request (list "op" "sayid-clear-log"))
   (nrepl-send-sync-request (list "op" "sayid-trace-all-ns-in-dir"
                                  "dir" (sayid-get-trace-ns-dir)))
-  (message (cider-last-sexp))
   (cider-eval-last-sexp)
-  (nrepl-send-sync-request (list "op" "sayid-remove-all-traces"))
+  (nrepl-send-sync-request (list "op" "sayid-disable-all-traces"))
   (let* ((resp (nrepl-send-sync-request (list "op" "sayid-get-workspace")))
-        (x (read (nrepl-dict-get resp "value")))
+         (x (nrepl-dict-get resp "value"))
         (m (nrepl-dict-get resp "meta"))
         (orig-buf (current-buffer)))
     (sayid-pop-insert-ansi x m orig-buf)))
@@ -159,12 +171,10 @@
     (goto-line line)))
 
 (defun is-header-and-< (n m)
-  (print m)
   (and (< n (first m))
        (eq 1 (nrepl-dict-get (second m) "header"))))
 
 (defun is-header-and-> (n m)  ;; I know I know
-  (print m)
   (and (> n (first m))
        (eq 1 (nrepl-dict-get (second m) "header"))))
 
@@ -237,6 +247,8 @@
   (define-key clojure-mode-map (kbd "C-c s e") 'sayid-eval-last-sexp)
   (define-key clojure-mode-map (kbd "C-c s f") 'sayid-query-form-at-point)
   (define-key clojure-mode-map (kbd "C-c s n") 'sayid-force-get-inner-trace)
+  (define-key clojure-mode-map (kbd "C-c s r")
+    'sayid-replay-workspace-query-point)
   (define-key clojure-mode-map (kbd "C-c s w") 'sayid-get-workspace)
   (define-key clojure-mode-map (kbd "C-c s t") 'sayid-outer-trace-on)
   (define-key clojure-mode-map (kbd "C-c s k") 'sayid-kill-all-traces)

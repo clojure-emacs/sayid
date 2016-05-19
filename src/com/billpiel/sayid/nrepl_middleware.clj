@@ -45,7 +45,13 @@
        nil?
        not))
 
-(defn inner-replay-matches!
+(defn replay!
+  [trees]
+  (doseq [{:keys [name args]} trees]
+    (apply (resolve name)
+           args)))
+
+(defn inner-replay!
   [[{:keys [name]} :as matches]]
   (sd/ws-add-deep-trace-fn!* name)
   (doseq [{:keys [name args]} matches]
@@ -94,6 +100,37 @@
   (t/send transport (response-for msg :value (clj->nrepl (sd/ws-show-traced*))))
   (send-status-done transport msg))
 
+(defn sayid-replay-workspace
+  [{:keys [transport] :as msg}]
+  (println "sayid-replay-workspace")
+  (let [kids (:children (sd/ws-deref!))]
+    (sd/ws-cycle-all-traces!)
+    (sd/ws-clear-log!)
+    (replay! kids))
+  (send-status-done transport msg))
+
+(defn sayid-replay-at-point
+  [{:keys [transport source file line] :as msg}]
+  (try (let [{start-line :line} (get-meta-at-file-pos file line source)
+             matches (query-ws-by-file-line-range file start-line line)
+             matches' (when-not (empty? matches)
+                        (do (replay! matches)
+                            (query-ws-by-file-line-range file start-line line)))
+
+             out (if-not (nil? matches')
+                   (-> matches'
+                       util/wrap-kids
+                       so/tree->string+meta)
+                   {:string (str "No trace records found for function at line: " line)})]
+         (t/send transport (response-for msg
+                                         :value (:string out)
+                                         :meta (-> out :meta process-line-meta))))
+       (catch Exception e
+         (t/send transport (response-for msg
+                                         :value (with-out-str (clojure.stacktrace/print-stack-trace e)))))
+       (finally
+         (send-status-done transport msg))))
+
 (defn sayid-force-get-inner-trace
   [{:keys [transport source file line] :as msg}]
   (try (let [{start-line :line} (get-meta-at-file-pos file line source)
@@ -104,7 +141,7 @@
                         matches
                         (empty? matches) nil
                         :else
-                        (do (inner-replay-matches! matches)
+                        (do (inner-replay! matches)
                             (query-ws-by-file-line-range file start-line line)))
 
              out (if-not (nil? matches')
@@ -184,12 +221,18 @@
 
 (defn sayid-trace-all-ns-in-dir
   [{:keys [transport dir] :as msg}]
-  (doall (map sd/ws-add-trace-ns!* (ns-find/find-namespaces-in-dir (java.io.File. dir))))
+  (doall (map sd/ws-add-trace-ns!*
+              (ns-find/find-namespaces-in-dir (java.io.File. dir))))
   (send-status-done transport msg))
 
 (defn sayid-remove-all-traces
   [{:keys [transport] :as msg}]
   (sd/ws-remove-all-traces!)
+  (send-status-done transport msg))
+
+(defn sayid-disable-all-traces
+  [{:keys [transport] :as msg}]
+  (sd/ws-disable-all-traces!)
   (send-status-done transport msg))
 
 (defn sayid-set-printer
@@ -205,9 +248,13 @@
 (defn sayid-get-workspace
   [{:keys [transport] :as msg}]
   (let [out (sd/with-printer (so/tree->string+meta (sd/ws-deref!)))]
-    (t/send transport (response-for msg
-                                    :value (:string out)
-                                    :meta  (-> out :meta process-line-meta))))
+    (try
+      (t/send transport (response-for msg
+                                      :value (:string out)
+                                      :meta  (-> out :meta process-line-meta)))
+      (catch Exception e
+        (println "EXCEPTION!")
+        (println e))))
   (t/send transport (response-for msg :status :done)))
 
 (def sayid-nrepl-ops
@@ -218,11 +265,14 @@
    "sayid-reset-workspace" #'sayid-reset-workspace
    "sayid-trace-all-ns-in-dir" #'sayid-trace-all-ns-in-dir
    "sayid-remove-all-traces" #'sayid-remove-all-traces
+   "sayid-disable-all-traces" #'sayid-disable-all-traces
    "sayid-buf-query-id-w-mod" #'sayid-buf-query-id-w-mod
    "sayid-buf-query-fn-w-mod" #'sayid-buf-query-fn-w-mod
    "sayid-buf-def-at-point" #'sayid-buf-def-at-point
    "sayid-set-printer" #'sayid-set-printer
-   "sayid-show-traced" #'sayid-show-traced})
+   "sayid-show-traced" #'sayid-show-traced
+   "sayid-replay-at-point" #'sayid-replay-at-point
+   "sayid-replay-workspace" #'sayid-replay-workspace})
 
 
 (defn wrap-sayid
@@ -235,3 +285,25 @@
                                    (repeat {:doc "docs?"
                                             :returns {}
                                             :requires {}}))})
+
+#_ (
+    "
+TODO
+x eval-last-exp -- with trace ns in dir
+- eval-last-exp -- with trace all proj ns
+x query for form at point
+- query for form at point -- with modifiers
+x force replay for inner form query
+- indicate funcs that were re-ran
+x include meta in string responses
+x jump to func/form from sayid buffer
+- def captured value from sayid buffer
+
+
+
+"
+
+
+
+
+     )
