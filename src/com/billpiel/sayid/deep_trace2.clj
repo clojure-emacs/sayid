@@ -12,7 +12,7 @@
 
 (defn form->xform-map*
   [form]
-  (if (seq? form)
+  (if (coll? form)
     (let [x (macroexpand form)
           xx (clojure.walk/macroexpand-all form)] ;; TODO better way?
       (conj (mapcat form->xform-map* x)
@@ -168,11 +168,11 @@
             {(if (coll? xl)
                (sym-seq->parent xl)
                xl)
-             {:tree nil    ;; placeholder for trace tree
-              :xl xl              ;; expanded location
+             {:tree nil ;; placeholder for trace tree
+              :xl xl    ;; expanded location
               :orig (-> xl
-                       xl->xform
-                       xform->form)  ;; original symbol or value
+                        xl->xform
+                        xform->form) ;; original symbol or value
               :x (-> xl
                      xl->xform)
               :xlxp (xl->xlxp xl) ;; expanded locations expanded parent
@@ -199,21 +199,22 @@
              (apply merge))))
 
 (defn mk-tree-template
-  [src-map frm-meta fn-meta path parent-path & {:keys [macro?]}]
-
-  (let [sub-src-map (-> path
-                        path->sym
-                        src-map)
+  [src-map frm-meta fn-meta path-chain & {:keys [macro?]}]
+  (let [sub-src-map (util/$- -> path-chain
+                             last
+                             (remove #{:macro} $)
+                             path->sym
+                             src-map)
         form (if macro?
                (:orig sub-src-map)
                (:x sub-src-map))]
-    {:parent-path parent-path
+    {:inner-path-chain path-chain
      :name (if (seq? form)
              (first form)
              form)
      :form form
      :macro? macro?
-     :inner-path path
+     :inner-path (last path-chain)
      :parent-name (symbol (format "%s/%s"
                                   (-> fn-meta :ns str)
                                   (:name fn-meta)))
@@ -229,8 +230,6 @@
       (assoc :children (atom [])
              :inner-path nil)
       atom))
-
-(declare produce-recent-parent-tree-atom!)
 
 (defn get-recent-tree-at-inner-path
   [path recent-trees & {:keys [skip-closed-check]}]
@@ -263,17 +262,19 @@
          (:inner-path @tree-atom)
          tree-atom))
 
+(declare produce-recent-tree-atom!)
+
 (defn mk-recent-tree-at-inner-path
-  [inner-path recent-trees]
-  (if (nil? inner-path)
+  [path-chain recent-trees]
+  (if (empty? path-chain)
     (let [new-tree (get-temp-root-tree)]
       (push-to-recent-trees!  new-tree
                               recent-trees)
       new-tree)
-    (let [parent (produce-recent-parent-tree-atom! inner-path
-                                                   recent-trees)
+    (let [parent (produce-recent-tree-atom! (drop-last path-chain)
+                                            recent-trees)
           new-tree (-> (trace/mk-tree :parent @parent)
-                       (assoc :inner-path inner-path
+                       (assoc :inner-path (last path-chain)
                               :parent-path (:path @parent))
                        atom)]
       (push-to-recent-trees! new-tree
@@ -283,30 +284,19 @@
       new-tree)))
 
 (defn produce-recent-tree-atom!
-  [inner-path recent-trees & {:keys [skip-closed-check]}]
-  (if-let [tree-atom (get-recent-tree-at-inner-path inner-path
-                                                         recent-trees
-                                                         :skip-closed-check skip-closed-check)]
+  [inner-path-chain recent-trees & {:keys [skip-closed-check]}]
+  (if-let [tree-atom (get-recent-tree-at-inner-path (last inner-path-chain)
+                                                    recent-trees
+                                                    :skip-closed-check skip-closed-check)]
     tree-atom
-    (mk-recent-tree-at-inner-path inner-path
-                                  recent-trees)))
-
-(defn produce-recent-parent-tree-atom!
-  [inner-path recent-trees]
-  (let [parent-inner-path (some-> inner-path
-                                  not-empty
-                                  drop-last
-                                  vec)]
-    (if-let [parent (get-recent-tree-at-inner-path parent-inner-path
-                                                   recent-trees)]
-      parent
-      (mk-recent-tree-at-inner-path parent-inner-path recent-trees))))
+    (mk-recent-tree-at-inner-path inner-path-chain recent-trees)))
 
 (defn tr-fn
-  [inner-path [recent-trees] template f]
+  [recent-trees {:keys [inner-path-chain arg-forms] :as template} f]
   (fn [& args]
-    (let [this (-> @(produce-recent-tree-atom! inner-path
-                                               recent-trees)
+    (let [this (-> (produce-recent-tree-atom! inner-path-chain
+                                              recent-trees)
+                   deref
                    (merge template)
                    (assoc :args (vec args)
                           :arg-map (delay (zipmap (:arg-forms template)
@@ -328,10 +318,10 @@
       value)))
 
 (defn tr-macro
-  [path [recent-trees] template mcro v]
+  [recent-trees template mcro v]
   (def rt' @recent-trees)
 
-  (let [tree @(produce-recent-tree-atom! path
+  (let [tree @(produce-recent-tree-atom! (:inner-path-chain template)
                                          recent-trees
                                          :skip-closed-check true)]
     (-> tree
@@ -343,8 +333,9 @@
 
 
 (defn tr-let-ret
-  [path [recent-trees] template v]
-  (-> path
+  [recent-trees template v]
+  (-> template
+      :inner-path-chain
       (produce-recent-tree-atom! recent-trees)
       deref
       (merge template)
@@ -355,17 +346,15 @@
   v)
 
 (defn tr-let-bind
-  [path [recent-trees] v bnd-frm val-frm]
-  (-> path
-      (produce-recent-tree-atom! recent-trees)
+  [{:keys [inner-path-chain]} recent-trees v bnd-frm val-frm]
+  (-> (produce-recent-tree-atom! inner-path-chain recent-trees)
       deref
       (update-in [:let-binds] conj [v bnd-frm val-frm])
       (update-tree! recent-trees)))
 
 (defn tr-if-ret
-  [path [recent-trees] template v]
-  (-> path
-      (produce-recent-tree-atom! recent-trees)
+  [{:keys [inner-path-chain]} recent-trees template v]
+  (-> (produce-recent-tree-atom! inner-path-chain recent-trees)
       deref
       (merge template)
       (assoc :return v
@@ -374,18 +363,16 @@
   v)
 
 (defn tr-if-test
-  [path [recent-trees] v]
-  (-> path
-      (produce-recent-parent-tree-atom! recent-trees)
+  [{:keys [inner-path-chain]} recent-trees v]
+  (-> (produce-recent-tree-atom! inner-path-chain recent-trees)
       deref
       (assoc :args [v])
       (update-tree! recent-trees))
   v)
 
 (defn tr-if-branch
-  [path [recent-trees] test v]
-  (-> path
-      (produce-recent-parent-tree-atom! recent-trees)
+  [{:keys [inner-path-chain]} recent-trees test v]
+  (-> (produce-recent-tree-atom! inner-path-chain recent-trees)
       deref
       (assoc-in [:args 1] v)
       (update-tree! recent-trees))
@@ -394,70 +381,69 @@
 (declare xpand-form)
 
 (defn xpand-all
-  [form src-map fn-meta path parent-path]
+  [form src-map fn-meta path path-chain]
   (when-not (nil? form)
     (util/back-into form
                     (doall (map-indexed #(xpand-form %2
                                                      src-map
                                                      fn-meta
                                                      (conj path %)
-                                                     parent-path)
+                                                     path-chain)
                                         form)))))
 
 (defn xpand-fn-form
-  [head form path template]
+  [head form template]
   (cons (list `tr-fn
-              path
               '$$
               `'~template
               (first form))
         (rest form)))
 
 (defn xpand-macro-form
-  [head form path template]
+  [head form template]
   (list `tr-macro
-        path
         '$$
         `'~template
         (keyword head)
         form))
 
 (defn xpand-let-binds
-  [path binds]
+  [template binds]
   (vec (mapcat (fn [[b v]]
                  `(~b ~v
-                   ~'_ (tr-let-bind ~path ~'$$ ~b '~b '~v)))
+                      ~'_ (tr-let-bind ~template
+                                       ~'$$
+                                       ~b
+                                       '~b
+                                       '~v)))
                (partition 2 binds))))
 
 (defn xpand-let-form
-  [[_ binds & frms] path template]
-  (let [template' template]
-    `(tr-let-ret ~path
-                 ~'$$
-                 '~template'
-                 (let ~(xpand-let-binds path
-                                        binds)
-                   ~@frms))))
+  [[_ binds & frms] template]
+  `(tr-let-ret ~'$$
+               '~template
+               (let ~(xpand-let-binds template
+                                      binds)
+                 ~@frms)))
 
 (defn xpand-if-form
-  [[_ test then else] path template]
+  [[_ test then else] template]
   (let [template' (assoc template
                          :test-form `'~test)]
-    `(tr-if-ret ~path
-                ~'$$
+    `(tr-if-ret ~'$$
                 '~template'
-                (if (tr-if-test ~(conj path 1)
+                (if (tr-if-test ~template'
                                 ~'$$
                                 ~test)
-                  (tr-if-branch ~(conj path 2)
+                  (tr-if-branch ~template'
                                 ~'$$
                                 true
                                 ~then)
                   ~(when-not (nil? else)
-                     `(tr-if-branch ~(conj path 3)
-                                ~'$$
-                                false
-                                ~else))))))
+                     `(tr-if-branch ~template'
+                                    ~'$$
+                                    false
+                                    ~else))))))
 
 (defn get-form-meta-somehow
   [form]
@@ -465,64 +451,60 @@
       (-> form first meta)))
 
 (defn xpand-fn
-  [head form src-map fn-meta path parent-path]
-  (xpand-fn-form head
-                 (xpand-all form
-                            src-map
-                            fn-meta
-                            path
-                            path)
-                 path
-                 (mk-tree-template src-map
-                                   (get-form-meta-somehow form)
-                                   fn-meta
-                                   path
-                                   parent-path)))
+  [head form src-map fn-meta path path-chain]
+  (let [path-chain' (conj path-chain path)]
+    (xpand-fn-form head
+                   (xpand-all form
+                              src-map
+                              fn-meta
+                              path
+                              path-chain')
+                   (mk-tree-template src-map
+                                     (get-form-meta-somehow form)
+                                     fn-meta
+                                     path-chain'))))
 
 (defn xpand-macro
-  [head form src-map fn-meta path parent-path]
+  [head form src-map fn-meta path path-chain]
   (let [xform (with-meta (macroexpand form) (meta form))] ;; TODO be sure this is doing something
-    (xpand-macro-form head
-                      (xpand-form xform
-                                  src-map
-                                  fn-meta
-                                  path
-                                  path)
-                      path
-                      (mk-tree-template src-map
-                                        (get-form-meta-somehow form)
-                                        fn-meta
-                                        path
-                                        parent-path
-                                        :macro? true))))
+    (let [path' (conj path :macro)
+          path-chain' (conj path-chain path)]
+      (xpand-macro-form head
+                        (xpand-form xform
+                                    src-map
+                                    fn-meta
+                                    path'
+                                    path-chain')
+                        (mk-tree-template src-map
+                                          (get-form-meta-somehow form)
+                                          fn-meta
+                                          path-chain'
+                                          :macro? true)))))
 
 (defn xpand-if
-  [form src-map fn-meta path parent-path]
+  [form src-map fn-meta path path-chain]
   (xpand-if-form (xpand-all form
                             src-map
                             fn-meta
                             path
-                            path)
-                 path
+                            path-chain)
                  (mk-tree-template src-map
                                    (get-form-meta-somehow form)
                                    fn-meta
-                                   path
-                                   parent-path)))
+                                   path-chain)))
 
 (defn xpand-let
-  [form src-map fn-meta path parent-path]
-  (xpand-let-form (xpand-all form
-                             src-map
-                             fn-meta
-                             path
-                             path)
-                  path
-                  (mk-tree-template src-map
-                                    (get-form-meta-somehow form)
-                                    fn-meta
-                                    path
-                                    parent-path)))
+  [form src-map fn-meta path path-chain]
+  (let [path-chain' (conj path-chain path)]
+    (xpand-let-form (xpand-all form
+                               src-map
+                               fn-meta
+                               path
+                               path-chain')
+                    (mk-tree-template src-map
+                                      (get-form-meta-somehow form)
+                                      fn-meta
+                                      path-chain'))))
 
 (defn dot-sym?
   [sym]
@@ -531,26 +513,27 @@
        (.startsWith ".")))
 
 (defn xpand-form
-  [form src-map fn-meta & [path parent-path]]
-  (let [path' (or path [])]
+  [form src-map fn-meta & [path path-chain]]
+  (let [path' (or path [])
+        path-chain' (or path-chain [])
+        args [form src-map fn-meta path' path-chain']]
     (cond
       (seq? form)
       (let [head (first form)]
         (cond
-          (= 'let head) (xpand-let form src-map fn-meta path' parent-path)
+          (= 'let head) (apply xpand-let args)
 
-          (util/macro? head)
-          (xpand-macro head form src-map fn-meta path' parent-path)
+          (util/macro? head) (apply xpand-macro head args)
 
-          (= 'if head) (xpand-if form src-map fn-meta path' parent-path)
+          (= 'if head) (apply xpand-if args)
 
           (or (special-symbol? head)
               (dot-sym? head)) ;; TODO better way to detect these?
-          (xpand-all form src-map fn-meta path' parent-path)
+          (apply xpand-all args)
 
-          :else (xpand-fn head form src-map fn-meta path' parent-path)))
+          :else (apply xpand-fn head args)))
 
-      (coll? form) (xpand-all form src-map fn-meta path' parent-path)
+      (coll? form) (apply xpand-all args)
       :else form)))
 
 ;;TODO try-catch
@@ -558,7 +541,7 @@
   [form parent-fn-meta]
   (let [expr-map (mk-expr-mapping form)
         xform (xpand-form form expr-map parent-fn-meta)]
-    `(let [~'$$ [(atom {})]
+    `(let [~'$$ (atom {})
            ~'$return ~xform]
        (record-trace-tree! ~'$$)
        ~'$return)))
@@ -587,7 +570,7 @@
     tree-atom))
 
 (defn record-trace-tree!
-  [[tree-atom src-map]]
+  [tree-atom]
   (let [children (some-> (@tree-atom nil)
                          deref-children
                          :children
@@ -644,8 +627,22 @@
       trace/untrace-var*))
 
 
-(defn f1 [a] (let [b 4
-                   c (inc b)]
-               (if (= a b)
-                 (-> c inc str keyword)
-                 (->> [a b c] (map inc) (map even?)))))
+#_ (defn f1 [a] (inc 2) (empty? [0 [1 2 (-> a inc dec)]])) ;; TODO
+
+
+(defn f1 [a] (empty? [0 [1 2 (-> a inc dec)]]))
+
+#_ (deep-tracer {:qual-sym 'com.billpiel.sayid.deep-trace2/f1
+                 :meta' nil
+                 :ns' 'com.billpiel.sayid.deep-trace2})
+
+#_ (binding [trace/*trace-log-parent* {:id :root1 :children (atom [])}]
+  (let [f (deep-tracer {:qual-sym 'com.billpiel.sayid.deep-trace2/f1
+                        :meta' nil
+                        :ns' 'com.billpiel.sayid.deep-trace2})]
+    (f 2)
+    (-/p trace/*trace-log-parent*)))
+
+#_ (deep-tracer {:qual-sym 'xpojure.routes.home/home-page
+              :meta' nil
+              :ns' 'xpojure.routes.home})
