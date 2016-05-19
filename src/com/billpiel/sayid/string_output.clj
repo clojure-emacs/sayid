@@ -133,24 +133,23 @@
 (defn name->string
   [tree start?]
   (let [{:keys [depth name form ns parent-name macro? xpanded-frm]} tree]
-    (when-not (nil? name)
-      [(get-line-meta tree :header? true)
-       (slinky-pipes-MZ depth :end (when start? "v"))
-       (if parent-name
-         [(color-code-MZ :fg 0 :bg* (dec depth) :bold false)
-          (if-not (nil? form)
-            (str form)
-            name)
-          (when macro?
-            [(color-code-MZ :fg* (dec depth) :bg 0 :bold false) " => " (str xpanded-frm)])
-          (color-code-MZ :fg* (dec depth) :bg 0 :bold false)
-          "  " parent-name]
-         [(color-code-MZ :fg* (dec depth) :bg 0 :bold false)
-          name])
-       "  "
-       (color-code-MZ :fg 7)
-       (:id tree)
-       reset-color-code])))
+    [(get-line-meta tree :header? true)
+     (slinky-pipes-MZ depth :end (when start? "v"))
+     (if parent-name
+       [(color-code-MZ :fg 0 :bg* (dec depth) :bold false)
+        (if-not (nil? form)
+          (str form)
+          name)
+        (when macro?
+          [(color-code-MZ :fg* (dec depth) :bg 0 :bold false) " => " (str xpanded-frm)])
+        (color-code-MZ :fg* (dec depth) :bg 0 :bold false)
+        "  " parent-name]
+       [(color-code-MZ :fg* (dec depth) :bg 0 :bold false)
+        name])
+     "  "
+     (color-code-MZ :fg 7)
+     (:id tree)
+     reset-color-code]))
 
 (defn multi-line-indent
   [& {:keys [label value indent-base indent-offset]}]
@@ -219,7 +218,7 @@
     (when-let [args (:args tree)]
       (->> args
            (map-indexed (fn [i value]
-                          [(get-line-meta tree [:args i])
+                          [(get-line-meta tree :path [:args i])
                            (multi-line-indent-MZ :value value
                                                  :indent-base (:depth tree)
                                                  :indent-offset 3)]))
