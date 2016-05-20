@@ -133,23 +133,25 @@
 (defn name->string
   [tree start?]
   (let [{:keys [depth name form ns parent-name macro? xpanded-frm]} tree]
-    [(get-line-meta tree :header? true)
-     (slinky-pipes-MZ depth :end (when start? "v"))
-     (if parent-name
-       [(color-code-MZ :fg 0 :bg* (dec depth) :bold false)
-        (if-not (nil? form)
-          (str form)
-          name)
-        (when macro?
-          [(color-code-MZ :fg* (dec depth) :bg 0 :bold false) " => " (str xpanded-frm)])
-        (color-code-MZ :fg* (dec depth) :bg 0 :bold false)
-        "  " parent-name]
-       [(color-code-MZ :fg* (dec depth) :bg 0 :bold false)
-        name])
-     "  "
-     (color-code-MZ :fg 7)
-     (:id tree)
-     reset-color-code]))
+    (if (nil? depth)
+      []
+      [(get-line-meta tree :header? true)
+       (slinky-pipes-MZ depth :end (when start? "v"))
+       (if parent-name
+         [(color-code-MZ :fg 0 :bg* (dec depth) :bold false)
+          (if-not (nil? form)
+            (str form)
+            name)
+          (when macro?
+            [(color-code-MZ :fg* (dec depth) :bg 0 :bold false) " => " (str xpanded-frm)])
+          (color-code-MZ :fg* (dec depth) :bg 0 :bold false)
+          "  " parent-name]
+         [(color-code-MZ :fg* (dec depth) :bg 0 :bold false)
+          name])
+       "  "
+       (color-code-MZ :fg 7)
+       (:id tree)
+       reset-color-code])))
 
 (defn multi-line-indent
   [& {:keys [label value indent-base indent-offset]}]
@@ -289,31 +291,33 @@
 
 (defn tree->string*
   [tree]
-  (let [has-children (some-> tree
-                             :children
-                             not-empty)]
-    [(name->string tree true) "\n"
-     (when-sel :selects  (selects-str tree))
-     (when-sel :args (args*-str tree))
-     (when-sel :children
-               (when has-children
-                 [(when-sel :return (return-str tree :pos :before))
-                  (when-sel :throw (throw-str tree))
-                  (mapv tree->string* (:children tree))
-                  (name->string tree false) "\n"
-                  (when-sel :args
-                            (args*-str tree))]))
-     (when-sel :return (return-str tree :pos :after))
-     (when-sel :throw (throw-str tree))
-     (when (and (-> tree :depth nil? not)
-                (-> tree
-                    meta
-                    ::ws/workspace
-                    not))
-       (slinky-pipes-MZ (:depth tree)
-                        :end "^"))
-     reset-color-code
-     "\n"]))
+  (if (nil? tree)
+    []
+    (let [has-children (some-> tree
+                               :children
+                               not-empty)]
+      [(name->string tree true) "\n"
+       (when-sel :selects  (selects-str tree))
+       (when-sel :args (args*-str tree))
+       (when-sel :children
+                 (when has-children
+                   [(when-sel :return (return-str tree :pos :before))
+                    (when-sel :throw (throw-str tree))
+                    (mapv tree->string* (:children tree))
+                    (name->string tree false) "\n"
+                    (when-sel :args
+                              (args*-str tree))]))
+       (when-sel :return (return-str tree :pos :after))
+       (when-sel :throw (throw-str tree))
+       (when (and (-> tree :depth nil? not)
+                  (-> tree
+                      meta
+                      ::ws/workspace
+                      not))
+         (slinky-pipes-MZ (:depth tree)
+                          :end "^"))
+       reset-color-code
+       "\n"])))
 
 (defn tree->string
   [tree]

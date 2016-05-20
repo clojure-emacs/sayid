@@ -31,7 +31,7 @@
 
 (defun sayid-send-and-insert (req)
   (let* ((resp (nrepl-send-sync-request req))
-         (x (nrepl-dict-get resp "value"))
+         (x (read (nrepl-dict-get resp "value"))) ;; WTF
          (m (nrepl-dict-get resp "meta"))
          (orig-buf (current-buffer)))
     (sayid-pop-insert-ansi x m orig-buf)))
@@ -44,6 +44,13 @@
 (defun sayid-query-form-at-point ()
   (interactive)
   (sayid-send-and-insert (list "op" "sayid-query-form-at-point"
+                               "file" (buffer-file-name)
+                               "line" (line-number-at-pos))))
+
+(defun sayid-get-meta-at-point ()
+  (interactive)
+  (sayid-send-and-insert (list "op" "sayid-get-meta-at-point"
+                               "source" (buffer-string)
                                "file" (buffer-file-name)
                                "line" (line-number-at-pos))))
 
@@ -85,7 +92,7 @@
   (let* ((s-buf (get-buffer "*sayid*"))
          (req (list "op" "sayid-show-traced"))
          (resp (nrepl-send-sync-request req))
-         (v (read (nrepl-dict-get resp "value" )))
+         (v (read (nrepl-dict-get resp "value" ))) ;; WTF
          (v-ns (second (assoc "ns" v)))
          (v-fn (second (assoc "fn" v)))
          (v-ifn (second (assoc "deep-fn" v)))
@@ -109,11 +116,17 @@
   (interactive)
   (sayid-send-and-insert (list "op" "sayid-get-workspace")))
 
-(defun sayid-outer-trace-on ()
+(defun sayid-trace-all-ns-in-dir ()
   (interactive)
   (nrepl-send-sync-request (list "op" "sayid-trace-all-ns-in-dir"
                                  "dir" (sayid-get-trace-ns-dir)))
-  (message "Traced some stuff."))
+  (sayid-show-traced))
+
+(defun sayid-trace-ns-in-file ()
+  (interactive)
+  (nrepl-send-sync-request (list "op" "sayid-trace-ns-in-file"
+                                 "file" (buffer-file-name)))
+  (sayid-show-traced))
 
 (defun sayid-kill-all-traces ()
   (interactive)
@@ -146,6 +159,8 @@
 (defun sayid-search-line-meta (m n f)
   (let ((head (first m))
         (tail (rest m)))
+    (print head)
+    (print n)
     (cond ((eq nil head) nil)
           ((funcall f n head)
            head)
@@ -188,9 +203,12 @@
 
 (defun sayid-buffer-nav-to-next ()
   (interactive)
+  (print (sayid-search-line-meta sayid-meta
+                                 (line-number-at-pos)
+                                 'is-header-and-<))
   (let ((next (first (sayid-search-line-meta sayid-meta
-                                              (line-number-at-pos)
-                                              'is-header-and-<))))
+                                             (line-number-at-pos)
+                                             'is-header-and-<))))
     (when next
       (goto-line next))))
 
@@ -250,7 +268,7 @@
   (define-key clojure-mode-map (kbd "C-c s r")
     'sayid-replay-workspace-query-point)
   (define-key clojure-mode-map (kbd "C-c s w") 'sayid-get-workspace)
-  (define-key clojure-mode-map (kbd "C-c s t") 'sayid-outer-trace-on)
+;  (define-key clojure-mode-map (kbd "C-c s t") 'sayid-outer-trace-on)
   (define-key clojure-mode-map (kbd "C-c s k") 'sayid-kill-all-traces)
   (define-key clojure-mode-map (kbd "C-c s c") 'sayid-clear-log)
   (define-key clojure-mode-map (kbd "C-c s x") 'sayid-reset-workspace)

@@ -14,7 +14,16 @@
   [transport msg]
   (t/send transport (response-for msg :status :done)))
 
-(defn get-form-at-file-pos
+(defn find-ns-sym
+  [file]
+  (println file)
+  (some->> file
+           slurp
+           (re-find #"\(ns\s+(.+)\b")
+           second
+           symbol))
+
+(defn get-form-at-pos-in-source
   [file line source]
   (let [rdr (rts/source-logging-push-back-reader source
                                                  (count source)
@@ -27,9 +36,9 @@
           (<= (:line m) line (:end-line m)) frm
           :else (recur rdr-iter))))))
 
-(defn get-meta-at-file-pos
+(defn get-meta-at-pos-in-source
   [file line source]
-  (meta (get-form-at-file-pos file line source)))
+  (meta (get-form-at-pos-in-source file line source)))
 
 (defn parse-ns-name-from-source
   [source]
@@ -95,6 +104,13 @@
 ;; ======================
 
 
+(defn sayid-get-meta-at-point
+  [{:keys [transport source file line] :as msg}]
+  (t/send transport
+          (response-for msg
+                        :value (str (get-meta-at-pos-in-source file line source))))
+  (send-status-done transport msg))
+
 (defn sayid-show-traced
   [{:keys [transport] :as msg}]
   (t/send transport (response-for msg :value (clj->nrepl (sd/ws-show-traced*))))
@@ -111,7 +127,7 @@
 
 (defn sayid-replay-at-point
   [{:keys [transport source file line] :as msg}]
-  (try (let [{start-line :line} (get-meta-at-file-pos file line source)
+  (try (let [{start-line :line} (get-meta-at-pos-in-source file line source)
              matches (query-ws-by-file-line-range file start-line line)
              matches' (when-not (empty? matches)
                         (do (replay! matches)
@@ -133,7 +149,7 @@
 
 (defn sayid-force-get-inner-trace
   [{:keys [transport source file line] :as msg}]
-  (try (let [{start-line :line} (get-meta-at-file-pos file line source)
+  (try (let [{start-line :line} (get-meta-at-pos-in-source file line source)
              matches (query-ws-by-file-line-range file start-line line)
              has-inner? (tree-contains-inner-trace? {:children matches})
              matches' (cond
@@ -225,6 +241,16 @@
               (ns-find/find-namespaces-in-dir (java.io.File. dir))))
   (send-status-done transport msg))
 
+(defn sayid-trace-ns-in-file
+  [{:keys [transport file] :as msg}]
+  (println "sayid-trace-ns-in-file")
+  (println file)
+  (->> file
+       find-ns-sym
+       (#(do (println %) %))
+       sd/ws-add-trace-ns!*)
+  (send-status-done transport msg))
+
 (defn sayid-remove-all-traces
   [{:keys [transport] :as msg}]
   (sd/ws-remove-all-traces!)
@@ -247,7 +273,7 @@
 
 (defn sayid-get-workspace
   [{:keys [transport] :as msg}]
-  (let [out (sd/with-printer (so/tree->string+meta (sd/ws-deref!)))]
+  (let [out (sd/with-this-printer [:children] (so/tree->string+meta (sd/ws-deref!)))]
     (try
       (t/send transport (response-for msg
                                       :value (:string out)
@@ -264,6 +290,7 @@
    "sayid-clear-log" #'sayid-clear-log
    "sayid-reset-workspace" #'sayid-reset-workspace
    "sayid-trace-all-ns-in-dir" #'sayid-trace-all-ns-in-dir
+   "sayid-trace-ns-in-file" #'sayid-trace-ns-in-file
    "sayid-remove-all-traces" #'sayid-remove-all-traces
    "sayid-disable-all-traces" #'sayid-disable-all-traces
    "sayid-buf-query-id-w-mod" #'sayid-buf-query-id-w-mod
@@ -272,7 +299,8 @@
    "sayid-set-printer" #'sayid-set-printer
    "sayid-show-traced" #'sayid-show-traced
    "sayid-replay-at-point" #'sayid-replay-at-point
-   "sayid-replay-workspace" #'sayid-replay-workspace})
+   "sayid-replay-workspace" #'sayid-replay-workspace
+   "sayid-get-meta-at-point" #'sayid-get-meta-at-point})
 
 
 (defn wrap-sayid

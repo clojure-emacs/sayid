@@ -34,6 +34,17 @@
   (into {} (map (fn [[k v]] [k (f v)])
                 m)))
 
+(defn clear-meta
+  [v]
+  (with-meta v nil))
+
+(defn cleanse-arglist
+  "Clear out pre-condtions and tags."
+  [arglist]
+  (->> arglist
+       clear-meta
+       (mapv clear-meta)))
+
 (defn arg-matcher-fn
   [arglists]
   (when (not-empty arglists)
@@ -46,14 +57,17 @@
 
 (defn arg-match
   [arglists args]
+  (def arglists' arglists)
+  (def args' args)
   (if (not-empty arglists)
     (let [args-v (vec args)
-          matcher-fn (arg-matcher-fn-memo arglists)]
-      (apply-to-map-vals #(if (seq? %) ;; Resolve LazySeqs
+          matcher-fn (->> arglists
+                          (map cleanse-arglist)
+                          arg-matcher-fn-memo)]
+      (apply-to-map-vals #(if (seq? %) ;; Resolve LazySeqs -- TODO make safer?
                             (apply list %)
                             %)
-                         (apply matcher-fn
-                                args-v)))
+                         (apply matcher-fn args-v)))
     (zipmap (range) args)))
 
 (defn qualify-sym
