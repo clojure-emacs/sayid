@@ -139,18 +139,18 @@
        (slinky-pipes-MZ depth :end (when start? "v"))
        (if parent-name
          [(color-code-MZ :fg 0 :bg* (dec depth) :bold false)
-          (if-not (nil? form)
-            (str form)
-            name)
+          (str (if-not (nil? form)
+                 form
+                 name))
           (when macro?
             [(color-code-MZ :fg* (dec depth) :bg 0 :bold false) " => " (str xpanded-frm)])
           (color-code-MZ :fg* (dec depth) :bg 0 :bold false)
-          "  " parent-name]
+          "  " (str parent-name)]
          [(color-code-MZ :fg* (dec depth) :bg 0 :bold false)
-          name])
+          (str name)])
        "  "
        (color-code-MZ :fg 7)
-       (:id tree)
+       (-> tree :id str)
        reset-color-code])))
 
 (defn multi-line-indent
@@ -327,6 +327,53 @@
        (remove nil?)
        (remove map?)
        (clojure.string/join "")))
+
+
+
+
+(declare strings-agg-head)
+
+(defn map-agg-head
+  [agg [next & tail :as items]]
+  (cond (empty? items) agg
+        (map? next) #(map-agg-head (concat [next ""]
+                                           agg)
+                                   tail)
+        (string? next) #(strings-agg-head (concat [[next]] agg)
+                                          tail)
+        (nil? next) #(map-agg-head agg
+                                   tail)))
+
+(defn strings-agg-head
+  [[agg-head & agg-tail :as agg] [next & tail :as items]]
+  (cond (empty? items) agg
+        (string? next) #(strings-agg-head (concat [(conj agg-head next)]
+                                                  agg-tail)
+                                          tail)
+        :else #(map-agg-head (concat [next (apply str agg-head)]
+                                     agg-tail)
+                             tail)))
+
+(defn ->meta-string-pairs
+  [v]
+  (let [[head :as all] (util/$- ->> v
+                                (conj $ nil)
+                                (trampoline map-agg-head [])
+                                reverse
+                                drop-last
+                                (drop-while #{""}))]
+    (partition-all 2 (if (string? head)
+                       (concat [{}] all)
+                       all))))
+
+(defn tree->meta-string-pairs
+  [tree]
+  (->> tree
+       tree->string*
+       flatten
+       (remove nil?)
+       ->meta-string-pairs))
+
 
 (defn tree->meta
   [tree]

@@ -75,11 +75,33 @@
                                "line" (line-number-at-pos))))
 
 (defun insert-w-props (s p buf)
+  (print ".............")
+  (print s)
+  (print p)
   (set-buffer buf)
   (let ((start (point))
-        (xxx (insert s))
+        (xxx (insert (or s "")))
         (end (- (point) 1)))
     (set-text-properties start end p buf)))
+
+
+;; make-symbol is a liar
+(defun str-to-sym (s) (car (read-from-string s)))
+
+(defun first-to-sym (p)
+  (list (str-to-sym (first p))
+        (second p)))
+
+(defun str-alist-to-sym-list (sal)
+  (apply 'append
+         (mapcar 'first-to-sym
+                 sal)))
+
+(defun insert-text-prop-alist (pairs buf)
+  (dolist (p pairs)
+    (insert-w-props (second p)
+                    (str-alist-to-sym-list (first p))
+                    buf)))
 
 (defun insert-traced-name (buf s)
   (insert-w-props (concat "  " s "\n")
@@ -88,7 +110,6 @@
 
 (defun sayid-show-traced ()
   (interactive)
-
   (let* ((s-buf (get-buffer "*sayid*"))
          (req (list "op" "sayid-show-traced"))
          (resp (nrepl-send-sync-request req))
@@ -114,7 +135,15 @@
 
 (defun sayid-get-workspace ()
   (interactive)
-  (sayid-send-and-insert (list "op" "sayid-get-workspace")))
+  (let* ((resp (nrepl-send-sync-request (list "op" "sayid-get-workspace")))
+         (x (nrepl-dict-get resp "value")) ;; WTF
+         (orig-buf (current-buffer))
+         (sayid-buf (sayid-init-buf)))
+    (insert-text-prop-alist x sayid-buf)
+    (ansi-color-apply-on-region (point-min) (point-max))
+    (sayid-mode)
+    (pop-to-buffer orig-buf))
+  (message "done sayid-get-workspace"))
 
 (defun sayid-trace-all-ns-in-dir ()
   (interactive)
@@ -176,14 +205,29 @@
 
 (defun sayid-buffer-nav-from-point ()
   (interactive)
-  (let* ((line-meta (sayid-get-line-meta (reverse sayid-meta)
-                                         (line-number-at-pos)))
-         (file (nrepl-dict-get line-meta
-                               "file"))
-         (line (nrepl-dict-get line-meta
-                               "line")))
+  (let* ((file (get-text-property (point) 'file))
+         (line (get-text-property (point) 'line)))
+    (print (point))
     (pop-to-buffer (find-file-noselect file))
     (goto-line line)))
+
+
+(get-text-property 165 (make-symbol "file") (get-buffer "*sayid*"))
+(text-properties-at 165 (get-buffer "*sayid*"))
+
+(eq 'header (first (text-properties-at 165 (get-buffer "*sayid*"))))
+
+(eq (make-symbol "header") (make-symbol "header"))
+(eq 'header 'header)
+(eq (car (read-from-string "hi"))  (car (read-from-string "hi")))
+
+
+(set-text-properties 164 166 '(file 4 foo 5) (get-buffer "*sayid*"))
+
+(set-text-properties 164 166
+                     (list 'header "true" 'path "" 'fn-name "com.billpiel.sayid.test.ns1/func3-2" 'id "30460" 'file "/home/bill/repos/sayid/test/com/billpiel/sayid/test/ns1.clj" 'column 1 'line 24)
+                     (get-buffer "*sayid*"))
+
 
 (defun is-header-and-< (n m)
   (and (< n (first m))

@@ -273,6 +273,18 @@
 
 (defn sayid-get-workspace
   [{:keys [transport] :as msg}]
+  (let [out (sd/with-this-printer [:children]
+              (so/tree->meta-string-pairs (sd/ws-deref!)))]
+    (try
+      (t/send transport (response-for msg
+                                      :value (clj->nrepl out)))
+      (catch Exception e
+        (println "EXCEPTION!")
+        (println e))))
+  (t/send transport (response-for msg :status :done)))
+
+#_ (defn sayid-get-workspace
+  [{:keys [transport] :as msg}]
   (let [out (sd/with-this-printer [:children] (so/tree->string+meta (sd/ws-deref!)))]
     (try
       (t/send transport (response-for msg
