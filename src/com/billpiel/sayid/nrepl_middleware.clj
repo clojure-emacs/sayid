@@ -11,8 +11,19 @@
             [clojure.tools.namespace.find :as ns-find]))
 
 (defn send-status-done
-  [transport msg]
-  (t/send transport (response-for msg :status :done)))
+  [msg]
+  (t/send (:transport msg)
+          (response-for msg :status :done)))
+
+(defn reply:clj->nrepl
+  [msg out]
+  (try (t/send (:transport msg)
+               (response-for msg
+                             :value (clj->nrepl out)))
+       (catch Exception e
+         (println "EXCEPTION!")
+         (println e)))
+  (send-status-done msg))
 
 (defn find-ns-sym
   [file]
@@ -177,15 +188,11 @@
          (send-status-done transport msg))))
 
 (defn sayid-query-form-at-point
-  [{:keys [transport file line] :as msg}]
-  (let [out (-> (sd/ws-query-by-file-pos file line)
-                util/wrap-kids
-                so/tree->string+meta)]
-    (t/send transport (response-for msg
-                                    :value (:string out)
-                                    :meta (-> out :meta process-line-meta))))
-  (t/send transport (response-for msg :status :done)))
-
+  [{:keys [file line] :as msg}]
+  (reply:clj->nrepl msg
+                    (-> (sd/ws-query-by-file-pos file line)
+                        util/wrap-kids
+                        so/tree->meta-string-pairs)))
 
 (defn sayid-buf-query
   [q-vec mod-str]
@@ -195,37 +202,36 @@
         query (remove nil? [k n q-vec])]
     (-> (apply sd/ws-query* query)
         util/wrap-kids
-        so/tree->string+meta)))
+        so/tree->meta-string-pairs)))
 
 (defn sayid-buf-query-id-w-mod
-  [{:keys [transport trace-id mod] :as msg}]
-  (let [{v :string
-         m :meta} (sayid-buf-query [:id (keyword trace-id)] mod)]
-    (t/send transport (response-for msg
-                                    :value v
-                                    :meta (process-line-meta m))))
-  (send-status-done transport msg))
+  [{:keys [trace-id mod] :as msg}]
+  (reply:clj->nrepl msg
+                    (sayid-buf-query [:id (keyword trace-id)]
+                                     mod)))
 
 (defn sayid-buf-query-fn-w-mod
-  [{:keys [transport fn-name mod] :as msg}]
-  (let [out (sayid-buf-query [(some-fn :parent-name :name)
+  [{:keys [fn-name mod] :as msg}]
+  (reply:clj->nrepl msg (sayid-buf-query [(some-fn :parent-name :name)
                               (symbol fn-name)]
-                             mod)]
-    (t/send transport (response-for msg
-                                    :value (:string out)
-                                    :meta (-> out :meta process-line-meta))))
-  (send-status-done transport msg))
+                             mod)))
 
 (defn sayid-buf-def-at-point
   [{:keys [transport trace-id path] :as msg}]
+  (println trace-id)
   (println path)
-  (let [path' (read-string path)]
-    (util/def-ns-var '$s '* (-> [:id (keyword trace-id)]
+  (println (type path))
+  (let [path' (-> path
+                  (update-in [0] keyword)
+                  (update-in [1] symbol))]
+    (println path')
+    (util/def-ns-var '$s '* (-> [:id (keyword trace-id)] ;;TODO use intern
                                 sd/ws-query*
                                 first
+                                (#(do (println %) %))
                                 (get-in path'))))
   (t/send transport (response-for msg :value "Def'd as $s/*"))
-  (send-status-done transport msg))
+  (send-status-done msg))
 
 (defn sayid-clear-log
   [{:keys [transport] :as msg}]
@@ -274,28 +280,10 @@
   (send-status-done transport msg))
 
 (defn sayid-get-workspace
-  [{:keys [transport] :as msg}]
-  (let [out (sd/with-this-printer [:children]
-              (so/tree->meta-string-pairs (sd/ws-deref!)))]
-    (try
-      (t/send transport (response-for msg
-                                      :value (clj->nrepl out)))
-      (catch Exception e
-        (println "EXCEPTION!")
-        (println e))))
-  (t/send transport (response-for msg :status :done)))
-
-#_ (defn sayid-get-workspace
-  [{:keys [transport] :as msg}]
-  (let [out (sd/with-this-printer [:children] (so/tree->string+meta (sd/ws-deref!)))]
-    (try
-      (t/send transport (response-for msg
-                                      :value (:string out)
-                                      :meta  (-> out :meta process-line-meta)))
-      (catch Exception e
-        (println "EXCEPTION!")
-        (println e))))
-  (t/send transport (response-for msg :status :done)))
+  [msg]
+  (reply:clj->nrepl msg
+                    (sd/with-this-printer [:children]
+                      (so/tree->meta-string-pairs (sd/ws-deref!)))))
 
 (def sayid-nrepl-ops
   {"sayid-query-form-at-point" #'sayid-query-form-at-point

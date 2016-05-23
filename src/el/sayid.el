@@ -43,9 +43,9 @@
 
 (defun sayid-query-form-at-point ()
   (interactive)
-  (sayid-send-and-insert (list "op" "sayid-query-form-at-point"
-                               "file" (buffer-file-name)
-                               "line" (line-number-at-pos))))
+  (sayid-req-insert-meta-ansi (list "op" "sayid-query-form-at-point"
+                                    "file" (buffer-file-name)
+                                    "line" (line-number-at-pos))))
 
 (defun sayid-get-meta-at-point ()
   (interactive)
@@ -183,11 +183,10 @@
         (orig-buf (current-buffer)))
     (sayid-pop-insert-ansi x m orig-buf)))
 
+;; REMOVE
 (defun sayid-search-line-meta (m n f)
   (let ((head (first m))
         (tail (rest m)))
-    (print head)
-    (print n)
     (cond ((eq nil head) nil)
           ((funcall f n head)
            head)
@@ -210,14 +209,6 @@
 
 (defun sayid-buffer-nav-to-prev ()
   (interactive)
-  (let ((next (first (sayid-search-line-meta (reverse sayid-meta)
-                                              (line-number-at-pos)
-                                              'is-header-and->))))
-    (when next
-      (goto-line next))))
-
-(defun sayid-buffer-nav-to-prev ()
-  (interactive)
   (forward-line -1)
   (while (and (> (point) (point-min))
               (eq nil (get-text-property (point) 'header)))
@@ -232,44 +223,35 @@
 
 (defun sayid-query-id-w-mod ()
   (interactive)
-  (sayid-send-and-insert (list "op" "sayid-buf-query-id-w-mod"
-                               "trace-id" (nrepl-dict-get (sayid-get-line-meta (reverse sayid-meta)
-                                                                               (line-number-at-pos))
-                                                          "id")
-                               "mod" (read-string "query modifier: "))))
+  (sayid-req-insert-meta-ansi (list "op" "sayid-buf-query-id-w-mod"
+                                    "trace-id" (get-text-property (point) 'id)
+                                    "mod" (read-string "query modifier: "))))
 
 (defun sayid-query-id ()
   (interactive)
-  (sayid-send-and-insert (list "op" "sayid-buf-query-id-w-mod"
-                               "trace-id" (nrepl-dict-get (sayid-get-line-meta (reverse sayid-meta)
-                                                                               (line-number-at-pos))
-                                                          "id")
-                               "mod" "")))
+    (sayid-req-insert-meta-ansi (list "op" "sayid-buf-query-id-w-mod"
+                                    "trace-id" (get-text-property (point) 'id)
+                                    "mod" "")))
 
 (defun sayid-query-fn-w-mod ()
   (interactive)
-  (sayid-send-and-insert (list "op" "sayid-buf-query-fn-w-mod"
-                               "fn-name" (nrepl-dict-get (get-text-property (point) 'fn-name)
-                                                          "fn-name")
+  (sayid-req-insert-meta-ansi (list "op" "sayid-buf-query-fn-w-mod"
+                               "fn-name" (get-text-property (point) 'fn-name)
                                "mod" (read-string "query modifier: "))))
+
+
 (defun sayid-query-fn ()
   (interactive)
-  (sayid-send-and-insert (list "op" "sayid-buf-query-fn-w-mod"
-                               "fn-name" (nrepl-dict-get (sayid-get-line-meta (reverse sayid-meta)
-                                                                               (line-number-at-pos))
-                                                          "fn-name")
+  (sayid-req-insert-meta-ansi (list "op" "sayid-buf-query-fn-w-mod"
+                               "fn-name" (get-text-property (point) 'fn-name)
                                "mod" "")))
 
 
 (defun sayid-buf-def-at-point ()
   (interactive)
   (sayid-send-and-message (list "op" "sayid-buf-def-at-point"
-                                "trace-id" (nrepl-dict-get (sayid-get-line-meta (reverse sayid-meta)
-                                                                                (line-number-at-pos))
-                                                           "id")
-                                "path" (nrepl-dict-get (sayid-get-line-meta (reverse sayid-meta)
-                                                                            (line-number-at-pos))
-                                                       "path"))))
+                                "trace-id" (get-text-property (point) 'id)
+                                "path" (get-text-property (point) 'path))))
 
 (defun sayid-set-printer ()
   (interactive)
