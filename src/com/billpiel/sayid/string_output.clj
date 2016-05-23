@@ -314,8 +314,9 @@
                       meta
                       ::ws/workspace
                       not))
-         (slinky-pipes-MZ (:depth tree)
-                          :end "^"))
+         [(get-line-meta tree) ;; clear meta
+          (slinky-pipes-MZ (:depth tree)
+                           :end "^")])
        reset-color-code
        "\n"])))
 

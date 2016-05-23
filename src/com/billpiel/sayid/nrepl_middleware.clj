@@ -94,6 +94,8 @@
   (cond (coll? v) (list* v)
         (number? v) v
         (keyword? v) (name v)
+        (true? v) 1
+        (false? v) nil
         :else (str v)))
 
 (defn clj->nrepl
