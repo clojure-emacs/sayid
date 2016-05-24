@@ -122,12 +122,12 @@
   (t/send transport
           (response-for msg
                         :value (str (get-meta-at-pos-in-source file line source))))
-  (send-status-done transport msg))
+  (send-status-done msg))
 
 (defn sayid-show-traced
   [{:keys [transport] :as msg}]
   (t/send transport (response-for msg :value (clj->nrepl (sd/ws-show-traced*))))
-  (send-status-done transport msg))
+  (send-status-done msg))
 
 (defn sayid-replay-workspace
   [{:keys [transport] :as msg}]
@@ -136,7 +136,7 @@
     (sd/ws-cycle-all-traces!)
     (sd/ws-clear-log!)
     (replay! kids))
-  (send-status-done transport msg))
+  (send-status-done msg))
 
 (defn sayid-replay-at-point
   [{:keys [transport source file line] :as msg}]
@@ -158,34 +158,32 @@
          (t/send transport (response-for msg
                                          :value (with-out-str (clojure.stacktrace/print-stack-trace e)))))
        (finally
-         (send-status-done transport msg))))
+         (send-status-done msg))))
 
-(defn sayid-force-get-inner-trace
+(defn sayid-replay-with-inner-trace
   [{:keys [transport source file line] :as msg}]
   (try (let [{start-line :line} (get-meta-at-pos-in-source file line source)
              matches (query-ws-by-file-line-range file start-line line)
-             has-inner? (tree-contains-inner-trace? {:children matches})
-             matches' (cond
-                        has-inner?
-                        matches
-                        (empty? matches) nil
-                        :else
-                        (do (inner-replay! matches)
-                            (query-ws-by-file-line-range file start-line line)))
-
+             [{:keys [name]}] matches
+             kids (:children (sd/ws-deref!))
+             _ (do (sd/ws-cycle-all-traces!)
+                   (sd/ws-clear-log!)
+                   (sd/ws-add-deep-trace-fn!* name)
+                   (replay! kids))
+             matches' (query-ws-by-file-line-range file start-line line)
              out (if-not (nil? matches')
                    (-> matches'
                        util/wrap-kids
-                       so/tree->string+meta)
+                       so/tree->meta-string-pairs
+                       clj->nrepl)
                    {:string (str "No trace records found for function at line: " line)})]
          (t/send transport (response-for msg
-                                         :value (:string out)
-                                         :meta (-> out :meta process-line-meta))))
+                                         :value out)))
        (catch Exception e
          (t/send transport (response-for msg
                                          :value (with-out-str (clojure.stacktrace/print-stack-trace e)))))
        (finally
-         (send-status-done transport msg))))
+         (send-status-done msg))))
 
 (defn sayid-query-form-at-point
   [{:keys [file line] :as msg}]
@@ -216,14 +214,20 @@
                               (symbol fn-name)]
                              mod)))
 
+;; this func is unfortunate
+(defn str-vec->arg-path
+  [[kw idx]]
+  (let [kw' (keyword kw)]
+    (cond (nil? idx) [kw']
+          (string? idx) [kw' (symbol idx)]
+          :else [kw' idx])))
+
 (defn sayid-buf-def-at-point
   [{:keys [transport trace-id path] :as msg}]
   (println trace-id)
   (println path)
   (println (type path))
-  (let [path' (-> path
-                  (update-in [0] keyword)
-                  (update-in [1] symbol))]
+  (let [path' (str-vec->arg-path path)]
     (println path')
     (util/def-ns-var '$s '* (-> [:id (keyword trace-id)] ;;TODO use intern
                                 sd/ws-query*
@@ -236,18 +240,18 @@
 (defn sayid-clear-log
   [{:keys [transport] :as msg}]
   (sd/ws-clear-log!)
-  (send-status-done transport msg))
+  (send-status-done msg))
 
 (defn sayid-reset-workspace
   [{:keys [transport] :as msg}]
   (sd/ws-reset!)
-  (send-status-done transport msg))
+  (send-status-done msg))
 
 (defn sayid-trace-all-ns-in-dir
   [{:keys [transport dir] :as msg}]
   (doall (map sd/ws-add-trace-ns!*
               (ns-find/find-namespaces-in-dir (java.io.File. dir))))
-  (send-status-done transport msg))
+  (send-status-done msg))
 
 (defn sayid-trace-ns-in-file
   [{:keys [transport file] :as msg}]
@@ -257,17 +261,17 @@
        find-ns-sym
        (#(do (println %) %))
        sd/ws-add-trace-ns!*)
-  (send-status-done transport msg))
+  (send-status-done msg))
 
 (defn sayid-remove-all-traces
   [{:keys [transport] :as msg}]
   (sd/ws-remove-all-traces!)
-  (send-status-done transport msg))
+  (send-status-done msg))
 
 (defn sayid-disable-all-traces
   [{:keys [transport] :as msg}]
   (sd/ws-disable-all-traces!)
-  (send-status-done transport msg))
+  (send-status-done msg))
 
 (defn sayid-set-printer
   [{:keys [transport printer] :as msg}]
@@ -277,7 +281,7 @@
     (->> (str "[" printer "]")
          read-string
          (apply sd/set-printer!)))
-  (send-status-done transport msg))
+  (send-status-done msg))
 
 (defn sayid-get-workspace
   [msg]
@@ -287,7 +291,7 @@
 
 (def sayid-nrepl-ops
   {"sayid-query-form-at-point" #'sayid-query-form-at-point
-   "sayid-force-get-inner-trace" #'sayid-force-get-inner-trace
+   "sayid-replay-with-inner-trace" #'sayid-replay-with-inner-trace
    "sayid-get-workspace" #'sayid-get-workspace
    "sayid-clear-log" #'sayid-clear-log
    "sayid-reset-workspace" #'sayid-reset-workspace

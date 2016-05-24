@@ -411,7 +411,7 @@
   [template binds]
   (vec (mapcat (fn [[b v]]
                  `(~b ~v
-                      ~'_ (tr-let-bind ~template
+                      ~'_ (tr-let-bind '~template
                                        ~'$$
                                        ~b
                                        '~b

@@ -56,16 +56,15 @@
 
 (defun sayid-replay-workspace-query-point ()
   (interactive)
-
   (nrepl-send-sync-request (list "op" "sayid-replay-workspace"))
   (sayid-query-form-at-point))
 
-(defun sayid-force-get-inner-trace ()
+(defun sayid-replay-with-inner-trace ()
   (interactive)
-  (sayid-send-and-insert (list "op" "sayid-force-get-inner-trace"
-                               "source" (buffer-string)
-                               "file" (buffer-file-name)
-                               "line" (line-number-at-pos))))
+  (sayid-req-insert-meta-ansi (list "op" "sayid-replay-with-inner-trace"
+                                    "source" (buffer-string)
+                                    "file" (buffer-file-name)
+                                    "line" (line-number-at-pos))))
 
 (defun sayid-replay-at-point ()
   (interactive)
@@ -109,7 +108,7 @@
   (let* ((s-buf (get-buffer "*sayid*"))
          (req (list "op" "sayid-show-traced"))
          (resp (nrepl-send-sync-request req))
-         (v (read (nrepl-dict-get resp "value" ))) ;; WTF
+         (v (nrepl-dict-get resp "value" )) ;; WTF
          (v-ns (second (assoc "ns" v)))
          (v-fn (second (assoc "fn" v)))
          (v-ifn (second (assoc "deep-fn" v)))
@@ -177,11 +176,7 @@
                                  "dir" (sayid-get-trace-ns-dir)))
   (cider-eval-last-sexp)
   (nrepl-send-sync-request (list "op" "sayid-disable-all-traces"))
-  (let* ((resp (nrepl-send-sync-request (list "op" "sayid-get-workspace")))
-         (x (nrepl-dict-get resp "value"))
-        (m (nrepl-dict-get resp "meta"))
-        (orig-buf (current-buffer)))
-    (sayid-pop-insert-ansi x m orig-buf)))
+  (sayid-get-workspace))
 
 ;; REMOVE
 (defun sayid-search-line-meta (m n f)
@@ -263,7 +258,7 @@
 (defun sayid-set-clj-mode-keys ()
   (define-key clojure-mode-map (kbd "C-c s e") 'sayid-eval-last-sexp)
   (define-key clojure-mode-map (kbd "C-c s f") 'sayid-query-form-at-point)
-  (define-key clojure-mode-map (kbd "C-c s n") 'sayid-force-get-inner-trace)
+  (define-key clojure-mode-map (kbd "C-c s n") 'sayid-replay-with-inner-trace)
   (define-key clojure-mode-map (kbd "C-c s r")
     'sayid-replay-workspace-query-point)
   (define-key clojure-mode-map (kbd "C-c s w") 'sayid-get-workspace)
