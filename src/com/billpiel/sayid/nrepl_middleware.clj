@@ -10,6 +10,20 @@
             [com.billpiel.sayid.util.other :as util]
             [clojure.tools.namespace.find :as ns-find]))
 
+(defn clj->nrepl*
+  [v]
+  (cond (coll? v) (list* v)
+        (number? v) v
+        (keyword? v) (name v)
+        (true? v) 1
+        (false? v) nil
+        :else (str v)))
+
+(defn clj->nrepl
+  [frm]
+  (clojure.walk/prewalk clj->nrepl*
+                        frm))
+
 (defn send-status-done
   [msg]
   (t/send (:transport msg)
@@ -48,6 +62,7 @@
         (cond
           (nil? frm) nil
           (<= (:line m) line (:end-line m)) frm
+          (> (:line m) line) nil
           :else (recur rdr-iter))))))
 
 (defn get-meta-at-pos-in-source
@@ -88,7 +103,7 @@
   (let [ws (sd/ws-deref!)
         ids (q/get-ids-from-file-line-range ws
                                             file
-                                            start-line
+                                            (or start-line line)
                                             line)]
     (if-not (empty? ids)
       (sd/ws-query* [:id ids])
@@ -102,20 +117,6 @@
                (update-in [:path] str)
                (update-in [:header] #(when % 1)))])
         line-meta))
-
-(defn clj->nrepl*
-  [v]
-  (cond (coll? v) (list* v)
-        (number? v) v
-        (keyword? v) (name v)
-        (true? v) 1
-        (false? v) nil
-        :else (str v)))
-
-(defn clj->nrepl
-  [frm]
-  (clojure.walk/prewalk clj->nrepl*
-                        frm))
 
 ;; ======================
 
@@ -169,18 +170,20 @@
              matches (query-ws-by-file-line-range file start-line line)
              [{:keys [name inner-path]}] matches
              kids (:children (sd/ws-deref!))
-             _ (do (sd/ws-cycle-all-traces!)
-                   (sd/ws-clear-log!)
-                   (when (nil? inner-path) ;; don't inner-trace an inner trace
-                     (sd/ws-add-deep-trace-fn!* name))
-                   (replay! kids))
+             _ (do (when-not (empty? matches)
+                     (sd/ws-cycle-all-traces!)
+                     (sd/ws-clear-log!)
+                     (when (nil? inner-path) ;; don't inner-trace an inner trace
+                       (sd/ws-add-deep-trace-fn!* name))
+                     (replay! kids)))
              matches' (query-ws-by-file-line-range file start-line line)
-             out (if-not (nil? matches')
+             out (if-not (or (empty? matches)
+                             (empty? matches'))
                    (-> matches'
                        util/wrap-kids
                        so/tree->meta-string-pairs
                        clj->nrepl)
-                   {:string (str "No trace records found for function at line: " line)})]
+                   (clj->nrepl [[nil (str "No trace records found for function at line: " line)]]))]
          (t/send transport (response-for msg
                                          :value out)))
        (catch Exception e
