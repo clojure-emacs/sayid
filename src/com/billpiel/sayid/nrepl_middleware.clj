@@ -164,11 +164,12 @@
   [{:keys [transport source file line] :as msg}]
   (try (let [{start-line :line} (get-meta-at-pos-in-source file line source)
              matches (query-ws-by-file-line-range file start-line line)
-             [{:keys [name]}] matches
+             [{:keys [name inner-path]}] matches
              kids (:children (sd/ws-deref!))
              _ (do (sd/ws-cycle-all-traces!)
                    (sd/ws-clear-log!)
-                   (sd/ws-add-deep-trace-fn!* name)
+                   (when (nil? inner-path) ;; don't inner-trace an inner trace
+                     (sd/ws-add-deep-trace-fn!* name))
                    (replay! kids))
              matches' (query-ws-by-file-line-range file start-line line)
              out (if-not (nil? matches')
