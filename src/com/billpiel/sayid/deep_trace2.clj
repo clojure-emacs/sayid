@@ -419,7 +419,7 @@
                (partition 2 binds))))
 
 (defn xpand-let-form
-  [[_ binds & frms] template]
+  [[_ binds] [_ _ & frms] template]
   `(tr-let-ret ~'$$
                '~template
                (let ~(xpand-let-binds template
@@ -496,7 +496,8 @@
 (defn xpand-let
   [form src-map fn-meta path path-chain]
   (let [path-chain' (conj path-chain path)]
-    (xpand-let-form (xpand-all form
+    (xpand-let-form form
+                    (xpand-all form
                                src-map
                                fn-meta
                                path
