@@ -128,9 +128,16 @@
                            s-buf)
           v-ifn)))
 
+;; I have no idea why I seem to need this
+(defun read-if-string (v)
+  (print v)
+  (if (stringp v)
+      (read v)
+    v))
+
 (defun sayid-req-insert-meta-ansi (req)
   (let* ((resp (nrepl-send-sync-request req))
-         (x (nrepl-dict-get resp "value")) ;; WTF
+         (x (read-if-string (nrepl-dict-get resp "value"))) ;; WTF
          (orig-buf (current-buffer))
          (sayid-buf (sayid-init-buf)))
     (insert-text-prop-alist x sayid-buf)
