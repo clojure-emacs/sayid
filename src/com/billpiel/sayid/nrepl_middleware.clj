@@ -17,6 +17,9 @@
 
 (defn reply:clj->nrepl
   [msg out]
+  (println "=============================")
+  (println (clj->nrepl out))
+  (println "=============================")
   (try (t/send (:transport msg)
                (response-for msg
                              :value (clj->nrepl out)))
