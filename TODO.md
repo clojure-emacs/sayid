@@ -1,0 +1,13 @@
+nrepl/sayid.el
+- button to pretty print
+- button to cider-inspect
+- trace by dir
+- trace by ns
+- enable/disable commands
+- back button (backspace)
+- video
+- 'n' does inner trace from buf
+- better 'show trace' buffer
+  - per ns
+  - check whether each func is: outer, inner, enabled
+  - button to remove trace
