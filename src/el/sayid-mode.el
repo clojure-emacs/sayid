@@ -15,6 +15,9 @@
         (define-key map  (kbd "w") 'sayid-get-workspace)
         (define-key map  (kbd "n") 'sayid-buffer-nav-to-next)
         (define-key map  (kbd "p") 'sayid-buffer-nav-to-prev)
+        (define-key map  (kbd "P") 'sayid-buf-pprint-at-point)
+        (define-key map  (kbd "<backspace>") 'sayid-buf-back)
+        (define-key map  (kbd "<S-backspace>") 'sayid-buf-forward)
         map))
 
  ;;;###autoload

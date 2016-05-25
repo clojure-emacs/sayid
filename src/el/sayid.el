@@ -98,6 +98,10 @@
                     (str-alist-to-sym-list (first p))
                     buf)))
 
+(defun insert-text-prop-ring (pairs buf)
+  (push-to-ring pairs)
+  (insert-text-prop-alist pairs buf))
+
 (defun insert-traced-name (buf s)
   (insert-w-props (concat "  " s "\n")
                   (list :name s)
@@ -135,15 +139,51 @@
       (read v)
     v))
 
+(defvar sayid-ring)
+(setq sayid-ring '())
+
+(defun list-take (n l)
+  (butlast l (- (length l) n)))
+
+(defun push-to-ring (v)
+  (setq sayid-ring (list-take 5 (cons v sayid-ring))))
+
+(defun cycle-ring ()
+  (setq sayid-ring
+        (append (cdr sayid-ring)
+                (list (first sayid-ring))))
+  (first sayid-ring))
+
+(defun cycle-ring-back ()
+  (setq sayid-ring
+        (append (last sayid-ring)
+                (butlast sayid-ring)))
+  (first sayid-ring))
+
+(defun sayid-setup-buf (meta-ansi save-to-ring)
+  (let ((orig-buf (current-buffer))
+        (sayid-buf (sayid-init-buf)))
+    (if save-to-ring
+        (insert-text-prop-ring meta-ansi sayid-buf)
+      (insert-text-prop-alist meta-ansi sayid-buf))
+    (ansi-color-apply-on-region (point-min) (point-max))
+    (sayid-mode)
+    (pop-to-buffer orig-buf)))
+
 (defun sayid-req-insert-meta-ansi (req)
   (let* ((resp (nrepl-send-sync-request req))
          (x (read-if-string (nrepl-dict-get resp "value"))) ;; WTF
          (orig-buf (current-buffer))
          (sayid-buf (sayid-init-buf)))
-    (insert-text-prop-alist x sayid-buf)
+    (insert-text-prop-ring x sayid-buf)
     (ansi-color-apply-on-region (point-min) (point-max))
     (sayid-mode)
     (pop-to-buffer orig-buf)))
+
+(defun sayid-req-insert-meta-ansi (req)
+  (let* ((resp (nrepl-send-sync-request req))
+         (x (read-if-string (nrepl-dict-get resp "value")))) ;; WTF
+    (sayid-setup-buf x t)))
 
 (defun sayid-get-workspace ()
   (interactive)
@@ -267,6 +307,15 @@
                                  "printer" (concat (read-string "printer: ")
                                                    " :children")))
   (message "Printer set."))
+
+(defun sayid-buf-back ()
+  (interactive)
+  (sayid-setup-buf (cycle-ring) nil))
+
+(defun sayid-buf-forward ()
+  (interactive)
+  (sayid-setup-buf (cycle-ring-back) nil))
+
 
 (defun sayid-set-clj-mode-keys ()
   (define-key clojure-mode-map (kbd "C-c s e") 'sayid-eval-last-sexp)
