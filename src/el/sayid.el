@@ -255,6 +255,12 @@
                                 "trace-id" (get-text-property (point) 'id)
                                 "path" (get-text-property (point) 'path))))
 
+(defun sayid-buf-pprint-at-point ()
+  (interactive)
+  (sayid-req-insert-meta-ansi (list "op" "sayid-buf-pprint-at-point"
+                                    "trace-id" (get-text-property (point) 'id)
+                                    "path" (get-text-property (point) 'path))))
+
 (defun sayid-set-printer ()
   (interactive)
   (nrepl-send-sync-request (list "op" "sayid-set-printer"

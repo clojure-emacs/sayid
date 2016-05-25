@@ -231,17 +231,22 @@
 
 (defn sayid-buf-def-at-point
   [{:keys [transport trace-id path] :as msg}]
-  (println trace-id)
-  (println path)
-  (println (type path))
   (let [path' (str-vec->arg-path path)]
-    (println path')
     (util/def-ns-var '$s '* (-> [:id (keyword trace-id)] ;;TODO use intern
                                 sd/ws-query*
                                 first
-                                (#(do (println %) %))
                                 (get-in path'))))
   (t/send transport (response-for msg :value "Def'd as $s/*"))
+  (send-status-done msg))
+
+(defn sayid-buf-pprint-at-point
+  [{:keys [transport trace-id path] :as msg}]
+  (let [path' (str-vec->arg-path path)
+        value (-> [:id (keyword trace-id)] ;;TODO use intern
+                  sd/ws-query*
+                  first
+                  (get-in path'))]
+    (t/send transport (response-for msg :value (clj->nrepl [[nil (so/pprint-str value)]]))))
   (send-status-done msg))
 
 (defn sayid-clear-log
@@ -309,6 +314,7 @@
    "sayid-buf-query-id-w-mod" #'sayid-buf-query-id-w-mod
    "sayid-buf-query-fn-w-mod" #'sayid-buf-query-fn-w-mod
    "sayid-buf-def-at-point" #'sayid-buf-def-at-point
+   "sayid-buf-pprint-at-point" #'sayid-buf-pprint-at-point
    "sayid-set-printer" #'sayid-set-printer
    "sayid-show-traced" #'sayid-show-traced
    "sayid-replay-at-point" #'sayid-replay-at-point
