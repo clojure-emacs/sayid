@@ -14,6 +14,16 @@
         (setq sayid-trace-ns-dir input)
         input)))
 
+(defun sayid-set-trace-ns-dir ()
+  (interactive)
+  (let* ((default-dir (file-name-directory (buffer-file-name)))
+         (input (read-string "Scan dir for namespaces : "
+                             (or sayid-trace-ns-dir
+                                 default-dir))))
+    (setq sayid-trace-ns-dir input)
+    input))
+
+
 (defun sayid-init-buf ()
   (pop-to-buffer "*sayid*")
   (read-only-mode 0)
@@ -111,7 +121,7 @@
   (interactive)
   (let* ((s-buf (get-buffer "*sayid*"))
          (req (list "op" "sayid-show-traced"))
-         (resp (nrepl-send-sync-request req))
+         (resp (read-if-string (nrepl-send-sync-request req)))
          (v (nrepl-dict-get resp "value" )) ;; WTF
          (v-ns (second (assoc "ns" v)))
          (v-fn (second (assoc "fn" v)))
@@ -192,7 +202,7 @@
 (defun sayid-trace-all-ns-in-dir ()
   (interactive)
   (nrepl-send-sync-request (list "op" "sayid-trace-all-ns-in-dir"
-                                 "dir" (sayid-get-trace-ns-dir)))
+                                 "dir" (sayid-set-trace-ns-dir)))
   (sayid-show-traced))
 
 (defun sayid-trace-ns-in-file ()
@@ -324,7 +334,7 @@
   (define-key clojure-mode-map (kbd "C-c s r")
     'sayid-replay-workspace-query-point)
   (define-key clojure-mode-map (kbd "C-c s w") 'sayid-get-workspace)
-;  (define-key clojure-mode-map (kbd "C-c s t") 'sayid-outer-trace-on)
+  (define-key clojure-mode-map (kbd "C-c s t d") 'sayid-trace-all-ns-in-dir)
   (define-key clojure-mode-map (kbd "C-c s k") 'sayid-kill-all-traces)
   (define-key clojure-mode-map (kbd "C-c s c") 'sayid-clear-log)
   (define-key clojure-mode-map (kbd "C-c s x") 'sayid-reset-workspace)

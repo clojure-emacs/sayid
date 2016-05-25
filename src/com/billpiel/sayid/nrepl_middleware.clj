@@ -261,8 +261,10 @@
 
 (defn sayid-trace-all-ns-in-dir
   [{:keys [transport dir] :as msg}]
+  (sd/ws-disable-all-traces!)
   (doall (map sd/ws-add-trace-ns!*
               (ns-find/find-namespaces-in-dir (java.io.File. dir))))
+  (sd/ws-cycle-all-traces!)
   (send-status-done msg))
 
 (defn sayid-trace-ns-in-file
