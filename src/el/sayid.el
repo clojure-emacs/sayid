@@ -298,12 +298,18 @@
                                "fn-name" (get-text-property (point) 'fn-name)
                                "mod" "")))
 
-
 (defun sayid-buf-def-at-point ()
   (interactive)
   (sayid-send-and-message (list "op" "sayid-buf-def-at-point"
                                 "trace-id" (get-text-property (point) 'id)
                                 "path" (get-text-property (point) 'path))))
+
+(defun sayid-buf-inspect-at-point ()
+  (interactive)
+  (sayid-send-and-message (list "op" "sayid-buf-def-at-point"
+                                "trace-id" (get-text-property (point) 'id)
+                                "path" (get-text-property (point) 'path)))
+  (cider-inspect "$s/*"))
 
 (defun sayid-buf-pprint-at-point ()
   (interactive)

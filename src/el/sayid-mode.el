@@ -18,6 +18,7 @@
         (define-key map  (kbd "P") 'sayid-buf-pprint-at-point)
         (define-key map  (kbd "<backspace>") 'sayid-buf-back)
         (define-key map  (kbd "<S-backspace>") 'sayid-buf-forward)
+        (define-key map  (kbd "c i") 'sayid-buf-inspect-at-point)
         map))
 
  ;;;###autoload
