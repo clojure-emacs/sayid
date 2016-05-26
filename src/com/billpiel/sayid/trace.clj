@@ -185,6 +185,56 @@
       (doseq [f ns-fns]
         (untrace-var* f)))))
 
+(defn apply->vec
+  [f]
+  (fn [v] [v (f v)]))
+
+(defn audit-fn
+  [fn-var trace-selection]
+  (let [fn-meta (meta fn-var)]
+    (-> fn-meta
+        (update-in [:ns] str)
+        (assoc :trace-type (::trace-type fn-meta)
+               :trace-selection trace-selection)
+        (dissoc ::trace-type
+                ::traced))))
+
+(defn audit-fn-sym
+  [fn-sym trace-selection]
+  (-> fn-sym
+      resolve
+      (audit-fn trace-selection)))
+
+(defn audit-ns
+  [ns-sym]
+  (let [mk-vec-fn (fn [fn-var]
+                    [(-> fn-var meta :name)
+                     (audit-fn fn-var :ns)])]
+    (->> ns-sym
+         ns-interns
+         vals
+         (filter (comp fn? var-get))
+         (map mk-vec-fn)
+         (into {}))))
+
+(defn audit-traces
+  [traced]
+  (let [{outer :fn inner :deep-fn ns' :ns} traced
+        f (fn [trace-type]
+            (fn [fn-sym]
+              (let [fn-var (resolve fn-sym)]
+                [(-> fn-var meta :name)
+                 (audit-fn fn-var trace-type)])))
+        fn-audits (->> (concat (map (f :fn) outer)
+                               (map (f :deep-fn) inner))
+                       (group-by #(-> % second :ns))
+                       (map (fn [[k v]] [(symbol k) (into {} v)]))
+                       (into {}))]
+    {:ns (into {}
+               (map (apply->vec audit-ns)
+                    ns'))
+     :fn fn-audits}))
+
 (defmulti trace* (fn [type sym workspace] type))
 
 (defmethod trace* :ns
