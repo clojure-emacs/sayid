@@ -5,6 +5,7 @@
             [com.billpiel.sayid.core :as sd]
             [com.billpiel.sayid.query2 :as q]
             [com.billpiel.sayid.string-output :as so]
+            [com.billpiel.sayid.trace :as tr]
             [clojure.tools.reader :as r]
             [clojure.tools.reader.reader-types :as rts]
             [com.billpiel.sayid.util.other :as util]
@@ -128,10 +129,54 @@
                         :value (str (get-meta-at-pos-in-source file line source))))
   (send-status-done msg))
 
-(defn ^:nrepl sayid-show-traced
+#_ (defn ^:nrepl sayid-show-traced
   [{:keys [transport] :as msg}]
   (t/send transport (response-for msg :value (clj->nrepl (sd/ws-show-traced*))))
   (send-status-done msg))
+
+(defn audit-ns->summary-view
+  [audit-ns]
+  (let [[ns-sym audit-fns] audit-ns
+        fn-count (count audit-fns)
+        traced-count (->> audit-fns
+                          (map second)
+                          (map :trace-type)
+                          (filter #{:fn :deep-fn})
+                          count)]
+    [{:ns ns-sym} (format "  %s / %s  %s" traced-count fn-count ns-sym)]))
+
+(defn audit-fn->view
+  [[ fn-sym {:keys [trace-type trace-selection] :as  fn-meta}]]
+  [fn-meta (format "  %s %s %s\n"
+                   (case trace-selection
+                     :fn "O"
+                     :deep-fn "I"
+                     nil "x"
+                     :else "?")
+                   (case trace-type
+                     :fn "E"
+                     :deep-fn "E"
+                     nil "D"
+                     :else "?")
+                   fn-sym)])
+
+(defn audit-fn-group->view
+  [[ns-sym audit-fns]]
+  (concat [{} (format "- in ns %s\n" ns-sym)]
+          (mapcat audit-fn->view audit-fns)))
+
+(defn audit->view
+  [audit & [ns-sym]]
+  (concat [{} "Traced namespaces:\n"]
+          (mapcat audit-ns->summary-view (:ns audit))
+          [{} "\n\nTraced functions:\n"]
+          (mapcat audit-fn-group->view (:fn audit))))
+
+(defn ^:nrepl sayid-show-traced
+  [{:keys [transport] :as msg}]
+  (println "******* sayid-show-traced")
+  (let [audit (-> @sd/workspace :traced tr/audit-traces)]
+    (reply:clj->nrepl msg (partition 2 (audit->view audit)))))
 
 (defn ^:nrepl sayid-replay-workspace
   [{:keys [transport] :as msg}]

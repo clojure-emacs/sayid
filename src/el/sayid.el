@@ -117,31 +117,6 @@
                   (list :name s)
                   buf))
 
-(defun sayid-show-traced ()
-  (interactive)
-  (let* ((s-buf (get-buffer "*sayid*"))
-         (req (list "op" "sayid-show-traced"))
-         (resp (read-if-string (nrepl-send-sync-request req)))
-         (v (nrepl-dict-get resp "value" )) ;; WTF
-         (v-ns (second (assoc "ns" v)))
-         (v-fn (second (assoc "fn" v)))
-         (v-ifn (second (assoc "deep-fn" v)))
-         (orig-buf (current-buffer))
-         (s-buf (sayid-init-buf)))
-
-    (insert "Traced Namespaces:\n")
-    (mapc (apply-partially 'insert-traced-name
-                           s-buf)
-          v-ns)
-    (insert "\nOuter Traced Functions:\n")
-    (mapc (apply-partially 'insert-traced-name
-                           s-buf)
-          v-fn)
-    (insert "\nInner Traced Functions:\n")
-    (mapc (apply-partially 'insert-traced-name
-                           s-buf)
-          v-ifn)))
-
 ;; I have no idea why I seem to need this
 (defun read-if-string (v)
   (print v)
@@ -198,6 +173,10 @@
 (defun sayid-get-workspace ()
   (interactive)
   (sayid-req-insert-meta-ansi (list "op" "sayid-get-workspace")))
+
+(defun sayid-show-traced ()
+  (interactive)
+  (sayid-req-insert-meta-ansi (list "op" "sayid-show-traced")))
 
 (defun sayid-trace-all-ns-in-dir ()
   (interactive)
