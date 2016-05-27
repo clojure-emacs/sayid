@@ -121,19 +121,19 @@
 ;; ======================
 
 
-(defn sayid-get-meta-at-point
+(defn ^:nrepl sayid-get-meta-at-point
   [{:keys [transport source file line] :as msg}]
   (t/send transport
           (response-for msg
                         :value (str (get-meta-at-pos-in-source file line source))))
   (send-status-done msg))
 
-(defn sayid-show-traced
+(defn ^:nrepl sayid-show-traced
   [{:keys [transport] :as msg}]
   (t/send transport (response-for msg :value (clj->nrepl (sd/ws-show-traced*))))
   (send-status-done msg))
 
-(defn sayid-replay-workspace
+(defn ^:nrepl sayid-replay-workspace
   [{:keys [transport] :as msg}]
   (println "sayid-replay-workspace")
   (let [kids (:children (sd/ws-deref!))]
@@ -142,7 +142,7 @@
     (replay! kids))
   (send-status-done msg))
 
-(defn sayid-replay-at-point
+(defn ^:nrepl sayid-replay-at-point
   [{:keys [transport source file line] :as msg}]
   (try (let [{start-line :line} (get-meta-at-pos-in-source file line source)
              matches (query-ws-by-file-line-range file start-line line)
@@ -164,7 +164,7 @@
        (finally
          (send-status-done msg))))
 
-(defn sayid-replay-with-inner-trace
+(defn ^:nrepl sayid-replay-with-inner-trace
   [{:keys [transport source file line] :as msg}]
   (try (let [{start-line :line} (get-meta-at-pos-in-source file line source)
              matches (query-ws-by-file-line-range file start-line line)
@@ -192,7 +192,7 @@
        (finally
          (send-status-done msg))))
 
-(defn sayid-query-form-at-point
+(defn ^:nrepl sayid-query-form-at-point
   [{:keys [file line] :as msg}]
   (reply:clj->nrepl msg
                     (-> (sd/ws-query-by-file-pos file line)
@@ -209,13 +209,13 @@
         util/wrap-kids
         so/tree->meta-string-pairs)))
 
-(defn sayid-buf-query-id-w-mod
+(defn ^:nrepl sayid-buf-query-id-w-mod
   [{:keys [trace-id mod] :as msg}]
   (reply:clj->nrepl msg
                     (sayid-buf-query [:id (keyword trace-id)]
                                      mod)))
 
-(defn sayid-buf-query-fn-w-mod
+(defn ^:nrepl sayid-buf-query-fn-w-mod
   [{:keys [fn-name mod] :as msg}]
   (reply:clj->nrepl msg (sayid-buf-query [(some-fn :parent-name :name)
                               (symbol fn-name)]
@@ -229,7 +229,7 @@
           (string? idx) [kw' (symbol idx)]
           :else [kw' idx])))
 
-(defn sayid-buf-def-at-point
+(defn ^:nrepl sayid-buf-def-at-point
   [{:keys [transport trace-id path] :as msg}]
   (let [path' (str-vec->arg-path path)]
     (util/def-ns-var '$s '* (-> [:id (keyword trace-id)] ;;TODO use intern
@@ -239,7 +239,7 @@
   (t/send transport (response-for msg :value "Def'd as $s/*"))
   (send-status-done msg))
 
-(defn sayid-buf-pprint-at-point
+(defn ^:nrepl sayid-buf-pprint-at-point
   [{:keys [transport trace-id path] :as msg}]
   (let [path' (str-vec->arg-path path)
         value (-> [:id (keyword trace-id)] ;;TODO use intern
@@ -249,17 +249,17 @@
     (t/send transport (response-for msg :value (clj->nrepl [[nil (so/pprint-str value)]]))))
   (send-status-done msg))
 
-(defn sayid-clear-log
+(defn ^:nrepl sayid-clear-log
   [{:keys [transport] :as msg}]
   (sd/ws-clear-log!)
   (send-status-done msg))
 
-(defn sayid-reset-workspace
+(defn ^:nrepl sayid-reset-workspace
   [{:keys [transport] :as msg}]
   (sd/ws-reset!)
   (send-status-done msg))
 
-(defn sayid-trace-all-ns-in-dir
+(defn ^:nrepl sayid-trace-all-ns-in-dir
   [{:keys [transport dir] :as msg}]
   (sd/ws-disable-all-traces!)
   (doall (map sd/ws-add-trace-ns!*
@@ -267,7 +267,7 @@
   (sd/ws-cycle-all-traces!)
   (send-status-done msg))
 
-(defn sayid-trace-ns-in-file
+(defn ^:nrepl sayid-trace-ns-in-file
   [{:keys [transport file] :as msg}]
   (println "sayid-trace-ns-in-file")
   (println file)
@@ -277,17 +277,17 @@
        sd/ws-add-trace-ns!*)
   (send-status-done msg))
 
-(defn sayid-remove-all-traces
+(defn ^:nrepl sayid-remove-all-traces
   [{:keys [transport] :as msg}]
   (sd/ws-remove-all-traces!)
   (send-status-done msg))
 
-(defn sayid-disable-all-traces
+(defn ^:nrepl sayid-disable-all-traces
   [{:keys [transport] :as msg}]
   (sd/ws-disable-all-traces!)
   (send-status-done msg))
 
-(defn sayid-set-printer
+(defn ^:nrepl sayid-set-printer
   [{:keys [transport printer] :as msg}]
   (println printer)
   (if (.startsWith printer ".")
@@ -297,32 +297,19 @@
          (apply sd/set-printer!)))
   (send-status-done msg))
 
-(defn sayid-get-workspace
+(defn ^:nrepl sayid-get-workspace
   [msg]
   (reply:clj->nrepl msg
                     (sd/with-this-printer [:children]
                       (so/tree->meta-string-pairs (sd/ws-deref!)))))
 
-(def sayid-nrepl-ops
-  {"sayid-query-form-at-point" #'sayid-query-form-at-point
-   "sayid-replay-with-inner-trace" #'sayid-replay-with-inner-trace
-   "sayid-get-workspace" #'sayid-get-workspace
-   "sayid-clear-log" #'sayid-clear-log
-   "sayid-reset-workspace" #'sayid-reset-workspace
-   "sayid-trace-all-ns-in-dir" #'sayid-trace-all-ns-in-dir
-   "sayid-trace-ns-in-file" #'sayid-trace-ns-in-file
-   "sayid-remove-all-traces" #'sayid-remove-all-traces
-   "sayid-disable-all-traces" #'sayid-disable-all-traces
-   "sayid-buf-query-id-w-mod" #'sayid-buf-query-id-w-mod
-   "sayid-buf-query-fn-w-mod" #'sayid-buf-query-fn-w-mod
-   "sayid-buf-def-at-point" #'sayid-buf-def-at-point
-   "sayid-buf-pprint-at-point" #'sayid-buf-pprint-at-point
-   "sayid-set-printer" #'sayid-set-printer
-   "sayid-show-traced" #'sayid-show-traced
-   "sayid-replay-at-point" #'sayid-replay-at-point
-   "sayid-replay-workspace" #'sayid-replay-workspace
-   "sayid-get-meta-at-point" #'sayid-get-meta-at-point})
-
+(def sayid-nrepl-ops1
+  (->> *ns*
+       ns-interns
+       vals
+       (filter #(-> % meta :nrepl))
+       (map #(vector (-> % meta :name str) %))
+       (into {})))
 
 (defn wrap-sayid
   [handler]
@@ -334,25 +321,3 @@
                                    (repeat {:doc "docs?"
                                             :returns {}
                                             :requires {}}))})
-
-#_ (
-    "
-TODO
-x eval-last-exp -- with trace ns in dir
-- eval-last-exp -- with trace all proj ns
-x query for form at point
-- query for form at point -- with modifiers
-x force replay for inner form query
-- indicate funcs that were re-ran
-x include meta in string responses
-x jump to func/form from sayid buffer
-- def captured value from sayid buffer
-
-
-
-"
-
-
-
-
-     )
