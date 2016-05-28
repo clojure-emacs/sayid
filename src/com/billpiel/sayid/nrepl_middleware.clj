@@ -151,6 +151,7 @@
                    (case trace-selection
                      :fn "O"
                      :deep-fn "I"
+                     :ns " "
                      nil "x"
                      :else "?")
                    (case trace-type
@@ -165,18 +166,39 @@
   (concat [{} (format "- in ns %s\n" ns-sym)]
           (mapcat audit-fn->view audit-fns)))
 
-(defn audit->view
+(defn audit->top-view
   [audit & [ns-sym]]
   (concat [{} "Traced namespaces:\n"]
           (mapcat audit-ns->summary-view (:ns audit))
           [{} "\n\nTraced functions:\n"]
           (mapcat audit-fn-group->view (:fn audit))))
 
+(defn audit->ns-view
+  [audit & [ns-sym]]
+  (concat [{:ns ns-sym} (format "Namespace %s\n" ns-sym)]
+          (mapcat audit-fn->view
+                  (-> audit :ns (get ns-sym)))
+          [{} "\n\nTraced functions:\n"]
+          (mapcat audit-fn->view
+                  (-> audit :fn (get ns-sym)))))
+
 (defn ^:nrepl sayid-show-traced
-  [{:keys [transport] :as msg}]
-  (println "******* sayid-show-traced")
-  (let [audit (-> @sd/workspace :traced tr/audit-traces)]
-    (reply:clj->nrepl msg (partition 2 (audit->view audit)))))
+  [{:keys [transport ns] :as msg}]
+  (let [audit (-> @sd/workspace :traced tr/audit-traces)
+        audit-view (if ns
+                     (audit->ns-view audit (symbol ns))
+                     (audit->top-view audit))]
+    (->> audit-view
+         (partition 2)
+         (reply:clj->nrepl msg))))
+
+(defn ^:nrepl sayid-trace-fn
+  [{:keys [transport fn-name fn-ns type] :as msg}]
+  (println [fn-name fn-ns type])
+  (case type
+        "outer" (sd/ws-add-trace-fn!* (util/qualify-sym fn-ns fn-name))
+        "inner" (sd/ws-add-deep-trace-fn!* (util/qualify-sym fn-ns fn-name)))
+  (sayid-show-traced msg))
 
 (defn ^:nrepl sayid-replay-workspace
   [{:keys [transport] :as msg}]
@@ -348,7 +370,7 @@
                     (sd/with-this-printer [:children]
                       (so/tree->meta-string-pairs (sd/ws-deref!)))))
 
-(def sayid-nrepl-ops1
+(def sayid-nrepl-ops
   (->> *ns*
        ns-interns
        vals

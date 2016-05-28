@@ -4,6 +4,8 @@
 
 (defvar sayid-trace-ns-dir nil)
 (defvar sayid-meta)
+(defvar sayid-traced-buf-spec '("*sayid-traced*" . sayid-traced-mode))
+
 
 (defun sayid-get-trace-ns-dir ()
   (interactive)
@@ -23,28 +25,12 @@
     (setq sayid-trace-ns-dir input)
     input))
 
-
-(defun sayid-init-buf ()
-  (pop-to-buffer "*sayid*")
-  (read-only-mode 0)
-  (erase-buffer)
-  (get-buffer "*sayid*"))
-
-(defun sayid-pop-insert-ansi (text l-m orig-buf)
-  (sayid-init-buf)
-  (insert text)
-  (recenter -1)
-  (ansi-color-apply-on-region (point-min) (point-max))
-  (sayid-mode)
-  (setq sayid-meta l-m)
-  (pop-to-buffer orig-buf))
-
-(defun sayid-send-and-insert (req)
-  (let* ((resp (nrepl-send-sync-request req))
-         (x (read (nrepl-dict-get resp "value"))) ;; WTF
-         (m (nrepl-dict-get resp "meta"))
-         (orig-buf (current-buffer)))
-    (sayid-pop-insert-ansi x m orig-buf)))
+(defun sayid-init-buf (&optional buf-name)
+  (let ((buf-name- (or buf-name "*sayid*")))
+    (pop-to-buffer buf-name-)
+    (read-only-mode 0)
+    (erase-buffer)
+    (get-buffer buf-name-)))
 
 (defun sayid-send-and-message (req)
   (let* ((resp (nrepl-send-sync-request req))
@@ -145,30 +131,26 @@
                 (butlast sayid-ring)))
   (first sayid-ring))
 
-(defun sayid-setup-buf (meta-ansi save-to-ring)
+(defun sayid-setup-buf (meta-ansi save-to-ring &optional alt-buf-spec)
   (let ((orig-buf (current-buffer))
-        (sayid-buf (sayid-init-buf)))
+        (sayid-buf (sayid-init-buf (car alt-buf-spec))))
     (if save-to-ring
         (insert-text-prop-ring meta-ansi sayid-buf)
       (insert-text-prop-alist meta-ansi sayid-buf))
     (ansi-color-apply-on-region (point-min) (point-max))
-    (sayid-mode)
+    (funcall (or (cdr alt-buf-spec)
+                 'sayid-mode))
     (pop-to-buffer orig-buf)))
 
-(defun sayid-req-insert-meta-ansi (req)
-  (let* ((resp (nrepl-send-sync-request req))
-         (x (read-if-string (nrepl-dict-get resp "value"))) ;; WTF
-         (orig-buf (current-buffer))
-         (sayid-buf (sayid-init-buf)))
-    (insert-text-prop-ring x sayid-buf)
-    (ansi-color-apply-on-region (point-min) (point-max))
-    (sayid-mode)
-    (pop-to-buffer orig-buf)))
-
-(defun sayid-req-insert-meta-ansi (req)
+(defun sayid-req-insert-meta-ansi (req &optional alt-buf-spec)
   (let* ((resp (nrepl-send-sync-request req))
          (x (read-if-string (nrepl-dict-get resp "value")))) ;; WTF
-    (sayid-setup-buf x t)))
+    (sayid-setup-buf x t alt-buf-spec)))
+
+(defun sayid-req-insert-meta-ansi-to-traced (req)
+  (let* ((resp (nrepl-send-sync-request req))
+         (x (read-if-string (nrepl-dict-get resp "value")))) ;; WTF
+    (sayid-setup-buf x nil sayid-traced-buf-spec)))
 
 (defun sayid-get-workspace ()
   (interactive)
@@ -176,7 +158,16 @@
 
 (defun sayid-show-traced ()
   (interactive)
-  (sayid-req-insert-meta-ansi (list "op" "sayid-show-traced")))
+  (sayid-req-insert-meta-ansi-to-traced (list "op" "sayid-show-traced")))
+
+(defun sayid-traced-buf-enter ()
+  (interactive)
+  (let ((name (get-text-property (point) 'name ))
+        (ns (get-text-property (point) 'ns)))
+    (cond
+     ((stringp name) 1) ;; goto func
+     ((stringp ns) (sayid-req-insert-meta-ansi-to-traced (list "op" "sayid-show-traced" "ns" ns)))
+     (t 0))))
 
 (defun sayid-trace-all-ns-in-dir ()
   (interactive)
@@ -189,6 +180,26 @@
   (nrepl-send-sync-request (list "op" "sayid-trace-ns-in-file"
                                  "file" (buffer-file-name)))
   (sayid-show-traced))
+
+(defun sayid-traced-buf-inner-trace-fn ()
+  (interactive)
+  (setq pos (point))
+  (nrepl-send-sync-request (list "op" "sayid-trace-fn"
+                                 "fn-name" (get-text-property (point) 'name)
+                                 "fn-ns" (get-text-property (point) 'ns)
+                                 "type" "inner"))
+  (sayid-show-traced)
+  (goto-char pos))
+
+(defun sayid-traced-buf-outer-trace-fn ()
+  (interactive)
+  (setq pos (point))
+  (nrepl-send-sync-request (list "op" "sayid-trace-fn"
+                                 "fn-name" (get-text-property (point) 'name)
+                                 "fn-ns" (get-text-property (point) 'ns)
+                                 "type" "outer"))
+  (sayid-show-traced)
+  (goto-char pos))
 
 (defun sayid-kill-all-traces ()
   (interactive)

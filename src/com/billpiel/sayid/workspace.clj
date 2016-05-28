@@ -55,9 +55,12 @@
 
 (defn add-trace-*!
   [ws type sym]
-  (if (= type :deep-fn)
-    (remove-trace-*! ws  ;; deep traces must be applied to a clean surface
-                     :fn
+  (when-let [existing-trace-type (and (#{:fn :deep-fn} type)
+                                      (-> sym
+                                          trace/check-fn-trace-type
+                                          #{:fn :deep-fn}))]
+    (remove-trace-*! ws
+                     existing-trace-type
                      sym))
   (swap! ws (fn [ws'] (-> ws'
                           (update-in [:traced type]

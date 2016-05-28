@@ -215,7 +215,7 @@
          vals
          (filter (comp fn? var-get))
          (map mk-vec-fn)
-         (into {}))))
+         (into (sorted-map)))))
 
 (defn audit-traces
   [traced]
@@ -228,12 +228,19 @@
         fn-audits (->> (concat (map (f :fn) outer)
                                (map (f :deep-fn) inner))
                        (group-by #(-> % second :ns))
-                       (map (fn [[k v]] [(symbol k) (into {} v)]))
-                       (into {}))]
-    {:ns (into {}
+                       (map (fn [[k v]] [(symbol k) (into (sorted-map) v)]))
+                       (into (sorted-map)))]
+    {:ns (into (sorted-map)
                (map (apply->vec audit-ns)
                     ns'))
      :fn fn-audits}))
+
+(defn check-fn-trace-type
+  [fn-sym]
+  (-> fn-sym
+      resolve
+      meta
+      ::trace-type))
 
 (defmulti trace* (fn [type sym workspace] type))
 
