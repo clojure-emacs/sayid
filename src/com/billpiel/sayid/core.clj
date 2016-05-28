@@ -94,6 +94,13 @@ user> (-> #'f1 meta :source)
   (ws-show-traced))
 (util/defalias w-rat! ws-remove-all-traces!)
 
+(defn ws-remove-trace-fn!
+  "Disables and removes a trace on a function from the active workspace."
+  [fn-sym]
+  (#'ws/remove-trace-fn! workspace fn-sym)
+  (ws-show-traced))
+(util/defalias w-rtf! ws-remove-trace-fn!)
+
 (defn ws-reset!
   "Removes all traces set by active workspace. Resets the active workspace to nil."
   []
@@ -169,12 +176,24 @@ user> (-> #'f1 meta :source)
   [] (#'ws/enable-all-traces! workspace))
 (util/defalias w-eat! ws-enable-all-traces!)
 
+(defn ws-enable-trace-fn!
+  "Enables a trace on a function. Function must already have trace added
+  to active workspace."
+  [fn-sym] (#'ws/enable-trace-fn! workspace
+                                  fn-sym))
+(util/defalias w-etf! ws-enable-trace-fn!)
 
 (defn ws-disable-all-traces!
   "Disables all traces in active workspace. The active workspace trace set will be
   preserved and can be re-enabled."
   [] (#'ws/disable-all-traces! workspace))
 (util/defalias w-dat! ws-disable-all-traces!)
+
+(defn ws-disable-trace-fn!
+  "Disables a trace on a function. The active workspace trace set will
+  be preserved and can be re-enabled."
+  [fn-sym] (#'ws/disable-trace-fn! workspace fn-sym))
+(util/defalias w-dtf! ws-disable-trace-fn!)
 
 (defn ws-cycle-all-traces!
   "Disables and enables all traces in active workspace. You shouldn't

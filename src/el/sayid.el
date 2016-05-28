@@ -156,9 +156,10 @@
   (interactive)
   (sayid-req-insert-meta-ansi (list "op" "sayid-get-workspace")))
 
-(defun sayid-show-traced ()
+(defun sayid-show-traced (&optional ns)
   (interactive)
-  (sayid-req-insert-meta-ansi-to-traced (list "op" "sayid-show-traced")))
+  (sayid-req-insert-meta-ansi-to-traced (list "op" "sayid-show-traced"
+                                              "ns" ns)))
 
 (defun sayid-traced-buf-enter ()
   (interactive)
@@ -184,21 +185,59 @@
 (defun sayid-traced-buf-inner-trace-fn ()
   (interactive)
   (setq pos (point))
+  (setq ns (get-text-property 1 'ns))
   (nrepl-send-sync-request (list "op" "sayid-trace-fn"
                                  "fn-name" (get-text-property (point) 'name)
                                  "fn-ns" (get-text-property (point) 'ns)
                                  "type" "inner"))
-  (sayid-show-traced)
+  (sayid-show-traced ns)
   (goto-char pos))
 
 (defun sayid-traced-buf-outer-trace-fn ()
   (interactive)
   (setq pos (point))
+  (setq ns (get-text-property 1 'ns))
   (nrepl-send-sync-request (list "op" "sayid-trace-fn"
                                  "fn-name" (get-text-property (point) 'name)
                                  "fn-ns" (get-text-property (point) 'ns)
                                  "type" "outer"))
-  (sayid-show-traced)
+  (sayid-show-traced ns)
+
+  (goto-char pos))
+
+(defun sayid-traced-buf-enable ()
+  (interactive)
+  (setq pos (point))
+  (setq ns (get-text-property 1 'ns))
+  (nrepl-send-sync-request (list "op" "sayid-trace-fn-enable"
+                                 "fn-name" (get-text-property (point) 'name)
+                                 "fn-ns" (get-text-property (point) 'ns)))
+  (sayid-show-traced ns)
+  (goto-char pos))
+
+(defun sayid-traced-buf-disable ()
+  (interactive)
+  (setq pos (point))
+  (setq ns (get-text-property 1 'ns))
+  (nrepl-send-sync-request (list "op" "sayid-trace-fn-disable"
+                                 "fn-name" (get-text-property (point) 'name)
+                                 "fn-ns" (get-text-property (point) 'ns)))
+  (sayid-show-traced ns)
+  (goto-char pos))
+
+(defun sayid-traced-buf-remove-trace-fn ()
+  (interactive)
+  (setq pos (point))
+  (setq ns (get-text-property 1 'ns))
+  (nrepl-send-sync-request (list "op" "sayid-trace-fn-remove"
+                                 "fn-name" (get-text-property (point) 'name)
+                                 "fn-ns" (get-text-property (point) 'ns)))
+  (sayid-show-traced ns)
+  (goto-char pos))
+
+(defun sayid-traced-buf-TEMPLATE ()
+  (interactive)
+  (setq pos (point))
   (goto-char pos))
 
 (defun sayid-kill-all-traces ()
@@ -330,11 +369,19 @@
   (define-key clojure-mode-map (kbd "C-c s r")
     'sayid-replay-workspace-query-point)
   (define-key clojure-mode-map (kbd "C-c s w") 'sayid-get-workspace)
-  (define-key clojure-mode-map (kbd "C-c s t d") 'sayid-trace-all-ns-in-dir)
+  (define-key clojure-mode-map (kbd "C-c s t y") 'sayid-trace-all-ns-in-dir)
+  (define-key clojure-mode-map (kbd "C-c s t a") 'sayid-trace-ns)   ;;TODO
+  (define-key clojure-mode-map (kbd "C-c s t e") 'sayid-trace-fn-enable)   ;;TODO
+  (define-key clojure-mode-map (kbd "C-c s t E") 'sayid-trace-ns-enable)   ;;TODO
+  (define-key clojure-mode-map (kbd "C-c s t d") 'sayid-trace-fn-disable)   ;;TODO
+  (define-key clojure-mode-map (kbd "C-c s t D") 'sayid-trace-ns-disable)   ;;TODO
+  (define-key clojure-mode-map (kbd "C-c s t n") 'sayid-inner-trace-fn)   ;;TODO
+  (define-key clojure-mode-map (kbd "C-c s t o") 'sayid-outer-trace-fn)   ;;TODO
   (define-key clojure-mode-map (kbd "C-c s k") 'sayid-kill-all-traces)
   (define-key clojure-mode-map (kbd "C-c s c") 'sayid-clear-log)
   (define-key clojure-mode-map (kbd "C-c s x") 'sayid-reset-workspace)
   (define-key clojure-mode-map (kbd "C-c s s") 'sayid-show-traced)
+  (define-key clojure-mode-map (kbd "C-c s S") 'sayid-show-traced-ns) ;;TODO
   (define-key clojure-mode-map (kbd "C-c s p s") 'sayid-set-printer))
 
 (add-hook 'clojure-mode-hook 'sayid-set-clj-mode-keys)

@@ -75,6 +75,14 @@
   (symbol (str ns)
           (str sym)))
 
+(defn disqualify-sym
+  [fn-sym]
+  (->> fn-sym
+       str
+       (re-find #"(.*?)/(.*)")
+       rest
+       (mapv symbol)))
+
 (defmacro fully-qualify-sym
   [sym]
   `(let [m# (-> ~sym
@@ -308,12 +316,10 @@
 
 (defn flatten-map-kv-pairs
   [m]
-  (mapcat #(mapv
-            vector
-            (-> %
-                first
-                repeat)
-            (second %))
+  (mapcat (fn [[k v]]
+            (mapv vector
+                  (repeat k)
+                  v))
           m))
 
 (defmacro assoc-var-meta-to-fn

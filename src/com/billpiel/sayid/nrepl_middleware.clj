@@ -184,8 +184,10 @@
 
 (defn ^:nrepl sayid-show-traced
   [{:keys [transport ns] :as msg}]
+  (println "*** sayid-show-traced")
+  (println ns)
   (let [audit (-> @sd/workspace :traced tr/audit-traces)
-        audit-view (if ns
+        audit-view (if (not (or (nil? ns) (empty? ns)))
                      (audit->ns-view audit (symbol ns))
                      (audit->top-view audit))]
     (->> audit-view
@@ -198,7 +200,28 @@
   (case type
         "outer" (sd/ws-add-trace-fn!* (util/qualify-sym fn-ns fn-name))
         "inner" (sd/ws-add-deep-trace-fn!* (util/qualify-sym fn-ns fn-name)))
-  (sayid-show-traced msg))
+  (send-status-done msg))
+
+(defn ^:nrepl sayid-trace-fn-enable
+  [{:keys [transport fn-name fn-ns] :as msg}]
+  (println "**** sayid-trace-fn-enable")
+  (println (util/qualify-sym fn-ns fn-name))
+  (sd/ws-enable-trace-fn! (util/qualify-sym fn-ns fn-name))
+  (send-status-done msg))
+
+(defn ^:nrepl sayid-trace-fn-disable
+  [{:keys [transport fn-name fn-ns] :as msg}]
+  (println "**** sayid-trace-fn-disable")
+  (println (util/qualify-sym fn-ns fn-name))
+  (sd/ws-disable-trace-fn! (util/qualify-sym fn-ns fn-name))
+  (send-status-done msg))
+
+(defn ^:nrepl sayid-trace-fn-remove
+  [{:keys [transport fn-name fn-ns] :as msg}]
+  (println "**** sayid-trace-fn-remove")
+  (println (util/qualify-sym fn-ns fn-name))
+  (sd/ws-remove-trace-fn! (util/qualify-sym fn-ns fn-name))
+  (send-status-done msg))
 
 (defn ^:nrepl sayid-replay-workspace
   [{:keys [transport] :as msg}]
