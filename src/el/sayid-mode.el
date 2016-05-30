@@ -14,6 +14,7 @@
         (define-key map  (kbd "I") 'sayid-query-id-w-mod)
         (define-key map  (kbd "w") 'sayid-get-workspace)
         (define-key map  (kbd "n") 'sayid-buffer-nav-to-next)
+        (define-key map  (kbd "N") 'sayid-buf-replay-with-inner-trace)
         (define-key map  (kbd "p") 'sayid-buffer-nav-to-prev)
         (define-key map  (kbd "P") 'sayid-buf-pprint-at-point)
         (define-key map  (kbd "<backspace>") 'sayid-buf-back)

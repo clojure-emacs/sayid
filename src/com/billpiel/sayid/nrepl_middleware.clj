@@ -249,7 +249,7 @@
        (finally
          (send-status-done msg))))
 
-(defn ^:nrepl sayid-replay-with-inner-trace
+(defn ^:nrepl sayid-replay-with-inner-trace-at-point
   [{:keys [transport source file line] :as msg}]
   (try (let [{start-line :line} (get-meta-at-pos-in-source file line source)
              matches (query-ws-by-file-line-range file start-line line)
@@ -276,6 +276,31 @@
                                          :value (with-out-str (clojure.stacktrace/print-stack-trace e)))))
        (finally
          (send-status-done msg))))
+
+(defn ^:nrepl sayid-replay-with-inner-trace
+  [{:keys [transport func] :as msg}]
+  (try
+    (let [fn-sym (symbol func)
+          kids (:children (sd/ws-deref!))
+          _ (do (sd/ws-add-deep-trace-fn!* fn-sym)
+                (sd/ws-cycle-all-traces!)
+                (sd/ws-clear-log!)
+                (replay! kids))
+          matches (-> (sd/ws-query* [:parent-name fn-sym])
+                      util/wrap-kids
+                      so/tree->meta-string-pairs
+                      clj->nrepl)
+          out (clj->nrepl matches)]
+      (t/send transport (response-for msg
+                                      :value out)))
+    (catch Exception e
+      (println e)
+      (println (with-out-str ;; I don't know why this is necessary
+                 (clojure.stacktrace/print-stack-trace e)))
+      (t/send transport (response-for msg
+                                      :value (with-out-str (clojure.stacktrace/print-stack-trace e)))))
+    (finally
+      (send-status-done msg))))
 
 (defn ^:nrepl sayid-query-form-at-point
   [{:keys [file line] :as msg}]
