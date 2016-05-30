@@ -1,6 +1,7 @@
 ;; Sayid nREPL middleware client
 
 (require 'sayid-mode)
+(require 'sayid-traced-mode)
 
 (defvar sayid-trace-ns-dir nil)
 (defvar sayid-meta)
@@ -30,17 +31,19 @@
   (interactive)
   (or sayid-trace-ns-dir
       (let* ((default-dir (file-name-directory (buffer-file-name)))
-             (input (read-directory-name "Scan dir for namespaces : "
-                                         default-dir)))
+             (input (expand-file-name
+                     (read-directory-name "Scan dir for namespaces : "
+                                          default-dir))))
         (setq sayid-trace-ns-dir input)
         input)))
 
 (defun sayid-set-trace-ns-dir ()
   (interactive)
   (let* ((default-dir (file-name-directory (buffer-file-name)))
-         (input (expand-file-name (read-directory-name "Scan dir for namespaces : "
-                                                       (or sayid-trace-ns-dir
-                                                           default-dir)))))
+         (input (expand-file-name
+                 (read-directory-name "Scan dir for namespaces : "
+                                      (or sayid-trace-ns-dir
+                                          default-dir)))))
     (setq sayid-trace-ns-dir input)
     input))
 
@@ -54,7 +57,7 @@
 
 (defun sayid-send-and-message (req)
   (let* ((resp (nrepl-send-sync-request req))
-         (x (nrepl-dict-get resp "value")))
+         (x (read-if-string (nrepl-dict-get resp "value"))))
     (message x)))
 
 (defun sayid-query-form-at-point ()
@@ -65,10 +68,16 @@
 
 (defun sayid-get-meta-at-point ()
   (interactive)
-  (sayid-send-and-insert (list "op" "sayid-get-meta-at-point"
-                               "source" (buffer-string)
-                               "file" (buffer-file-name)
-                               "line" (line-number-at-pos))))
+  (sayid-send-and-message (list "op" "sayid-get-meta-at-point"
+                                "source" (buffer-string)
+                                "file" (buffer-file-name)
+                                "line" (line-number-at-pos))))
+
+(defun sayid-trace-fn-enable ()
+  (interactive)
+  (sayid-req-insert-meta-ansi (list "op" "sayid-"
+                                    "file" (buffer-file-name)
+                                    "line" (line-number-at-pos))))
 
 (defun sayid-replay-workspace-query-point ()
   (interactive)
@@ -77,17 +86,22 @@
 
 (defun sayid-replay-with-inner-trace ()
   (interactive)
-  (sayid-req-insert-meta-ansi (list "op" "sayid-replay-with-inner-trace"
+  (sayid-req-insert-meta-ansi (list "op" "sayid-replay-with-inner-trace-at-point"
                                     "source" (buffer-string)
                                     "file" (buffer-file-name)
                                     "line" (line-number-at-pos))))
 
+(defun sayid-buf-replay-with-inner-trace ()
+  (interactive)
+  (sayid-req-insert-meta-ansi (list "op" "sayid-replay-with-inner-trace"
+                                    "func" (get-text-property (point) 'fn-name))))
+
 (defun sayid-replay-at-point ()
   (interactive)
-  (sayid-send-and-insert (list "op" "sayid-replay-at-point"
-                               "source" (buffer-string)
-                               "file" (buffer-file-name)
-                               "line" (line-number-at-pos))))
+  (sayid-req-insert-meta-ansi (list "op" "sayid-replay-at-point"
+                                    "source" (buffer-string)
+                                    "file" (buffer-file-name)
+                                    "line" (line-number-at-pos))))
 
 (defun insert-w-props (s p buf)
   (set-buffer buf)
@@ -155,15 +169,15 @@
   (first sayid-ring))
 
 (defun update-buf-pos-to-ring ()
-  (sayid-select-default-buf)
-  (let ((current (peek-first-in-ring)))
-    (if current
-        (swap-first-in-ring (list (car current)
-                                  (sayid-buf-point))))))
+  (if (eq sayid-selected-buf sayid-buf-spec)
+      (let ((current (peek-first-in-ring)))
+        (if current
+            (swap-first-in-ring (list (car current)
+                                      (sayid-buf-point)))))))
 
 (defun push-buf-state-to-ring (meta-ansi)
-  (sayid-select-default-buf)
-  (push-to-ring (list meta-ansi (sayid-buf-point))))
+  (if (eq sayid-selected-buf sayid-buf-spec)
+      (push-to-ring (list meta-ansi (sayid-buf-point)))))
 
 (defun sayid-setup-buf (meta-ansi save-to-ring &optional pos)
   (let ((orig-buf (current-buffer))
@@ -180,12 +194,7 @@
 (defun sayid-req-insert-meta-ansi (req)
   (let* ((resp (nrepl-send-sync-request req))
          (x (read-if-string (nrepl-dict-get resp "value")))) ;; WTF
-    (sayid-setup-buf x t)))
-
-(defun sayid-req-insert-meta-ansi-to-traced (req)
-  (let* ((resp (nrepl-send-sync-request req))
-         (x (read-if-string (nrepl-dict-get resp "value")))) ;; WTF
-    (sayid-setup-buf x nil)))
+    (sayid-setup-buf x t 1)))
 
 (defun sayid-get-workspace ()
   (interactive)
@@ -193,27 +202,45 @@
 
 (defun sayid-show-traced (&optional ns)
   (interactive)
-  (sayid-req-insert-meta-ansi-to-traced (list "op" "sayid-show-traced"
-                                              "ns" ns)))
+  (sayid-select-traced-buf)
+  (sayid-req-insert-meta-ansi (list "op" "sayid-show-traced"
+                                    "ns" ns))
+  (sayid-select-default-buf))
 
 (defun sayid-traced-buf-enter ()
   (interactive)
+  (sayid-select-traced-buf)
   (let ((name (get-text-property (point) 'name ))
         (ns (get-text-property (point) 'ns)))
     (cond
      ((stringp name) 1) ;; goto func
-     ((stringp ns) (sayid-req-insert-meta-ansi-to-traced (list "op" "sayid-show-traced" "ns" ns)))
-     (t 0))))
+     ((stringp ns) (sayid-req-insert-meta-ansi (list "op" "sayid-show-traced"
+                                                     "ns" ns)))
+     (t 0)))
+  (sayid-select-default-buf))
 
 (defun sayid-trace-all-ns-in-dir ()
   (interactive)
   (nrepl-send-sync-request (list "op" "sayid-trace-all-ns-in-dir"
-                                 "dir" (sayid-set-trace-ns-dir)))
+                                 "dir" (sayid-get-trace-ns-dir)))
   (sayid-show-traced))
 
 (defun sayid-trace-ns-in-file ()
   (interactive)
   (nrepl-send-sync-request (list "op" "sayid-trace-ns-in-file"
+                                 "file" (buffer-file-name)))
+  (sayid-show-traced))
+
+(defun sayid-trace-enable-all ()
+  (interactive)
+  (nrepl-send-sync-request (list "op" "sayid-enable-all-traces"
+                                 "file" (buffer-file-name)))
+  (sayid-show-traced))
+
+
+(defun sayid-trace-disable-all ()
+  (interactive)
+  (nrepl-send-sync-request (list "op" "sayid-disable-all-traces"
                                  "file" (buffer-file-name)))
   (sayid-show-traced))
 
@@ -412,15 +439,14 @@
   (define-key clojure-mode-map (kbd "C-c s e") 'sayid-eval-last-sexp)
   (define-key clojure-mode-map (kbd "C-c s f") 'sayid-query-form-at-point)
   (define-key clojure-mode-map (kbd "C-c s n") 'sayid-replay-with-inner-trace)
-  (define-key clojure-mode-map (kbd "C-c s r")
-    'sayid-replay-workspace-query-point)
+  (define-key clojure-mode-map (kbd "C-c s r") 'sayid-replay-workspace-query-point)
   (define-key clojure-mode-map (kbd "C-c s w") 'sayid-get-workspace)
   (define-key clojure-mode-map (kbd "C-c s t y") 'sayid-trace-all-ns-in-dir)
-  (define-key clojure-mode-map (kbd "C-c s t b") 'sayid-trace-ns-in-file)
+  (define-key clojure-mode-map (kbd "C-c s t b") 'sayid-trace-ns-in-file) ;; b = buffer
   (define-key clojure-mode-map (kbd "C-c s t e") 'sayid-trace-fn-enable)   ;;TODO
-  (define-key clojure-mode-map (kbd "C-c s t E") 'sayid-trace-enable-all)   ;;TODO
+  (define-key clojure-mode-map (kbd "C-c s t E") 'sayid-trace-enable-all)
   (define-key clojure-mode-map (kbd "C-c s t d") 'sayid-trace-fn-disable)   ;;TODO
-  (define-key clojure-mode-map (kbd "C-c s t D") 'sayid-trace-disable-all)   ;;TODO
+  (define-key clojure-mode-map (kbd "C-c s t D") 'sayid-trace-disable-all)
   (define-key clojure-mode-map (kbd "C-c s t n") 'sayid-inner-trace-fn)   ;;TODO
   (define-key clojure-mode-map (kbd "C-c s t o") 'sayid-outer-trace-fn)   ;;TODO
   (define-key clojure-mode-map (kbd "C-c s t k") 'sayid-kill-all-traces)

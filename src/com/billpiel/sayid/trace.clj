@@ -207,15 +207,17 @@
 
 (defn audit-ns
   [ns-sym]
-  (let [mk-vec-fn (fn [fn-var]
-                    [(-> fn-var meta :name)
-                     (audit-fn fn-var :ns)])]
-    (->> ns-sym
-         ns-interns
-         vals
-         (filter (comp fn? var-get))
-         (map mk-vec-fn)
-         (into (sorted-map)))))
+  (try (let [mk-vec-fn (fn [fn-var]
+                         [(-> fn-var meta :name)
+                          (audit-fn fn-var :ns)])]
+         (->> ns-sym
+              ns-interns
+              vals
+              (filter (comp fn? var-get))
+              (map mk-vec-fn)
+              (into (sorted-map))))
+       (catch Exception ex
+         (sorted-map))))
 
 (defn audit-traces
   [traced]

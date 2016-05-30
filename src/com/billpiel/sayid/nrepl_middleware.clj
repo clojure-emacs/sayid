@@ -129,11 +129,6 @@
                         :value (str (get-meta-at-pos-in-source file line source))))
   (send-status-done msg))
 
-#_ (defn ^:nrepl sayid-show-traced
-  [{:keys [transport] :as msg}]
-  (t/send transport (response-for msg :value (clj->nrepl (sd/ws-show-traced*))))
-  (send-status-done msg))
-
 (defn audit-ns->summary-view
   [audit-ns]
   (let [[ns-sym audit-fns] audit-ns
@@ -143,7 +138,7 @@
                           (map :trace-type)
                           (filter #{:fn :deep-fn})
                           count)]
-    [{:ns ns-sym} (format "  %s / %s  %s" traced-count fn-count ns-sym)]))
+    [{:ns ns-sym} (format "  %s / %s  %s\n" traced-count fn-count ns-sym)]))
 
 (defn audit-fn->view
   [[ fn-sym {:keys [trace-type trace-selection] :as  fn-meta}]]
@@ -375,6 +370,11 @@
 (defn ^:nrepl sayid-disable-all-traces
   [{:keys [transport] :as msg}]
   (sd/ws-disable-all-traces!)
+  (send-status-done msg))
+
+(defn ^:nrepl sayid-enable-all-traces
+  [{:keys [transport] :as msg}]
+  (sd/ws-enable-all-traces!)
   (send-status-done msg))
 
 (defn ^:nrepl sayid-set-printer

@@ -3,10 +3,10 @@
 nrepl/sayid.el
 x button to pretty print
 x button to cider-inspect
-- trying to trace unloaded ns problems???
+x trying to trace unloaded ns problems???
 ~ trace by dir
 - trace by ns
-- enable/disable traces
+x enable/disable traces
 x back button (backspace)
 x back button - save pos
 - 'n' does inner trace from buf
@@ -25,10 +25,14 @@ x back button - save pos
   - query ws by func
   x enter-> jump to ns detail view
 - lots of clj-mode bindings
-  
-- video
+
+- what happens if you apply and inner trace twice?
 
 - rename everything (inner/outer)
+- write script  
+- video
+
+
 - query by func maintains cursor on id
 
 - color codes instead of ansi
