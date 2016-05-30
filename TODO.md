@@ -1,18 +1,36 @@
+- bottom line hidden in output
+
 nrepl/sayid.el
 x button to pretty print
 x button to cider-inspect
-- trace by dir
+- trying to trace unloaded ns problems???
+~ trace by dir
 - trace by ns
 - enable/disable traces
 x back button (backspace)
-- back button additions
- - save pos
- - save mode
+x back button - save pos
 - 'n' does inner trace from buf
 ~ better 'show trace' buffer
-  - per ns
+  x refresh maintains ns status
+  x per ns
   x check whether each func is: outer, inner, enabled
-  - button to remove trace
+  x trace commands
+    x outer
+    x inner
+    x enable
+    x disable
+    x remove
+    - the rest
   - enter-> jump to func
-  - enter-> jump to ns detail view
+  - query ws by func
+  x enter-> jump to ns detail view
+- lots of clj-mode bindings
+  
 - video
+
+- rename everything (inner/outer)
+- query by func maintains cursor on id
+
+- color codes instead of ansi
+
+- lenses
