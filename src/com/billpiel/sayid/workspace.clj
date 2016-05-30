@@ -5,7 +5,7 @@
 
 (def default-traced {:ns #{}
                        :fn #{}
-                       :deep-fn #{}})
+                       :inner-fn #{}})
 
 (defn default-workspace
   []
@@ -65,10 +65,10 @@
 
 (defn add-trace-*!
   [ws type sym]
-  (when-let [existing-trace-type (and (#{:fn :deep-fn} type)
+  (when-let [existing-trace-type (and (#{:fn :inner-fn} type)
                                       (-> sym
                                           trace/check-fn-trace-type
-                                          #{:fn :deep-fn}))]
+                                          #{:fn :inner-fn}))]
     (remove-trace-*! ws
                      existing-trace-type
                      sym))
@@ -82,7 +82,7 @@
   (let [w @ws
         f (fn [type] (doseq [sym (get-in w [:traced type])]
                        (trace/trace* type sym w)))]
-    (doall (map f [:deep-fn
+    (doall (map f [:inner-fn
                    :fn
                    :ns]))
     true))
@@ -126,7 +126,7 @@
                      fn-sym))
   (doseq [t (->> fn-sym
                  (lookup-traces-by-fn @ws)
-                 (filter #{:fn :deep-fn}))] ;; func may have been disabled or out of sync
+                 (filter #{:fn :inner-fn}))] ;; func may have been disabled or out of sync
 
     (remove-trace-*! ws
                      t

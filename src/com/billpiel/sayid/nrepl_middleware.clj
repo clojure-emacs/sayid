@@ -92,7 +92,7 @@
 
 (defn inner-replay!
   [[{:keys [name]} :as matches]]
-  (sd/ws-add-deep-trace-fn!* name)
+  (sd/ws-add-inner-trace-fn!* name)
   (doseq [{:keys [name args]} matches]
     (apply (resolve name)
            args)))
@@ -136,7 +136,7 @@
         traced-count (->> audit-fns
                           (map second)
                           (map :trace-type)
-                          (filter #{:fn :deep-fn})
+                          (filter #{:fn :inner-fn})
                           count)]
     [{:ns ns-sym} (format "  %s / %s  %s\n" traced-count fn-count ns-sym)]))
 
@@ -145,13 +145,13 @@
   [fn-meta (format "  %s %s %s\n"
                    (case trace-selection
                      :fn "O"
-                     :deep-fn "I"
+                     :inner-fn "I"
                      :ns " "
                      nil "x"
                      :else "?")
                    (case trace-type
                      :fn "E"
-                     :deep-fn "E"
+                     :inner-fn "E"
                      nil "D"
                      :else "?")
                    fn-sym)])
@@ -194,7 +194,7 @@
   (println [fn-name fn-ns type])
   (case type
         "outer" (sd/ws-add-trace-fn!* (util/qualify-sym fn-ns fn-name))
-        "inner" (sd/ws-add-deep-trace-fn!* (util/qualify-sym fn-ns fn-name)))
+        "inner" (sd/ws-add-inner-trace-fn!* (util/qualify-sym fn-ns fn-name)))
   (send-status-done msg))
 
 (defn ^:nrepl sayid-trace-fn-enable
@@ -259,7 +259,7 @@
                      (sd/ws-cycle-all-traces!)
                      (sd/ws-clear-log!)
                      (when (nil? inner-path) ;; don't inner-trace an inner trace
-                       (sd/ws-add-deep-trace-fn!* name))
+                       (sd/ws-add-inner-trace-fn!* name))
                      (replay! kids)))
              matches' (query-ws-by-file-line-range file start-line line)
              out (if-not (or (empty? matches)
@@ -282,7 +282,7 @@
   (try
     (let [fn-sym (symbol func)
           kids (:children (sd/ws-deref!))
-          _ (do (sd/ws-add-deep-trace-fn!* fn-sym)
+          _ (do (sd/ws-add-inner-trace-fn!* fn-sym)
                 (sd/ws-cycle-all-traces!)
                 (sd/ws-clear-log!)
                 (replay! kids))

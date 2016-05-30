@@ -1,7 +1,7 @@
 (ns com.billpiel.sayid.core
   (:require com.billpiel.sayid.string-output
             [com.billpiel.sayid.trace :as trace]
-            [com.billpiel.sayid.deep-trace2 :as dtrace]
+            [com.billpiel.sayid.inner-trace2 :as itrace]
             [com.billpiel.sayid.workspace :as ws]
             [com.billpiel.sayid.recording :as rec]
             [com.billpiel.sayid.query2 :as q]
@@ -129,22 +129,22 @@ user> (-> #'f1 meta :source)
   `(ws-add-trace-fn!* (util/fully-qualify-sym '~fn-sym)))
 (util/defalias-macro w-atf! ws-add-trace-fn!)
 
-(defn ^:no-doc ws-add-deep-trace-fn!*
+(defn ^:no-doc ws-add-inner-trace-fn!*
   [fn-sym]
   (#'ws/add-trace-*! (ws-init! :quiet)
-                     :deep-fn
+                     :inner-fn
                      fn-sym)
   fn-sym)
 
-(defmacro ws-add-deep-trace-fn!
+(defmacro ws-add-inner-trace-fn!
   "`fn-sym` is a symbol that references an existing function. Applies an
-  enabled *deep* trace to said functions. Adds the traces to the active
+  enabled *inner* trace to said functions. Adds the traces to the active
   workspace trace set. Deep traces capture all functions calls that
   occurr within the traced function."
   [fn-sym]
-  `(ws-add-deep-trace-fn!* (util/fully-qualify-sym ~(util/quote-if-sym fn-sym))))
+  `(ws-add-inner-trace-fn!* (util/fully-qualify-sym ~(util/quote-if-sym fn-sym))))
 
-(util/defalias-macro w-adtf! ws-add-deep-trace-fn!)
+(util/defalias-macro w-aitf! ws-add-inner-trace-fn!)
 
 (defn ^:no-doc ws-add-trace-ns!*
   "`ns-sym` is a symbol that references an existing namespace. Applies an enabled
@@ -248,7 +248,7 @@ user> (-> #'f1 meta :source)
     (apply f a)))
 (util/defalias w-rpi! ws-replay-id!)
 
-(defn ^:no-doc deep-trace-apply*
+(defn ^:no-doc inner-trace-apply*
   [workspace qual-sym args]
   (let [meta' (-> qual-sym
                   resolve
@@ -256,58 +256,58 @@ user> (-> #'f1 meta :source)
         ns' (-> meta'
                 :ns
                 str)
-        dtraced-fn (dtrace/deep-tracer {:workspace nil
+        itraced-fn (itrace/inner-tracer {:workspace nil
                                         :qual-sym qual-sym
                                         :meta' meta'
                                         :ns' ns'}
                                        nil)]
     (binding [trace/*trace-log-parent* workspace]
-      (apply dtraced-fn args))))
+      (apply itraced-fn args))))
 
-(defn ws-query-deep-trace-replay
+(defn ws-query-inner-trace-replay
   "Queries the current workspace with `query`. Then takes the top-level
-  results, deep traces the functions and replays them. Returns the
+  results, inner traces the functions and replays them. Returns the
   resulting workspace, which is NOT the active workspace."
   [query]
   (let [results (ws-query* query)
         workspace (ws/default-workspace)]
     (doseq [{:keys [name args]} results]
-      (deep-trace-apply* workspace
+      (inner-trace-apply* workspace
                          name
                          args))
     (ws-deref! workspace)))
-(util/defalias w-qdtr ws-query-deep-trace-replay)
+(util/defalias w-qdtr ws-query-inner-trace-replay)
 
-(defn ws-query-deep-trace-replay-print
+(defn ws-query-inner-trace-replay-print
   "Queries the current workspace with `query`. Then takes the top-level
-  results, deep traces the functions, replays them then PRINTS the
+  results, inner traces the functions, replays them then PRINTS the
   resulting workspace, which is NOT the active workspace."
   [query]
   (-> query
-      ws-query-deep-trace-replay
+      ws-query-inner-trace-replay
       trees-print
       with-printer))
-(util/defalias w-qdtrp ws-query-deep-trace-replay-print)
-(util/defalias w-$ ws-query-deep-trace-replay-print)
+(util/defalias w-qdtrp ws-query-inner-trace-replay-print)
+(util/defalias w-$ ws-query-inner-trace-replay-print)
 
-(defn ws-deep-trace-apply
+(defn ws-inner-trace-apply
   "Deep traces the function indicated by the qualified symbol,
   `qual-sym`, and then call it with arguments `args`. Returns the
   resulting workspace, which is NOT the active workspace."
   [qual-sym args]
   (let [workspace (ws/default-workspace)]
-    (deep-trace-apply* workspace
+    (inner-trace-apply* workspace
                        qual-sym
                        args)
     (ws-deref! workspace)))
-(util/defalias w-dta ws-deep-trace-apply)
+(util/defalias w-dta ws-inner-trace-apply)
 
-(defn ws-deep-trace-apply-print
-  "Run `ws-deep-trace-apply` then prints the resulting workspace."
+(defn ws-inner-trace-apply-print
+  "Run `ws-inner-trace-apply` then prints the resulting workspace."
   [qual-sym args]
-  (ws-print (ws-deep-trace-apply qual-sym
+  (ws-print (ws-inner-trace-apply qual-sym
                                   args)))
-(util/defalias w-dtap ws-deep-trace-apply-print)
+(util/defalias w-itap ws-inner-trace-apply-print)
 
 
 ;; === END Workspace functions

@@ -221,14 +221,14 @@
 
 (defn audit-traces
   [traced]
-  (let [{outer :fn inner :deep-fn ns' :ns} traced
+  (let [{outer :fn inner :inner-fn ns' :ns} traced
         f (fn [trace-type]
             (fn [fn-sym]
               (let [fn-var (resolve fn-sym)]
                 [(-> fn-var meta :name)
                  (audit-fn fn-var trace-type)])))
         fn-audits (->> (concat (map (f :fn) outer)
-                               (map (f :deep-fn) inner))
+                               (map (f :inner-fn) inner))
                        (group-by #(-> % second :ns))
                        (map (fn [[k v]] [(symbol k) (into (sorted-map) v)]))
                        (into (sorted-map)))]

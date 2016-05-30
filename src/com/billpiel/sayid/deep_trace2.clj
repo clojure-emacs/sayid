@@ -1,4 +1,4 @@
-(ns com.billpiel.sayid.deep-trace2
+(ns com.billpiel.sayid.inner-trace2
   (require [com.billpiel.sayid.util.other :as util]
            [com.billpiel.sayid.trace :as trace]))
 
@@ -592,7 +592,7 @@
                                d s)))))
 
 ;;TODO trace multi-arity works??
-(defn deep-tracer
+(defn inner-tracer
   [{:keys [workspace qual-sym meta' ns']}] ;; original-fn and workspace not used! IS THAT RIGHT??
   (let [src (-> qual-sym
                 symbol
@@ -607,13 +607,13 @@
            (clojure.pprint/pprint traced-form)
            (throw e)))))
 
-(defn ^{::trace/trace-type :deep-fn} composed-tracer-fn
+(defn ^{::trace/trace-type :inner-fn} composed-tracer-fn
   [m _]
   (->> m
-       deep-tracer
+       inner-tracer
        (trace/shallow-tracer m)))
 
-(defmethod trace/trace* :deep-fn
+(defmethod trace/trace* :inner-fn
   [_ fn-sym workspace]
   (-> fn-sym
       resolve
@@ -621,7 +621,7 @@
                                                    ::trace/trace-type)
                         workspace)))
 
-(defmethod trace/untrace* :deep-fn
+(defmethod trace/untrace* :inner-fn
   [_ fn-sym]
   (-> fn-sym
       resolve
@@ -633,17 +633,17 @@
 
 (defn f1 [a] (empty? [0 [1 2 (-> a inc dec)]]))
 
-#_ (deep-tracer {:qual-sym 'com.billpiel.sayid.deep-trace2/f1
+#_ (inner-tracer {:qual-sym 'com.billpiel.sayid.inner-trace2/f1
                  :meta' nil
-                 :ns' 'com.billpiel.sayid.deep-trace2})
+                 :ns' 'com.billpiel.sayid.inner-trace2})
 
 #_ (binding [trace/*trace-log-parent* {:id :root1 :children (atom [])}]
-  (let [f (deep-tracer {:qual-sym 'com.billpiel.sayid.deep-trace2/f1
+  (let [f (inner-tracer {:qual-sym 'com.billpiel.sayid.inner-trace2/f1
                         :meta' nil
-                        :ns' 'com.billpiel.sayid.deep-trace2})]
+                        :ns' 'com.billpiel.sayid.inner-trace2})]
     (f 2)
     (-/p trace/*trace-log-parent*)))
 
-#_ (deep-tracer {:qual-sym 'xpojure.routes.home/home-page
+#_ (inner-tracer {:qual-sym 'xpojure.routes.home/home-page
               :meta' nil
               :ns' 'xpojure.routes.home})
