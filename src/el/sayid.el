@@ -4,30 +4,50 @@
 
 (defvar sayid-trace-ns-dir nil)
 (defvar sayid-meta)
-(defvar sayid-traced-buf-spec '("*sayid-traced*" . sayid-traced-mode))
 
+(defvar sayid-buf-spec '("*sayid*" . sayid-mode))
+(defvar sayid-traced-buf-spec '("*sayid-traced*" . sayid-traced-mode))
+(defvar sayid-selected-buf sayid-buf-spec)
+
+(defvar sayid-ring)
+(setq sayid-ring '())
+
+(defun sayid-select-default-buf ()
+  (setq sayid-selected-buf sayid-buf-spec))
+
+(defun sayid-select-traced-buf ()
+    (setq sayid-selected-buf sayid-traced-buf-spec))
+
+(defun sayid-buf-point ()
+  (set-buffer (car sayid-selected-buf))
+  (point))
+
+(defun expanded-buffer-file-name ()
+  (expand-file-name (buffer-file-name)))
+(expanded-buffer-file-name)
 
 (defun sayid-get-trace-ns-dir ()
   (interactive)
   (or sayid-trace-ns-dir
       (let* ((default-dir (file-name-directory (buffer-file-name)))
-             (input (read-string "Scan dir for namespaces : "
-                                 default-dir)))
+             (input (read-directory-name "Scan dir for namespaces : "
+                                         default-dir)))
         (setq sayid-trace-ns-dir input)
         input)))
 
 (defun sayid-set-trace-ns-dir ()
   (interactive)
   (let* ((default-dir (file-name-directory (buffer-file-name)))
-         (input (read-string "Scan dir for namespaces : "
-                             (or sayid-trace-ns-dir
-                                 default-dir))))
+         (input (expand-file-name (read-directory-name "Scan dir for namespaces : "
+                                                       (or sayid-trace-ns-dir
+                                                           default-dir)))))
     (setq sayid-trace-ns-dir input)
     input))
 
-(defun sayid-init-buf (&optional buf-name)
-  (let ((buf-name- (or buf-name "*sayid*")))
+(defun sayid-init-buf ()
+  (let ((buf-name- (car sayid-selected-buf)))
     (pop-to-buffer buf-name-)
+    (update-buf-pos-to-ring)
     (read-only-mode 0)
     (erase-buffer)
     (get-buffer buf-name-)))
@@ -95,7 +115,7 @@
                     buf)))
 
 (defun insert-text-prop-ring (pairs buf)
-  (push-to-ring pairs)
+  (push-buf-state-to-ring pairs)
   (insert-text-prop-alist pairs buf))
 
 (defun insert-traced-name (buf s)
@@ -110,14 +130,17 @@
       (read v)
     v))
 
-(defvar sayid-ring)
-(setq sayid-ring '())
-
 (defun list-take (n l)
   (butlast l (- (length l) n)))
 
 (defun push-to-ring (v)
   (setq sayid-ring (list-take 5 (cons v sayid-ring))))
+
+(defun peek-first-in-ring ()
+  (first sayid-ring))
+
+(defun swap-first-in-ring (v)
+  (setq sayid-ring (cons v (cdr sayid-ring))))
 
 (defun cycle-ring ()
   (setq sayid-ring
@@ -131,26 +154,38 @@
                 (butlast sayid-ring)))
   (first sayid-ring))
 
-(defun sayid-setup-buf (meta-ansi save-to-ring &optional alt-buf-spec)
+(defun update-buf-pos-to-ring ()
+  (sayid-select-default-buf)
+  (let ((current (peek-first-in-ring)))
+    (if current
+        (swap-first-in-ring (list (car current)
+                                  (sayid-buf-point))))))
+
+(defun push-buf-state-to-ring (meta-ansi)
+  (sayid-select-default-buf)
+  (push-to-ring (list meta-ansi (sayid-buf-point))))
+
+(defun sayid-setup-buf (meta-ansi save-to-ring &optional pos)
   (let ((orig-buf (current-buffer))
-        (sayid-buf (sayid-init-buf (car alt-buf-spec))))
+        (sayid-buf (sayid-init-buf)))
     (if save-to-ring
         (insert-text-prop-ring meta-ansi sayid-buf)
       (insert-text-prop-alist meta-ansi sayid-buf))
     (ansi-color-apply-on-region (point-min) (point-max))
-    (funcall (or (cdr alt-buf-spec)
-                 'sayid-mode))
+    (funcall (cdr sayid-selected-buf))
+    (if pos
+        (goto-char pos))
     (pop-to-buffer orig-buf)))
 
-(defun sayid-req-insert-meta-ansi (req &optional alt-buf-spec)
+(defun sayid-req-insert-meta-ansi (req)
   (let* ((resp (nrepl-send-sync-request req))
          (x (read-if-string (nrepl-dict-get resp "value")))) ;; WTF
-    (sayid-setup-buf x t alt-buf-spec)))
+    (sayid-setup-buf x t)))
 
 (defun sayid-req-insert-meta-ansi-to-traced (req)
   (let* ((resp (nrepl-send-sync-request req))
          (x (read-if-string (nrepl-dict-get resp "value")))) ;; WTF
-    (sayid-setup-buf x nil sayid-traced-buf-spec)))
+    (sayid-setup-buf x nil)))
 
 (defun sayid-get-workspace ()
   (interactive)
@@ -186,17 +221,20 @@
   (interactive)
   (setq pos (point))
   (setq ns (get-text-property 1 'ns))
+  (sayid-select-traced-buf)
   (nrepl-send-sync-request (list "op" "sayid-trace-fn"
                                  "fn-name" (get-text-property (point) 'name)
                                  "fn-ns" (get-text-property (point) 'ns)
                                  "type" "inner"))
   (sayid-show-traced ns)
-  (goto-char pos))
+  (goto-char pos)
+  (sayid-select-default-buf))
 
 (defun sayid-traced-buf-outer-trace-fn ()
   (interactive)
   (setq pos (point))
   (setq ns (get-text-property 1 'ns))
+  (sayid-select-traced-buf)
   (nrepl-send-sync-request (list "op" "sayid-trace-fn"
                                  "fn-name" (get-text-property (point) 'name)
                                  "fn-ns" (get-text-property (point) 'ns)
@@ -209,36 +247,37 @@
   (interactive)
   (setq pos (point))
   (setq ns (get-text-property 1 'ns))
+  (sayid-select-traced-buf)
   (nrepl-send-sync-request (list "op" "sayid-trace-fn-enable"
                                  "fn-name" (get-text-property (point) 'name)
                                  "fn-ns" (get-text-property (point) 'ns)))
   (sayid-show-traced ns)
-  (goto-char pos))
+  (goto-char pos)
+  (sayid-select-default-buf))
 
 (defun sayid-traced-buf-disable ()
   (interactive)
   (setq pos (point))
   (setq ns (get-text-property 1 'ns))
+  (sayid-select-traced-buf)
   (nrepl-send-sync-request (list "op" "sayid-trace-fn-disable"
                                  "fn-name" (get-text-property (point) 'name)
                                  "fn-ns" (get-text-property (point) 'ns)))
   (sayid-show-traced ns)
-  (goto-char pos))
+  (goto-char pos)
+  (sayid-select-default-buf))
 
 (defun sayid-traced-buf-remove-trace-fn ()
   (interactive)
   (setq pos (point))
   (setq ns (get-text-property 1 'ns))
+  (sayid-select-traced-buf)
   (nrepl-send-sync-request (list "op" "sayid-trace-fn-remove"
                                  "fn-name" (get-text-property (point) 'name)
                                  "fn-ns" (get-text-property (point) 'ns)))
   (sayid-show-traced ns)
-  (goto-char pos))
-
-(defun sayid-traced-buf-TEMPLATE ()
-  (interactive)
-  (setq pos (point))
-  (goto-char pos))
+  (goto-char pos)
+  (sayid-select-default-buf))
 
 (defun sayid-kill-all-traces ()
   (interactive)
@@ -355,12 +394,19 @@
 
 (defun sayid-buf-back ()
   (interactive)
-  (sayid-setup-buf (cycle-ring) nil))
+  (update-buf-pos-to-ring)
+  (let ((buf-state (cycle-ring)))
+    (sayid-setup-buf (first buf-state)
+                     nil
+                     (second buf-state))))
 
 (defun sayid-buf-forward ()
   (interactive)
-  (sayid-setup-buf (cycle-ring-back) nil))
-
+  (update-buf-pos-to-ring)
+  (let ((buf-state (cycle-ring-back)))
+    (sayid-setup-buf (first buf-state)
+                     nil
+                     (second buf-state))))
 
 (defun sayid-set-clj-mode-keys ()
   (define-key clojure-mode-map (kbd "C-c s e") 'sayid-eval-last-sexp)
@@ -370,14 +416,14 @@
     'sayid-replay-workspace-query-point)
   (define-key clojure-mode-map (kbd "C-c s w") 'sayid-get-workspace)
   (define-key clojure-mode-map (kbd "C-c s t y") 'sayid-trace-all-ns-in-dir)
-  (define-key clojure-mode-map (kbd "C-c s t a") 'sayid-trace-ns)   ;;TODO
+  (define-key clojure-mode-map (kbd "C-c s t b") 'sayid-trace-ns-in-file)
   (define-key clojure-mode-map (kbd "C-c s t e") 'sayid-trace-fn-enable)   ;;TODO
-  (define-key clojure-mode-map (kbd "C-c s t E") 'sayid-trace-ns-enable)   ;;TODO
+  (define-key clojure-mode-map (kbd "C-c s t E") 'sayid-trace-enable-all)   ;;TODO
   (define-key clojure-mode-map (kbd "C-c s t d") 'sayid-trace-fn-disable)   ;;TODO
-  (define-key clojure-mode-map (kbd "C-c s t D") 'sayid-trace-ns-disable)   ;;TODO
+  (define-key clojure-mode-map (kbd "C-c s t D") 'sayid-trace-disable-all)   ;;TODO
   (define-key clojure-mode-map (kbd "C-c s t n") 'sayid-inner-trace-fn)   ;;TODO
   (define-key clojure-mode-map (kbd "C-c s t o") 'sayid-outer-trace-fn)   ;;TODO
-  (define-key clojure-mode-map (kbd "C-c s k") 'sayid-kill-all-traces)
+  (define-key clojure-mode-map (kbd "C-c s t k") 'sayid-kill-all-traces)
   (define-key clojure-mode-map (kbd "C-c s c") 'sayid-clear-log)
   (define-key clojure-mode-map (kbd "C-c s x") 'sayid-reset-workspace)
   (define-key clojure-mode-map (kbd "C-c s s") 'sayid-show-traced)
