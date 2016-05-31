@@ -9,7 +9,7 @@ x trying to trace unloaded ns problems???
 x enable/disable traces
 x back button (backspace)
 x back button - save pos
-- 'n' does inner trace from buf
+x 'n' does inner trace from buf
 ~ better 'show trace' buffer
   x refresh maintains ns status
   x per ns
