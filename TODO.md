@@ -28,7 +28,16 @@ x 'n' does inner trace from buf
 
 - what happens if you apply and inner trace twice?
 
-- rename everything (inner/outer)
+x rename everything (inner/outer)
+
+- have eval-last be more sane; check for existing traces
+
+- BUGS
+ - trace doesn't take sometimes -- eval last
+ - `C-s t y` doesn't work
+ - e/d to enable/disable ns from *traced*
+ 
+
 - write script  
 - video
 

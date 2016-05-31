@@ -353,7 +353,7 @@
       (update-tree! recent-trees)))
 
 (defn tr-if-ret
-  [{:keys [inner-path-chain]} recent-trees template v]
+  [recent-trees {:keys [inner-path-chain] :as template} v]
   (-> (produce-recent-tree-atom! inner-path-chain recent-trees)
       deref
       (merge template)
@@ -432,15 +432,15 @@
                          :test-form `'~test)]
     `(tr-if-ret ~'$$
                 '~template'
-                (if (tr-if-test ~template'
+                (if (tr-if-test '~template'
                                 ~'$$
                                 ~test)
-                  (tr-if-branch ~template'
+                  (tr-if-branch '~template'
                                 ~'$$
                                 true
                                 ~then)
                   ~(when-not (nil? else)
-                     `(tr-if-branch ~template'
+                     `(tr-if-branch '~template'
                                     ~'$$
                                     false
                                     ~else))))))

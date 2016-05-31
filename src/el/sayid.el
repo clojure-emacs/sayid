@@ -222,7 +222,7 @@
 (defun sayid-trace-all-ns-in-dir ()
   (interactive)
   (nrepl-send-sync-request (list "op" "sayid-trace-all-ns-in-dir"
-                                 "dir" (sayid-get-trace-ns-dir)))
+                                 "dir" (sayid-set-trace-ns-dir)))
   (sayid-show-traced))
 
 (defun sayid-trace-ns-in-file ()
@@ -324,7 +324,7 @@
 (defun sayid-eval-last-sexp ()
   (interactive)
   (nrepl-send-sync-request (list "op" "sayid-clear-log"))
-  (nrepl-send-sync-request (list "op" "sayid-trace-all-ns-in-dir"
+  (nrepl-send-sync-request (list "op" "sayid-enable-all-traces"
                                  "dir" (sayid-get-trace-ns-dir)))
   (cider-eval-last-sexp)
   (nrepl-send-sync-request (list "op" "sayid-disable-all-traces"))
