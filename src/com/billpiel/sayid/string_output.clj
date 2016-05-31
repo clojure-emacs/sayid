@@ -330,8 +330,6 @@
        (clojure.string/join "")))
 
 
-
-
 (declare strings-agg-head)
 
 (defn map-agg-head
@@ -347,7 +345,8 @@
 
 (defn strings-agg-head
   [[agg-head & agg-tail :as agg] [next & tail :as items]]
-  (cond (empty? items) agg
+  (cond (empty? items) (concat [(apply str agg-head)]
+                                     agg-tail)
         (string? next) #(strings-agg-head (concat [(conj agg-head next)]
                                                   agg-tail)
                                           tail)
@@ -358,10 +357,8 @@
 (defn ->meta-string-pairs
   [v]
   (let [[head :as all] (util/$- ->> v
-                                (conj $ nil)
                                 (trampoline map-agg-head [])
                                 reverse
-                                drop-last
                                 (drop-while #{""}))]
     (partition-all 2 (if (string? head)
                        (concat [{}] all)
