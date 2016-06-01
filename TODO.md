@@ -31,11 +31,17 @@ x 'n' does inner trace from buf
 x rename everything (inner/outer)
 
 - have eval-last be more sane; check for existing traces
+- use 'l' for backspace (says Tim?)
 
 - BUGS
+ - ANSI is SLOW
  - trace doesn't take sometimes -- eval last
+ - doesn't inner-trace into `let` bindings
+ - multi-line let bind expr renders badly
  - `C-s t y` doesn't work
+ - 'p' in *sayid*
  - e/d to enable/disable ns from *traced*
+
  
 
 - write script  
