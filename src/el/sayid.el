@@ -57,7 +57,7 @@
 
 (defun sayid-send-and-message (req)
   (let* ((resp (nrepl-send-sync-request req))
-         (x (read-if-string (nrepl-dict-get resp "value"))))
+         (x (nrepl-dict-get resp "value")))
     (message x)))
 
 (defun sayid-query-form-at-point ()
@@ -324,8 +324,7 @@
 (defun sayid-eval-last-sexp ()
   (interactive)
   (nrepl-send-sync-request (list "op" "sayid-clear-log"))
-  (nrepl-send-sync-request (list "op" "sayid-enable-all-traces"
-                                 "dir" (sayid-get-trace-ns-dir)))
+  (nrepl-send-sync-request (list "op" "sayid-enable-all-traces"))
   (cider-eval-last-sexp)
   (nrepl-send-sync-request (list "op" "sayid-disable-all-traces"))
   (sayid-get-workspace))

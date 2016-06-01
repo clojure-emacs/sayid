@@ -4,7 +4,7 @@
 
 (defn prs
   [v]
-  (subs (with-out-str (clojure.pprint/pprint v)) 0 1000 ))
+  (subs (with-out-str (clojure.pprint/pprint v)) 0 1000))
 
 ;; TODO exceptions
 
@@ -57,7 +57,7 @@
 
 (defn sym-seq->parent
   [syms]
-  (util/$- -> syms
+  (util/$- some-> syms
            first
            (if (coll? $)
              (sym-seq->parent $)
