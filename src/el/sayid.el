@@ -130,25 +130,26 @@
 
 (defun ansi-fg-str->face (s)
   (or (cdr (assoc s '((30 . "black")
-                      (31 . "red")
-                      (32 . "green")
-                      (33 . "yellow")
+                      (31 . "red3")
+                      (32 . "green3")
+                      (33 . "yellow3")
                       (34 . "#6699FF")
-                      (35 . "purple")
-                      (36 . "cyan")
+                      (35 . "purple2")
+                      (36 . "cyan3")
                       (37 . "white")
                       (39 . "white"))))
       "white"))
 
 (defun ansi-bg-str->face (s)
-  (or (cdr (assoc s '(("40" . "red")
-                      ("41" . "orange")
-                      ("42" . "yellow")
-                      ("43" . "green")
-                      ("44" . "blue")
-                      ("45" . "purple")
-                      ("46" . "red")
-                      ("47" . "orange"))))
+  (or (cdr (assoc s '((40 . "black")
+                      (41 . "red4")
+                      (42 . "green4")
+                      (43 . "yellow4")
+                      (44 . "blue3")
+                      (45 . "purple3")
+                      (46 . "cyan4")
+                      (47 . "white")
+                      (49 . "black"))))
       "black"))
 
 (defun mk-font-face (p)
@@ -162,12 +163,10 @@
   (dolist (p props)
     (let ((name-sym (if-str-to-sym (car p))))
       (if (eq name-sym 'text-color)
-          (progn
-            (print (list start end (mk-font-face p)))
-            (put-text-property start
-                               end
-                               'font-lock-face
-                               (mk-font-face p)))
+          (put-text-property start
+                             end
+                             'font-lock-face
+                             (mk-font-face p))
         (put-text-property start
                            end
                            (if-str-to-sym (car p))
@@ -214,7 +213,6 @@
 
 ;; I have no idea why I seem to need this
 (defun read-if-string (v)
-  (print v)
   (if (stringp v)
       (read v)
     v))
@@ -437,7 +435,7 @@
   (interactive)
   (forward-line -1)
   (while (and (> (point) (point-min))
-              (eq nil (get-text-property (point) 'header)))
+              (not (eq 1 (get-text-property (point) 'header))))
     (forward-line -1)))
 
 (defun sayid-buffer-nav-to-next ()

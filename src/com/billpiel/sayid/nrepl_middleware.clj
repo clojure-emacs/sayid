@@ -129,64 +129,16 @@
                         :value (str (get-meta-at-pos-in-source file line source))))
   (send-status-done msg))
 
-(defn audit-ns->summary-view
-  [audit-ns]
-  (let [[ns-sym audit-fns] audit-ns
-        fn-count (count audit-fns)
-        traced-count (->> audit-fns
-                          (map second)
-                          (map :trace-type)
-                          (filter #{:fn :inner-fn})
-                          count)]
-    [{:ns ns-sym} (format "  %s / %s  %s\n" traced-count fn-count ns-sym)]))
-
-(defn audit-fn->view
-  [[ fn-sym {:keys [trace-type trace-selection] :as  fn-meta}]]
-  [fn-meta (format "  %s %s %s\n"
-                   (case trace-selection
-                     :fn "O"
-                     :inner-fn "I"
-                     :ns " "
-                     nil "x"
-                     :else "?")
-                   (case trace-type
-                     :fn "E"
-                     :inner-fn "E"
-                     nil "D"
-                     :else "?")
-                   fn-sym)])
-
-(defn audit-fn-group->view
-  [[ns-sym audit-fns]]
-  (concat [{} (format "- in ns %s\n" ns-sym)]
-          (mapcat audit-fn->view audit-fns)))
-
-(defn audit->top-view
-  [audit & [ns-sym]]
-  (concat [{} "Traced namespaces:\n"]
-          (mapcat audit-ns->summary-view (:ns audit))
-          [{} "\n\nTraced functions:\n"]
-          (mapcat audit-fn-group->view (:fn audit))))
-
-(defn audit->ns-view
-  [audit & [ns-sym]]
-  (concat [{:ns ns-sym} (format "Namespace %s\n" ns-sym)]
-          (mapcat audit-fn->view
-                  (-> audit :ns (get ns-sym)))
-          [{} "\n\nTraced functions:\n"]
-          (mapcat audit-fn->view
-                  (-> audit :fn (get ns-sym)))))
-
 (defn ^:nrepl sayid-show-traced
   [{:keys [transport ns] :as msg}]
   (println "*** sayid-show-traced")
   (println ns)
   (let [audit (-> @sd/workspace :traced tr/audit-traces)
         audit-view (if (not (or (nil? ns) (empty? ns)))
-                     (audit->ns-view audit (symbol ns))
-                     (audit->top-view audit))]
+                     (so/audit->ns-view audit (symbol ns))
+                     (so/audit->top-view audit))]
     (->> audit-view
-         (partition 2)
+         so/annotated->text-prop-pair
          (reply:clj->nrepl msg))))
 
 (defn ^:nrepl sayid-trace-fn

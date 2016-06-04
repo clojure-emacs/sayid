@@ -331,6 +331,58 @@
        (clojure.string/join "")))
 
 
+
+(defn audit-ns->summary-view
+  [audit-ns]
+  (let [[ns-sym audit-fns] audit-ns
+        fn-count (count audit-fns)
+        traced-count (->> audit-fns
+                          (map second)
+                          (map :trace-type)
+                          (filter #{:fn :inner-fn})
+                          count)]
+    [{:src {:ns ns-sym}} (format "  %s / %s  %s\n" traced-count fn-count ns-sym)]))
+
+(defn audit-fn->view
+  [[ fn-sym {:keys [trace-type trace-selection] :as  fn-meta}]]
+  [{:src fn-meta} (format "  %s %s %s\n"
+                   (case trace-selection
+                     :fn "O"
+                     :inner-fn "I"
+                     :ns " "
+                     nil "x"
+                     :else "?")
+                   (case trace-type
+                     :fn "E"
+                     :inner-fn "E"
+                     nil "D"
+                     :else "?")
+                   fn-sym)])
+
+(defn audit-fn-group->view
+  [[ns-sym audit-fns]]
+  (concat [(format "- in ns %s\n" ns-sym)]
+          (mapcat audit-fn->view audit-fns)))
+
+(defn audit->top-view
+  [audit & [ns-sym]]
+  (concat ["Traced namespaces:\n"]
+          (mapcat audit-ns->summary-view (:ns audit))
+          ["\n\nTraced functions:\n"]
+          (mapcat audit-fn-group->view (:fn audit))))
+
+(defn audit->ns-view
+  [audit & [ns-sym]]
+  (concat [{:src {:ns ns-sym}} (format "Namespace %s\n" ns-sym)]
+          (mapcat audit-fn->view
+                  (-> audit :ns (get ns-sym)))
+          [{:src {}} "\n\nTraced functions:\n"]
+          (mapcat audit-fn->view
+                  (-> audit :fn (get ns-sym)))))
+
+
+
+
 (declare strings-agg-head)
 
 (defn map-agg-head
@@ -354,17 +406,6 @@
         :else #(map-agg-head (concat [next (apply str agg-head)]
                                      agg-tail)
                              tail)))
-
-;; DEPRECATE
-(defn ->meta-string-pairs
-  [v]
-  (let [[head :as all] (util/$- ->> v
-                                (trampoline map-agg-head [])
-                                reverse
-                                (drop-while #{""}))]
-    (partition-all 2 (if (string? head)
-                       (concat [{}] all)
-                       all))))
 
 (defn group-meta-strings
   [v]
@@ -502,6 +543,18 @@
               :else  (recur head'
                             tail'))))))
 
+(defn annotated->text-prop-pair
+  [a]
+  (->> a
+       flatten
+       (remove nil?)
+       group-meta-strings
+       (map #(if (string? %)
+               (str->ansi-pairs %)
+               %))
+       flatten
+       split-text-tag-coll))
+
 (defn tree->text-prop-pair
   [tree]
   (->> tree
@@ -570,7 +623,3 @@
   [trees]
   (doseq [t trees]
     (print-tree-unlimited t)))
-
-(let [r (re-pattern (str "\33" ".*?m"))]
-  (re-find r
-           (str "hi" (color-code :fg* 4) "ho")))
