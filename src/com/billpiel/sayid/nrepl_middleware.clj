@@ -307,7 +307,7 @@
   (reply:clj->nrepl msg
                     (-> (sd/ws-query-by-file-pos file line)
                         util/wrap-kids
-                        so/tree->meta-string-pairs)))
+                        so/tree->text-prop-pair)))
 
 (defn sayid-buf-query
   [q-vec mod-str]
@@ -317,7 +317,7 @@
         query (remove nil? [k n q-vec])]
     (-> (apply sd/ws-query* query)
         util/wrap-kids
-        so/tree->meta-string-pairs)))
+        so/tree->text-prop-pair)))
 
 (defn ^:nrepl sayid-buf-query-id-w-mod
   [{:keys [trace-id mod] :as msg}]
@@ -416,7 +416,7 @@
   [msg]
   (reply:clj->nrepl msg
                     (sd/with-this-printer [:children]
-                      (so/tree->meta-string-pairs (sd/ws-deref!)))))
+                      (so/tree->text-prop-pair (sd/ws-deref!)))))
 
 (def sayid-nrepl-ops
   (->> *ns*

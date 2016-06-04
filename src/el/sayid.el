@@ -103,6 +103,7 @@
                                     "file" (buffer-file-name)
                                     "line" (line-number-at-pos))))
 
+;; DEPRECATE
 (defun insert-w-props (s p buf)
   (set-buffer buf)
   (let ((start (point))
@@ -113,25 +114,99 @@
 ;; make-symbol is a liar
 (defun str-to-sym (s) (car (read-from-string s)))
 
+(defun if-str-to-sym (s)
+  (if (stringp s)
+      (str-to-sym s)
+    s))
+
 (defun first-to-sym (p)
   (list (str-to-sym (first p))
         (second p)))
 
-(defun str-alist-to-sym-list (sal)
+(defun str-alist-to-sym-alist (sal)
   (apply 'append
          (mapcar 'first-to-sym
                  sal)))
 
+(defun ansi-fg-str->face (s)
+  (or (cdr (assoc s '((30 . "black")
+                      (31 . "red")
+                      (32 . "green")
+                      (33 . "yellow")
+                      (34 . "#6699FF")
+                      (35 . "purple")
+                      (36 . "cyan")
+                      (37 . "white")
+                      (39 . "white"))))
+      "white"))
+
+(defun ansi-bg-str->face (s)
+  (or (cdr (assoc s '(("40" . "red")
+                      ("41" . "orange")
+                      ("42" . "yellow")
+                      ("43" . "green")
+                      ("44" . "blue")
+                      ("45" . "purple")
+                      ("46" . "red")
+                      ("47" . "orange"))))
+      "black"))
+
+(defun mk-font-face (p)
+  (let ((x (second p)))
+    (list (list ':foreground (ansi-fg-str->face (cadr (assoc "fg" x))))
+          (list ':background (ansi-bg-str->face (cadr (assoc "bg" x)))))))
+
+(put-text-property 5 15 'face '(:foreground "red") (get-buffer "*sayid*"))
+
+(defun put-all-text-props (props start end buf)
+  (dolist (p props)
+    (let ((name-sym (if-str-to-sym (car p))))
+      (if (eq name-sym 'text-color)
+          (progn
+            (print (list start end (mk-font-face p)))
+            (put-text-property start
+                               end
+                               'font-lock-face
+                               (mk-font-face p)))
+        (put-text-property start
+                           end
+                           (if-str-to-sym (car p))
+                           (cadr p)
+                           buf)))))
+
+(defun put-text-props-series (series buf)
+  (dolist (s series)
+    (put-all-text-props (caddr s)
+                        (car s)
+                        (cadr s)
+                        buf)))
+
+(defun write-resp-val-to-buf (val buf)
+  (set-buffer buf)
+  (insert (car val))
+  (put-text-props-series (cadr val) buf))
+
+(put-text-props-series '((1 3 ((a "a13") ( b "b13")))
+                         (2 5 ((c "c25") ( d "d25"))))
+                       (get-buffer "*scratch*"))
+
+(cadr (assoc 'a '( (a 1))))
+
+;; DEPRECATE
 (defun insert-text-prop-alist (pairs buf)
   (dolist (p pairs)
     (insert-w-props (second p)
                     (str-alist-to-sym-list (first p))
                     buf)))
 
+
+
+;; DEPRECATE
 (defun insert-text-prop-ring (pairs buf)
   (push-buf-state-to-ring pairs)
   (insert-text-prop-alist pairs buf))
 
+;; UNUSED?
 (defun insert-traced-name (buf s)
   (insert-w-props (concat "  " s "\n")
                   (list :name s)
@@ -180,6 +255,18 @@
       (push-to-ring (list meta-ansi (sayid-buf-point)))))
 
 (defun sayid-setup-buf (meta-ansi save-to-ring &optional pos)
+  (let ((orig-buf (current-buffer))
+        (sayid-buf (sayid-init-buf)))
+    (if save-to-ring
+        (push-buf-state-to-ring meta-ansi))
+    (write-resp-val-to-buf meta-ansi sayid-buf)
+    (funcall (cdr sayid-selected-buf))
+    (if pos
+        (goto-char pos))
+    (pop-to-buffer orig-buf)))
+
+;; DEPRECATE
+(defun OLD-sayid-setup-buf (meta-ansi save-to-ring &optional pos)
   (let ((orig-buf (current-buffer))
         (sayid-buf (sayid-init-buf)))
     (if save-to-ring

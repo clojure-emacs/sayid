@@ -9,7 +9,8 @@
 (defn ->int
   [v]
   (try (cond (integer? v) v
-             (string? v) (Integer/parseInt v))
+             (string? v) (Integer/parseInt v)
+             (float? v) (int v))
        (catch Exception e
          nil)))
 

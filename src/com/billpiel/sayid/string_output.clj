@@ -118,17 +118,18 @@
 
 (defn get-line-meta
   [v & {:keys [path header?]}]
-  (some-> (or (:src-pos v)
-              (:meta v))
-          (select-keys [:line :column :file :end-line :end-column])
-          (assoc :id (:id v)
-                 :fn-name (or (:parent-name v)
-                              (:name v))
-                 :path path
-                 :header header?)
-          (update-in [:file] #(if (string? %)
-                                (util/get-src-file-path %)
-                                %))))
+  (util/$- some-> (or (:src-pos v)
+                      (:meta v))
+           (select-keys [:line :column :file :end-line :end-column])
+           (assoc :id (:id v)
+                  :fn-name (or (:parent-name v)
+                               (:name v))
+                  :path path
+                  :header header?)
+           (update-in [:file] #(if (string? %)
+                                 (util/get-src-file-path %)
+                                 %))
+           {:src $}))
 
 (defn name->string
   [tree start?]
@@ -354,6 +355,7 @@
                                      agg-tail)
                              tail)))
 
+;; DEPRECATE
 (defn ->meta-string-pairs
   [v]
   (let [[head :as all] (util/$- ->> v
@@ -364,14 +366,35 @@
                        (concat [{}] all)
                        all))))
 
-(defn tree->meta-string-pairs
+(defn group-meta-strings
+  [v]
+  (let [[head :as all] (util/$- ->> v
+                                (trampoline map-agg-head [])
+                                reverse
+                                (drop-while #{""}))]
+    all))
+
+(defn tree->text-prop-pair
   [tree]
   (->> tree
        tree->string*
        flatten
        (remove nil?)
-       ->meta-string-pairs))
+       group-meta-strings
+       (map #(if (string? %)
+               (str->ansi-pairs %)
+               %))
+       flatten
+       split-text-tag-coll))
 
+(->> x
+     group-meta-strings
+     (map #(if (string? %)
+             (str->ansi-pairs %)
+             %))
+     flatten)
+
+(str->ansi-pairs (second (group-meta-strings x)))
 
 (defn tree->meta
   [tree]
@@ -428,3 +451,164 @@
   [trees]
   (doseq [t trees]
     (print-tree-unlimited t)))
+
+(let [r (re-pattern (str "\33" ".*?m"))]
+  (re-find r
+           (str "hi" (color-code :fg* 4) "ho")))
+
+(defn color-pair->fg-bg-map
+  [a b]
+  (let [a' (util/->int a)
+        b' (util/->int b)
+        ->kw (fn [v] (case (-> v (/ 10.0) Math/floor util/->int)
+                       3 :fg
+                       4 :bg))]
+    (if (every? (some-fn nil? zero?) [a' b'])
+      {:fg "--" :bg "--"}
+      (merge {}
+             (when a'
+               {(->kw a') a'})
+             (when b'
+               {(->kw b') b'})))))
+
+(defn ansi->prop-map
+  [ansi]
+  (let [rm (re-matcher (re-pattern (str "\33" "\\[(\\d+)?(;(\\d+))?m"))
+                       ansi)]
+    (loop [[match c1 _ c2] (re-find rm)
+           agg {}]
+      (if-not (nil? match)
+        (recur (re-find rm)
+               (merge agg
+                      (color-pair->fg-bg-map c1
+                                             c2)))
+        {:text-color agg}))))
+
+(ansi->prop-map (str "\33" "[31;42m"  "\33" "[m" "\33" "[33m"))
+
+(ansi-prop-map->emacs-face-map
+ (ansi->prop-map (str (color-code :fg* 1 :bg* 3)
+                      (color-code :fg* 4))))
+
+(defn str->ansi-pairs
+  [s]
+  (let [r (re-pattern (str "([^" "\33" "]*)(("  "\33" ".*?m)+)"))]
+    (loop [head []
+           tail s]
+      (let [[match txt ansi _] (re-find r tail)
+            tail' (subs tail (count match))
+            ansi' (when ansi
+                    {:display (ansi->prop-map ansi)})
+            head' (concat head (remove empty? [txt ansi']))]
+        (cond (empty? tail') head'
+              (and (empty? txt)
+                   (empty? ansi)) (concat head' [tail'])
+              :else  (recur head'
+                            tail'))))))
+
+(defn map->kvpair
+  [m]
+  (let [[[k v]] (vec m)]
+    [k v]))
+
+(defmulti merge-tags (fn [k _ _] k))
+
+(defmethod merge-tags :display
+  [_ new old]
+  (merge old new))
+
+(defmethod merge-tags :src
+  [_ new old]
+  new)
+
+(defn open-tag
+  [tag-map pos open-tags]
+  (let [[k v] (map->kvpair tag-map)
+        prev-v (k open-tags)]
+    (merge open-tags
+           {k (util/$- -> v
+                       (merge-tags k $ prev-v)
+                       (assoc :_start pos)
+                       (dissoc :_end))})))
+
+(defn close-tag
+  [kw open-tags pos]
+  (some-> open-tags
+          kw
+          (assoc-in [:_end]
+                    pos)))
+
+(defn close-all-open
+  [agg-tags open-tags pos]
+  (->> open-tags
+       keys
+       (map #(close-tag % open-tags pos))
+       (filter #(< (:_start %) (:_end %)))
+       (concat agg-tags)))
+
+(defn finalize-tags
+  [agg-tags open-tags pos]
+  (->> (close-all-open agg-tags open-tags pos)
+       (remove nil?)
+       (mapv #(vector (:_start %)
+                      (:_end %)
+                      (dissoc % :_start :_end)))))
+
+(defn do-map
+  [head open-tags agg-tags pos]
+  [(open-tag head pos open-tags)
+   (conj agg-tags (close-tag (-> head first first)
+                             open-tags
+                             pos))])
+
+(defn do-string
+  [s agg-txt pos]
+  [(conj agg-txt s)
+   (+ pos (count s))])
+
+(def tail [{:src {:a 1}}
+           "123"
+           "4567"
+           {:display {:b 2}}
+           "89ABC"
+           {:src {:c 3}}
+           "DEF012"
+           {:display {:d 4}}
+           "3456"])
+
+(defn split-text-tag-coll
+  [c]
+  (loop [[head & tail] c
+         open-tags {}
+         agg-txt []
+         agg-tags []
+         pos 1]
+    (cond
+      (map? head)
+      (let [[a b] (do-map head open-tags agg-tags pos)]
+        (recur tail a agg-txt b pos))
+
+      (string? head)
+      (let [[a b] (do-string head agg-txt pos)]
+        (recur tail open-tags a agg-tags b))
+
+      (nil? head)
+      [(apply str agg-txt)
+       (finalize-tags agg-tags
+                      open-tags
+                      pos)])))
+
+(split-text-tag-coll tail)
+
+#_(do
+    (str->ansi-pairs (str "hi" (color-code :fg* 4 :bg* 1) (color-code) "ho"))
+    (str->ansi-pairs (str (color-code :fg* 4) "ho"))
+
+    (str->ansi-pairs (str (color-code :fg* 4) "hello" (color-code :fg* 4) (color-code :fg* 4) "ho"))
+
+    (comment))
+
+#_ (do
+
+
+     (comment))
