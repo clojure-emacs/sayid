@@ -266,7 +266,7 @@
                              (empty? matches'))
                    (-> matches'
                        util/wrap-kids
-                       so/tree->meta-string-pairs
+                       so/tree->text-prop-pair
                        clj->nrepl)
                    (clj->nrepl [[nil (str "No trace records found for function at line: " line)]]))]
          (t/send transport (response-for msg
@@ -288,7 +288,7 @@
                 (replay! kids))
           matches (-> (sd/ws-query* [:parent-name fn-sym])
                       util/wrap-kids
-                      so/tree->meta-string-pairs
+                      so/tree->text-prop-pair
                       clj->nrepl)
           out (clj->nrepl matches)]
       (t/send transport (response-for msg

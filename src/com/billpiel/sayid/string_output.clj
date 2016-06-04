@@ -374,137 +374,6 @@
                                 (drop-while #{""}))]
     all))
 
-(defn tree->text-prop-pair
-  [tree]
-  (->> tree
-       tree->string*
-       flatten
-       (remove nil?)
-       group-meta-strings
-       (map #(if (string? %)
-               (str->ansi-pairs %)
-               %))
-       flatten
-       split-text-tag-coll))
-
-(->> x
-     group-meta-strings
-     (map #(if (string? %)
-             (str->ansi-pairs %)
-             %))
-     flatten)
-
-(str->ansi-pairs (second (group-meta-strings x)))
-
-(defn tree->meta
-  [tree]
-  (loop [[head & tail] tree
-         pos 1
-         agg (sorted-map)]
-    (cond (nil? head) agg
-
-          (= head "\n")
-          (recur tail (inc pos) agg)
-
-          :else
-          (recur tail pos (assoc agg pos head)))))
-
-(defn tree->string+meta
-  [tree]
-  (let [flat-tree (->> tree
-                       tree->string*
-                       flatten
-                       (remove nil?))
-        tree-str (->> flat-tree
-                      (remove map?)
-                      (clojure.string/join ""))
-        tree-meta (->> flat-tree
-                       (filter #(or (map? %)
-                                    (and (string? %)
-                                         (re-find #"\n+" %))))
-                       tree->meta)]
-    {:string tree-str
-     :meta tree-meta}))
-
-(defn print-tree-unlimited
-  [tree]
-  (-> tree
-      tree->string
-      print))
-
-(defn print-tree
-  [tree]
-  (let [s (with-out-str (print-tree-unlimited tree))
-        s' (if (< *max-chars*
-                  (count s))
-             (str (subs s 0 *max-chars*)
-                  truncate-msg)
-             s)]
-    (print s')))
-
-(defn print-trees
-  [trees]
-  (doseq [t trees]
-    (print-tree t)))
-
-(defn print-trees-unlimited
-  [trees]
-  (doseq [t trees]
-    (print-tree-unlimited t)))
-
-(let [r (re-pattern (str "\33" ".*?m"))]
-  (re-find r
-           (str "hi" (color-code :fg* 4) "ho")))
-
-(defn color-pair->fg-bg-map
-  [a b]
-  (let [a' (util/->int a)
-        b' (util/->int b)
-        ->kw (fn [v] (case (-> v (/ 10.0) Math/floor util/->int)
-                       3 :fg
-                       4 :bg))]
-    (if (every? (some-fn nil? zero?) [a' b'])
-      {:fg "--" :bg "--"}
-      (merge {}
-             (when a'
-               {(->kw a') a'})
-             (when b'
-               {(->kw b') b'})))))
-
-(defn ansi->prop-map
-  [ansi]
-  (let [rm (re-matcher (re-pattern (str "\33" "\\[(\\d+)?(;(\\d+))?m"))
-                       ansi)]
-    (loop [[match c1 _ c2] (re-find rm)
-           agg {}]
-      (if-not (nil? match)
-        (recur (re-find rm)
-               (merge agg
-                      (color-pair->fg-bg-map c1
-                                             c2)))
-        {:text-color agg}))))
-
-(ansi->prop-map (str "\33" "[31;42m"  "\33" "[m" "\33" "[33m"))
-
-(ansi-prop-map->emacs-face-map
- (ansi->prop-map (str (color-code :fg* 1 :bg* 3)
-                      (color-code :fg* 4))))
-
-(defn str->ansi-pairs
-  [s]
-  (let [r (re-pattern (str "([^" "\33" "]*)(("  "\33" ".*?m)+)"))]
-    (loop [head []
-           tail s]
-      (let [[match txt ansi _] (re-find r tail)
-            tail' (subs tail (count match))
-            ansi' (when ansi
-                    {:display (ansi->prop-map ansi)})
-            head' (concat head (remove empty? [txt ansi']))]
-        (cond (empty? tail') head'
-              (and (empty? txt)
-                   (empty? ansi)) (concat head' [tail'])
-              :else  (recur head'
-                            tail'))))))
 
 (defn map->kvpair
   [m]
@@ -566,15 +435,6 @@
   [(conj agg-txt s)
    (+ pos (count s))])
 
-(def tail [{:src {:a 1}}
-           "123"
-           "4567"
-           {:display {:b 2}}
-           "89ABC"
-           {:src {:c 3}}
-           "DEF012"
-           {:display {:d 4}}
-           "3456"])
 
 (defn split-text-tag-coll
   [c]
@@ -598,17 +458,119 @@
                       open-tags
                       pos)])))
 
-(split-text-tag-coll tail)
+(defn color-pair->fg-bg-map
+  [a b]
+  (let [a' (util/->int a)
+        b' (util/->int b)
+        ->kw (fn [v] (case (-> v (/ 10.0) Math/floor util/->int)
+                       3 :fg
+                       4 :bg))]
+    (if (every? (some-fn nil? zero?) [a' b'])
+      {:fg "--" :bg "--"}
+      (merge {}
+             (when a'
+               {(->kw a') a'})
+             (when b'
+               {(->kw b') b'})))))
 
-#_(do
-    (str->ansi-pairs (str "hi" (color-code :fg* 4 :bg* 1) (color-code) "ho"))
-    (str->ansi-pairs (str (color-code :fg* 4) "ho"))
+(defn ansi->prop-map
+  [ansi]
+  (let [rm (re-matcher (re-pattern (str "\33" "\\[(\\d+)?(;(\\d+))?m"))
+                       ansi)]
+    (loop [[match c1 _ c2] (re-find rm)
+           agg {}]
+      (if-not (nil? match)
+        (recur (re-find rm)
+               (merge agg
+                      (color-pair->fg-bg-map c1
+                                             c2)))
+        {:text-color agg}))))
 
-    (str->ansi-pairs (str (color-code :fg* 4) "hello" (color-code :fg* 4) (color-code :fg* 4) "ho"))
+(defn str->ansi-pairs
+  [s]
+  (let [r (re-pattern (str "([^" "\33" "]*)(("  "\33" ".*?m)+)"))]
+    (loop [head []
+           tail s]
+      (let [[match txt ansi _] (re-find r tail)
+            tail' (subs tail (count match))
+            ansi' (when ansi
+                    {:display (ansi->prop-map ansi)})
+            head' (concat head (remove empty? [txt ansi']))]
+        (cond (empty? tail') head'
+              (and (empty? txt)
+                   (empty? ansi)) (concat head' [tail'])
+              :else  (recur head'
+                            tail'))))))
 
-    (comment))
+(defn tree->text-prop-pair
+  [tree]
+  (->> tree
+       tree->string*
+       flatten
+       (remove nil?)
+       group-meta-strings
+       (map #(if (string? %)
+               (str->ansi-pairs %)
+               %))
+       flatten
+       split-text-tag-coll))
 
-#_ (do
+(defn tree->meta
+  [tree]
+  (loop [[head & tail] tree
+         pos 1
+         agg (sorted-map)]
+    (cond (nil? head) agg
 
+          (= head "\n")
+          (recur tail (inc pos) agg)
 
-     (comment))
+          :else
+          (recur tail pos (assoc agg pos head)))))
+
+(defn tree->string+meta
+  [tree]
+  (let [flat-tree (->> tree
+                       tree->string*
+                       flatten
+                       (remove nil?))
+        tree-str (->> flat-tree
+                      (remove map?)
+                      (clojure.string/join ""))
+        tree-meta (->> flat-tree
+                       (filter #(or (map? %)
+                                    (and (string? %)
+                                         (re-find #"\n+" %))))
+                       tree->meta)]
+    {:string tree-str
+     :meta tree-meta}))
+
+(defn print-tree-unlimited
+  [tree]
+  (-> tree
+      tree->string
+      print))
+
+(defn print-tree
+  [tree]
+  (let [s (with-out-str (print-tree-unlimited tree))
+        s' (if (< *max-chars*
+                  (count s))
+             (str (subs s 0 *max-chars*)
+                  truncate-msg)
+             s)]
+    (print s')))
+
+(defn print-trees
+  [trees]
+  (doseq [t trees]
+    (print-tree t)))
+
+(defn print-trees-unlimited
+  [trees]
+  (doseq [t trees]
+    (print-tree-unlimited t)))
+
+(let [r (re-pattern (str "\33" ".*?m"))]
+  (re-find r
+           (str "hi" (color-code :fg* 4) "ho")))

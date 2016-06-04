@@ -265,18 +265,11 @@
         (goto-char pos))
     (pop-to-buffer orig-buf)))
 
-;; DEPRECATE
-(defun OLD-sayid-setup-buf (meta-ansi save-to-ring &optional pos)
-  (let ((orig-buf (current-buffer))
-        (sayid-buf (sayid-init-buf)))
-    (if save-to-ring
-        (insert-text-prop-ring meta-ansi sayid-buf)
-      (insert-text-prop-alist meta-ansi sayid-buf))
-    (ansi-color-apply-on-region (point-min) (point-max))
-    (funcall (cdr sayid-selected-buf))
-    (if pos
-        (goto-char pos))
-    (pop-to-buffer orig-buf)))
+(defun colorize ()
+  (interactive)
+  (mapcar (lambda (x)
+            (put-text-property x (+ x 1) 'font-lock-face '(:foreground "red")))
+          (number-sequence (point-min) (- (point-max) 1))))
 
 (defun sayid-req-insert-meta-ansi (req)
   (let* ((resp (nrepl-send-sync-request req))
