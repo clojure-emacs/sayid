@@ -131,8 +131,6 @@
 
 (defn ^:nrepl sayid-show-traced
   [{:keys [transport ns] :as msg}]
-  (println "*** sayid-show-traced")
-  (println ns)
   (let [audit (-> @sd/workspace :traced tr/audit-traces)
         audit-view (if (not (or (nil? ns) (empty? ns)))
                      (so/audit->ns-view audit (symbol ns))
@@ -140,6 +138,43 @@
     (->> audit-view
          so/annotated->text-prop-pair
          (reply:clj->nrepl msg))))
+
+(defn count-traces
+  [trace-audit]
+  (+ (count  (for [v1 (-> trace-audit :ns vals)
+                   v2 (vals v1)]
+               v2))
+     (count  (for [v1 (-> trace-audit :fn vals)
+                   v2 (vals v1)]
+               v2))))
+
+(defn count-enabled-traces
+  [trace-audit]
+  (+ (count  (for [v1 (-> trace-audit :ns vals)
+                   v2 (vals v1)
+                   :when (-> v2 :trace-type nil? not)]
+               v2))
+     (count  (for [v1 (-> trace-audit :fn vals)
+                   v2 (vals v1)
+                   :when (-> v2 :trace-type nil? not)]
+               v2))))
+
+(defn ^:nrepl sayid-get-trace-count
+  [{:keys [transport] :as msg}]
+  (util/$- -> @sd/workspace
+           :traced
+           tr/audit-traces
+           count-traces
+           (reply:clj->nrepl msg $)))
+
+(defn ^:nrepl sayid-get-enabled-trace-count
+  [{:keys [transport] :as msg}]
+  (util/$- -> @sd/workspace
+           :traced
+           tr/audit-traces
+           count-enabled-traces
+           (reply:clj->nrepl msg $)))
+
 
 (defn ^:nrepl sayid-trace-fn
   [{:keys [transport fn-name fn-ns type] :as msg}]

@@ -269,10 +269,12 @@
             (put-text-property x (+ x 1) 'font-lock-face '(:foreground "red")))
           (number-sequence (point-min) (- (point-max) 1))))
 
+(defun sayid-req-get-value (req)
+  (read-if-string (nrepl-dict-get (nrepl-send-sync-request req)
+                                  "value")))
+
 (defun sayid-req-insert-meta-ansi (req)
-  (let* ((resp (nrepl-send-sync-request req))
-         (x (read-if-string (nrepl-dict-get resp "value")))) ;; WTF
-    (sayid-setup-buf x t 1)))
+  (sayid-setup-buf (sayid-req-get-value req) t 1))
 
 (defun sayid-get-workspace ()
   (interactive)
@@ -402,9 +404,18 @@
 (defun sayid-eval-last-sexp ()
   (interactive)
   (nrepl-send-sync-request (list "op" "sayid-clear-log"))
-  (nrepl-send-sync-request (list "op" "sayid-enable-all-traces"))
-  (cider-eval-last-sexp)
-  (nrepl-send-sync-request (list "op" "sayid-disable-all-traces"))
+  (let* ((has-traces (< 0 (sayid-req-get-value
+                           '("op" "sayid-get-trace-count"))))
+         (has-enabled-traced (< 0 (sayid-req-get-value
+                                   '("op" "sayid-get-enabled-trace-count")))))
+    (if (not has-traces)
+        (nrepl-send-sync-request (list "op" "sayid-trace-all-ns-in-dir"
+                                       "dir" (sayid-set-trace-ns-dir))))
+    (if (not has-enabled-traced)
+        (nrepl-send-sync-request '("op" "sayid-enable-all-traces")))
+    (cider-eval-last-sexp)
+    (if (not has-enabled-traced)
+        (nrepl-send-sync-request (list "op" "sayid-disable-all-traces"))))
   (sayid-get-workspace))
 
 ;; REMOVE
