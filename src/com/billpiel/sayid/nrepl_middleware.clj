@@ -343,8 +343,11 @@
                   sd/ws-query*
                   first
                   (get-in path'))]
-    (t/send transport (response-for msg :value (clj->nrepl [[nil (so/pprint-str value)]]))))
-  (send-status-done msg))
+    (->> value
+         so/pprint-str
+         vector
+         so/annotated->text-prop-pair
+         (reply:clj->nrepl msg))))
 
 (defn ^:nrepl sayid-clear-log
   [{:keys [transport] :as msg}]
