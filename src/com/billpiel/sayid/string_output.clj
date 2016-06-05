@@ -170,7 +170,59 @@
                                            " ")))]
        [s "\n"])]))
 
+
+(defn remove-ansi
+  [s]
+  (let [r (re-pattern (str "\33" "\\[.*?m"))]
+    (apply str (clojure.string/split s r))))
+
+(defn count-ansi-chrs
+  [s]
+  (- (count s) (-> s remove-ansi count)))
+
+(defn buffer-string
+  [n s]
+  (util/$- ->> s
+           (concat $ (repeat " "))
+           (take (+ n
+                    (count-ansi-chrs s)))
+           (apply str)))
+
+(defn string->col-str-seq
+  [s]
+  (let [lines (clojure.string/split-lines s)
+        max (->> lines (map remove-ansi) (map count) (apply max))
+        lines' (->> lines (map (partial buffer-string max)))]
+    (concat lines' (repeat (buffer-string max "")))))
+
+(defn mk-column-str
+  [& cols]
+  (let [strs (filter string? cols)
+        lines (map clojure.string/split-lines strs)
+        max-height (->> lines
+                        (map count)
+                        (apply max)
+                        (min (or *truncate-lines-count*
+                                 Integer/MAX_VALUE)))
+        col-seqs (map #(if (string? %)
+                         (string->col-str-seq %)
+                         %)
+                      cols)]
+    (apply str (take (* (inc (count cols)) max-height)
+                     (apply interleave (concat col-seqs [(repeat "\n")]))))))
+
+(defn multi-line-indent2
+  [& {:keys [cols indent-base]}]
+  (->> cols
+       (apply mk-column-str
+              (repeat (indent-MZ indent-base)))))
+
+(println (multi-line-indent2 :cols ["label " (pprint-str {:a [1 2 3 4 5 6 7 8 9 10] :b [1 2 3 4 5 6 7 8 9 10] :c [1 2 3 4 5 6 7 8 9 10]})]
+                             :indent-base 2))
+
+
 (def multi-line-indent-MZ  (memoize multi-line-indent))
+(def multi-line-indent2-MZ  (memoize multi-line-indent2))
 
 (defn indent-arg-map
   [tree m]
@@ -178,18 +230,16 @@
        (map (fn [[label value]]
               [(get-line-meta tree
                               :path [:arg-map label])
-               (multi-line-indent-MZ :label (str label " => ")
-                                     :value value
-                                     :indent-base (:depth tree)
-                                     :indent-offset  3)]))
+               (multi-line-indent2-MZ :cols [(str label " => ") (pprint-str value)]
+                                     :indent-base (:depth tree))]))
        vec))
 
 (defn indent-map
   [tree m]
   (->> m
        (map (fn [[label value]]
-              (multi-line-indent-MZ :label (str label " => ")
-                                    :value value
+              (multi-line-indent2-MZ :cols [ (str label " => ")
+                                             (pprint-str value)]
                                     :indent-base (:depth tree)
                                     :indent-offset  3)))
        vec))
@@ -201,13 +251,12 @@
       (let [return (:return tree)]
         [(get-line-meta tree
                         :path [:return])
-         (multi-line-indent-MZ :label (str (condp = pos
-                                              :before "returns"
-                                              :after "returned")
-                                            " => ")
-                                :value  return
-                                :indent-base (:depth tree)
-                                :indent-offset  3)]))))
+         (multi-line-indent2-MZ :cols [(condp = pos
+                                         :before "returns"
+                                         :after "returned")
+                                       " => "
+                                       (pprint-str return)]
+                                :indent-base (:depth tree))]))))
 
 (defn args-map-str
   [tree]
@@ -222,22 +271,21 @@
       (->> args
            (map-indexed (fn [i value]
                           [(get-line-meta tree :path [:args i])
-                           (multi-line-indent-MZ :value value
-                                                 :indent-base (:depth tree)
-                                                 :indent-offset 3)]))
+                           (multi-line-indent2-MZ :cols [(pprint-str value)]
+                                                 :indent-base (:depth tree))]))
            vec))))
 
 (defn let-binds-str
   [tree]
   (->> tree
        :let-binds
-       (map #(multi-line-indent-MZ :label (str (second %)
-                                               " "
-                                               (pprint-str (nth % 2))
-                                               " => ")
-                                   :value (first %)
-                                   :indent-base (:depth tree)
-                                   :indent-offset 3))
+       (map #(multi-line-indent2-MZ :cols [(-> % second str)
+                                           (str (color-code)
+                                                " <= ")
+                                           (-> % first pprint-str)
+                                           " <= "
+                                           (pprint-str (nth % 2))]
+                                    :indent-base (:depth tree)))
        vec))
 
 (defn args*-str
