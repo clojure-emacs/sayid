@@ -33,9 +33,6 @@
 
 (defn reply:clj->nrepl
   [msg out]
-  (println "=============================")
-  (println (clj->nrepl out))
-  (println "=============================")
   (try (t/send (:transport msg)
                (response-for msg
                              :value (clj->nrepl out)))
@@ -46,7 +43,6 @@
 
 (defn find-ns-sym
   [file]
-  (println file)
   (some->> file
            slurp
            (re-find #"\(ns\s+(.+)\b")
@@ -179,7 +175,6 @@
 
 (defn ^:nrepl sayid-trace-fn
   [{:keys [transport fn-name fn-ns type] :as msg}]
-  (println [fn-name fn-ns type])
   (case type
         "outer" (sd/ws-add-trace-fn!* (util/qualify-sym fn-ns fn-name))
         "inner" (sd/ws-add-inner-trace-fn!* (util/qualify-sym fn-ns fn-name)))
@@ -187,28 +182,21 @@
 
 (defn ^:nrepl sayid-trace-fn-enable
   [{:keys [transport fn-name fn-ns] :as msg}]
-  (println "**** sayid-trace-fn-enable")
-  (println (util/qualify-sym fn-ns fn-name))
   (sd/ws-enable-trace-fn! (util/qualify-sym fn-ns fn-name))
   (send-status-done msg))
 
 (defn ^:nrepl sayid-trace-fn-disable
   [{:keys [transport fn-name fn-ns] :as msg}]
-  (println "**** sayid-trace-fn-disable")
-  (println (util/qualify-sym fn-ns fn-name))
   (sd/ws-disable-trace-fn! (util/qualify-sym fn-ns fn-name))
   (send-status-done msg))
 
 (defn ^:nrepl sayid-trace-fn-remove
   [{:keys [transport fn-name fn-ns] :as msg}]
-  (println "**** sayid-trace-fn-remove")
-  (println (util/qualify-sym fn-ns fn-name))
   (sd/ws-remove-trace-fn! (util/qualify-sym fn-ns fn-name))
   (send-status-done msg))
 
 (defn ^:nrepl sayid-replay-workspace
   [{:keys [transport] :as msg}]
-  (println "sayid-replay-workspace")
   (let [kids (:children (sd/ws-deref!))]
     (sd/ws-cycle-all-traces!)
     (sd/ws-clear-log!)
@@ -369,7 +357,6 @@
 
 (defn ^:nrepl sayid-trace-ns-by-pattern
   [{:keys [transport ns-pattern ref-ns] :as msg}]
-  (println ns-pattern)
   (mapv #(-> %
              str
              symbol
@@ -381,11 +368,8 @@
 
 (defn ^:nrepl sayid-trace-ns-in-file
   [{:keys [transport file] :as msg}]
-  (println "sayid-trace-ns-in-file")
-  (println file)
   (->> file
        find-ns-sym
-       (#(do (println %) %))
        sd/ws-add-trace-ns!*)
   (send-status-done msg))
 
@@ -406,7 +390,6 @@
 
 (defn ^:nrepl sayid-set-printer
   [{:keys [transport printer] :as msg}]
-  (println printer)
   (if (.startsWith printer ".")
     (reset! sd/printer sd/default-printer)
     (->> (str "[" printer "]")
