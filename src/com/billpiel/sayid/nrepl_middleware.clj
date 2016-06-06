@@ -9,7 +9,8 @@
             [clojure.tools.reader :as r]
             [clojure.tools.reader.reader-types :as rts]
             [com.billpiel.sayid.util.other :as util]
-            [clojure.tools.namespace.find :as ns-find]))
+            [clojure.tools.namespace.find :as ns-find]
+            [com.billpiel.sayid.util.find-ns :as find-ns]))
 
 (defn clj->nrepl*
   [v]
@@ -361,9 +362,20 @@
 
 (defn ^:nrepl sayid-trace-all-ns-in-dir
   [{:keys [transport dir] :as msg}]
-  (sd/ws-disable-all-traces!)
   (doall (map sd/ws-add-trace-ns!*
               (ns-find/find-namespaces-in-dir (java.io.File. dir))))
+  (sd/ws-cycle-all-traces!)
+  (send-status-done msg))
+
+(defn ^:nrepl sayid-trace-ns-by-pattern
+  [{:keys [transport ns-pattern ref-ns] :as msg}]
+  (println ns-pattern)
+  (mapv #(-> %
+             str
+             symbol
+             sd/ws-add-trace-ns!*)
+        (find-ns/search-nses (symbol ns-pattern)
+                             (symbol ref-ns)))
   (sd/ws-cycle-all-traces!)
   (send-status-done msg))
 

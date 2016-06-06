@@ -185,12 +185,6 @@
   (insert (car val))
   (put-text-props-series (cadr val) buf))
 
-(put-text-props-series '((1 3 ((a "a13") ( b "b13")))
-                         (2 5 ((c "c25") ( d "d25"))))
-                       (get-buffer "*scratch*"))
-
-(cadr (assoc 'a '( (a 1))))
-
 ;; DEPRECATE
 (defun insert-text-prop-alist (pairs buf)
   (dolist (p pairs)
@@ -309,6 +303,13 @@
   (interactive)
   (nrepl-send-sync-request (list "op" "sayid-trace-ns-in-file"
                                  "file" (buffer-file-name)))
+  (sayid-show-traced))
+
+(defun sayid-trace-ns-by-pattern ()
+  (interactive)
+  (nrepl-send-sync-request (list "op" "sayid-trace-ns-by-pattern"
+                                 "ns-pattern" (read-string "Namespace to trace (*=wildcard) " (cider-current-ns))
+                                 "ref-ns" (cider-current-ns)))
   (sayid-show-traced))
 
 (defun sayid-trace-enable-all ()
@@ -530,6 +531,7 @@
   (define-key clojure-mode-map (kbd "C-c s r") 'sayid-replay-workspace-query-point)
   (define-key clojure-mode-map (kbd "C-c s w") 'sayid-get-workspace)
   (define-key clojure-mode-map (kbd "C-c s t y") 'sayid-trace-all-ns-in-dir)
+  (define-key clojure-mode-map (kbd "C-c s t p") 'sayid-trace-ns-by-pattern)
   (define-key clojure-mode-map (kbd "C-c s t b") 'sayid-trace-ns-in-file) ;; b = buffer
   (define-key clojure-mode-map (kbd "C-c s t e") 'sayid-trace-fn-enable)   ;;TODO
   (define-key clojure-mode-map (kbd "C-c s t E") 'sayid-trace-enable-all)
