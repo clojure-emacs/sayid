@@ -217,10 +217,6 @@
        (apply mk-column-str
               (repeat (indent-MZ indent-base)))))
 
-(println (multi-line-indent2 :cols ["label " (pprint-str {:a [1 2 3 4 5 6 7 8 9 10] :b [1 2 3 4 5 6 7 8 9 10] :c [1 2 3 4 5 6 7 8 9 10]})]
-                             :indent-base 2))
-
-
 (def multi-line-indent-MZ  (memoize multi-line-indent))
 (def multi-line-indent2-MZ  (memoize multi-line-indent2))
 
