@@ -1,4 +1,25 @@
-;; Sayid nREPL middleware client
+;;; sayid.el --- sayid nREPL middleware client
+
+;; Copyright (c) 2016 Bill Piel
+
+;; Licensed under the Apache License, Version 2.0 (the "License");
+;; you may not use this file except in compliance with the License.
+;; You may obtain a copy of the License at
+
+;;     http://www.apache.org/licenses/LICENSE-2.0
+
+;; Unless required by applicable law or agreed to in writing, software
+;; distributed under the License is distributed on an "AS IS" BASIS,
+;; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+;; See the License for the specific language governing permissions and
+;; limitations under the License.
+
+;;; Commentary:
+
+;; Sayid is a debugger for clojure. This package, sayid.el, is a client
+;; for the sayid nrepl middleware.
+
+;;; Code:
 
 (require 'sayid-mode)
 (require 'sayid-traced-mode)
@@ -27,6 +48,7 @@
   (expand-file-name (buffer-file-name)))
 (expanded-buffer-file-name)
 
+;;;###autoload
 (defun sayid-get-trace-ns-dir ()
   (interactive)
   (or sayid-trace-ns-dir
@@ -37,6 +59,7 @@
         (setq sayid-trace-ns-dir input)
         input)))
 
+;;;###autoload
 (defun sayid-set-trace-ns-dir ()
   (interactive)
   (let* ((default-dir (file-name-directory (buffer-file-name)))
@@ -60,12 +83,14 @@
          (x (nrepl-dict-get resp "value")))
     (message x)))
 
+;;;###autoload
 (defun sayid-query-form-at-point ()
   (interactive)
   (sayid-req-insert-meta-ansi (list "op" "sayid-query-form-at-point"
                                     "file" (buffer-file-name)
                                     "line" (line-number-at-pos))))
 
+;;;###autoload
 (defun sayid-get-meta-at-point ()
   (interactive)
   (sayid-send-and-message (list "op" "sayid-get-meta-at-point"
@@ -73,17 +98,20 @@
                                 "file" (buffer-file-name)
                                 "line" (line-number-at-pos))))
 
+;;;###autoload
 (defun sayid-trace-fn-enable ()
   (interactive)
   (sayid-req-insert-meta-ansi (list "op" "sayid-"
                                     "file" (buffer-file-name)
                                     "line" (line-number-at-pos))))
 
+;;;###autoload
 (defun sayid-replay-workspace-query-point ()
   (interactive)
   (nrepl-send-sync-request (list "op" "sayid-replay-workspace"))
   (sayid-query-form-at-point))
 
+;;;###autoload
 (defun sayid-replay-with-inner-trace ()
   (interactive)
   (sayid-req-insert-meta-ansi (list "op" "sayid-replay-with-inner-trace-at-point"
@@ -91,25 +119,19 @@
                                     "file" (buffer-file-name)
                                     "line" (line-number-at-pos))))
 
+;;;###autoload
 (defun sayid-buf-replay-with-inner-trace ()
   (interactive)
   (sayid-req-insert-meta-ansi (list "op" "sayid-replay-with-inner-trace"
                                     "func" (get-text-property (point) 'fn-name))))
 
+;;;###autoload
 (defun sayid-replay-at-point ()
   (interactive)
   (sayid-req-insert-meta-ansi (list "op" "sayid-replay-at-point"
                                     "source" (buffer-string)
                                     "file" (buffer-file-name)
                                     "line" (line-number-at-pos))))
-
-;; DEPRECATE
-(defun insert-w-props (s p buf)
-  (set-buffer buf)
-  (let ((start (point))
-        (xxx (insert (or s "")))
-        (end (- (point) 1)))
-    (set-text-properties start end p buf)))
 
 ;; make-symbol is a liar
 (defun str-to-sym (s) (car (read-from-string s)))
@@ -185,26 +207,6 @@
   (insert (car val))
   (put-text-props-series (cadr val) buf))
 
-;; DEPRECATE
-(defun insert-text-prop-alist (pairs buf)
-  (dolist (p pairs)
-    (insert-w-props (second p)
-                    (str-alist-to-sym-list (first p))
-                    buf)))
-
-
-
-;; DEPRECATE
-(defun insert-text-prop-ring (pairs buf)
-  (push-buf-state-to-ring pairs)
-  (insert-text-prop-alist pairs buf))
-
-;; UNUSED?
-(defun insert-traced-name (buf s)
-  (insert-w-props (concat "  " s "\n")
-                  (list :name s)
-                  buf))
-
 ;; I have no idea why I seem to need this
 (defun read-if-string (v)
   (if (stringp v)
@@ -270,10 +272,12 @@
 (defun sayid-req-insert-meta-ansi (req)
   (sayid-setup-buf (sayid-req-get-value req) t 1))
 
+;;;###autoload
 (defun sayid-get-workspace ()
   (interactive)
   (sayid-req-insert-meta-ansi (list "op" "sayid-get-workspace")))
 
+;;;###autoload
 (defun sayid-show-traced (&optional ns)
   (interactive)
   (sayid-select-traced-buf)
@@ -281,6 +285,7 @@
                                     "ns" ns))
   (sayid-select-default-buf))
 
+;;;###autoload
 (defun sayid-traced-buf-enter ()
   (interactive)
   (sayid-select-traced-buf)
@@ -293,18 +298,21 @@
      (t 0)))
   (sayid-select-default-buf))
 
+;;;###autoload
 (defun sayid-trace-all-ns-in-dir ()
   (interactive)
   (nrepl-send-sync-request (list "op" "sayid-trace-all-ns-in-dir"
                                  "dir" (sayid-set-trace-ns-dir)))
   (sayid-show-traced))
 
+;;;###autoload
 (defun sayid-trace-ns-in-file ()
   (interactive)
   (nrepl-send-sync-request (list "op" "sayid-trace-ns-in-file"
                                  "file" (buffer-file-name)))
   (sayid-show-traced))
 
+;;;###autoload
 (defun sayid-trace-ns-by-pattern ()
   (interactive)
   (nrepl-send-sync-request (list "op" "sayid-trace-ns-by-pattern"
@@ -312,19 +320,21 @@
                                  "ref-ns" (cider-current-ns)))
   (sayid-show-traced))
 
+;;;###autoload
 (defun sayid-trace-enable-all ()
   (interactive)
   (nrepl-send-sync-request (list "op" "sayid-enable-all-traces"
                                  "file" (buffer-file-name)))
   (sayid-show-traced))
 
-
+;;;###autoload
 (defun sayid-trace-disable-all ()
   (interactive)
   (nrepl-send-sync-request (list "op" "sayid-disable-all-traces"
                                  "file" (buffer-file-name)))
   (sayid-show-traced))
 
+;;;###autoload
 (defun sayid-traced-buf-inner-trace-fn ()
   (interactive)
   (setq pos (point))
@@ -338,6 +348,7 @@
   (goto-char pos)
   (sayid-select-default-buf))
 
+;;;###autoload
 (defun sayid-traced-buf-outer-trace-fn ()
   (interactive)
   (setq pos (point))
@@ -351,6 +362,7 @@
 
   (goto-char pos))
 
+;;;###autoload
 (defun sayid-traced-buf-enable ()
   (interactive)
   (setq pos (point))
@@ -363,6 +375,7 @@
   (goto-char pos)
   (sayid-select-default-buf))
 
+;;;###autoload
 (defun sayid-traced-buf-disable ()
   (interactive)
   (setq pos (point))
@@ -375,6 +388,7 @@
   (goto-char pos)
   (sayid-select-default-buf))
 
+;;;###autoload
 (defun sayid-traced-buf-remove-trace-fn ()
   (interactive)
   (setq pos (point))
@@ -387,21 +401,25 @@
   (goto-char pos)
   (sayid-select-default-buf))
 
+;;;###autoload
 (defun sayid-kill-all-traces ()
   (interactive)
   (nrepl-send-sync-request (list "op" "sayid-remove-all-traces"))
   (message "Killed all traces."))
 
+;;;###autoload
 (defun sayid-clear-log ()
   (interactive)
   (nrepl-send-sync-request (list "op" "sayid-clear-log"))
   (message "Cleared log."))
 
+;;;###autoload
 (defun sayid-reset-workspace ()
   (interactive)
   (nrepl-send-sync-request (list "op" "sayid-reset-workspace"))
   (message "Removed traces. Cleared log."))
 
+;;;###autoload
 (defun sayid-eval-last-sexp ()
   (interactive)
   (nrepl-send-sync-request (list "op" "sayid-clear-log"))
@@ -419,15 +437,6 @@
         (nrepl-send-sync-request (list "op" "sayid-disable-all-traces"))))
   (sayid-get-workspace))
 
-;; REMOVE
-(defun sayid-search-line-meta (m n f)
-  (let ((head (first m))
-        (tail (rest m)))
-    (cond ((eq nil head) nil)
-          ((funcall f n head)
-           head)
-          (t (sayid-search-line-meta tail n f)))))
-
 (defun sayid-get-line-meta (m n)
   (let ((head (first m))
         (tail (rest m)))
@@ -436,6 +445,7 @@
            (second head))
           (t (sayid-get-line-meta tail n)))))
 
+;;;###autoload
 (defun sayid-buffer-nav-from-point ()
   (interactive)
   (let* ((file (get-text-property (point) 'file))
@@ -443,6 +453,7 @@
     (pop-to-buffer (find-file-noselect file))
     (goto-line line)))
 
+;;;###autoload
 (defun sayid-buffer-nav-to-prev ()
   (interactive)
   (forward-line -1)
@@ -450,6 +461,7 @@
               (not (eq 1 (get-text-property (point) 'header))))
     (forward-line -1)))
 
+;;;###autoload
 (defun sayid-buffer-nav-to-next ()
   (interactive)
   (forward-line)
@@ -457,37 +469,42 @@
               (not (eq 1 (get-text-property (point) 'header))))
     (forward-line)))
 
+;;;###autoload
 (defun sayid-query-id-w-mod ()
   (interactive)
   (sayid-req-insert-meta-ansi (list "op" "sayid-buf-query-id-w-mod"
                                     "trace-id" (get-text-property (point) 'id)
                                     "mod" (read-string "query modifier: "))))
 
+;;;###autoload
 (defun sayid-query-id ()
   (interactive)
     (sayid-req-insert-meta-ansi (list "op" "sayid-buf-query-id-w-mod"
                                     "trace-id" (get-text-property (point) 'id)
                                     "mod" "")))
 
+;;;###autoload
 (defun sayid-query-fn-w-mod ()
   (interactive)
   (sayid-req-insert-meta-ansi (list "op" "sayid-buf-query-fn-w-mod"
                                "fn-name" (get-text-property (point) 'fn-name)
                                "mod" (read-string "query modifier: "))))
 
-
+;;;###autoload
 (defun sayid-query-fn ()
   (interactive)
   (sayid-req-insert-meta-ansi (list "op" "sayid-buf-query-fn-w-mod"
                                "fn-name" (get-text-property (point) 'fn-name)
                                "mod" "")))
 
+;;;###autoload
 (defun sayid-buf-def-at-point ()
   (interactive)
   (sayid-send-and-message (list "op" "sayid-buf-def-at-point"
                                 "trace-id" (get-text-property (point) 'id)
                                 "path" (get-text-property (point) 'path))))
 
+;;;###autoload
 (defun sayid-buf-inspect-at-point ()
   (interactive)
   (sayid-send-and-message (list "op" "sayid-buf-def-at-point"
@@ -495,12 +512,14 @@
                                 "path" (get-text-property (point) 'path)))
   (cider-inspect "$s/*"))
 
+;;;###autoload
 (defun sayid-buf-pprint-at-point ()
   (interactive)
   (sayid-req-insert-meta-ansi (list "op" "sayid-buf-pprint-at-point"
                                     "trace-id" (get-text-property (point) 'id)
                                     "path" (get-text-property (point) 'path))))
 
+;;;###autoload
 (defun sayid-set-printer ()
   (interactive)
   (nrepl-send-sync-request (list "op" "sayid-set-printer"
@@ -508,6 +527,7 @@
                                                    " :children")))
   (message "Printer set."))
 
+;;;###autoload
 (defun sayid-buf-back ()
   (interactive)
   (update-buf-pos-to-ring)
@@ -516,6 +536,7 @@
                      nil
                      (second buf-state))))
 
+;;;###autoload
 (defun sayid-buf-forward ()
   (interactive)
   (update-buf-pos-to-ring)
@@ -547,3 +568,7 @@
   (define-key clojure-mode-map (kbd "C-c s p s") 'sayid-set-printer))
 
 (add-hook 'clojure-mode-hook 'sayid-set-clj-mode-keys)
+
+(provide 'sayid)
+
+;;; sayid.el ends here
