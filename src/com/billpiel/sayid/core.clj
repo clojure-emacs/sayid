@@ -442,7 +442,7 @@ user> (-> #'f1 meta :source)
   [& [ws]]
   (with-view (-> ws
                  ws-view!
-                 (#'so/print-trees))))
+                 (#'so/print-tree))))
 (util/defalias w-pr ws-print)
 
 (defn rec-print

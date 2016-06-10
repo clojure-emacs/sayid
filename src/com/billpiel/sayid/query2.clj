@@ -162,13 +162,15 @@
 
 (defn query-tree
   [qry-fn tree]
-  (let [e' (update-in tree [:children]
-                      (partial mapcat
-                               (partial query-tree
-                                        qry-fn)))]
-    (if (qry-fn tree)
-      [e']
-      (:children e'))))
+  (if-not (nil? tree)
+    (let [e' (update-in tree [:children]
+                        (partial mapcat
+                                 (partial query-tree
+                                          qry-fn)))]
+      (if (qry-fn tree)
+        [e']
+        (:children e')))
+    []))
 
 (defn query-dos
   [tree pred-map pred-final-fn] ;; pred-final-fn takes a node (w/ :zipper) and fn to retrieve tags from a node
@@ -336,11 +338,27 @@
          (every-pred-2 (mk-relative-final-qry-fn [:d] #{:a})
                        (mk-relative-final-qry-fn [:a] #{:d}))))
 
-(defn q
-  [tree & body]
-  (vec (exec-query tree
-                   body)))
+(defn mk-query-result-root
+  [tree]
+  (vary-meta (if (-> tree
+                     meta
+                     :trace-root)
+               tree
+               {:id (-> "query-result" gensym keyword)
+                :children []})
+             assoc
+             ::query-result true
+             :trace-root true))
 
+(defn q
+     [tree & body]
+     (let [parent (mk-query-result-root tree)
+           [r1 :as result] (vec (exec-query tree
+                                            body))]
+       (if (= (:id r1) (:id parent))
+         r1
+         (assoc parent
+                :children result))))
 
 ;; ========================
 

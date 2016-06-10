@@ -377,10 +377,6 @@
           (pred head) head
           :else (recur pred tail))))
 
-(defn wrap-kids
-  [children]
-  {:children children})
-
 (defn get-src-file-path
   [s]
   (let [s' (clojure.string/replace s #"^file:" "")]

@@ -340,32 +340,36 @@
   (if (nil? tree)
     []
     (when-let [view (*view* tree)]
-      (let [has-children (some-> tree
+      (let [trace-root? (-> tree meta :trace-root)
+            has-children (some-> tree
                                  :children
                                  not-empty)]
-        [(name->string tree true) "\n"
-         (when-let [selects (:selects view)]
-           (selects-str tree selects))
-         (when-sel :args (args*-str tree))
-         (when has-children
-           [(when-sel :return (return-str tree :pos :before))
-            (when-sel :throw (throw-str tree))
-            (mapv tree->string* (:children tree))
-            (name->string tree false) "\n"
-            (when-sel :args
-                      (args*-str tree))])
-         (when-sel :return (return-str tree :pos :after))
-         (when-sel :throw (throw-str tree))
-         (when (and (-> tree :depth nil? not)
-                    (-> tree
-                        meta
-                        ::ws/workspace
-                        not))
-           [(get-line-meta tree) ;; clear meta
-            (slinky-pipes-MZ (:depth tree)
-                             :end "^")])
-         reset-color-code
-         "\n"]))))
+        [(when (not trace-root?)
+           (name->string tree true)) "\n"
+           (when-let [selects (:selects view)]
+             (selects-str tree selects))
+           (when-sel :args (args*-str tree))
+           (when has-children
+             [(when-sel :return (return-str tree :pos :before))
+              (when-sel :throw (throw-str tree))
+              (mapv tree->string* (:children tree))
+              (when (not trace-root?)
+                [(name->string tree false) "\n"])
+              (when-sel :args
+                        (args*-str tree))])
+           (when-sel :return (return-str tree :pos :after))
+           (when-sel :throw (throw-str tree))
+           (when (and (-> tree :depth nil? not)
+                      (-> tree
+                          meta
+                          ::ws/workspace
+                          not))
+             [(get-line-meta tree) ;; clear meta
+              (when (not trace-root?)
+                (slinky-pipes-MZ (:depth tree)
+                                 :end "^"))])
+           reset-color-code
+           "\n"]))))
 
 (defn tree->string
   [tree]

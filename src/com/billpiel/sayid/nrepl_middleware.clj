@@ -243,7 +243,6 @@
 
              out (if-not (nil? matches')
                    (-> matches'
-                       util/wrap-kids
                        so/tree->string+meta)
                    {:string (str "No trace records found for function at line: " line)})]
          (t/send transport (response-for msg
@@ -271,7 +270,6 @@
              out (if-not (or (empty? matches)
                              (empty? matches'))
                    (-> matches'
-                       util/wrap-kids
                        so/tree->text-prop-pair
                        clj->nrepl)
                    (clj->nrepl [[nil (str "No trace records found for function at line: " line)]]))]
@@ -293,7 +291,6 @@
                 (sd/ws-clear-log!)
                 (replay! kids))
           matches (-> (sd/ws-query* [:parent-name fn-sym])
-                      util/wrap-kids
                       so/tree->text-prop-pair
                       clj->nrepl)
           out (clj->nrepl matches)]
@@ -312,7 +309,6 @@
   [{:keys [file line] :as msg}]
   (reply:clj->nrepl msg
                     (-> (sd/ws-query-by-file-pos file line)
-                        util/wrap-kids
                         so/tree->text-prop-pair)))
 
 (defn sayid-buf-query
@@ -322,7 +318,6 @@
         n (util/->int sn)
         query (remove nil? [k n q-vec])]
     (-> (apply sd/ws-query* query)
-        util/wrap-kids
         so/tree->text-prop-pair)))
 
 (defn ^:nrepl sayid-buf-query-id-w-mod
@@ -432,9 +427,7 @@
   (reply:clj->nrepl msg
                     (sd/with-this-view (or @sd/view
                                       (v/mk-simple-view {}))
-                      (so/tree->text-prop-pair
-                                   (util/wrap-kids
-                                    (sd/ws-view!))))))
+                      (so/tree->text-prop-pair (sd/ws-view!)))))
 
 (def sayid-nrepl-ops
   (->> *ns*
