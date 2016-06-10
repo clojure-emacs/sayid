@@ -21,6 +21,7 @@
 
 ;;; Code:
 
+
 (require 'sayid-mode)
 (require 'sayid-traced-mode)
 
@@ -582,5 +583,4 @@
   (add-hook 'clojure-mode-hook 'sayid-set-clj-mode-keys))
 
 (provide 'sayid)
-
 ;;; sayid.el ends here

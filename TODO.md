@@ -4,8 +4,8 @@ nrepl/sayid.el
 x button to pretty print
 x button to cider-inspect
 x trying to trace unloaded ns problems???
-~ trace by dir
-- trace by ns
+x trace by dir
+x trace by ns
 x enable/disable traces
 x back button (backspace)
 x back button - save pos
@@ -25,31 +25,40 @@ x 'n' does inner trace from buf
   - query ws by func
   x enter-> jump to ns detail view
 - lots of clj-mode bindings
+  - sayid-trace-fn-enable
+  - sayid-trace-fn-disable
+  - sayid-inner-trace-fn
+  - sayid-outer-trace-fn
+  - sayid-show-traced-ns
 
-- what happens if you apply and inner trace twice?
+
+- what happens if you apply an inner trace twice?
 
 x rename everything (inner/outer)
 
-- have eval-last be more sane; check for existing traces
+x have eval-last be more sane; check for existing traces
 - use 'l' for backspace (says Tim?)
 
 - BUGS
- - ANSI is SLOW
- - trace doesn't take sometimes -- eval last
+ x ANSI is SLOW
+   x fix show-traces
+   - could still be faster??
+ x FIX PPRINT
  - doesn't inner-trace into `let` bindings
- - multi-line let bind expr renders badly
- - `C-s t y` doesn't work
- - 'p' in *sayid*
+ - trace doesn't take sometimes -- eval last
+ x multi-line let bind expr renders badly
+ x 'p' in *sayid*
  - e/d to enable/disable ns from *traced*
 
  
 
-- write script  
-- video
+x write script  
+x video
 
 
 - query by func maintains cursor on id
 
-- color codes instead of ansi
+x color codes instead of ansi
+- add meta so that let binds can be def'd and pprinted
 
 - lenses

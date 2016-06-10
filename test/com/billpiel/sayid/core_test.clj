@@ -751,22 +751,22 @@ x split out and memoize arg map fn
     - arg-map slow?
   x profiling
   x querying
-x FIX adding a deep-trace to existing trace should undo trace before applying deep trace
+x FIX adding a inner-trace to existing trace should undo trace before applying inner trace
 - refator some things in string_output to multimethods?
-x deep-trace :name should just be name. Do string concat in presentation logic
-x test querying w/ deep trace
+x inner-trace :name should just be name. Do string concat in presentation logic
+x test querying w/ inner trace
 x safe print level/length for string out
 x upgrade puget -- use seq-limit
-- FIX adding only deep-trace throws execption on execution -- happened in scheduler
-~ test profiling w/ deep trace
+- FIX adding only inner-trace throws execption on execution -- happened in scheduler
+~ test profiling w/ inner trace
 ~ profile simulated tracer fn
 x FIX return values of `false` aren't displayed
 X should be able to query for func by func
 x profiling interface in core
-- FIX deep-traced fn returning fn blows up -- has no parent context -- throw explaining exception??
+x FIX inner-traced fn returning fn blows up -- has no parent context -- throw explaining exception??
 - rec-save-as should accept keyword or string
 - never return ws or recs from core fns
-x deep trace (inside fn)
+x inner trace (inside fn)
 x trace individual fns
 x re-exec traces
 x query selector funcs
@@ -774,16 +774,16 @@ x query selector funcs
   x toggle output components
 - switch to earlier clojure version -- deps too
   - get tests passing in all versions too
-- query output by line/column position -- for emacs plugin
+x query output by line/column position -- for emacs plugin
 - cursors
    - bisect recording trees to find bugs
 - split ns and fn name in trace rec and output
 x some kind of string output length limit options?
 - show file and line num in output
 - wrap args that are funcs
- - and deep search values for funcs?
+ - and inner search values for funcs?
 - wrap returns that are funcs
- - and deep search values for funcs?
+ - and inner search values for funcs?
 - diff entries
 - search fn syntax for dynamic vars to capture
 - tag vals w meta data and track?
