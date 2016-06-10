@@ -30,11 +30,6 @@
   (atom {:ws-ns '$ws
          :rec-ns '$rec}))
 
-(def ^:no-doc
-  default-view {:max-chars so/*max-chars*
-                   :max-arg-lines so/*max-arg-lines*
-                   :selector so/*selector*})
-
 (declare with-view)
 (declare ws-query*)
 (declare ws-query)

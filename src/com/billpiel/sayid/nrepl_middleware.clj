@@ -413,15 +413,6 @@
   (sd/ws-enable-all-traces!)
   (send-status-done msg))
 
-(defn ^:nrepl sayid-set-printer
-  [{:keys [transport printer] :as msg}]
-  (if (.startsWith printer ".")
-    (reset! sd/printer sd/default-printer)
-    (->> (str "[" printer "]")
-         read-string
-         (apply sd/set-printer!)))
-  (send-status-done msg))
-
 (defn ^:nrepl sayid-get-workspace
   [msg]
   (reply:clj->nrepl msg

@@ -46,7 +46,6 @@
 
 (defun expanded-buffer-file-name ()
   (expand-file-name (buffer-file-name)))
-(expanded-buffer-file-name)
 
 ;;;###autoload
 (defun sayid-get-trace-ns-dir ()
@@ -82,6 +81,32 @@
   (let* ((resp (nrepl-send-sync-request req))
          (x (nrepl-dict-get resp "value")))
     (message x)))
+
+
+(defun sayid-setup-buf (meta-ansi save-to-ring &optional pos)
+  (let ((orig-buf (current-buffer))
+        (sayid-buf (sayid-init-buf)))
+    (if save-to-ring
+        (push-buf-state-to-ring meta-ansi))
+    (write-resp-val-to-buf meta-ansi sayid-buf)
+    (funcall (cdr sayid-selected-buf))
+    (if pos
+        (goto-char pos))
+    (pop-to-buffer orig-buf)))
+
+(defun colorize ()
+  (interactive)
+  (mapcar (lambda (x)
+            (put-text-property x (+ x 1) 'font-lock-face '(:foreground "red")))
+          (number-sequence (point-min) (- (point-max) 1))))
+
+(defun sayid-req-get-value (req)
+  (read-if-string (nrepl-dict-get (nrepl-send-sync-request req)
+                                  "value")))
+
+(defun sayid-req-insert-meta-ansi (req)
+  (sayid-setup-buf (sayid-req-get-value req) t 1))
+
 
 ;;;###autoload
 (defun sayid-query-form-at-point ()
@@ -246,30 +271,6 @@
   (if (eq sayid-selected-buf sayid-buf-spec)
       (push-to-ring (list meta-ansi (sayid-buf-point)))))
 
-(defun sayid-setup-buf (meta-ansi save-to-ring &optional pos)
-  (let ((orig-buf (current-buffer))
-        (sayid-buf (sayid-init-buf)))
-    (if save-to-ring
-        (push-buf-state-to-ring meta-ansi))
-    (write-resp-val-to-buf meta-ansi sayid-buf)
-    (funcall (cdr sayid-selected-buf))
-    (if pos
-        (goto-char pos))
-    (pop-to-buffer orig-buf)))
-
-(defun colorize ()
-  (interactive)
-  (mapcar (lambda (x)
-            (put-text-property x (+ x 1) 'font-lock-face '(:foreground "red")))
-          (number-sequence (point-min) (- (point-max) 1))))
-
-(defun sayid-req-get-value (req)
-  (read-if-string (nrepl-dict-get (nrepl-send-sync-request req)
-                                  "value")))
-
-(defun sayid-req-insert-meta-ansi (req)
-  (sayid-setup-buf (sayid-req-get-value req) t 1))
-
 ;;;###autoload
 (defun sayid-get-workspace ()
   (interactive)
@@ -336,69 +337,68 @@
 ;;;###autoload
 (defun sayid-traced-buf-inner-trace-fn ()
   (interactive)
-  (setq pos (point))
-  (setq ns (get-text-property 1 'ns))
-  (sayid-select-traced-buf)
-  (nrepl-send-sync-request (list "op" "sayid-trace-fn"
-                                 "fn-name" (get-text-property (point) 'name)
-                                 "fn-ns" (get-text-property (point) 'ns)
-                                 "type" "inner"))
-  (sayid-show-traced ns)
-  (goto-char pos)
-  (sayid-select-default-buf))
+  (let ((pos (point))
+        (ns (get-text-property 1 'ns)))
+    (sayid-select-traced-buf)
+    (nrepl-send-sync-request (list "op" "sayid-trace-fn"
+                                   "fn-name" (get-text-property (point) 'name)
+                                   "fn-ns" (get-text-property (point) 'ns)
+                                   "type" "inner"))
+    (sayid-show-traced ns)
+    (goto-char pos)
+    (sayid-select-default-buf)))
 
 ;;;###autoload
 (defun sayid-traced-buf-outer-trace-fn ()
   (interactive)
-  (setq pos (point))
-  (setq ns (get-text-property 1 'ns))
-  (sayid-select-traced-buf)
-  (nrepl-send-sync-request (list "op" "sayid-trace-fn"
-                                 "fn-name" (get-text-property (point) 'name)
-                                 "fn-ns" (get-text-property (point) 'ns)
-                                 "type" "outer"))
-  (sayid-show-traced ns)
-
-  (goto-char pos))
+  (let ((pos (point))
+        (ns (get-text-property 1 'ns)))
+    (sayid-select-traced-buf)
+    (nrepl-send-sync-request (list "op" "sayid-trace-fn"
+                                   "fn-name" (get-text-property (point) 'name)
+                                   "fn-ns" (get-text-property (point) 'ns)
+                                   "type" "outer"))
+    (sayid-show-traced ns)
+    (goto-char pos)))
 
 ;;;###autoload
 (defun sayid-traced-buf-enable ()
   (interactive)
-  (setq pos (point))
-  (setq ns (get-text-property 1 'ns))
-  (sayid-select-traced-buf)
-  (nrepl-send-sync-request (list "op" "sayid-trace-fn-enable"
-                                 "fn-name" (get-text-property (point) 'name)
-                                 "fn-ns" (get-text-property (point) 'ns)))
-  (sayid-show-traced ns)
-  (goto-char pos)
-  (sayid-select-default-buf))
+  (let ((pos (point))
+        (ns (get-text-property 1 'ns)))
+    (sayid-select-traced-buf)
+    (nrepl-send-sync-request (list "op" "sayid-trace-fn-enable"
+                                   "fn-name" (get-text-property (point) 'name)
+                                   "fn-ns" (get-text-property (point) 'ns)))
+    (sayid-show-traced ns)
+    (goto-char pos)
+    (sayid-select-default-buf)))
 
 ;;;###autoload
 (defun sayid-traced-buf-disable ()
   (interactive)
-  (setq pos (point))
-  (setq ns (get-text-property 1 'ns))
-  (sayid-select-traced-buf)
-  (nrepl-send-sync-request (list "op" "sayid-trace-fn-disable"
-                                 "fn-name" (get-text-property (point) 'name)
-                                 "fn-ns" (get-text-property (point) 'ns)))
-  (sayid-show-traced ns)
-  (goto-char pos)
-  (sayid-select-default-buf))
+  (let ((pos (point))
+        (ns (get-text-property 1 'ns)))
+    (sayid-select-traced-buf)
+    (nrepl-send-sync-request (list "op" "sayid-trace-fn-disable"
+                                   "fn-name" (get-text-property (point) 'name)
+                                   "fn-ns" (get-text-property (point) 'ns)))
+    (sayid-show-traced ns)
+    (goto-char pos)
+    (sayid-select-default-buf)))
 
 ;;;###autoload
 (defun sayid-traced-buf-remove-trace-fn ()
   (interactive)
-  (setq pos (point))
-  (setq ns (get-text-property 1 'ns))
-  (sayid-select-traced-buf)
-  (nrepl-send-sync-request (list "op" "sayid-trace-fn-remove"
-                                 "fn-name" (get-text-property (point) 'name)
-                                 "fn-ns" (get-text-property (point) 'ns)))
-  (sayid-show-traced ns)
-  (goto-char pos)
-  (sayid-select-default-buf))
+  (let ((pos (point))
+        (ns (get-text-property 1 'ns)))
+    (sayid-select-traced-buf)
+    (nrepl-send-sync-request (list "op" "sayid-trace-fn-remove"
+                                   "fn-name" (get-text-property (point) 'name)
+                                   "fn-ns" (get-text-property (point) 'ns)))
+    (sayid-show-traced ns)
+    (goto-char pos)
+    (sayid-select-default-buf)))
 
 ;;;###autoload
 (defun sayid-kill-all-traces ()
@@ -450,7 +450,8 @@
   (let* ((file (get-text-property (point) 'file))
          (line (get-text-property (point) 'line)))
     (pop-to-buffer (find-file-noselect file))
-    (goto-line line)))
+    (goto-char (point-min))
+    (forward-line line)))
 
 ;;;###autoload
 (defun sayid-buffer-nav-to-prev ()
