@@ -554,6 +554,7 @@
                      nil
                      (second buf-state))))
 
+;;;###autoload
 (defun sayid-set-clj-mode-keys ()
   (define-key clojure-mode-map (kbd "C-c s e") 'sayid-eval-last-sexp)
   (define-key clojure-mode-map (kbd "C-c s f") 'sayid-query-form-at-point)
@@ -576,7 +577,9 @@
   (define-key clojure-mode-map (kbd "C-c s S") 'sayid-show-traced-ns) ;;TODO
   (define-key clojure-mode-map (kbd "C-c s V s") 'sayid-set-view))
 
-(add-hook 'clojure-mode-hook 'sayid-set-clj-mode-keys)
+;;;###autoload
+(with-eval-after-load 'clojure-mode
+  (add-hook 'clojure-mode-hook 'sayid-set-clj-mode-keys))
 
 (provide 'sayid)
 
