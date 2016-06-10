@@ -5,6 +5,7 @@
             [com.billpiel.sayid.core :as sd]
             [com.billpiel.sayid.query2 :as q]
             [com.billpiel.sayid.string-output :as so]
+            [com.billpiel.sayid.view :as v]
             [com.billpiel.sayid.trace :as tr]
             [clojure.tools.reader :as r]
             [clojure.tools.reader.reader-types :as rts]
@@ -14,6 +15,7 @@
 
 
 (def views (atom {}))
+(def selected-view (atom nil))
 
 (defn register-view!
   [name view]
@@ -130,7 +132,17 @@
 
 (defn ^:nrepl sayid-set-view
   [{:keys [transport view-name] :as msg}]
+
   (-> view-name keyword (@views) sd/set-view!)
+  (reset! selected-view @sd/view)
+  (send-status-done msg))
+
+(defn ^:nrepl sayid-toggle-view
+  [{:keys [transport] :as msg}]
+  (if (and @selected-view
+           (not= @sd/view @selected-view))
+    (sd/set-view! @selected-view)
+    (sd/set-view!))
   (send-status-done msg))
 
 (defn ^:nrepl sayid-get-views
@@ -418,8 +430,11 @@
 (defn ^:nrepl sayid-get-workspace
   [msg]
   (reply:clj->nrepl msg
-                    (sd/with-this-printer [:children]
-                      (so/tree->text-prop-pair (sd/ws-deref!)))))
+                    (sd/with-this-view (or @sd/view
+                                      (v/mk-simple-view {}))
+                      (so/tree->text-prop-pair
+                                   (util/wrap-kids
+                                    (sd/ws-view!))))))
 
 (def sayid-nrepl-ops
   (->> *ns*

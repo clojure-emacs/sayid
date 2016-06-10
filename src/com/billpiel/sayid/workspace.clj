@@ -14,6 +14,9 @@
               :ws-slot nil})
       (vary-meta assoc
                  ::workspace
+                 true)
+      (vary-meta assoc
+                 :trace-root
                  true)))
 
 (defn workspace->tree

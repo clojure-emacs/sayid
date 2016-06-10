@@ -22,6 +22,7 @@
   (atom nil))
 
 (def view (atom nil))
+(def ^:dynamic *view* so/*view*)
 
 (def config
   "Configuration map. Indicates which namespaces should be used to shelf
@@ -213,8 +214,8 @@ user> (-> #'f1 meta :source)
   [& [w]]
   (let [w' (or w
                (ws-deref!))]
-    (q/q w' [(or @view
-                 so/*view*)])))
+    (q/q w' [*view*])))
+(util/defalias w-v! ws-view!)
 
 (defn ws-save!
   "Saves active workspace to the workspace shelf namespace in the pre-specified slot."
@@ -405,9 +406,11 @@ user> (-> #'f1 meta :source)
 
 (defmacro with-this-view
   ([view' & body]
-   `(binding [so/*view* (or ~view'
-                            so/*view*)]
-      ~@body)))
+   `(let [v# (or ~view'
+                 so/*view*)]
+      (binding [*view* v#
+                so/*view* v#]
+        ~@body))))
 
 (defmacro with-view
   "Puts the view in effect for the lexical scope."

@@ -17,6 +17,8 @@
         (define-key map  (kbd "N") 'sayid-buf-replay-with-inner-trace)
         (define-key map  (kbd "p") 'sayid-buffer-nav-to-prev)
         (define-key map  (kbd "P") 'sayid-buf-pprint-at-point)
+        (define-key map  (kbd "v") 'sayid-toggle-view)
+        (define-key map  (kbd "V") 'sayid-set-view)
         (define-key map  (kbd "<backspace>") 'sayid-buf-back)
         (define-key map  (kbd "<S-backspace>") 'sayid-buf-forward)
         (define-key map  (kbd "c i") 'sayid-buf-inspect-at-point)

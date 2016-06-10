@@ -530,6 +530,12 @@
   (message "View set."))
 
 ;;;###autoload
+(defun sayid-toggle-view ()
+  (interactive)
+  (nrepl-send-sync-request (list "op" "sayid-toggle-view"))
+  (message "View toggled."))
+
+;;;###autoload
 (defun sayid-buf-back ()
   (interactive)
   (update-buf-pos-to-ring)
