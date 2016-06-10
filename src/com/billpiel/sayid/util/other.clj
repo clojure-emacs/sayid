@@ -14,6 +14,13 @@
        (catch Exception e
          nil)))
 
+(defn ->vec
+  [v]
+  (cond (vector? v) v
+        (sequential? v) (vec v)
+        (coll? v) (vec v)
+        :else [v]))
+
 (defn def-ns-var
   [ws-ns-sym sym v]
   (binding [*ns* (create-ns ws-ns-sym)]

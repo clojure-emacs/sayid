@@ -12,6 +12,16 @@
             [clojure.tools.namespace.find :as ns-find]
             [com.billpiel.sayid.util.find-ns :as find-ns]))
 
+
+(def views (atom {}))
+
+(defn register-view!
+  [name view]
+  (swap! views
+         assoc
+         name
+         view))
+
 (defn clj->nrepl*
   [v]
   (cond (coll? v) (list* v)
@@ -118,6 +128,14 @@
 
 ;; ======================
 
+(defn ^:nrepl sayid-set-view
+  [{:keys [transport view-name] :as msg}]
+  (-> view-name keyword (@views) sd/set-view!)
+  (send-status-done msg))
+
+(defn ^:nrepl sayid-get-views
+  [{:keys [transport source file line] :as msg}]
+  (reply:clj->nrepl msg (keys @views)))
 
 (defn ^:nrepl sayid-get-meta-at-point
   [{:keys [transport source file line] :as msg}]

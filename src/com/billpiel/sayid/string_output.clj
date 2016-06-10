@@ -1,6 +1,7 @@
 (ns com.billpiel.sayid.string-output
   (:require [puget.printer :as puget]
             [com.billpiel.sayid.workspace :as ws]
+            [com.billpiel.sayid.view :as v]
             [com.billpiel.sayid.util.other :as util]
             clojure.string))
 
@@ -8,11 +9,11 @@
 (def ^:dynamic *max-chars* 10000)
 (def ^:dynamic *max-arg-lines* 15)
 (def ^:dynamic *truncate-lines-count* nil)
-(def ^:dynamic *selector* {:args true
-                           :return true
-                           :children true
-                           :throw true
-                           :selects false})
+(def ^:dynamic *view* (v/mk-simple-view {:args true
+                                         :return true
+                                         :children true
+                                         :throw true
+                                         :selects false}))
 
 (def pprint-str #(puget.printer/cprint-str %
                                            {:seq-limit *sayid-print-length*
@@ -319,51 +320,52 @@
       "\n"]))
 
 (defn selects-str
-  [tree]
+  [tree selects]
   (let [sel-fn (fn [sel]
                  (util/get-some (if (vector? sel)
                                   sel
                                   [sel])
                                 tree))
         sel-map (util/apply-to-map-vals sel-fn
-                                        (:selects *selector*))]
+                                        selects)]
     (indent-map tree sel-map)))
 
 (defmacro when-sel
   [kw & body]
-  `(when (~kw *selector*)
+  `(when (~kw ~'view)
      [~@body]))
 
 (defn tree->string*
   [tree]
   (if (nil? tree)
     []
-    (let [has-children (some-> tree
-                               :children
-                               not-empty)]
-      [(name->string tree true) "\n"
-       (when-sel :selects  (selects-str tree))
-       (when-sel :args (args*-str tree))
-       (when-sel :children
-                 (when has-children
-                   [(when-sel :return (return-str tree :pos :before))
-                    (when-sel :throw (throw-str tree))
-                    (mapv tree->string* (:children tree))
-                    (name->string tree false) "\n"
-                    (when-sel :args
-                              (args*-str tree))]))
-       (when-sel :return (return-str tree :pos :after))
-       (when-sel :throw (throw-str tree))
-       (when (and (-> tree :depth nil? not)
-                  (-> tree
-                      meta
-                      ::ws/workspace
-                      not))
-         [(get-line-meta tree) ;; clear meta
-          (slinky-pipes-MZ (:depth tree)
-                           :end "^")])
-       reset-color-code
-       "\n"])))
+    (when-let [view (*view* tree)]
+      (let [has-children (some-> tree
+                                 :children
+                                 not-empty)]
+        [(name->string tree true) "\n"
+         (when-let [selects (:selects view)]
+           (selects-str tree selects))
+         (when-sel :args (args*-str tree))
+         (when has-children
+           [(when-sel :return (return-str tree :pos :before))
+            (when-sel :throw (throw-str tree))
+            (mapv tree->string* (:children tree))
+            (name->string tree false) "\n"
+            (when-sel :args
+                      (args*-str tree))])
+         (when-sel :return (return-str tree :pos :after))
+         (when-sel :throw (throw-str tree))
+         (when (and (-> tree :depth nil? not)
+                    (-> tree
+                        meta
+                        ::ws/workspace
+                        not))
+           [(get-line-meta tree) ;; clear meta
+            (slinky-pipes-MZ (:depth tree)
+                             :end "^")])
+         reset-color-code
+         "\n"]))))
 
 (defn tree->string
   [tree]

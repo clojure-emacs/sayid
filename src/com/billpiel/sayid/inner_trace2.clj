@@ -628,21 +628,22 @@
       trace/untrace-var*))
 
 
-#_ (defn f1 [a] (inc 2) (empty? [0 [1 2 (-> a inc dec)]])) ;; TODO
-
-
-(defn f1 [a] (empty? [0 [1 2 (-> a inc dec)]]))
+ (defn f1
+     []
+     (let [a (inc 1)] a))
 
 #_ (inner-tracer {:qual-sym 'com.billpiel.sayid.inner-trace2/f1
-                 :meta' nil
+                  :meta' {:ns 'com.billpiel.sayid.inner-trace2
+                          :name 'com.billpiel.sayid.inner-trace2/f1}
                  :ns' 'com.billpiel.sayid.inner-trace2})
 
 #_ (binding [trace/*trace-log-parent* {:id :root1 :children (atom [])}]
-  (let [f (inner-tracer {:qual-sym 'com.billpiel.sayid.inner-trace2/f1
-                        :meta' nil
-                        :ns' 'com.billpiel.sayid.inner-trace2})]
-    (f 2)
-    (-/p trace/*trace-log-parent*)))
+     (let [f (inner-tracer {:qual-sym 'com.billpiel.sayid.inner-trace2/f1
+                            :meta' {:ns 'com.billpiel.sayid.inner-trace2
+                          :name 'com.billpiel.sayid.inner-trace2/f1}
+                            :ns' 'com.billpiel.sayid.inner-trace2})]
+       (f 1 2)
+       (-/p trace/*trace-log-parent*)))
 
 #_ (inner-tracer {:qual-sym 'xpojure.routes.home/home-page
               :meta' nil

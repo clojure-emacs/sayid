@@ -5,6 +5,7 @@
             [com.billpiel.sayid.workspace :as ws]
             [com.billpiel.sayid.recording :as rec]
             [com.billpiel.sayid.query2 :as q]
+            [com.billpiel.sayid.view :as v]
             [com.billpiel.sayid.util.find-ns :as find-ns]
             [com.billpiel.sayid.string-output :as so]
             [com.billpiel.sayid.profiling :as pro]
@@ -20,6 +21,8 @@
   or `r-`."
   (atom nil))
 
+(def view (atom nil))
+
 (def config
   "Configuration map. Indicates which namespaces should be used to shelf
   workspaces and recordings."
@@ -27,16 +30,11 @@
          :rec-ns '$rec}))
 
 (def ^:no-doc
-  default-printer {:max-chars so/*max-chars*
+  default-view {:max-chars so/*max-chars*
                    :max-arg-lines so/*max-arg-lines*
                    :selector so/*selector*})
 
-(def printer
-  "The printer that is applied by `with-printer` and print functions
-  such as `ws-print`."
-  (atom default-printer))
-
-(declare with-printer)
+(declare with-view)
 (declare ws-query*)
 (declare ws-query)
 (declare ws-print)
@@ -211,6 +209,13 @@ user> (-> #'f1 meta :source)
                                 workspace)))
 (util/defalias w-drf! ws-deref!)
 
+(defn ws-view!
+  [& [w]]
+  (let [w' (or w
+               (ws-deref!))]
+    (q/q w' [(or @view
+                 so/*view*)])))
+
 (defn ws-save!
   "Saves active workspace to the workspace shelf namespace in the pre-specified slot."
   []
@@ -286,7 +291,7 @@ user> (-> #'f1 meta :source)
   (-> query
       ws-query-inner-trace-replay
       trees-print
-      with-printer))
+      with-view))
 (util/defalias w-qdtrp ws-query-inner-trace-replay-print)
 (util/defalias w-$ ws-query-inner-trace-replay-print)
 
@@ -398,70 +403,16 @@ user> (-> #'f1 meta :source)
                                  (keys v)
                                  (meta v)))))))
 
-(defn- mk-printer-*-list
-  [opts init-prn whitelist?]
-  (loop [prn init-prn
-         opts' opts]
-    (let [[fi se & re] opts'
-          limit ({:mc :max-chars
-                  :mal :max-arg-lines} fi)]
-      (cond
-        (nil? fi) prn
-        limit (recur (assoc prn limit se)
-                     re)
-        (map? fi) (recur (update-in prn
-                                    [:selector
-                                     :selects]
-                                    merge
-                                    fi)
-                         (rest opts'))
-        :else (recur (update-in prn [:selector]
-                                assoc fi whitelist?)
-                     (rest opts'))))))
+(defmacro with-this-view
+  ([view' & body]
+   `(binding [so/*view* (or ~view'
+                            so/*view*)]
+      ~@body)))
 
-(defn- mk-printer-white-list
-  [opts]
-  (mk-printer-*-list opts
-                     (assoc default-printer
-                            :selector {})
-                     true))
-
-(defn- mk-printer-black-list
-  [opts]
-  (mk-printer-*-list opts
-                     default-printer
-                     false))
-
-(defn mk-printer
-  [opts]
-  (cond
-    (nil? opts) default-printer
-
-    (-> opts first (= :-))
-    (mk-printer-black-list (rest opts))
-
-    :else (mk-printer-white-list opts)))
-
-(defmacro with-this-printer
-  "Sets the printer as `prn` for the lexical scope. `prn` may be a
-  printer map or a vector. See `(doc mk-printer)` for details on the
-  latter."
-  ([prn & body]
-   `(let [prn# (if (vector? ~prn)
-                 (mk-printer ~prn)
-                 ~prn)]
-      (binding [so/*max-chars* (or (:max-chars prn#)
-                                   so/*max-chars*)
-                so/*max-arg-lines* (or (:max-arg-lines prn#)
-                                       so/*max-arg-lines*)
-                so/*selector* (or (:selector prn#)
-                                  so/*selector*)]
-        ~@body))))
-
-(defmacro with-printer
-  "Puts the printer in effect for the lexical scope."
+(defmacro with-view
+  "Puts the view in effect for the lexical scope."
   ([& body]
-   `(with-this-printer @printer ~@body)))
+   `(with-this-view @view ~@body)))
 
 (defn trees-print
   "Prints `trees`, which may be either trace tree, a collection of trace
@@ -476,17 +427,19 @@ user> (-> #'f1 meta :source)
   "Prints either the active workspace, or the first argument, but
   without any restrictions on the output. Don't blow up your buffer!"
   [& [ws]]
-  (#'so/print-tree-unlimited (or ws
-                       (ws-deref!))))
+  (-> ws
+      ws-view!
+      (#'so/print-tree-unlimited)))
 (util/defalias w-pru ws-print-unlimited)
 
 (defn ws-print
   "Prints either the active workspace, or the first argument, using the
-  default printer, which puts safety restrictions on the output to
+  default view, which puts safety restrictions on the output to
   prevent overwhelming hugeness."
   [& [ws]]
-  (with-printer (#'so/print-tree (or ws
-                                     (ws-deref!)))))
+  (with-view (-> ws
+                 ws-view!
+                 (#'so/print-trees))))
 (util/defalias w-pr ws-print)
 
 (defn rec-print
@@ -495,12 +448,9 @@ user> (-> #'f1 meta :source)
                        @recording)))
 (util/defalias r-pr rec-print)
 
-(defn set-printer!
-  "Sets the printer that is applied by `with-printer` and used by print
-  functions such as `ws-print`."
-  [& opts]
-  (reset! printer
-          (mk-printer opts)))
+(defn set-view!
+  [& [view']]
+  (reset! view view'))
 
 ;; === END String Output functions
 
@@ -567,8 +517,8 @@ user> (-> #'f1 meta :source)
 
 (defn ws-query*
   [& query]
-  (apply q/q
-         (ws-deref!)
+  (apply #'q/q
+         (ws-view!)
          query))
 
 (defmacro ws-query
@@ -579,7 +529,7 @@ user> (-> #'f1 meta :source)
 (defmacro ws-query-print
   "Queries the trace record of the active workspace and prints the results."
   [& body]
-  `(with-printer
+  `(with-view
      (trees-print (ws-query ~@body))))
 (util/defalias-macro w-qp ws-query-print)
 (util/defalias-macro q ws-query-print)
@@ -664,8 +614,9 @@ user> (-> #'f1 meta :source)
   (trees-print (ws-query* [(mk-src-pos-query-fn file line)]))
   (println))
 
+;; used only by middleware
 (defn ws-query-by-file-pos
   [file line]
-  (ws-query* [:id (q/get-ids-from-file-pos (ws-deref!)
+  (ws-query* [:id (q/get-ids-from-file-pos (ws-view!)
                                            file
                                            line)]))

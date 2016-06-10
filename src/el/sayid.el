@@ -179,8 +179,6 @@
     (list (list ':foreground (ansi-fg-str->face (cadr (assoc "fg" x))))
           (list ':background (ansi-bg-str->face (cadr (assoc "bg" x)))))))
 
-(put-text-property 5 15 'face '(:foreground "red") (get-buffer "*sayid*"))
-
 (defun put-all-text-props (props start end buf)
   (dolist (p props)
     (let ((name-sym (if-str-to-sym (car p))))
@@ -316,7 +314,8 @@
 (defun sayid-trace-ns-by-pattern ()
   (interactive)
   (nrepl-send-sync-request (list "op" "sayid-trace-ns-by-pattern"
-                                 "ns-pattern" (read-string "Namespace to trace (*=wildcard) " (cider-current-ns))
+                                 "ns-pattern" (read-string "Namespace to trace (*=wildcard) "
+                                                           (cider-current-ns))
                                  "ref-ns" (cider-current-ns)))
   (sayid-show-traced))
 
@@ -519,13 +518,16 @@
                                     "trace-id" (get-text-property (point) 'id)
                                     "path" (get-text-property (point) 'path))))
 
+(defun sayid-get-views ()
+  (sayid-req-get-value '("op" "sayid-get-views")))
+
 ;;;###autoload
-(defun sayid-set-printer ()
+(defun sayid-set-view ()
   (interactive)
-  (nrepl-send-sync-request (list "op" "sayid-set-printer"
-                                 "printer" (concat (read-string "printer: ")
-                                                   " :children")))
-  (message "Printer set."))
+  (nrepl-send-sync-request (list "op" "sayid-set-view"
+                                 "view-name" (concat (completing-read "view: "
+                                                                      (sayid-get-views)))))
+  (message "View set."))
 
 ;;;###autoload
 (defun sayid-buf-back ()
@@ -565,7 +567,7 @@
   (define-key clojure-mode-map (kbd "C-c s x") 'sayid-reset-workspace)
   (define-key clojure-mode-map (kbd "C-c s s") 'sayid-show-traced)
   (define-key clojure-mode-map (kbd "C-c s S") 'sayid-show-traced-ns) ;;TODO
-  (define-key clojure-mode-map (kbd "C-c s p s") 'sayid-set-printer))
+  (define-key clojure-mode-map (kbd "C-c s V s") 'sayid-set-view))
 
 (add-hook 'clojure-mode-hook 'sayid-set-clj-mode-keys)
 

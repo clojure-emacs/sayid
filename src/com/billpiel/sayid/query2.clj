@@ -462,21 +462,3 @@
                                                       start-line
                                                       line)
            :ids))
-
-#_ (
-"
-    :inside-width  best-better best-worse both-nil equal
-    :start-dist
-    best-better    b           n          b        a
-    best-worse     b           n          n        a
-    both-nil       b           n          b        a
-    equal          b           n          a        a
-
-
-
-"
-
-
-
-
-    )
