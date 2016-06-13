@@ -117,7 +117,7 @@
                                             line)]
     (if-not (empty? ids)
       (sd/ws-query* [:id ids])
-      [])))
+      nil)))
 
 (defn process-line-meta
   [line-meta]
@@ -257,7 +257,9 @@
 (defn ^:nrepl sayid-replay-with-inner-trace-at-point
   [{:keys [transport source file line] :as msg}]
   (try (let [{start-line :line} (get-meta-at-pos-in-source file line source)
-             matches (query-ws-by-file-line-range file start-line line)
+             matches (:children (query-ws-by-file-line-range file
+                                                             start-line
+                                                             line))
              [{:keys [name inner-path]}] matches
              kids (:children (sd/ws-deref!))
              _ (do (when-not (empty? matches)
