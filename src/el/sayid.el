@@ -2,6 +2,10 @@
 
 ;; Copyright (c) 2016 Bill Piel
 
+;; Author: Bill Piel <bill@billpiel.com>
+;; Version: 0.0.2
+;; URL: https://github.com/bpiel/sayid
+
 ;; Licensed under the Apache License, Version 2.0 (the "License");
 ;; you may not use this file except in compliance with the License.
 ;; You may obtain a copy of the License at
@@ -20,7 +24,6 @@
 ;; for the sayid nrepl middleware.
 
 ;;; Code:
-
 
 (require 'sayid-mode)
 (require 'sayid-traced-mode)
