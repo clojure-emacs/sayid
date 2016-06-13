@@ -202,7 +202,6 @@
            count-enabled-traces
            (reply:clj->nrepl msg $)))
 
-
 (defn ^:nrepl sayid-trace-fn
   [{:keys [transport fn-name fn-ns type] :as msg}]
   (case type
@@ -223,6 +222,16 @@
 (defn ^:nrepl sayid-trace-fn-remove
   [{:keys [transport fn-name fn-ns] :as msg}]
   (sd/ws-remove-trace-fn! (util/qualify-sym fn-ns fn-name))
+  (send-status-done msg))
+
+(defn ^:nrepl sayid-trace-ns-enable
+  [{:keys [transport fn-ns] :as msg}]
+  (sd/ws-enable-trace-ns! (symbol fn-ns))
+  (send-status-done msg))
+
+(defn ^:nrepl sayid-trace-ns-disable
+  [{:keys [transport fn-ns] :as msg}]
+  (sd/ws-disable-trace-ns! (symbol fn-ns))
   (send-status-done msg))
 
 (defn ^:nrepl sayid-replay-workspace

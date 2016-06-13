@@ -81,14 +81,18 @@
   (trace/trace* type sym @ws))
 
 (defn enable-all-traces!
-  [ws]
-  (let [w @ws
-        f (fn [type] (doseq [sym (get-in w [:traced type])]
-                       (trace/trace* type sym w)))]
-    (doall (map f [:inner-fn
-                   :fn
-                   :ns]))
-    true))
+  ([ws]
+   (enable-all-traces! ws identity))
+  ([ws filter-fn]
+   (let [w @ws
+         f (fn [type] (doseq [sym (util/$- -> w
+                                           (get-in [:traced type])
+                                           (filter filter-fn $))]
+                        (trace/trace* type sym w)))]
+     (doall (map f [:inner-fn
+                    :fn
+                    :ns]))
+     true)))
 
 (defn enable-trace-fn!
   [ws fn-sym]
@@ -100,11 +104,13 @@
   true)
 
 (defn disable-all-traces!
-  [ws]
-  (doseq [t (->> @ws
-                 :traced
-                 util/flatten-map-kv-pairs)]
-    (apply trace/untrace* t)))
+  ([ws] (disable-all-traces! ws identity))
+  ([ws filter-fn]
+   (doseq [t (->> @ws
+                  :traced
+                  util/flatten-map-kv-pairs
+                  (filter (comp filter-fn second)))]
+     (apply trace/untrace* t))))
 
 (defn disable-trace-fn!
   [ws fn-sym]

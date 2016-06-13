@@ -9,8 +9,8 @@
         (define-key map  (kbd "<RET>") 'sayid-traced-buf-enter)
         (define-key map  (kbd "e") 'sayid-traced-buf-enable)
         (define-key map  (kbd "d") 'sayid-traced-buf-disable)
-        (define-key map  (kbd "E") 'sayid-traced-buf-enable-all)
-        (define-key map  (kbd "D") 'sayid-traced-buf-disable-all)
+        (define-key map  (kbd "E") 'sayid-traced-buf-enable-all) ;TODO
+        (define-key map  (kbd "D") 'sayid-traced-buf-disable-all) ;TODO
         (define-key map  (kbd "i") 'sayid-traced-buf-inner-trace-fn)
         (define-key map  (kbd "o") 'sayid-traced-buf-outer-trace-fn)
         (define-key map  (kbd "r") 'sayid-traced-buf-remove-trace-fn)

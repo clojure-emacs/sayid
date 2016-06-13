@@ -369,12 +369,17 @@
 (defun sayid-traced-buf-enable ()
   (interactive)
   (let ((pos (point))
-        (ns (get-text-property 1 'ns)))
+        (buf-ns (get-text-property 1 'ns))
+        (fn-name (get-text-property (point) 'name))
+        (fn-ns (get-text-property (point) 'ns)))
     (sayid-select-traced-buf)
-    (nrepl-send-sync-request (list "op" "sayid-trace-fn-enable"
-                                   "fn-name" (get-text-property (point) 'name)
-                                   "fn-ns" (get-text-property (point) 'ns)))
-    (sayid-show-traced ns)
+    (if fn-name
+        (nrepl-send-sync-request (list "op" "sayid-trace-fn-enable"
+                                       "fn-name" fn-name
+                                       "fn-ns" fn-ns))
+      (nrepl-send-sync-request (list "op" "sayid-trace-ns-enable"
+                                     "fn-ns" fn-ns)))
+    (sayid-show-traced buf-ns)
     (goto-char pos)
     (sayid-select-default-buf)))
 
@@ -382,12 +387,17 @@
 (defun sayid-traced-buf-disable ()
   (interactive)
   (let ((pos (point))
-        (ns (get-text-property 1 'ns)))
+        (buf-ns (get-text-property 1 'ns))
+        (fn-name (get-text-property (point) 'name))
+        (fn-ns (get-text-property (point) 'ns)))
     (sayid-select-traced-buf)
-    (nrepl-send-sync-request (list "op" "sayid-trace-fn-disable"
-                                   "fn-name" (get-text-property (point) 'name)
-                                   "fn-ns" (get-text-property (point) 'ns)))
-    (sayid-show-traced ns)
+    (if fn-name
+        (nrepl-send-sync-request (list "op" "sayid-trace-fn-disable"
+                                       "fn-name" (get-text-property (point) 'name)
+                                       "fn-ns" (get-text-property (point) 'ns)))
+      (nrepl-send-sync-request (list "op" "sayid-trace-ns-disable"
+                                     "fn-ns" fn-ns)))
+    (sayid-show-traced buf-ns)
     (goto-char pos)
     (sayid-select-default-buf)))
 

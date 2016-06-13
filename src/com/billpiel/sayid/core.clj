@@ -177,6 +177,26 @@ user> (-> #'f1 meta :source)
                                   fn-sym))
 (util/defalias w-etf! ws-enable-trace-fn!)
 
+(defn ws-enable-trace-ns!
+  "Enables a trace on a namespace. Namespace must already have trace
+  added to active workspace."
+  [ns-sym] (#'ws/enable-all-traces! workspace
+                                    #(= % ns-sym)))
+
+
+(defn ws-disable-trace-ns!
+  "Enables a trace on a namespace. Namespace must already have trace
+  added to active workspace."
+  [ns-sym] (#'ws/disable-all-traces! workspace
+                                     #(or
+                                       (do (println %)
+                                           true)
+                                       (= % ns-sym)
+                                          (-> %
+                                              util/disqualify-sym
+                                              first
+                                              (= ns-sym)))))
+
 (defn ws-disable-all-traces!
   "Disables all traces in active workspace. The active workspace trace set will be
   preserved and can be re-enabled."
