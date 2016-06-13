@@ -35,69 +35,25 @@
        (iter-while-identity z/up)
        rest))
 
-(defn children-zips [z]
-  (->> z
-       z/down
-       (iter-while-identity z/right)))
+(defn children-zips [zipr]
+  (some->> zipr
+           z/down
+           (iter-while-identity z/right)))
 
-(defn descendant-depth-firstish-zips [z]
-  (let [kids (children-zips z)]
-    (lazy-cat kids
-              (mapcat descendant-depth-firstish-zips
-                      kids))))
+(defn children-zips-by-generation [zipr]
+  (if (not-empty zipr)
+    (let [zipr' (if (some-> zipr
+                            meta
+                            :zip/make-node)
+                  [zipr]
+                  zipr)
+          kids (mapcat children-zips zipr')]
+      (concat (if (not-empty kids)
+                [kids]
+                [])
+              (children-zips-by-generation kids)))
+    nil))
 
-;; === helpers
-
-(defn some-zippers
-  [zipr-seq node tags-fn pred-fn]
-  (->> zipr-seq
-       (map z/node)
-       (map tags-fn)
-       (some pred-fn)))
-
-(defmacro defn-zipper->>
-  [name & body]
-  `(defn ~name
-     [node#]
-     (->> node#
-          :zipper
-          ~@body)))
-
-(defmacro defn-tags-functor
-  [name & body]
-  `(defn ~name
-     [node# tags-fn#]
-     (->> node#
-          ~@body
-          (map z/node)
-          (map tags-fn#))))
-
-(defn-zipper->> lazy-ancestor-zipr-seq ancestor-zips)
-(defn-tags-functor lazy-ancestor-tag-seq lazy-ancestor-zipr-seq)
-
-(defn-zipper->> lazy-descendant-zipr-seq descendant-depth-firstish-zips)
-(defn-tags-functor lazy-descendant-tag-seq lazy-descendant-zipr-seq)
-
-(defn-zipper->> lazy-sibling-zipr-seq all-sib-zips)
-(defn-tags-functor lazy-sibling-tag-seq lazy-sibling-zipr-seq)
-
-(defn some-tags
-  [tag-set tag-seq]
-  (some (partial some
-                 tag-set)
-        tag-seq))
-
-(defmacro defn-tag-seq-fnr->>
-  [name args & body]
-  `(defn ~name
-     ~(conj args 'tag-seq-functor)
-     (fn [~'node ~'tag-fn]
-       (->> (~'tag-seq-functor ~'node ~'tag-fn)
-            ~@body))))
-
-(defn-tag-seq-fnr->> mk-some-tags-in-seq-fn [tag-set] (some-tags tag-set))
-(defn-tag-seq-fnr->> take-lazy-tag-seq-functor [n] (take n))
-(defn-tag-seq-fnr->> prepend-node-to-lazy-tag-seq-functor [] (lazy-cat [(tag-fn node)]))
 
 ;; === tags
 
@@ -246,14 +202,6 @@
        (map mk-query-fn)
        (apply some-fn)))
 
-(defn some-fn-2
-  [& preds]
-  (fn [node tag-fn]
-    (loop [[f & r] preds]
-      (or (f node tag-fn)
-          (when (not-empty r)
-            (recur r))))))
-
 (defn every-pred-2
   [& preds]
   (fn [node tag-fn]
@@ -263,52 +211,9 @@
              (recur r)
              true)))))
 
-#_ (defn mk-relative-final-qry-fn
-     [opts tag-set & [dist]]
-     (let [opts' (util/obj-pred-action-else opts
-                                            (partial some #{:w})
-                                            :t [:a :s :d])
-           f' (fn [tag-seq-fnr]
-                (let [taker (if dist
-                              (partial take-lazy-tag-seq-functor dist)
-                              identity)
-                      stis (->> tag-seq-fnr
-                                taker
-                                prepend-node-to-lazy-tag-seq-functor
-                                (mk-some-tags-in-seq-fn tag-set))]
-                  stis))
-           rel-seq-map {:a lazy-descendant-tag-seq
-                        :s lazy-sibling-tag-seq
-                        :d lazy-ancestor-tag-seq}]
-       (->> opts'
-            (keep rel-seq-map)
-            (map f')
-            (apply some-fn-2))))
-
-(defn children-zips [zipr]
-  (some->> zipr
-           z/down
-           (iter-while-identity z/right)))
-
-(defn children-zips-by-generation [zipr]
-  (if (not-empty zipr)
-    (let [zipr' (if (some-> zipr
-                            meta
-                            :zip/make-node)
-                  [zipr]
-                  zipr)
-          kids (mapcat children-zips zipr')]
-      (concat (if (not-empty kids)
-                [kids]
-                [])
-              (children-zips-by-generation kids)))
-    nil))
 
 (defn mk-lazy-descendant-tag-seq
   [node tag-fn dist]
-  (def n' node)
-  (def tag-fn' tag-fn)
-  (def d' dist)
   (let [generations-seq (->> node
                              :zipper
                              children-zips-by-generation)
@@ -321,8 +226,29 @@
          (mapcat tag-fn))))
 
 
-(defn mk-lazy-sibling-tag-seq [])
-(defn mk-lazy-ancestor-tag-seq [])
+(defn mk-lazy-sibling-tag-seq
+  [node tag-fn dist]
+  (let [generations-seq (->> node
+                             :zipper
+                             all-sib-zips)
+        g-seq (if dist
+                (take dist generations-seq)
+                generations-seq)]
+    (->> g-seq
+         (map z/node)
+         (mapcat tag-fn))))
+
+(defn mk-lazy-ancestor-tag-seq
+  [node tag-fn dist]
+  (let [generations-seq (->> node
+                             :zipper
+                             ancestor-zips)
+        g-seq (if dist
+                (take dist generations-seq)
+                generations-seq)]
+    (->> g-seq
+         (map z/node)
+         (mapcat tag-fn))))
 
 (defn mk-relative-final-qry-fn
   [opts tag-set & [dist]]
