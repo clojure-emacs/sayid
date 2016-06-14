@@ -401,7 +401,8 @@ user> (-> #'f1 meta :source)
       (sequential? v)
       v
 
-      ((some-fn ::ws/workspace
+      ((some-fn :trace-root
+                ::ws/workspace
                 ::rec/recording
                 ::q/query-result)
        mk)

@@ -356,6 +356,7 @@
   (let [path' (str-vec->arg-path path)]
     (util/def-ns-var '$s '* (-> [:id (keyword trace-id)] ;;TODO use intern
                                 sd/ws-query*
+                                :children
                                 first
                                 (get-in path'))))
   (t/send transport (response-for msg :value "Def'd as $s/*"))
@@ -366,6 +367,7 @@
   (let [path' (str-vec->arg-path path)
         value (-> [:id (keyword trace-id)] ;;TODO use intern
                   sd/ws-query*
+                  :children
                   first
                   (get-in path'))]
     (->> value
