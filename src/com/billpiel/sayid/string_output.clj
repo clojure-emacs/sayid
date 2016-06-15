@@ -360,12 +360,11 @@
           (when-sel :args
                     (args*-str tree))])
        (when visible?
-         [(when-sel :return (return-str tree :pos :after))]
-         (when-sel :throw (throw-str tree))
-         [(get-line-meta tree) ;; clear meta
-          (when (not trace-root?)
-            (slinky-pipes-MZ (:depth tree)
-                             :end "^"))])
+         [(when-sel :return (return-str tree :pos :after))
+          (when-sel :throw (throw-str tree))
+          (get-line-meta tree) ;; clear meta
+          (slinky-pipes-MZ (:depth tree)
+                           :end "^")])
        reset-color-code
        "\n"])))
 
@@ -523,7 +522,6 @@
   [s agg-txt pos]
   [(conj agg-txt s)
    (+ pos (count s))])
-
 
 (defn split-text-tag-coll
   [c]
