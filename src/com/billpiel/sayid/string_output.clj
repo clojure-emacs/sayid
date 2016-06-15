@@ -560,9 +560,11 @@
              (when b'
                {(->kw b') b'})))))
 
+(def regex1  (re-pattern (str "\33" "\\[(\\d+)?(;(\\d+))?m")))
+
 (defn ansi->prop-map
   [ansi]
-  (let [rm (re-matcher (re-pattern (str "\33" "\\[(\\d+)?(;(\\d+))?m"))
+  (let [rm (re-matcher regex1
                        ansi)]
     (loop [[match c1 _ c2] (re-find rm)
            agg {}]
@@ -573,9 +575,11 @@
                                              c2)))
         {:text-color agg}))))
 
+(def regex2 (re-pattern (str "([^" "\33" "]*)(("  "\33" ".*?m)*)")))
+
 (defn str->ansi-pairs
   [s]
-  (let [r (re-pattern (str "([^" "\33" "]*)(("  "\33" ".*?m)+)"))]
+  (let [r regex2]
     (loop [head []
            tail s]
       (let [[match txt ansi _] (re-find r tail)
@@ -608,8 +612,8 @@
        flatten
        (remove nil?)
        group-meta-strings
-       (map #(if (string? %)
-               (str->ansi-pairs %)
+       (mapv #(if (string? %)
+                (str->ansi-pairs %)
                %))
        flatten
        split-text-tag-coll))
