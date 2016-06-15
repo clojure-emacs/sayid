@@ -96,11 +96,12 @@
 
 (defn enable-trace-fn!
   [ws fn-sym]
-  (when-let [traces (->> fn-sym
-                         (lookup-traces-by-fn @ws)
-                         (replace {:ns :fn}))]
-    (doseq [t traces]
-      (trace/trace* t fn-sym ws)))
+  (let [w @ws]
+    (when-let [traces (->> fn-sym
+                           (lookup-traces-by-fn w)
+                           (replace {:ns :fn}))]
+      (doseq [t traces]
+        (trace/trace* t fn-sym w))))
   true)
 
 (defn disable-all-traces!
