@@ -130,9 +130,47 @@
 ;;;###autoload
 (defun sayid-trace-fn-enable ()
   (interactive)
-  (sayid-req-insert-meta-ansi (list "op" "sayid-"
-                                    "file" (buffer-file-name)
-                                    "line" (line-number-at-pos))))
+  (sayid-send-and-message (list "op" "sayid-trace-fn-enable-at-point"
+                                "file" (buffer-file-name)
+                                "line" (line-number-at-pos)
+                                "column" (+ (current-column) 1)
+                                "source" (buffer-string))))
+
+;;;###autoload
+(defun sayid-trace-fn-disable ()
+  (interactive)
+  (sayid-send-and-message (list "op" "sayid-trace-fn-disable-at-point"
+                                "file" (buffer-file-name)
+                                "line" (line-number-at-pos)
+                                "column" (+ (current-column) 1)
+                                "source" (buffer-string))))
+
+;;;###autoload
+(defun sayid-outer-trace-fn ()
+  (interactive)
+  (sayid-send-and-message (list "op" "sayid-trace-fn-outer-trace-at-point"
+                                "file" (buffer-file-name)
+                                "line" (line-number-at-pos)
+                                "column" (+ (current-column) 1)
+                                "source" (buffer-string))))
+
+;;;###autoload
+(defun sayid-inner-trace-fn ()
+  (interactive)
+  (sayid-send-and-message (list "op" "sayid-trace-fn-inner-trace-at-point"
+                                "file" (buffer-file-name)
+                                "line" (line-number-at-pos)
+                                "column" (+ (current-column) 1)
+                                "source" (buffer-string))))
+
+;;;###autoload
+(defun sayid-remove-trace-fn ()
+  (interactive)
+  (sayid-send-and-message (list "op" "sayid-remove-trace-fn-at-point"
+                                "file" (buffer-file-name)
+                                "line" (line-number-at-pos)
+                                "column" (+ (current-column) 1)
+                                "source" (buffer-string))))
 
 ;;;###autoload
 (defun sayid-replay-workspace-query-point ()
@@ -584,7 +622,8 @@
   (define-key clojure-mode-map (kbd "C-c s t D") 'sayid-trace-disable-all)
   (define-key clojure-mode-map (kbd "C-c s t n") 'sayid-inner-trace-fn)   ;;TODO
   (define-key clojure-mode-map (kbd "C-c s t o") 'sayid-outer-trace-fn)   ;;TODO
-  (define-key clojure-mode-map (kbd "C-c s t k") 'sayid-kill-all-traces)
+  (define-key clojure-mode-map (kbd "C-c s t r") 'sayid-remove-trace-fn)   ;;TODO
+  (define-key clojure-mode-map (kbd "C-c s t K") 'sayid-kill-all-traces)
   (define-key clojure-mode-map (kbd "C-c s c") 'sayid-clear-log)
   (define-key clojure-mode-map (kbd "C-c s x") 'sayid-reset-workspace)
   (define-key clojure-mode-map (kbd "C-c s s") 'sayid-show-traced)

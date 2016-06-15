@@ -100,6 +100,10 @@
          name# (-> m# :name)]
      (qualify-sym ns# name#)))
 
+(defn resolve-to-qual-sym [ns-sym sym]
+  (when-let [{:keys [name ns]} (meta (ns-resolve ns-sym sym))]
+    (qualify-sym ns name)))
+
 (defn atom?
   [v]
   (instance? clojure.lang.Atom v))

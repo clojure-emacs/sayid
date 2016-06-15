@@ -61,7 +61,7 @@
            second
            symbol))
 
-(defn get-form-at-pos-in-source
+(defn get-top-form-at-pos-in-source
   [file line source]
   (let [rdr (rts/source-logging-push-back-reader source
                                                  (count source)
@@ -77,12 +77,87 @@
 
 (defn get-meta-at-pos-in-source
   [file line source]
-  (meta (get-form-at-pos-in-source file line source)))
+  (meta (get-top-form-at-pos-in-source file line source)))
 
-(defn parse-ns-name-from-source
+(defn pos-inside-line-column?
+  [pos-line pos-column start-line end-line start-col end-col]
+  (if (= start-line pos-line end-line)
+    (<= start-col pos-column end-col)
+    (or (and (= start-line pos-line)
+             (<= start-col pos-column))
+        (and (= end-line pos-line)
+             (< pos-column end-col))
+        (< start-line pos-line end-line))))
+
+(defn get-sym-at-pos-in-source
+  [file pos-line pos-column source]
+  (let [tseq (tree-seq coll? seq (get-top-form-at-pos-in-source file pos-line source))
+        inside? (fn [sym]
+                  (let [{:keys [line end-line column end-column]} (meta sym)]
+                    (when line
+                      (pos-inside-line-column? pos-line
+                                               pos-column
+                                               line
+                                               end-line
+                                               column
+                                               end-column))))]
+    (last (filter inside? tseq))))
+
+(defn parse-ns-name-from-source ;; TODO don't use this
   [source]
   (second (re-find #"\(\s*ns\s+([\w$.*-]+)"
                    source)))
+
+(defn ^:nrepl sayid-trace-fn-enable-at-point
+  [{:keys [transport file line column source] :as msg}]
+  (let [sym (get-sym-at-pos-in-source file line column source)
+        ns-sym (symbol (parse-ns-name-from-source source))
+        qual-sym
+        (util/resolve-to-qual-sym ns-sym sym)]
+    (when qual-sym
+      (sd/ws-enable-trace-fn! qual-sym))
+    (reply:clj->nrepl msg qual-sym)))
+
+
+(defn ^:nrepl sayid-trace-fn-disable-at-point
+  [{:keys [transport file line column source] :as msg}]
+  (let [sym (get-sym-at-pos-in-source file line column source)
+        ns-sym (symbol (parse-ns-name-from-source source))
+        qual-sym
+        (util/resolve-to-qual-sym ns-sym sym)]
+    (when qual-sym
+      (sd/ws-disable-trace-fn! qual-sym))
+    (reply:clj->nrepl msg qual-sym)))
+
+(defn ^:nrepl sayid-trace-fn-outer-trace-at-point
+  [{:keys [transport file line column source] :as msg}]
+  (let [sym (get-sym-at-pos-in-source file line column source)
+        ns-sym (symbol (parse-ns-name-from-source source))
+        qual-sym
+        (util/resolve-to-qual-sym ns-sym sym)]
+    (when qual-sym
+      (sd/ws-add-trace-fn!* qual-sym))
+    (reply:clj->nrepl msg qual-sym)))
+
+(defn ^:nrepl sayid-trace-fn-inner-trace-at-point
+  [{:keys [transport file line column source] :as msg}]
+  (let [sym (get-sym-at-pos-in-source file line column source)
+        ns-sym (symbol (parse-ns-name-from-source source))
+        qual-sym
+        (util/resolve-to-qual-sym ns-sym sym)]
+    (when qual-sym
+      (sd/ws-add-inner-trace-fn!* qual-sym))
+    (reply:clj->nrepl msg qual-sym)))
+
+(defn ^:nrepl sayid-remove-trace-fn-at-point
+  [{:keys [transport file line column source] :as msg}]
+  (let [sym (get-sym-at-pos-in-source file line column source)
+        ns-sym (symbol (parse-ns-name-from-source source))
+        qual-sym
+        (util/resolve-to-qual-sym ns-sym sym)]
+    (when qual-sym
+      (sd/ws-remove-trace-fn! qual-sym))
+    (reply:clj->nrepl msg qual-sym)))
 
 (defn tree-contains-inner-trace?
   [tree]
