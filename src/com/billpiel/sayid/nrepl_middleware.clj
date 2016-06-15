@@ -216,8 +216,10 @@
   [{:keys [transport] :as msg}]
   (if (and @selected-view
            (not= @sd/view @selected-view))
-    (sd/set-view! @selected-view)
-    (sd/set-view!))
+    (do (sd/set-view! @selected-view)
+        (reply:clj->nrepl msg 1))
+    (do (sd/set-view!)
+        (reply:clj->nrepl msg 0)))
   (send-status-done msg))
 
 (defn ^:nrepl sayid-get-views

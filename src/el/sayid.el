@@ -585,8 +585,9 @@
 ;;;###autoload
 (defun sayid-toggle-view ()
   (interactive)
-  (nrepl-send-sync-request (list "op" "sayid-toggle-view"))
-  (message "View toggled."))
+  (if (= 1 (sayid-req-get-value '("op" "sayid-toggle-view")))
+      (message "View toggled ON.")
+    (message "View toggled OFF.")))
 
 ;;;###autoload
 (defun sayid-buf-back ()
