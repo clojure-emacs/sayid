@@ -13,7 +13,7 @@
         (define-key map  (kbd "D") 'sayid-traced-buf-disable-all) ;TODO
         (define-key map  (kbd "i") 'sayid-traced-buf-inner-trace-fn)
         (define-key map  (kbd "o") 'sayid-traced-buf-outer-trace-fn)
-        (define-key map  (kbd "r") 'sayid-traced-buf-remove-trace-fn)
+        (define-key map  (kbd "r") 'sayid-traced-buf-remove-trace)
         (define-key map  (kbd "<backspace>") 'sayid-show-traced)
         map))
 

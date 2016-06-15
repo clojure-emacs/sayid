@@ -311,6 +311,11 @@
   (sd/ws-disable-trace-ns! (symbol fn-ns))
   (send-status-done msg))
 
+(defn ^:nrepl sayid-trace-ns-remove
+  [{:keys [transport fn-ns] :as msg}]
+  (sd/ws-remove-trace-ns! (symbol fn-ns))
+  (send-status-done msg))
+
 (defn ^:nrepl sayid-replay-workspace
   [{:keys [transport] :as msg}]
   (let [kids (:children (sd/ws-deref!))]

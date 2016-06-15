@@ -327,6 +327,11 @@
   (sayid-select-default-buf))
 
 ;;;###autoload
+(defun sayid-show-traced-ns ()
+  (interactive)
+  (sayid-show-traced (cider-current-ns)))
+
+;;;###autoload
 (defun sayid-traced-buf-enter ()
   (interactive)
   (sayid-select-traced-buf)
@@ -440,14 +445,18 @@
     (sayid-select-default-buf)))
 
 ;;;###autoload
-(defun sayid-traced-buf-remove-trace-fn ()
+(defun sayid-traced-buf-remove-trace ()
   (interactive)
   (let ((pos (point))
-        (ns (get-text-property 1 'ns)))
+        (ns (get-text-property 1 'ns))
+        (fn-name (get-text-property (point) 'name)))
     (sayid-select-traced-buf)
-    (nrepl-send-sync-request (list "op" "sayid-trace-fn-remove"
-                                   "fn-name" (get-text-property (point) 'name)
-                                   "fn-ns" (get-text-property (point) 'ns)))
+    (if fn-name
+        (nrepl-send-sync-request (list "op" "sayid-trace-fn-remove"
+                                       "fn-name" fn-name
+                                       "fn-ns" (get-text-property (point) 'ns)))
+      (nrepl-send-sync-request (list "op" "sayid-trace-ns-remove"
+                                     "fn-ns" (get-text-property (point) 'ns))))
     (sayid-show-traced ns)
     (goto-char pos)
     (sayid-select-default-buf)))
