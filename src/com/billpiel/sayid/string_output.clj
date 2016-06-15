@@ -328,7 +328,8 @@
                                 tree))
         sel-map (util/apply-to-map-vals sel-fn
                                         selects)]
-    (indent-map tree sel-map)))
+    [(get-line-meta tree)
+     (indent-map tree sel-map)]))
 
 (defmacro when-sel
   [kw & body]
