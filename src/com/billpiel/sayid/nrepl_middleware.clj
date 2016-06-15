@@ -403,8 +403,8 @@
         k (keyword sk)
         n (util/->int sn)
         query (remove nil? [k n q-vec])]
-    (-> (apply sd/ws-query* query)
-        so/tree->text-prop-pair)))
+    (sd/with-view (-> (apply sd/ws-query* query)
+                      so/tree->text-prop-pair))))
 
 (defn ^:nrepl sayid-buf-query-id-w-mod
   [{:keys [trace-id mod] :as msg}]
