@@ -1,4 +1,4 @@
-(defproject com.billpiel/sayid "0.0.2"
+(defproject com.billpiel/sayid "0.0.3-dev"
   :description "Sayid is a library for debugging and profiling clojure code."
   :url "http://bpiel.github.io/sayid/"
   :license {:name "Apache License, Version 2.0"
