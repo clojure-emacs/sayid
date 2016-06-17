@@ -1,7 +1,5 @@
 (ns com.billpiel.sayid.util.other
-  (require [clj-time.core :as time]
-           [clj-time.coerce :as time-c]
-           [clojure.walk :as walk]
+  (require [clojure.walk :as walk]
            [clojure.tools.reader :as r]
            [clojure.tools.reader.reader-types :as rts]
            clojure.repl))
@@ -163,11 +161,6 @@
       (obj-pred-action-else string? :t-fn symbol)
       (obj-pred-action-else symbol? :t-fn #(ns-resolve ns-sym %))
       derefable?->))
-
-(defn diff-dates-in-msec
-  [a b]
-  (- (-> a time-c/from-date time-c/to-long)
-     (-> b time-c/from-date time-c/to-long)))
 
 (defn replace$
   [form]
