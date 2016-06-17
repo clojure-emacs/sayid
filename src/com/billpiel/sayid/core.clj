@@ -188,10 +188,7 @@ user> (-> #'f1 meta :source)
   "Enables a trace on a namespace. Namespace must already have trace
   added to active workspace."
   [ns-sym] (#'ws/disable-all-traces! workspace
-                                     #(or
-                                       (do (println %)
-                                           true)
-                                       (= % ns-sym)
+                                     #(or (= % ns-sym)
                                           (-> %
                                               util/disqualify-sym
                                               first
