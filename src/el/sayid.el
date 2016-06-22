@@ -3,7 +3,7 @@
 ;; Copyright (c) 2016 Bill Piel
 
 ;; Author: Bill Piel <bill@billpiel.com>
-;; Version: 0.0.2
+;; Version: 0.0.3
 ;; URL: https://github.com/bpiel/sayid
 
 ;; Licensed under the Apache License, Version 2.0 (the "License");
@@ -82,7 +82,7 @@
     (get-buffer buf-name-)))
 
 (defun sayid-send-and-message (req)
-  (let* ((resp (nrepl-send-sync-request req))
+  (let* ((resp (nrepl-send-sync-request req (cider-current-connection)))
          (x (nrepl-dict-get resp "value")))
     (message x)))
 
@@ -105,7 +105,7 @@
           (number-sequence (point-min) (- (point-max) 1))))
 
 (defun sayid-req-get-value (req)
-  (read-if-string (nrepl-dict-get (nrepl-send-sync-request req)
+  (read-if-string (nrepl-dict-get (nrepl-send-sync-request req (cider-current-connection))
                                   "value")))
 
 (defun sayid-req-insert-meta-ansi (req)
@@ -175,7 +175,8 @@
 ;;;###autoload
 (defun sayid-replay-workspace-query-point ()
   (interactive)
-  (nrepl-send-sync-request (list "op" "sayid-replay-workspace"))
+  (nrepl-send-sync-request (list "op" "sayid-replay-workspace")
+                           (cider-current-connection))
   (sayid-query-form-at-point))
 
 ;;;###autoload
@@ -348,14 +349,16 @@
 (defun sayid-trace-all-ns-in-dir ()
   (interactive)
   (nrepl-send-sync-request (list "op" "sayid-trace-all-ns-in-dir"
-                                 "dir" (sayid-set-trace-ns-dir)))
+                                 "dir" (sayid-set-trace-ns-dir))
+                           (cider-current-connection))
   (sayid-show-traced))
 
 ;;;###autoload
 (defun sayid-trace-ns-in-file ()
   (interactive)
   (nrepl-send-sync-request (list "op" "sayid-trace-ns-in-file"
-                                 "file" (buffer-file-name)))
+                                 "file" (buffer-file-name))
+                           (cider-current-connection))
   (sayid-show-traced))
 
 ;;;###autoload
@@ -364,21 +367,24 @@
   (nrepl-send-sync-request (list "op" "sayid-trace-ns-by-pattern"
                                  "ns-pattern" (read-string "Namespace to trace (*=wildcard) "
                                                            (cider-current-ns))
-                                 "ref-ns" (cider-current-ns)))
+                                 "ref-ns" (cider-current-ns))
+                           (cider-current-connection))
   (sayid-show-traced))
 
 ;;;###autoload
 (defun sayid-trace-enable-all ()
   (interactive)
   (nrepl-send-sync-request (list "op" "sayid-enable-all-traces"
-                                 "file" (buffer-file-name)))
+                                 "file" (buffer-file-name))
+                           (cider-current-connection))
   (sayid-show-traced))
 
 ;;;###autoload
 (defun sayid-trace-disable-all ()
   (interactive)
   (nrepl-send-sync-request (list "op" "sayid-disable-all-traces"
-                                 "file" (buffer-file-name)))
+                                 "file" (buffer-file-name))
+                           (cider-current-connection))
   (sayid-show-traced))
 
 ;;;###autoload
@@ -390,7 +396,8 @@
     (nrepl-send-sync-request (list "op" "sayid-trace-fn"
                                    "fn-name" (get-text-property (point) 'name)
                                    "fn-ns" (get-text-property (point) 'ns)
-                                   "type" "inner"))
+                                   "type" "inner")
+                             (cider-current-connection))
     (sayid-show-traced ns)
     (goto-char pos)
     (sayid-select-default-buf)))
@@ -404,7 +411,8 @@
     (nrepl-send-sync-request (list "op" "sayid-trace-fn"
                                    "fn-name" (get-text-property (point) 'name)
                                    "fn-ns" (get-text-property (point) 'ns)
-                                   "type" "outer"))
+                                   "type" "outer")
+                             (cider-current-connection))
     (sayid-show-traced ns)
     (goto-char pos)))
 
@@ -419,9 +427,11 @@
     (if fn-name
         (nrepl-send-sync-request (list "op" "sayid-trace-fn-enable"
                                        "fn-name" fn-name
-                                       "fn-ns" fn-ns))
+                                       "fn-ns" fn-ns)
+                                 (cider-current-connection))
       (nrepl-send-sync-request (list "op" "sayid-trace-ns-enable"
-                                     "fn-ns" fn-ns)))
+                                     "fn-ns" fn-ns)
+                               (cider-current-connection)))
     (sayid-show-traced buf-ns)
     (goto-char pos)
     (sayid-select-default-buf)))
@@ -437,9 +447,11 @@
     (if fn-name
         (nrepl-send-sync-request (list "op" "sayid-trace-fn-disable"
                                        "fn-name" (get-text-property (point) 'name)
-                                       "fn-ns" (get-text-property (point) 'ns)))
+                                       "fn-ns" (get-text-property (point) 'ns))
+                                 (cider-current-connection))
       (nrepl-send-sync-request (list "op" "sayid-trace-ns-disable"
-                                     "fn-ns" fn-ns)))
+                                     "fn-ns" fn-ns)
+                               (cider-current-connection)))
     (sayid-show-traced buf-ns)
     (goto-char pos)
     (sayid-select-default-buf)))
@@ -454,9 +466,11 @@
     (if fn-name
         (nrepl-send-sync-request (list "op" "sayid-trace-fn-remove"
                                        "fn-name" fn-name
-                                       "fn-ns" (get-text-property (point) 'ns)))
+                                       "fn-ns" (get-text-property (point) 'ns))
+                                 (cider-current-connection))
       (nrepl-send-sync-request (list "op" "sayid-trace-ns-remove"
-                                     "fn-ns" (get-text-property (point) 'ns))))
+                                     "fn-ns" (get-text-property (point) 'ns))
+                               (cider-current-connection)))
     (sayid-show-traced ns)
     (goto-char pos)
     (sayid-select-default-buf)))
@@ -464,37 +478,44 @@
 ;;;###autoload
 (defun sayid-kill-all-traces ()
   (interactive)
-  (nrepl-send-sync-request (list "op" "sayid-remove-all-traces"))
+  (nrepl-send-sync-request (list "op" "sayid-remove-all-traces")
+                           (cider-current-connection))
   (message "Killed all traces."))
 
 ;;;###autoload
 (defun sayid-clear-log ()
   (interactive)
-  (nrepl-send-sync-request (list "op" "sayid-clear-log"))
+  (nrepl-send-sync-request (list "op" "sayid-clear-log")
+                           (cider-current-connection))
   (message "Cleared log."))
 
 ;;;###autoload
 (defun sayid-reset-workspace ()
   (interactive)
-  (nrepl-send-sync-request (list "op" "sayid-reset-workspace"))
+  (nrepl-send-sync-request (list "op" "sayid-reset-workspace")
+                           (cider-current-connection))
   (message "Removed traces. Cleared log."))
 
 ;;;###autoload
 (defun sayid-eval-last-sexp ()
   (interactive)
-  (nrepl-send-sync-request (list "op" "sayid-clear-log"))
+  (nrepl-send-sync-request (list "op" "sayid-clear-log")
+                           (cider-current-connection))
   (let* ((has-traces (< 0 (sayid-req-get-value
                            '("op" "sayid-get-trace-count"))))
          (has-enabled-traced (< 0 (sayid-req-get-value
                                    '("op" "sayid-get-enabled-trace-count")))))
     (if (not has-traces)
         (nrepl-send-sync-request (list "op" "sayid-trace-all-ns-in-dir"
-                                       "dir" (sayid-set-trace-ns-dir))))
+                                       "dir" (sayid-set-trace-ns-dir))
+                                 (cider-current-connection)))
     (if (not has-enabled-traced)
-        (nrepl-send-sync-request '("op" "sayid-enable-all-traces")))
+        (nrepl-send-sync-request '("op" "sayid-enable-all-traces")
+                                 (cider-current-connection)))
     (cider-eval-last-sexp)
     (if (not has-enabled-traced)
-        (nrepl-send-sync-request (list "op" "sayid-disable-all-traces"))))
+        (nrepl-send-sync-request (list "op" "sayid-disable-all-traces")
+                                 (cider-current-connection))))
   (sayid-get-workspace))
 
 (defun sayid-get-line-meta (m n)
@@ -588,7 +609,8 @@
   (interactive)
   (nrepl-send-sync-request (list "op" "sayid-set-view"
                                  "view-name" (concat (completing-read "view: "
-                                                                      (sayid-get-views)))))
+                                                                      (sayid-get-views))))
+                           (cider-current-connection))
   (message "View set."))
 
 ;;;###autoload
@@ -641,8 +663,8 @@
   (define-key clojure-mode-map (kbd "C-c s V s") 'sayid-set-view))
 
 ;;;###autoload
-(with-eval-after-load 'clojure-mode
-  (add-hook 'clojure-mode-hook 'sayid-set-clj-mode-keys))
+(eval-after-load 'clojure-mode
+  '(add-hook 'clojure-mode-hook 'sayid-set-clj-mode-keys))
 
 (provide 'sayid)
 ;;; sayid.el ends here
