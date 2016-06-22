@@ -38,6 +38,9 @@
 (defvar sayid-ring)
 (setq sayid-ring '())
 
+(defun sayid-caddr (v)
+  (car (cdr (cdr v))))
+
 (defun sayid-select-default-buf ()
   (setq sayid-selected-buf sayid-buf-spec))
 
@@ -210,8 +213,8 @@
     s))
 
 (defun first-to-sym (p)
-  (list (str-to-sym (first p))
-        (second p)))
+  (list (str-to-sym (car p))
+        (cadr p)))
 
 (defun str-alist-to-sym-alist (sal)
   (apply 'append
@@ -243,7 +246,7 @@
       "black"))
 
 (defun mk-font-face (p)
-  (let ((x (second p)))
+  (let ((x (cadr p)))
     (list (list ':foreground (ansi-fg-str->face (cadr (assoc "fg" x))))
           (list ':background (ansi-bg-str->face (cadr (assoc "bg" x)))))))
 
@@ -263,7 +266,7 @@
 
 (defun put-text-props-series (series buf)
   (dolist (s series)
-    (put-all-text-props (caddr s)
+    (put-all-text-props (sayid-caddr s)
                         (car s)
                         (cadr s)
                         buf)))
@@ -286,7 +289,7 @@
   (setq sayid-ring (list-take 5 (cons v sayid-ring))))
 
 (defun peek-first-in-ring ()
-  (first sayid-ring))
+  (car sayid-ring))
 
 (defun swap-first-in-ring (v)
   (setq sayid-ring (cons v (cdr sayid-ring))))
@@ -294,14 +297,14 @@
 (defun cycle-ring ()
   (setq sayid-ring
         (append (cdr sayid-ring)
-                (list (first sayid-ring))))
-  (first sayid-ring))
+                (list (car sayid-ring))))
+  (car sayid-ring))
 
 (defun cycle-ring-back ()
   (setq sayid-ring
         (append (last sayid-ring)
                 (butlast sayid-ring)))
-  (first sayid-ring))
+  (car sayid-ring))
 
 (defun update-buf-pos-to-ring ()
   (if (eq sayid-selected-buf sayid-buf-spec)
@@ -519,11 +522,11 @@
   (sayid-get-workspace))
 
 (defun sayid-get-line-meta (m n)
-  (let ((head (first m))
+  (let ((head (car m))
         (tail (rest m)))
     (cond ((eq nil head) nil)
-          ((>= n (first head))
-           (second head))
+          ((>= n (car head))
+           (cadr head))
           (t (sayid-get-line-meta tail n)))))
 
 ;;;###autoload
@@ -625,18 +628,18 @@
   (interactive)
   (update-buf-pos-to-ring)
   (let ((buf-state (cycle-ring)))
-    (sayid-setup-buf (first buf-state)
+    (sayid-setup-buf (car buf-state)
                      nil
-                     (second buf-state))))
+                     (cadr buf-state))))
 
 ;;;###autoload
 (defun sayid-buf-forward ()
   (interactive)
   (update-buf-pos-to-ring)
   (let ((buf-state (cycle-ring-back)))
-    (sayid-setup-buf (first buf-state)
+    (sayid-setup-buf (car buf-state)
                      nil
-                     (second buf-state))))
+                     (cadr buf-state))))
 
 ;;;###autoload
 (defun sayid-set-clj-mode-keys ()
