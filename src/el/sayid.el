@@ -27,6 +27,7 @@
 
 (require 'sayid-mode)
 (require 'sayid-traced-mode)
+(require 'cider)
 
 (defvar sayid-trace-ns-dir nil)
 (defvar sayid-meta)
@@ -523,7 +524,7 @@
 
 (defun sayid-get-line-meta (m n)
   (let ((head (car m))
-        (tail (rest m)))
+        (tail (cdr m)))
     (cond ((eq nil head) nil)
           ((>= n (car head))
            (cadr head))
