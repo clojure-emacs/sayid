@@ -247,9 +247,11 @@
       "black"))
 
 (defun mk-font-face (p)
-  (let ((x (cadr p)))
-    (list (list ':foreground (ansi-fg-str->face (cadr (assoc "fg" x))))
-          (list ':background (ansi-bg-str->face (cadr (assoc "bg" x)))))))
+  (if (and (listp p) (listp (cadr p)))
+      (let ((x (cadr p)))
+        (list (list ':foreground (ansi-fg-str->face (cadr (assoc "fg" x))))
+              (list ':background (ansi-bg-str->face (cadr (assoc "bg" x))))))
+    nil))
 
 (defun put-all-text-props (props start end buf)
   (dolist (p props)
