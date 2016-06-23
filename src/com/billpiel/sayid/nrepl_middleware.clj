@@ -386,7 +386,7 @@
           matches (-> (sd/ws-query* [:parent-name fn-sym])
                       so/tree->text-prop-pair
                       clj->nrepl)
-          out (clj->nrepl matches)]
+          out (clj->nrepl matches)] ;; TODO clj->nrepl called twice
       (t/send transport (response-for msg
                                       :value out)))
     (catch Exception e

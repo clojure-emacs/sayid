@@ -22,15 +22,25 @@ x 'n' does inner trace from buf
     x remove
     - the rest
   - enter-> jump to func
-  - query ws by func
   x enter-> jump to ns detail view
-- lots of clj-mode bindings
-  - sayid-trace-fn-enable
-  - sayid-trace-fn-disable
-  - sayid-inner-trace-fn
-  - sayid-outer-trace-fn
-  - sayid-show-traced-ns
+  - colors
 
+-  clj-mode bindings
+  x sayid-trace-fn-enable
+  x sayid-trace-fn-disable
+  x sayid-inner-trace-fn
+  x sayid-outer-trace-fn
+  x sayid-show-traced-ns
+
+- sayid-trace-mode bindings
+  - sayid-traced-buf-enable-all
+  - sayid-traced-buf-disable-all
+  x remove ns  
+
+- sourcerer
+ - func that set traces
+ - views
+ 
 
 - what happens if you apply an inner trace twice?
 
@@ -39,7 +49,7 @@ x rename everything (inner/outer)
 x have eval-last be more sane; check for existing traces
 - use 'l' for backspace (says Tim?)
 
-- BUGS
+# BUGS
  x ANSI is SLOW
    x fix show-traces
    - could still be faster??
@@ -48,17 +58,24 @@ x have eval-last be more sane; check for existing traces
  - trace doesn't take sometimes -- eval last
  x multi-line let bind expr renders badly
  x 'p' in *sayid*
- - e/d to enable/disable ns from *traced*
+ x e/d to enable/disable ns from *traced*
 
- 
+ x query relative distance not working
 
-x write script  
-x video
-
-
-- query by func maintains cursor on id
+? query by func maintains cursor on id
 
 x color codes instead of ansi
 - add meta so that let binds can be def'd and pprinted
 
-- lenses
+x views
+
+x sayid.el 0.0.2 on billpiel.com
+
+- 'q' query from buffer
+
+- in-emacs docs
+
+
+- generate and insert interactive debug code
+- refresh on apply view???
+- def/pprint :selects
