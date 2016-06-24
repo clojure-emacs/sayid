@@ -24,7 +24,7 @@
          name
          view))
 
-(defn query
+(defn query*
   [& args]
   (assoc (apply sd/ws-query*
                 args)
@@ -203,7 +203,7 @@
                                             (or start-line line)
                                             line)]
     (if-not (empty? ids)
-      (query [:id ids])
+      (query* [:id ids])
       nil)))
 
 (defn process-line-meta
@@ -372,7 +372,6 @@
                        (sd/ws-add-inner-trace-fn!* name))
                      (replay! kids)))
              matches' (query-ws-by-file-line-range file start-line line)
-             _ (println (::query-args matches'))
              out (if-not (or (empty? matches)
                              (empty? matches'))
                    (-> matches'
@@ -531,7 +530,11 @@
 (defn ^:nrepl sayid-query
   [{:keys [transport query] :as msg}]
   (println query)
-  (send-status-done msg))
+  (->> query
+       read-string
+       (apply query*)
+       query-tree->trio
+       (reply:clj->nrepl msg)))
 
 (def sayid-nrepl-ops
   (->> *ns*

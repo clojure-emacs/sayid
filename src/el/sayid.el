@@ -108,14 +108,11 @@
           (number-sequence (point-min) (- (point-max) 1))))
 
 (defun sayid-req-get-value (req)
-  (let ((r (read-if-string (nrepl-dict-get (nrepl-send-sync-request req (cider-current-connection))
-                                           "value"))))
-    (print "******** sayid-req-get-value")
-    r))
+  (read-if-string (nrepl-dict-get (nrepl-send-sync-request req
+                                                           (cider-current-connection))
+                                  "value")))
 
 (defun sayid-req-insert-meta-ansi (req)
-  (print "********* sayid-req-insert-meta-ansi")
-  (print req)
   (sayid-setup-buf (sayid-req-get-value req) t 1))
 
 
