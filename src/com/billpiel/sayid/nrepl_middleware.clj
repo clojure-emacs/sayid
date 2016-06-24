@@ -34,7 +34,7 @@
 (defn query-tree->trio
   [tree]
   (conj (vec (so/tree->text-prop-pair tree))
-        (::query-args tree)))
+        (-> tree ::query-args pr-str)))
 
 (defn clj->nrepl*
   [v]
@@ -376,7 +376,7 @@
              out (if-not (or (empty? matches)
                              (empty? matches'))
                    (-> matches'
-                       so/tree->text-prop-pair
+                       query-tree->trio ;so/tree->text-prop-pair
                        clj->nrepl)
                    (clj->nrepl [[nil (str "No trace records found for function at line: " line)]]))]
          (t/send transport (response-for msg
@@ -527,6 +527,11 @@
                     (sd/with-this-view (or @sd/view
                                       (v/mk-simple-view {}))
                       (so/tree->text-prop-pair (sd/ws-view!)))))
+
+(defn ^:nrepl sayid-query
+  [{:keys [transport query] :as msg}]
+  (println query)
+  (send-status-done msg))
 
 (def sayid-nrepl-ops
   (->> *ns*

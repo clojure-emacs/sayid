@@ -90,7 +90,6 @@
          (x (nrepl-dict-get resp "value")))
     (message x)))
 
-
 (defun sayid-setup-buf (meta-ansi save-to-ring &optional pos)
   (let ((orig-buf (current-buffer))
         (sayid-buf (sayid-init-buf)))
@@ -109,10 +108,14 @@
           (number-sequence (point-min) (- (point-max) 1))))
 
 (defun sayid-req-get-value (req)
-  (read-if-string (nrepl-dict-get (nrepl-send-sync-request req (cider-current-connection))
-                                  "value")))
+  (let ((r (read-if-string (nrepl-dict-get (nrepl-send-sync-request req (cider-current-connection))
+                                           "value"))))
+    (print "******** sayid-req-get-value")
+    r))
 
 (defun sayid-req-insert-meta-ansi (req)
+  (print "********* sayid-req-insert-meta-ansi")
+  (print req)
   (sayid-setup-buf (sayid-req-get-value req) t 1))
 
 
@@ -320,10 +323,18 @@
   (if (eq sayid-selected-buf sayid-buf-spec)
       (push-to-ring (list meta-ansi (sayid-buf-point)))))
 
+(defun peek-query-str ()
+  (car (cdr (cdr (car (peek-first-in-ring))))))
+
 ;;;###autoload
 (defun sayid-get-workspace ()
   (interactive)
   (sayid-req-insert-meta-ansi (list "op" "sayid-get-workspace")))
+
+(defun sayid-refresh-view ()
+  (interactive)
+  (sayid-req-insert-meta-ansi (list "op" "sayid-query"
+                                    "query" (peek-query-str))))
 
 ;;;###autoload
 (defun sayid-show-traced (&optional ns)
