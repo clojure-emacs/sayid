@@ -24,6 +24,18 @@
          name
          view))
 
+(defn query
+  [& args]
+  (assoc (apply sd/ws-query*
+                args)
+         ::query-args
+         args))
+
+(defn query-tree->trio
+  [tree]
+  (conj (vec (so/tree->text-prop-pair tree))
+        (::query-args tree)))
+
 (defn clj->nrepl*
   [v]
   (cond (coll? v) (list* v)
@@ -191,7 +203,7 @@
                                             (or start-line line)
                                             line)]
     (if-not (empty? ids)
-      (sd/ws-query* [:id ids])
+      (query [:id ids])
       nil)))
 
 (defn process-line-meta
@@ -324,6 +336,7 @@
     (replay! kids))
   (send-status-done msg))
 
+;; DEPRECATE OR FIX?
 (defn ^:nrepl sayid-replay-at-point
   [{:keys [transport source file line] :as msg}]
   (try (let [{start-line :line} (get-meta-at-pos-in-source file line source)
@@ -331,7 +344,6 @@
              matches' (when-not (empty? matches)
                         (do (replay! matches)
                             (query-ws-by-file-line-range file start-line line)))
-
              out (if-not (nil? matches')
                    (-> matches'
                        so/tree->string+meta)
@@ -360,6 +372,7 @@
                        (sd/ws-add-inner-trace-fn!* name))
                      (replay! kids)))
              matches' (query-ws-by-file-line-range file start-line line)
+             _ (println (::query-args matches'))
              out (if-not (or (empty? matches)
                              (empty? matches'))
                    (-> matches'
