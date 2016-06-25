@@ -625,14 +625,16 @@
                                  "view-name" (concat (completing-read "view: "
                                                                       (sayid-get-views))))
                            (cider-current-connection))
-  (message "View set."))
+  (message "View set.")
+  (sayid-refresh-view))
 
 ;;;###autoload
 (defun sayid-toggle-view ()
   (interactive)
   (if (= 1 (sayid-req-get-value '("op" "sayid-toggle-view")))
       (message "View toggled ON.")
-    (message "View toggled OFF.")))
+    (message "View toggled OFF."))
+  (sayid-refresh-view))
 
 ;;;###autoload
 (defun sayid-buf-back ()

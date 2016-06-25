@@ -26,10 +26,15 @@
 
 (defn query*
   [& args]
-  (assoc (apply sd/ws-query*
-                args)
-         ::query-args
-         args))
+  (def a' args)
+  (if args
+    (assoc (apply sd/ws-query*
+                  args)
+           ::query-args
+           args)
+    (assoc (sd/ws-view!)
+           ::query-args
+           nil)))
 
 (defn query-tree->trio
   [tree]
@@ -57,12 +62,14 @@
 
 (defn reply:clj->nrepl
   [msg out]
-  (try (t/send (:transport msg)
-               (response-for msg
-                             :value (clj->nrepl out)))
-       (catch Exception e
-         (println "EXCEPTION!")
-         (println e)))
+  (let [o (clj->nrepl out)]
+    (println o)
+    (try (t/send (:transport msg)
+                 (response-for msg
+                               :value o))
+         (catch Exception e
+           (println "EXCEPTION!")
+           (println e))))
   (send-status-done msg))
 
 (defn find-ns-sym
@@ -395,8 +402,8 @@
                 (sd/ws-cycle-all-traces!)
                 (sd/ws-clear-log!)
                 (replay! kids))
-          matches (-> (sd/ws-query* [:parent-name fn-sym])
-                      so/tree->text-prop-pair
+          matches (-> (query* [:parent-name fn-sym])
+                      query-tree->trio
                       clj->nrepl)
           out (clj->nrepl matches)] ;; TODO clj->nrepl called twice
       (t/send transport (response-for msg
@@ -422,8 +429,9 @@
         k (keyword sk)
         n (util/->int sn)
         query (remove nil? [k n q-vec])]
-    (sd/with-view (-> (apply sd/ws-query* query)
-                      so/tree->text-prop-pair))))
+    (sd/with-view (->> query
+                       (apply query*)
+                       query-tree->trio))))
 
 (defn ^:nrepl sayid-buf-query-id-w-mod
   [{:keys [trace-id mod] :as msg}]
@@ -431,11 +439,13 @@
                     (sayid-buf-query [:id (keyword trace-id)]
                                      mod)))
 
+(def parent-name-or-name (some-fn :parent-name :name))
+
 (defn ^:nrepl sayid-buf-query-fn-w-mod
   [{:keys [fn-name mod] :as msg}]
-  (reply:clj->nrepl msg (sayid-buf-query [(some-fn :parent-name :name)
-                              (symbol fn-name)]
-                             mod)))
+  (reply:clj->nrepl msg (sayid-buf-query [#'parent-name-or-name
+                                          (symbol fn-name)]
+                                         mod)))
 
 ;; this func is unfortunate
 (defn str-vec->arg-path
@@ -525,16 +535,29 @@
   (reply:clj->nrepl msg
                     (sd/with-this-view (or @sd/view
                                       (v/mk-simple-view {}))
-                      (so/tree->text-prop-pair (sd/ws-view!)))))
+                      (query-tree->trio (sd/ws-view!)))))
+
+(defn magic-recusive-eval
+  "Let's us send vars to nrepl client and back. Madness."
+  [frm]
+  (println frm)
+  (println (type frm))
+  (cond (vector? frm) (mapv magic-recusive-eval frm)
+        (seq? frm) (eval frm)
+        :else frm))
 
 (defn ^:nrepl sayid-query
   [{:keys [transport query] :as msg}]
+  ;; TODO default to name-only view for empty query?
+  (def q' query)
   (println query)
-  (->> query
-       read-string
-       (apply query*)
-       query-tree->trio
-       (reply:clj->nrepl msg)))
+  (sd/with-view
+    (->> query
+         read-string
+         (map magic-recusive-eval)
+         (apply query*)
+         query-tree->trio
+         (reply:clj->nrepl msg))))
 
 (def sayid-nrepl-ops
   (->> *ns*

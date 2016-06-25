@@ -150,10 +150,16 @@
 
 (defn get-some*
   [f v]
+  (def f' f)
+  (def v' v)
   (cond
     (fn? f)
     (f v)
 
+    (and (var? f)
+         (-> f deref fn?))
+    (f v)
+    
     (set? f)
     (f v)
 
@@ -174,6 +180,10 @@
   (cond (fn? pred)
         (pred v)
 
+        (and (var? pred)
+             (-> pred deref fn?))
+        (pred v)
+        
         (set? pred)
         (pred v)
 
