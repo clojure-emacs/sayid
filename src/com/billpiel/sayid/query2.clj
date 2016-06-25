@@ -150,8 +150,6 @@
 
 (defn get-some*
   [f v]
-  (def f' f)
-  (def v' v)
   (cond
     (fn? f)
     (f v)

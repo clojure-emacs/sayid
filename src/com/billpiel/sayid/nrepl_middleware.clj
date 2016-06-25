@@ -26,7 +26,6 @@
 
 (defn query*
   [& args]
-  (def a' args)
   (if args
     (assoc (apply sd/ws-query*
                   args)
@@ -62,14 +61,12 @@
 
 (defn reply:clj->nrepl
   [msg out]
-  (let [o (clj->nrepl out)]
-    (println o)
-    (try (t/send (:transport msg)
-                 (response-for msg
-                               :value o))
-         (catch Exception e
-           (println "EXCEPTION!")
-           (println e))))
+  (try (t/send (:transport msg)
+               (response-for msg
+                             :value (clj->nrepl out)))
+       (catch Exception e
+         (println "EXCEPTION!")
+         (println e)))
   (send-status-done msg))
 
 (defn find-ns-sym
@@ -540,8 +537,6 @@
 (defn magic-recusive-eval
   "Let's us send vars to nrepl client and back. Madness."
   [frm]
-  (println frm)
-  (println (type frm))
   (cond (vector? frm) (mapv magic-recusive-eval frm)
         (seq? frm) (eval frm)
         :else frm))
@@ -549,15 +544,12 @@
 (defn ^:nrepl sayid-query
   [{:keys [transport query] :as msg}]
   ;; TODO default to name-only view for empty query?
-  (def q' query)
-  (println query)
-  (sd/with-view
-    (->> query
-         read-string
-         (map magic-recusive-eval)
-         (apply query*)
-         query-tree->trio
-         (reply:clj->nrepl msg))))
+  (sd/with-view (->> query
+                     read-string
+                     (map magic-recusive-eval)
+                     (apply query*)
+                     query-tree->trio
+                     (reply:clj->nrepl msg))))
 
 (def sayid-nrepl-ops
   (->> *ns*
