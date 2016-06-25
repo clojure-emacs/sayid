@@ -276,13 +276,15 @@
   [tree]
   (->> tree
        :let-binds
-       (map #(multi-line-indent2-MZ :cols [(-> % second str)
-                                           (str (color-code)
-                                                " <= ")
-                                           (-> % first pprint-str)
-                                           " <= "
-                                           (pprint-str (nth % 2))]
-                                    :indent-base (:depth tree)))
+       (map-indexed (fn [i [val sym frm]]
+                      [(get-line-meta tree :path [:let-binds i 0])
+                       (multi-line-indent2-MZ :cols [(str sym)
+                                                     (str (color-code)
+                                                          " <= ")
+                                                     (pprint-str val)
+                                                     " <= "
+                                                     (pprint-str frm)]
+                                              :indent-base (:depth tree))]))
        vec))
 
 (defn args*-str

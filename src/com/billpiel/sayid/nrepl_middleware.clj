@@ -446,11 +446,12 @@
 
 ;; this func is unfortunate
 (defn str-vec->arg-path
-  [[kw idx]]
-  (let [kw' (keyword kw)]
-    (cond (nil? idx) [kw']
-          (string? idx) [kw' (symbol idx)]
-          :else [kw' idx])))
+  [[kw & idx]]
+  (let [kw' (keyword kw)
+        str->sym (fn [s] (if (string? s)
+                           (symbol s)
+                           s))]
+    (into [kw'] (mapv str->sym idx))))
 
 (defn ^:nrepl sayid-buf-def-at-point
   [{:keys [transport trace-id path] :as msg}]
