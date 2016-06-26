@@ -453,6 +453,54 @@
                            s))]
     (into [kw'] (mapv str->sym idx))))
 
+;; WIP ===== gen-instance-expr helpers
+
+
+(defn tt1
+  ([a] 1)
+  ([a [b c]] 2)
+  ([a b & c] 3))
+
+(-> #'tt1 meta :arglists last count)
+
+(defn find-arg-list-by-length
+  [n [first-list & rest-lists]]
+  (let [cfl (count first-list)]
+    (cond (nil? first-list) nil
+          
+          (or (= n cfl)
+              (and (-> first-list reverse rest first (= '&))
+                   (>= n (dec cfl))))
+          first-list
+
+          :else (recur n rest-lists))))
+
+(find-arg-list-by-length 2 (-> #'tt1 meta :arglists))
+
+(defn find-available-sym
+  [ns-sym prefix & [init-taken]]
+  (let [taken (set (or init-taken
+                       (-> ns-sym
+                           create-ns
+                           ns-interns
+                           keys)))]
+    (loop [n 0]
+      (let [suffix (if (= n 0) "" n)
+            candidate (symbol (str prefix suffix))]
+        (if-not (taken candidate)
+          candidate
+          (recur (inc n)))))))
+
+(defn lazy-find-available-sym
+  [prefix-seq init-taken]
+  (let [next (find-available-sym nil (first prefix-seq) init-taken)]
+    (lazy-cat [next]
+              (lazy-find-available-sym (rest prefix-seq)
+                                       (conj init-taken next)))))
+
+
+;; END WIP ===== gen-instance-expr helpers
+
 
 (defn gen-instance-expr
   [tree]
