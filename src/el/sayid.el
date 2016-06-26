@@ -650,6 +650,15 @@
     (message "View toggled OFF."))
   (sayid-refresh-view))
 
+
+;;;###autoload
+(defun sayid-gen-instance-expr ()
+  (interactive)
+  (let ((expr (sayid-req-get-value (list "op" "sayid-gen-instance-expr"
+                                         "trace-id" (get-text-property (point) 'id)))))
+    (kill-new expr)
+    (message (concat "Written to kill ring: " expr))))
+
 ;;;###autoload
 (defun sayid-buf-back ()
   (interactive)

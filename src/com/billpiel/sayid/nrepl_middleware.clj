@@ -453,10 +453,34 @@
                            s))]
     (into [kw'] (mapv str->sym idx))))
 
+
+(defn gen-instance-expr
+  [tree]
+  (let [arglist (-> tree :meta :arglists first)] ;; TODO logic to choose correct one
+    (doseq [pair (map vector
+                      arglist
+                      (:args tree))]
+      (apply util/def-ns-var
+             '$s
+             pair))
+    (format "(%s%s)"
+            (-> tree :meta :name)
+            (apply str (interleave (repeat " $s/")
+                                   arglist)))))
+
+(defn ^:nrepl sayid-gen-instance-expr
+  [{:keys [transport trace-id] :as msg}]
+  (or (some->> (sd/ws-query* [:id (keyword trace-id)])
+            :children
+            first
+            gen-instance-expr
+            (reply:clj->nrepl msg))
+      (send-status-done msg)))
+
 (defn ^:nrepl sayid-buf-def-at-point
   [{:keys [transport trace-id path] :as msg}]
   (let [path' (str-vec->arg-path path)]
-    (util/def-ns-var '$s '* (-> [:id (keyword trace-id)] ;;TODO use intern
+    (util/def-ns-var '$s '* (-> [:id (keyword trace-id)]
                                 sd/ws-query*
                                 :children
                                 first
