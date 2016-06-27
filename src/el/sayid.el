@@ -657,7 +657,8 @@
   (let ((expr (sayid-req-get-value (list "op" "sayid-gen-instance-expr"
                                          "trace-id" (get-text-property (point) 'id)))))
     (kill-new expr)
-    (message (concat "Written to kill ring: " expr))))
+    (message (concat "Written to kill ring: " expr))
+    (sayid-buffer-nav-from-point)))
 
 ;;;###autoload
 (defun sayid-buf-back ()

@@ -453,15 +453,7 @@
                            s))]
     (into [kw'] (mapv str->sym idx))))
 
-;; WIP ===== gen-instance-expr helpers
-
-
-(defn tt1
-  ([a] 1)
-  ([a [b c]] 2)
-  ([a b & c] 3))
-
-(-> #'tt1 meta :arglists last count)
+;; ===== gen-instance-expr helpers
 
 (defn find-arg-list-by-length
   [n [first-list & rest-lists]]
@@ -475,7 +467,15 @@
 
           :else (recur n rest-lists))))
 
-(find-arg-list-by-length 2 (-> #'tt1 meta :arglists))
+(defn get-args-sym-template
+  [arglist]
+  (let [convert-non-syms (fn [v] (if (symbol? v)
+                                   v
+                                   '*))]
+    (util/$- ->> arglist
+             (remove #{'&})
+             (map convert-non-syms)
+             (concat $ (repeat (last $))))))
 
 (defn find-available-sym
   [ns-sym prefix & [init-taken]]
@@ -499,14 +499,26 @@
                                        (conj init-taken next)))))
 
 
-;; END WIP ===== gen-instance-expr helpers
+(defn mk-avail-sym-lazy-seq
+  [n arglists]
+  (lazy-find-available-sym (get-args-sym-template (find-arg-list-by-length n
+                                                                           arglists))
+                           (-> '$s
+                               create-ns
+                               ns-interns
+                               keys
+                               (or []))))
 
+;; END ===== gen-instance-expr helpers
 
 (defn gen-instance-expr
   [tree]
-  (let [arglist (-> tree :meta :arglists first)] ;; TODO logic to choose correct one
+  (let [arg-count (-> tree :args count)
+        arglists (-> tree :meta :arglists)
+        arglist-template-seq (mk-avail-sym-lazy-seq arg-count
+                                                    arglists)]
     (doseq [pair (map vector
-                      arglist
+                      arglist-template-seq
                       (:args tree))]
       (apply util/def-ns-var
              '$s
@@ -514,7 +526,7 @@
     (format "(%s%s)"
             (-> tree :meta :name)
             (apply str (interleave (repeat " $s/")
-                                   arglist)))))
+                                   (take arg-count arglist-template-seq))))))
 
 (defn ^:nrepl sayid-gen-instance-expr
   [{:keys [transport trace-id] :as msg}]
