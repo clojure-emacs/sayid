@@ -1,4 +1,4 @@
-(defproject com.billpiel/sayid "0.0.5"
+(defproject com.billpiel/sayid "0.0.6-dev"
   :description "Sayid is a library for debugging and profiling clojure code."
   :signing {:gpg-key "<bill@billpiel.com>"}
   :url "http://bpiel.github.io/sayid/"
