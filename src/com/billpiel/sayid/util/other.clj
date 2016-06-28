@@ -99,8 +99,10 @@
      (qualify-sym ns# name#)))
 
 (defn resolve-to-qual-sym [ns-sym sym]
-  (when-let [{:keys [name ns]} (meta (ns-resolve ns-sym sym))]
-    (qualify-sym ns name)))
+  (try (when-let [{:keys [name ns]} (meta (ns-resolve ns-sym sym))]
+         (qualify-sym ns name))
+       (catch Exception e
+         nil)))
 
 (defn atom?
   [v]

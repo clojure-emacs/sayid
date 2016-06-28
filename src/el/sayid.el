@@ -85,10 +85,12 @@
     (erase-buffer)
     (get-buffer buf-name-)))
 
-(defun sayid-send-and-message (req)
+(defun sayid-send-and-message (req &optional fail-msg)
   (let* ((resp (nrepl-send-sync-request req (cider-current-connection)))
          (x (nrepl-dict-get resp "value")))
-    (message x)))
+    (if (and fail-msg (string= x "\"\""))
+        (message fail-msg)
+      (message x))))
 
 (defun try-goto-prop (prop val)
   (let ((p 1))
@@ -152,7 +154,9 @@
                                 "file" (buffer-file-name)
                                 "line" (line-number-at-pos)
                                 "column" (+ (current-column) 1)
-                                "source" (buffer-string))))
+                                "source" (buffer-string))
+                          "Nothing traced. Make sure cursor is on symbol.")
+  (sayid-show-traced))
 
 ;;;###autoload
 (defun sayid-trace-fn-disable ()
@@ -161,7 +165,9 @@
                                 "file" (buffer-file-name)
                                 "line" (line-number-at-pos)
                                 "column" (+ (current-column) 1)
-                                "source" (buffer-string))))
+                                "source" (buffer-string))
+                          "Nothing found. Make sure cursor is on symbol.")
+  (sayid-show-traced))
 
 ;;;###autoload
 (defun sayid-outer-trace-fn ()
@@ -170,7 +176,9 @@
                                 "file" (buffer-file-name)
                                 "line" (line-number-at-pos)
                                 "column" (+ (current-column) 1)
-                                "source" (buffer-string))))
+                                "source" (buffer-string))
+                          "Nothing traced. Make sure cursor is on symbol.")
+  (sayid-show-traced))
 
 ;;;###autoload
 (defun sayid-inner-trace-fn ()
@@ -179,7 +187,9 @@
                                 "file" (buffer-file-name)
                                 "line" (line-number-at-pos)
                                 "column" (+ (current-column) 1)
-                                "source" (buffer-string))))
+                                "source" (buffer-string))
+                          "Nothing traced. Make sure cursor is on symbol.")
+  (sayid-show-traced))
 
 ;;;###autoload
 (defun sayid-remove-trace-fn ()
@@ -188,7 +198,9 @@
                                 "file" (buffer-file-name)
                                 "line" (line-number-at-pos)
                                 "column" (+ (current-column) 1)
-                                "source" (buffer-string))))
+                                "source" (buffer-string))
+                          "Nothing found. Make sure cursor is on symbol.")
+    (sayid-show-traced))
 
 ;;;###autoload
 (defun sayid-replay-workspace-query-point ()

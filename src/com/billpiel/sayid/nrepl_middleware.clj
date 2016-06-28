@@ -156,7 +156,7 @@
     (reply:clj->nrepl msg qual-sym)))
 
 (defn ^:nrepl sayid-trace-fn-inner-trace-at-point
-  [{:keys [transport file line column source] :as msg}]
+  [{:keys [transport file line column source] :as msg}]t
   (let [sym (get-sym-at-pos-in-source file line column source)
         ns-sym (symbol (parse-ns-name-from-source source))
         qual-sym
