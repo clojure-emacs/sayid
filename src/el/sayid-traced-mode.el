@@ -15,6 +15,7 @@
         (define-key map  (kbd "o") 'sayid-traced-buf-outer-trace-fn)
         (define-key map  (kbd "r") 'sayid-traced-buf-remove-trace)
         (define-key map  (kbd "<backspace>") 'sayid-show-traced)
+        (define-key map  (kbd "l") 'sayid-show-traced)
         map))
 
  ;;;###autoload

@@ -21,6 +21,8 @@
         (define-key map  (kbd "V") 'sayid-set-view)
         (define-key map  (kbd "<backspace>") 'sayid-buf-back)
         (define-key map  (kbd "<S-backspace>") 'sayid-buf-forward)
+        (define-key map  (kbd "l") 'sayid-buf-back)
+        (define-key map  (kbd "L") 'sayid-buf-forward)
         (define-key map  (kbd "c i") 'sayid-buf-inspect-at-point)
         (define-key map  (kbd "g") 'sayid-gen-instance-expr)
         map))
