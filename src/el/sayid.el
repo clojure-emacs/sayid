@@ -402,16 +402,14 @@
 ;;;###autoload
 (defun sayid-trace-enable-all ()
   (interactive)
-  (nrepl-send-sync-request (list "op" "sayid-enable-all-traces"
-                                 "file" (buffer-file-name))
+  (nrepl-send-sync-request (list "op" "sayid-enable-all-traces")
                            (cider-current-connection))
   (sayid-show-traced))
 
 ;;;###autoload
 (defun sayid-trace-disable-all ()
   (interactive)
-  (nrepl-send-sync-request (list "op" "sayid-disable-all-traces"
-                                 "file" (buffer-file-name))
+  (nrepl-send-sync-request (list "op" "sayid-disable-all-traces")
                            (cider-current-connection))
   (sayid-show-traced))
 
