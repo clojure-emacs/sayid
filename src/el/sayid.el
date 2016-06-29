@@ -571,7 +571,7 @@
          (line (get-text-property (point) 'line)))
     (pop-to-buffer (find-file-noselect file))
     (goto-char (point-min))
-    (forward-line line)))
+    (forward-line (- line 1))))
 
 ;;;###autoload
 (defun sayid-buffer-nav-to-prev ()
