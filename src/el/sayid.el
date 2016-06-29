@@ -688,6 +688,71 @@
                      nil
                      (cadr buf-state))))
 
+(defun sayid-buf-show-help ()
+  (interactive)
+  (display-message-or-buffer "
+<RET> -- pop to function
+d -- def value to $s/*
+f -- query for calls to function
+F -- query for calls to function with modifier
+i -- show only this instance
+I -- query for this instance with modifier
+w -- show full workspace trace
+n -- jump to next call node
+N -- apply inner trace and reply workspace
+p -- jump to prev call node
+P -- pretty print value
+C -- clear workspace trace log
+v -- toggle view
+V -- set view (see register-view)
+l, <backspace> -- previous buffer state
+L, <S-backspace> -- forward buffer state
+g -- generate instance expression and put in kill ring
+h -- help
+"))
+
+(defun sayid-show-help ()
+  (interactive)
+  (display-message-or-buffer "
+C-c s e -- Enables traces, evals the expression at point, disables traces, displays results with terse view
+C-c s f -- Queries the active workspace for entries that most closely match the context of the cursor position
+C-c s n -- Applies an inner trace to the function at point, replays workspace, displays results
+C-c s r -- Replays workspace, queries results by context of cursor
+C-c s w -- Shows workspace, using the current view
+C-c s t y -- Prompts for a dir, recursively traces all ns's in that dir and subdirs
+C-c s t p -- Prompts for a pattern (* = wildcare), and applies a trace to all *loaded* ns's whose name matches the patten
+C-c s t b -- Trace the ns in the current buffer
+C-c s t e -- Enable the *existing* (if any) trace of the function at point
+C-c s t E -- Enable all traces
+C-c s t d -- Disable the *existing* (if any) trace of the function at point
+C-c s t D -- Disable all traces
+C-c s t n -- Apply an inner trace to the symbol at point
+C-c s t o -- Apply an outer trace to the symbol at point
+C-c s t r -- Remove existing trace from the symbol at point
+C-c s t K -- Remove all traces
+C-c s c -- Clear the workspace trace log
+C-c s x -- Blow away workspace -- traces and logs
+C-c s s -- Popup buffer showing what it currently traced
+C-c s S -- Popup buffer showing what it currently traced in buffer's ns
+C-c s V s -- Set the view
+C-c h -- show this help
+"))
+
+(defun sayid-traced-buf-show-help ()
+  (interactive)
+  (display-message-or-buffer "
+<RET> -- Drill into ns at point
+e -- Enable trace
+d -- Disable trace
+E -- Enable ALL traces
+D -- Disable ALL traces
+i -- Apply inner trace to func at point
+o -- Apply outer trace to func at point
+r -- Remove trace from fun at point
+l, <backspace> -- go back to trace overview (if in ns view)
+"))
+
+
 ;;;###autoload
 (defun sayid-set-clj-mode-keys ()
   (define-key clojure-mode-map (kbd "C-c s e") 'sayid-eval-last-sexp)
@@ -710,7 +775,10 @@
   (define-key clojure-mode-map (kbd "C-c s x") 'sayid-reset-workspace)
   (define-key clojure-mode-map (kbd "C-c s s") 'sayid-show-traced)
   (define-key clojure-mode-map (kbd "C-c s S") 'sayid-show-traced-ns) ;;TODO
-  (define-key clojure-mode-map (kbd "C-c s V s") 'sayid-set-view))
+  (define-key clojure-mode-map (kbd "C-c s V s") 'sayid-set-view)
+  (define-key clojure-mode-map (kbd "C-c s h") 'sayid-show-help))
+
+
 
 ;;;###autoload
 (eval-after-load 'clojure-mode
