@@ -383,3 +383,8 @@
       s'
       (when-let [r (clojure.java.io/resource s')]
         (.getPath r)))))
+
+(defn fn*?
+  [maybe]
+  (or (fn? maybe)
+      (= (type maybe) clojure.lang.MultiFn)))

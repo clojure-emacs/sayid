@@ -170,7 +170,7 @@
   [ns workspace]
   (when-let [ns (the-ns-safe ns)]
     (when-not ('#{clojure.core com.billpiel.sayid.core} (.name ns))
-      (let [ns-fns (->> ns ns-interns vals (filter (comp fn? var-get)))]
+      (let [ns-fns (->> ns ns-interns vals (filter (comp util/fn*? var-get)))]
         (doseq [f ns-fns]
           (trace-var* f
                       (util/assoc-var-meta-to-fn shallow-tracer
