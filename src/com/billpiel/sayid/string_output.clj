@@ -139,6 +139,11 @@
       []
       [(get-line-meta tree :header? true)
        (slinky-pipes-MZ depth :end (when start? "v"))
+       (when (:throw tree)
+         [(color-code-MZ :fg 1 :bg 7)
+          "!"
+          (color-code-MZ)
+          " "])
        (if parent-name
          [(color-code-MZ :fg 0 :bg* (dec depth) :bold false)
           (str (if-not (nil? form)
