@@ -464,9 +464,16 @@
                                      fn-meta
                                      path-chain'))))
 
+(defn with-meta-safe
+  [v m]
+  (try
+    (with-meta v m)
+    (catch Exception e
+      v)))
+
 (defn xpand-macro
   [head form src-map fn-meta path path-chain]
-  (let [xform (with-meta (macroexpand form) (meta form))] ;; TODO be sure this is doing something
+  (let [xform (with-meta-safe (macroexpand form) (meta form))] ;; TODO be sure this is doing something
     (let [path' (conj path :macro)
           path-chain' (conj path-chain path)]
       (xpand-macro-form head
