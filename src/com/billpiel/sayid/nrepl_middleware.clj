@@ -4,7 +4,7 @@
             [clojure.tools.nrepl.transport :as t]
             [com.billpiel.sayid.core :as sd]
             [com.billpiel.sayid.query2 :as q]
-            [com.billpiel.sayid.string-output :as so]
+            [com.billpiel.sayid.string-output2 :as so]
             [com.billpiel.sayid.view :as v]
             [com.billpiel.sayid.trace :as tr]
             [clojure.tools.reader :as r]
@@ -341,7 +341,7 @@
   (send-status-done msg))
 
 ;; DEPRECATE OR FIX?
-(defn ^:nrepl sayid-replay-at-point
+#_ (defn ^:nrepl sayid-replay-at-point
   [{:keys [transport source file line] :as msg}]
   (try (let [{start-line :line} (get-meta-at-pos-in-source file line source)
              matches (query-ws-by-file-line-range file start-line line)

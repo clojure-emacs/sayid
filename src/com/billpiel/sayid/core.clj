@@ -1,13 +1,12 @@
 (ns com.billpiel.sayid.core
-  (:require com.billpiel.sayid.string-output
-            [com.billpiel.sayid.trace :as trace]
+  (:require [com.billpiel.sayid.trace :as trace]
             [com.billpiel.sayid.inner-trace2 :as itrace]
             [com.billpiel.sayid.workspace :as ws]
             [com.billpiel.sayid.recording :as rec]
             [com.billpiel.sayid.query2 :as q]
             [com.billpiel.sayid.view :as v]
             [com.billpiel.sayid.util.find-ns :as find-ns]
-            [com.billpiel.sayid.string-output :as so]
+            [com.billpiel.sayid.string-output2 :as so]
             [com.billpiel.sayid.profiling :as pro]
             [com.billpiel.sayid.util.other :as util]))
 

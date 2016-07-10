@@ -160,23 +160,6 @@
        (-> tree :id str)
        reset-color-code])))
 
-(defn multi-line-indent
-  [& {:keys [label value indent-base indent-offset]}]
-  (let [s (pprint-str value)
-        mline (some #{\newline} s)]
-    [(indent-MZ indent-base)
-     label
-     (if mline
-       ["\n"
-        (indent-line-breaks (str s "\n")
-                            (+ 2 indent-base) ;; Why does this need to be 2?
-                            :end
-                            (apply str
-                                   (repeat indent-offset
-                                           " ")))]
-       [s "\n"])]))
-
-
 (defn remove-ansi
   [s]
   (let [r (re-pattern (str "\33" "\\[.*?m"))]
@@ -223,7 +206,6 @@
        (apply mk-column-str
               (repeat (indent-MZ indent-base)))))
 
-(def multi-line-indent-MZ  (memoize multi-line-indent))
 (def multi-line-indent2-MZ  (memoize multi-line-indent2))
 
 (defn indent-arg-map

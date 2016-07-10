@@ -25,6 +25,8 @@
 
 ;;; Code:
 
+(setq nrepl-log-messages nil) ;; logging REALLY slows things down
+
 (require 'sayid-mode)
 (require 'sayid-traced-mode)
 (require 'cider)
@@ -248,36 +250,24 @@
          (mapcar 'first-to-sym
                  sal)))
 
-(defun ansi-fg-str->face (s)
-  (or (cdr (assoc s '((30 . "black")
-                      (31 . "red3")
-                      (32 . "green3")
-                      (33 . "yellow3")
-                      (34 . "#6699FF")
-                      (35 . "#DD88FF")
-                      (36 . "cyan3")
-                      (37 . "white")
-                      (39 . "white"))))
+(defun ansi-str->face (s)
+  (or (cdr (assoc s '(("black" . "black")
+                      ("red" . "red3")
+                      ("green" . "green3")
+                      ("yellow" . "yellow3")
+                      ("blue" . "#6699FF")
+                      ("magenta" . "#DD88FF")
+                      ("cyan" . "cyan3")
+                      ("white" . "white"))))
       "white"))
 
-(defun ansi-bg-str->face (s)
-  (or (cdr (assoc s '((40 . "black")
-                      (41 . "red4")
-                      (42 . "green4")
-                      (43 . "yellow4")
-                      (44 . "blue3")
-                      (45 . "#9933BB")
-                      (46 . "cyan4")
-                      (47 . "white")
-                      (49 . "black"))))
-      "black"))
-
 (defun mk-font-face (p)
-  (if (and (listp p) (listp (cadr p)))
-      (let ((x (cadr p)))
-        (list (list ':foreground (ansi-fg-str->face (cadr (assoc "fg" x))))
-              (list ':background (ansi-bg-str->face (cadr (assoc "bg" x))))))
-    nil))
+  (let ((fg (cadr (assoc "fg-color" p)))
+        (bg (cadr (assoc "bg-color" p))))
+    (if (or fg bg)
+        (append (if fg (list (list ':foreground (ansi-str->face fg))))
+                (if bg (list (list ':background (ansi-str->face bg))))))))
+
 
 (defun put-all-text-props (props start end buf)
   (dolist (p props)
@@ -287,18 +277,35 @@
                              end
                              'font-lock-face
                              (mk-font-face p))
-        (put-text-property start
-                           end
+        (put-text-property (+ 1 start)
+                           (+ 1 end)
                            (if-str-to-sym (car p))
                            (cadr p)
                            buf)))))
 
+(defun prep-text-prop-alist (a)
+  (apply 'append
+         (mapcar (lambda (x) (list (str-to-sym (car x))
+                                   (cadr x)))
+                 a)))
+
+(defun put-alist-text-props (a start end buf)
+  (add-text-properties (+ 1  start)
+                       (+ 1 end)
+                       (prep-text-prop-alist a)
+                       buf)
+  (let ((ff (mk-font-face a)))
+    (if ff (put-text-property (+ 1  start)
+                              (+ 1 end)
+                              'font-lock-face
+                              ff))))
+
 (defun put-text-props-series (series buf)
   (dolist (s series)
-    (put-all-text-props (sayid-caddr s)
-                        (car s)
-                        (cadr s)
-                        buf)))
+    (put-alist-text-props (sayid-caddr s)
+                          (car s)
+                          (cadr s)
+                          buf)))
 
 (defun write-resp-val-to-buf (val buf)
   (set-buffer buf)
