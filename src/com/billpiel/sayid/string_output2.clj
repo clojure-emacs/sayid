@@ -71,13 +71,10 @@
 
 (defn get-line-length
   [line]
-  (def l' line)
   (->> line (map :length) (apply +)))
 
 (defn buffer-lines-to-width
   [width column]
-  (def w' width)
-  (def c' column)
   (map (fn [line]
          (let [buf-length (->> line (map :length) (apply +) (- width))]
            (if (> buf-length 0)
@@ -94,6 +91,7 @@
         max-height (->> lines
                         (map count)
                         (apply max))
+        lines' (map #(take max-height (concat % (repeat []))) lines)
         widths (map #(->> %
                           (map get-line-length)
                           (apply max)
@@ -104,7 +102,7 @@
                   indent
                   (conj (mapv buffer-lines-to-width
                               widths
-                              lines)
+                              lines')
                         (repeat [(tkn "\n")]))))))
 
 (defn multi-line-indent2
@@ -266,7 +264,6 @@
 
 (defn assoc-tokens-pos
   [tokens]
-  (def t' tokens)
   (loop [[{:keys [length line-break line-meta?] :as head} & tail] tokens
          line-meta nil
          pos 0
@@ -298,25 +295,42 @@
        (remove #(-> % second nil?))
        (into {})))
 
+(defn apply-type-colors-to-token
+  [token]
+  (let [type->color {:int :cyan
+                     :string :magenta
+                     :keyword :yellow
+                     :symbol :cyan
+                     :truncator :black}
+        type->bg-color {:truncator :white}]
+    (merge token
+           (when-let [color (type->color (:type token))]
+             {:fg-color color})
+           (when-let [color (type->bg-color (:type token))]
+             {:bg-color color}))))
+
 (defn mk-text-props
   [{:keys [start end] :as token}]
-  [start end (remove-nil-vals (dissoc token
-                                      :coll?
-                                      :column
-                                      :end
-                                      :end-col
-                                      :end-column
-                                      :end-line
-                                      :length
-                                      :line
-                                      :line-meta?
-                                      :line-break
-                                      :start
-                                      :start-col
-                                      :start-column
-                                      :start-line
-                                      :string
-                                      :zipper))])
+  (util/$- -> token
+           (dissoc :coll?
+                   :column
+                   :end
+                   :end-col
+                   :end-column
+                   :end-line
+                   :length
+                   :line
+                   :line-meta?
+                   :line-break
+                   :start
+                   :start-col
+                   :start-column
+                   :start-line
+                   :string
+                   :zipper)
+           remove-nil-vals
+           apply-type-colors-to-token
+           [start end $]))
 
 (defn split-text-tag-coll
   [tokens]
