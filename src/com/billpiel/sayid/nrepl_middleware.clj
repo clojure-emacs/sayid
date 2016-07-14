@@ -11,7 +11,8 @@
             [clojure.tools.reader.reader-types :as rts]
             [com.billpiel.sayid.util.other :as util]
             [clojure.tools.namespace.find :as ns-find]
-            [com.billpiel.sayid.util.find-ns :as find-ns]))
+            [com.billpiel.sayid.util.find-ns :as find-ns]
+            [tamarin.core :as tam]))
 
 
 (def views (atom {}))
@@ -256,7 +257,7 @@
                      (so/audit->ns-view audit (symbol ns))
                      (so/audit->top-view audit))]
     (->> audit-view
-         so/annotated->text-prop-pair
+         so/tokens->text-prop-pair
          (reply:clj->nrepl msg))))
 
 (defn count-traces
@@ -551,16 +552,16 @@
 (defn ^:nrepl sayid-buf-pprint-at-point
   [{:keys [transport trace-id path] :as msg}]
   (let [path' (str-vec->arg-path path)
-        value (-> [:id (keyword trace-id)] ;;TODO use intern
+        value (-> [:id (keyword trace-id)]
                   sd/ws-query*
                   :children
                   first
                   (get-in path'))]
-    (->> value
-         so/pprint-str
-         vector
-         so/annotated->text-prop-pair
-         (reply:clj->nrepl msg))))
+    (binding [tam/*max-y* 5000
+              tam/*max-seq-items* 100]
+      (->> value
+           so/value->text-prop-pair
+           (reply:clj->nrepl msg)))))
 
 (defn ^:nrepl sayid-clear-log
   [{:keys [transport] :as msg}]

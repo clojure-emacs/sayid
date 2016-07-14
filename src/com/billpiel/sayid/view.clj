@@ -3,7 +3,7 @@
 
 
 ;; ==================================================================
-;; These also exist in string-output. Move to some common location.
+;; These also exist in query. Move to some common location.
 
 
 (defn get-some*
@@ -102,7 +102,6 @@
 (defn mk-simple-view
   ([] (mk-simple-view {:args true
                        :return true
-                       :children true
                        :throw true
                        :selects false}))
   ([selector] (pred-sel-pairs->view [[true selector]])))

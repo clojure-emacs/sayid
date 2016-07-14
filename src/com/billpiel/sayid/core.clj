@@ -438,15 +438,6 @@ user> (-> #'f1 meta :source)
       (#'so/print-trees)))
 (util/defalias t-pr trees-print)
 
-(defn ws-print-unlimited
-  "Prints either the active workspace, or the first argument, but
-  without any restrictions on the output. Don't blow up your buffer!"
-  [& [ws]]
-  (-> ws
-      ws-view!
-      (#'so/print-tree-unlimited)))
-(util/defalias w-pru ws-print-unlimited)
-
 (defn ws-print
   "Prints either the active workspace, or the first argument, using the
   default view, which puts safety restrictions on the output to

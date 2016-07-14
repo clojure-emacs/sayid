@@ -135,13 +135,40 @@
        (map (fn [[label value]]
               [(get-line-meta tree
                               :path [:arg-map label])
-               (multi-line-indent2-MZ :cols [[(tkn [label " => "])] (tam/render-tokens value)]
+               (multi-line-indent2-MZ :cols [[(tkn [label " =>"])] (tam/render-tokens value)]
                                       :indent-base (:depth tree))]))
        vec))
 
-(defn selects-str [& args])
+(defn indent-map
+  [tree m]
+  (->> m
+       (map (fn [[label value]]
+              (multi-line-indent2-MZ :cols [[(tkn [label " =>"])] (tam/render-tokens value)]
+                                    :indent-base (:depth tree)
+                                    :indent-offset  3)))
+       vec))
 
-(defn throw-str [& args])
+(defn selects-str
+  [tree selects]
+  (let [sel-fn (fn [sel]
+                 (util/get-some (if (vector? sel)
+                                  sel
+                                  [sel])
+                                tree))
+        sel-map (util/apply-to-map-vals sel-fn
+                                        selects)]
+    [(get-line-meta tree)
+     (indent-map tree sel-map)]))
+
+(defn throw-str
+  [tree]
+  (when-let [thrown (:throw tree)]
+    [(get-line-meta tree
+                      :path [:throw])
+     (multi-line-indent2-MZ :cols [[(tkn "THROW" :fg 1 :bg 7)
+                                    (tkn " => ")]
+                                   (tam/render-tokens thrown)]
+                            :indent-base (:depth tree))]))
 
 (defn return-str
   [tree & {pos :pos}]
@@ -276,7 +303,7 @@
                       end-col (+ pos col)
                       [line' col' pos'] (increment-position line-break line end-col end-pos)]
                   (recur tail
-                         (if line-break nil line-meta)
+                         line-meta
                          pos'
                          line'
                          col'
@@ -339,7 +366,6 @@
         assoc-tokens-pos
         (mapv mk-text-props))])
 
-
 (defn tree->text-prop-pair
   [tree]
   (->> tree
@@ -399,12 +425,14 @@
                (-> audit :fn (get ns-sym)))))
 
 
-(defn pprint-str [& args])
 
-(defn tree->string [& args])
-(defn print-trees [& args])
 
-;; TODO ansi colors
+(defn tree->string [tree]
+  (->> tree
+       tree->text-prop-pair
+       first
+       (apply str)))
+
 (defn print-tree [tree]
   (->> tree
        tree->text-prop-pair
@@ -412,12 +440,52 @@
        (apply str)
        println))
 
-(defn print-tree-unlimited [& args])
+(defn print-trees
+  [trees]
+  (doseq [t trees]
+    (print-tree t)))
 
+(defn ansi-color-code
+  ([] (ansi-color-code {}))
+  ([{:keys [fg-color bg-color]}]
+   (let [fg (.indexOf colors-kw (or fg-color :white))
+         bg (.indexOf colors-kw (or bg-color :black))]
+     (->> [(if (= fg -1) nil (+ 30 fg))
+           (if (= bg -1) nil (+ 40 bg))]
+          (remove nil?)
+          not-empty
+          (clojure.string/join ";")
+          (format "\33[%sm")))))
 
-(defn annotated->text-prop-pair
+(defn print-tree-ansi [tree]
+  (->> tree
+       tree->string*
+       flatten
+       (remove nil?)
+       (map apply-type-colors-to-token)
+       (mapcat (fn [t][(ansi-color-code t)
+                       (:string t)
+                       (ansi-color-code)]))
+       (apply str)
+       print))
+
+(defn print-trees-ansi
+  [trees]
+  (doseq [t trees]
+    (print-tree t)))
+
+(defn value->text-prop-pair
   [a]
   (->> a
+       tam/render-tokens
        flatten
        (remove nil?)
        split-text-tag-coll))
+
+(defn tokens->text-prop-pair
+  [tokens]
+  (->> tokens
+       flatten
+       (remove nil?)
+       split-text-tag-coll))
+
