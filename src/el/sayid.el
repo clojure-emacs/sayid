@@ -29,6 +29,7 @@
 
 (require 'sayid-mode)
 (require 'sayid-traced-mode)
+(require 'sayid-pprint-mode)
 (require 'cider)
 
 (defvar sayid-trace-ns-dir nil)
@@ -36,6 +37,7 @@
 
 (defvar sayid-buf-spec '("*sayid*" . sayid-mode))
 (defvar sayid-traced-buf-spec '("*sayid-traced*" . sayid-traced-mode))
+(defvar sayid-pprint-buf-spec '("*sayid-pprint*" . sayid-pprint-mode))
 (defvar sayid-selected-buf sayid-buf-spec)
 
 (defvar sayid-ring)
@@ -49,6 +51,9 @@
 
 (defun sayid-select-traced-buf ()
     (setq sayid-selected-buf sayid-traced-buf-spec))
+
+(defun sayid-select-pprint-buf ()
+  (setq sayid-selected-buf sayid-pprint-buf-spec))
 
 (defun sayid-buf-point ()
   (set-buffer (car sayid-selected-buf))
@@ -642,9 +647,29 @@
 ;;;###autoload
 (defun sayid-buf-pprint-at-point ()
   (interactive)
+  (sayid-select-pprint-buf)
   (sayid-req-insert-meta-ansi (list "op" "sayid-buf-pprint-at-point"
                                     "trace-id" (get-text-property (point) 'id)
-                                    "path" (get-text-property (point) 'path))))
+                                    "path" (get-text-property (point) 'path)))
+  (pop-to-buffer (car sayid-selected-buf))
+  (goto-char 1)
+  (sayid-select-default-buf))
+
+(defun sayid-pprint-buf-out ()
+  (interactive)
+  (goto-char (car (get-text-property (point) 'neighbors))))
+
+(defun sayid-pprint-buf-in ()
+  (interactive)
+  (goto-char  (car (cdr (get-text-property (point) 'neighbors)))))
+
+(defun sayid-pprint-buf-prev ()
+  (interactive)
+  (goto-char (car (cdr (cdr (get-text-property (point) 'neighbors))))))
+
+(defun sayid-pprint-buf-next ()
+  (interactive)
+  (goto-char (car (cdr (cdr (cdr (get-text-property (point) 'neighbors)))))))
 
 (defun sayid-get-views ()
   (sayid-req-get-value '("op" "sayid-get-views")))

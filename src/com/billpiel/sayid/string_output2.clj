@@ -3,6 +3,7 @@
             [com.billpiel.sayid.view :as v]
             [com.billpiel.sayid.util.other :as util]
             [tamarin.core :as tam]
+            [clojure.zip :as z]
             clojure.string))
 
 (def ^:dynamic *view* (fn [x] {:args true
@@ -480,6 +481,72 @@
        tam/render-tokens
        flatten
        (remove nil?)
+       split-text-tag-coll))
+
+(defn adjusted-pos
+  [n]
+  (let [n' (or (some-> n :bounds first) n)
+        {:keys [start start-line]} n']
+    (when (and start start-line)
+      (-> start
+          (+ start-line)
+          inc))))
+
+(defn find-up-node
+  [z]
+  (let [up (some-> z z/up z/node)]
+    (if (= (:type up) :map-entry)
+      (some-> z z/up z/up z/node)
+      up)))
+
+(defn find-out-node
+  [z]
+  (let [up (some-> z z/up z/node)]
+    (if (= (:type up) :map-entry)
+      (some-> z z/up z/up z/node)
+      up)))
+
+(defn find-in-node
+  [z]
+  (let [down (some-> z z/down z/node)]
+    (if (= (:type down) :map-entry)
+      (some-> z z/down z/down z/right z/node)
+      down)))
+
+(defn find-prev-node
+  [z]
+  (let [up (some-> z z/up z/node)]
+    (if (= (:type up) :map-entry)
+      (some-> z z/up z/left z/down z/right z/node)
+      (some-> z z/left z/node))))
+
+(defn find-next-node
+  [z]
+  (let [up (some-> z z/up z/node)]
+    (if (= (:type up) :map-entry)
+      (some-> z z/up z/right z/down z/right z/node)
+      (some-> z z/right z/node))))
+
+(defn decorate-token
+  [t]
+  (let [z (:zipper t)
+        out (adjusted-pos (find-out-node z))
+        in (adjusted-pos (find-in-node z))
+        prev (adjusted-pos (find-prev-node z))
+        next (adjusted-pos (find-next-node z))]
+    (if (or out in prev next)
+      (do
+        (def t' t)
+        (assoc t :neighbors [out in prev next]))
+      t)))
+
+(defn value->text-prop-pair*
+  [a]
+  (->> a
+       tam/render-tokens
+       flatten
+       (remove nil?)
+       (map decorate-token)
        split-text-tag-coll))
 
 (defn tokens->text-prop-pair

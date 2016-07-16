@@ -560,7 +560,7 @@
     (binding [tam/*max-y* 5000
               tam/*max-seq-items* 100]
       (->> value
-           so/value->text-prop-pair
+           so/value->text-prop-pair*
            (reply:clj->nrepl msg)))))
 
 (defn ^:nrepl sayid-clear-log
