@@ -136,7 +136,7 @@
        (map (fn [[label value]]
               [(get-line-meta tree
                               :path [:arg-map label])
-               (multi-line-indent2-MZ :cols [[(tkn [label " =>"])] (tam/render-tokens value)]
+               (multi-line-indent2 :cols [[(tkn [label " =>"])] (tam/render-tokens value)]
                                       :indent-base (:depth tree))]))
        vec))
 
@@ -144,7 +144,7 @@
   [tree m]
   (->> m
        (map (fn [[label value]]
-              (multi-line-indent2-MZ :cols [[(tkn [label " =>"])] (tam/render-tokens value)]
+              (multi-line-indent2 :cols [[(tkn [label " =>"])] (tam/render-tokens value)]
                                     :indent-base (:depth tree)
                                     :indent-offset  3)))
        vec))
@@ -166,7 +166,7 @@
   (when-let [thrown (:throw tree)]
     [(get-line-meta tree
                       :path [:throw])
-     (multi-line-indent2-MZ :cols [[(tkn "THROW" :fg 1 :bg 7)
+     (multi-line-indent2 :cols [[(tkn "THROW" :fg 1 :bg 7)
                                     (tkn " => ")]
                                    (tam/render-tokens thrown)]
                             :indent-base (:depth tree))]))
@@ -177,7 +177,7 @@
     (let [return (:return tree)]
       [(get-line-meta tree
                       :path [:return])
-       (multi-line-indent2-MZ :cols [[(tkn [(condp = pos
+       (multi-line-indent2 :cols [[(tkn [(condp = pos
                                                :before "returns"
                                                :after "returned")
                                             " => "])]
@@ -195,7 +195,7 @@
     (->> args
          (map-indexed (fn [i value]
                         [(get-line-meta tree :path [:args i])
-                         (multi-line-indent2-MZ :cols [(tam/render-tokens value)]
+                         (multi-line-indent2 :cols [(tam/render-tokens value)]
                                                 :indent-base (:depth tree))]))
          vec)))
 
@@ -205,7 +205,7 @@
        :let-binds
        (map-indexed (fn [i [val sym frm]]
                       [(get-line-meta tree :path [:let-binds i 0])
-                       (multi-line-indent2-MZ :cols [[(tkn sym)
+                       (multi-line-indent2 :cols [[(tkn sym)
                                                       (tkn " <= ")]
                                                      (tam/render-tokens val)
                                                      [(tkn " <= ")]

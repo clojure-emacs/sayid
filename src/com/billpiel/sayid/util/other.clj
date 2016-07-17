@@ -70,10 +70,7 @@
           matcher-fn (->> arglists
                           (map cleanse-arglist)
                           arg-matcher-fn-memo)]
-      (apply-to-map-vals #(if (seq? %) ;; Resolve LazySeqs -- TODO make safer?
-                            (apply list %)
-                            %)
-                         (apply matcher-fn args-v)))
+      (apply matcher-fn args-v))
     (zipmap (range) args)))
 
 (defn qualify-sym
