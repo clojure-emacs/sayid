@@ -671,6 +671,10 @@
   (interactive)
   (goto-char (car (cdr (cdr (cdr (get-text-property (point) 'neighbors)))))))
 
+(defun sayid-pprint-buf-exit ()
+  (interactive)
+  (pop-to-buffer (car sayid-buf-spec)))
+
 (defun sayid-get-views ()
   (sayid-req-get-value '("op" "sayid-get-views")))
 
