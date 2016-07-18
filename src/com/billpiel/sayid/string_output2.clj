@@ -239,18 +239,18 @@
          [(tkn "!" :fg 1 :bg 7) (tkn " ")])
        (if parent-name
          [(tkn (if-not (nil? form)
-                      form
-                      name)
-                    :fg 0 :bg* (dec depth) :bold false)
+                 [form]
+                 name)
+               :fg 0 :bg* (dec depth) :bold false)
           (when macro?
             (tkn [" => " (str xpanded-frm)]
-                      :fg* (dec depth) :bg 0 :bold false))
-          (tkn "  " (str parent-name)
-                    :fg* (dec depth) :bg 0 :bold false)]
+                 :fg* (dec depth) :bg 0 :bold false))
+          (tkn ["  " (str parent-name)]
+               :fg* (dec depth) :bg 0 :bold false)]
          (tkn name :fg* (dec depth) :bg 0 :bold false))
        (tkn "  ")
        (tkn (-> tree :id str)
-                 :fg 7)])))
+            :fg 7)])))
 
 (defmacro when-sel
   [kw & body]
@@ -331,6 +331,7 @@
 (defn apply-type-colors-to-token
   [token]
   (let [type->color {:int :cyan
+                     :float :cyan
                      :string :magenta
                      :keyword :yellow
                      :symbol :cyan
