@@ -25,7 +25,7 @@
           :name name
           :args (vec args)
           :meta meta
-          :arg-map (delay (util/arg-match (-> meta
+          :arg-map (delay (util/arg-match-safe (-> meta
                                               :arglists
                                               vec)
                                           args))

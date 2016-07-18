@@ -212,9 +212,15 @@
 ;;;###autoload
 (defun sayid-replay-workspace-query-point ()
   (interactive)
+  (sayid-trace-enable-all)
   (nrepl-send-sync-request (list "op" "sayid-replay-workspace")
                            (cider-current-connection))
   (sayid-query-form-at-point))
+
+(defun sayid-load-buf-replay-query ()
+  (interactive)
+  (cider-load-buffer)
+  (sayid-replay-workspace-query-point))
 
 ;;;###autoload
 (defun sayid-replay-with-inner-trace ()
@@ -579,8 +585,8 @@
 ;;;###autoload
 (defun sayid-buffer-nav-from-point ()
   (interactive)
-  (let* ((file (get-text-property (point) 'file))
-         (line (get-text-property (point) 'line)))
+  (let* ((file (get-text-property (point) 'src-file))
+         (line (get-text-property (point) 'src-line)))
     (pop-to-buffer (find-file-noselect file))
     (goto-char (point-min))
     (forward-line (- line 1))))
@@ -795,17 +801,18 @@ l, <backspace> -- go back to trace overview (if in ns view)
   (define-key clojure-mode-map (kbd "C-c s f") 'sayid-query-form-at-point)
   (define-key clojure-mode-map (kbd "C-c s n") 'sayid-replay-with-inner-trace)
   (define-key clojure-mode-map (kbd "C-c s r") 'sayid-replay-workspace-query-point)
+  (define-key clojure-mode-map (kbd "C-c s !") 'sayid-load-buf-replay-query)
   (define-key clojure-mode-map (kbd "C-c s w") 'sayid-get-workspace)
   (define-key clojure-mode-map (kbd "C-c s t y") 'sayid-trace-all-ns-in-dir)
   (define-key clojure-mode-map (kbd "C-c s t p") 'sayid-trace-ns-by-pattern)
   (define-key clojure-mode-map (kbd "C-c s t b") 'sayid-trace-ns-in-file) ;; b = buffer
-  (define-key clojure-mode-map (kbd "C-c s t e") 'sayid-trace-fn-enable)   ;;TODO
+  (define-key clojure-mode-map (kbd "C-c s t e") 'sayid-trace-fn-enable) ;;TODO
   (define-key clojure-mode-map (kbd "C-c s t E") 'sayid-trace-enable-all)
-  (define-key clojure-mode-map (kbd "C-c s t d") 'sayid-trace-fn-disable)   ;;TODO
+  (define-key clojure-mode-map (kbd "C-c s t d") 'sayid-trace-fn-disable) ;;TODO
   (define-key clojure-mode-map (kbd "C-c s t D") 'sayid-trace-disable-all)
-  (define-key clojure-mode-map (kbd "C-c s t n") 'sayid-inner-trace-fn)   ;;TODO
-  (define-key clojure-mode-map (kbd "C-c s t o") 'sayid-outer-trace-fn)   ;;TODO
-  (define-key clojure-mode-map (kbd "C-c s t r") 'sayid-remove-trace-fn)   ;;TODO
+  (define-key clojure-mode-map (kbd "C-c s t n") 'sayid-inner-trace-fn) ;;TODO
+  (define-key clojure-mode-map (kbd "C-c s t o") 'sayid-outer-trace-fn) ;;TODO
+  (define-key clojure-mode-map (kbd "C-c s t r") 'sayid-remove-trace-fn) ;;TODO
   (define-key clojure-mode-map (kbd "C-c s t K") 'sayid-kill-all-traces)
   (define-key clojure-mode-map (kbd "C-c s c") 'sayid-clear-log)
   (define-key clojure-mode-map (kbd "C-c s x") 'sayid-reset-workspace)

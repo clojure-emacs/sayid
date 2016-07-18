@@ -73,6 +73,13 @@
       (apply matcher-fn args-v))
     (zipmap (range) args)))
 
+(defn arg-match-safe
+  [arglists args]
+  (try
+    (arg-match arglists args)
+    (catch Exception e
+      nil)))
+
 (defn qualify-sym
   [ns sym]
   (symbol (str ns)

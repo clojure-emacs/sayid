@@ -119,6 +119,11 @@
   (util/$- some-> (or (:src-pos v)
                       (:meta v))
            (select-keys [:line :column :file :end-line :end-column])
+           (clojure.set/rename-keys {:line :src-line
+                                     :column :src-column
+                                     :file :src-file
+                                     :end-line :src-end-line
+                                     :end-column :src-end-column})
            (assoc :id (:id v)
                   :fn-name (or (:parent-name v)
                                (:name v))
