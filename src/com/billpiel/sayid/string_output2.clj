@@ -328,6 +328,10 @@
        (remove #(-> % second nil?))
        (into {})))
 
+(defn tkn->simple-type
+  [t]
+  (-> t :type first))
+
 (defn apply-type-colors-to-token
   [token]
   (let [type->color {:int :cyan
@@ -338,9 +342,9 @@
                      :truncator :black}
         type->bg-color {:truncator :white}]
     (merge token
-           (when-let [color (type->color (:type token))]
+           (when-let [color (type->color (tkn->simple-type token))]
              {:fg-color color})
-           (when-let [color (type->bg-color (:type token))]
+           (when-let [color (type->bg-color (tkn->simple-type token))]
              {:bg-color color}))))
 
 (defn mk-text-props
@@ -495,41 +499,41 @@
         {:keys [start start-line]} n']
     (when (and start start-line)
       (-> start
-          (+ start-line)
+          (+ (* 2 start-line))
           inc))))
 
 (defn find-up-node
   [z]
   (let [up (some-> z z/up z/node)]
-    (if (= (:type up) :map-entry)
+    (if (= (tkn->simple-type up) :map-entry)
       (some-> z z/up z/up z/node)
       up)))
 
 (defn find-out-node
   [z]
   (let [up (some-> z z/up z/node)]
-    (if (= (:type up) :map-entry)
+    (if (= (tkn->simple-type up) :map-entry)
       (some-> z z/up z/up z/node)
       up)))
 
 (defn find-in-node
   [z]
   (let [down (some-> z z/down z/node)]
-    (if (= (:type down) :map-entry)
+    (if (= (tkn->simple-type down) :map-entry)
       (some-> z z/down z/down z/right z/node)
       down)))
 
 (defn find-prev-node
   [z]
   (let [up (some-> z z/up z/node)]
-    (if (= (:type up) :map-entry)
+    (if (= (tkn->simple-type up) :map-entry)
       (some-> z z/up z/left z/down z/right z/node)
       (some-> z z/left z/node))))
 
 (defn find-next-node
   [z]
   (let [up (some-> z z/up z/node)]
-    (if (= (:type up) :map-entry)
+    (if (= (tkn->simple-type up) :map-entry)
       (some-> z z/up z/right z/down z/right z/node)
       (some-> z z/right z/node))))
 
