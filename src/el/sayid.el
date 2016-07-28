@@ -84,9 +84,24 @@
     (setq sayid-trace-ns-dir input)
     input))
 
+(defun sayid-find-a-window ()
+  (or (get-buffer-window (car sayid-buf-spec) 'visible)
+      (get-buffer-window (car sayid-traced-buf-spec) 'visible)
+      (get-buffer-window (car sayid-pprint-buf-spec) 'visible)))
+
+(defun sayid-pop-to-buffer-reuse-visible-sayid (buf-name-)
+  (let ((w (sayid-find-a-window)))
+    (if w
+        (progn
+          (get-buffer-create buf-name-)
+          (set-window-buffer w buf-name-)
+          (select-window w))
+      (pop-to-buffer buf-name-))))
+
 (defun sayid-init-buf ()
   (let ((buf-name- (car sayid-selected-buf)))
-    (pop-to-buffer buf-name-)
+    (sayid-pop-to-buffer-reuse-visible-sayid buf-name-)
+    
     (update-buf-pos-to-ring)
     (read-only-mode 0)
     (erase-buffer)
@@ -109,9 +124,16 @@
             (setq p (+ 1 (point-max))))
         (setq p (next-single-property-change p prop))))))
 
+(defun sayid-current-buffer-except-sayid ()
+  (let ((cb (current-buffer) ))
+    (if (eq (sayid-find-a-window)
+            (get-buffer-window cb))
+        nil
+      cb)))
+
 (defun sayid-setup-buf (meta-ansi save-to-ring pos)
   (let ((id-at-point (get-text-property (point) 'id))  ;; we might not be in the sayid buffer, but whatever
-        (orig-buf (current-buffer))
+        (orig-buf (sayid-current-buffer-except-sayid))
         (sayid-buf (sayid-init-buf)))
     (if save-to-ring
         (push-buf-state-to-ring meta-ansi))
@@ -122,7 +144,8 @@
       (if id-at-point
           (try-goto-prop 'id id-at-point)
         (goto-char 1)))
-    (pop-to-buffer orig-buf)))
+    (when orig-buf
+      (pop-to-buffer orig-buf (cons nil (list (cons 'reusable-frames 'visible)))))))
 
 (defun colorize ()
   (interactive)
@@ -657,7 +680,6 @@
   (sayid-req-insert-meta-ansi (list "op" "sayid-buf-pprint-at-point"
                                     "trace-id" (get-text-property (point) 'id)
                                     "path" (get-text-property (point) 'path)))
-  (pop-to-buffer (car sayid-selected-buf))
   (goto-char 1)
   (sayid-select-default-buf))
 
@@ -679,7 +701,7 @@
 
 (defun sayid-pprint-buf-exit ()
   (interactive)
-  (pop-to-buffer (car sayid-buf-spec)))
+  (sayid-pop-to-buffer-reuse-visible-sayid (car sayid-buf-spec)))
 
 (defun sayid-get-views ()
   (sayid-req-get-value '("op" "sayid-get-views")))
