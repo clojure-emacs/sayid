@@ -360,10 +360,6 @@
                    :line
                    :line-meta?
                    :line-break
-                   :start
-                   :start-col
-                   :start-column
-                   :start-line
                    :string
                    :zipper)
            remove-nil-vals
@@ -499,7 +495,6 @@
         {:keys [start start-line]} n']
     (when (and start start-line)
       (-> start
-          (+ (* 2 start-line))
           inc))))
 
 (defn find-up-node
@@ -550,6 +545,13 @@
         (assoc t :neighbors [out in prev next]))
       t)))
 
+(defn split-text-tag-coll*
+  [tokens]
+  [(->> tokens (map :string) (apply str))
+   (->> tokens
+        (mapv mk-text-props)
+        (remove #(or (nil? (first %)) (nil? (second %)))))])
+
 (defn value->text-prop-pair*
   [a]
   (->> a
@@ -557,7 +559,7 @@
        flatten
        (remove nil?)
        (map decorate-token)
-       split-text-tag-coll))
+       split-text-tag-coll*))
 
 (defn tokens->text-prop-pair
   [tokens]
