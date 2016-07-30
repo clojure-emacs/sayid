@@ -703,6 +703,10 @@
   (interactive)
   (sayid-pop-to-buffer-reuse-visible-sayid (car sayid-buf-spec)))
 
+(defun sayid-pprint-buf-show-path ()
+  (interactive)
+  (message (get-text-property (point) 'path)))
+
 (defun sayid-get-views ()
   (sayid-req-get-value '("op" "sayid-get-views")))
 

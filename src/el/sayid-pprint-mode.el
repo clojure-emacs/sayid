@@ -10,6 +10,7 @@
         (define-key map  (kbd "i") 'sayid-pprint-buf-in)
         (define-key map  (kbd "p") 'sayid-pprint-buf-prev)
         (define-key map  (kbd "n") 'sayid-pprint-buf-next)
+        (define-key map  (kbd "<return>") 'sayid-pprint-buf-show-path)
         (define-key map  (kbd "<backspace>") 'sayid-pprint-buf-exit)
         (define-key map  (kbd "l") 'sayid-pprint-buf-exit)
         map))

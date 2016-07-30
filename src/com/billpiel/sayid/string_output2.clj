@@ -532,17 +532,48 @@
       (some-> z z/up z/right z/down z/right z/node)
       (some-> z z/right z/node))))
 
+
+(declare get-path)
+
+(defn update-last
+  [coll f]
+  (update-in coll
+             [(-> coll count dec)]
+             f))
+
+(defn get-path-of-vec-child
+  [z]
+  (if-let [left (z/left z)]
+    (update-last (get-path left) inc)
+    (conj (-> z z/up get-path) 0)))
+
+(defn get-path
+  [z]
+  (if-let [up (z/up z)]
+    (let [parent (z/node up)]
+      (case (-> parent :type first)
+        :map (get-path up)
+        :map-entry (conj (get-path up) (some-> up z/down z/node :string))
+        :vector (get-path-of-vec-child z)
+        :seq  (get-path-of-vec-child z)))
+    []))
+
 (defn decorate-token
   [t]
+  (if (= (:start t) 62)
+    (def t' t))
   (let [z (:zipper t)
         out (adjusted-pos (find-out-node z))
         in (adjusted-pos (find-in-node z))
         prev (adjusted-pos (find-prev-node z))
         next (adjusted-pos (find-next-node z))]
     (if (or out in prev next)
-      (do
-        (def t' t)
-        (assoc t :neighbors [out in prev next]))
+      (-> t
+          (assoc :neighbors [out in prev next])
+          (assoc :path (util/$- some-> t
+                                :zipper
+                                get-path
+                                (clojure.string/join " " $))))
       t)))
 
 (defn split-text-tag-coll*
@@ -567,4 +598,22 @@
        flatten
        (remove nil?)
        split-text-tag-coll))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
