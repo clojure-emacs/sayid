@@ -560,8 +560,6 @@
 
 (defn decorate-token
   [t]
-  (if (= (:start t) 62)
-    (def t' t))
   (let [z (:zipper t)
         out (adjusted-pos (find-out-node z))
         in (adjusted-pos (find-in-node z))
