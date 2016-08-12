@@ -18,6 +18,17 @@
 (def views (atom {}))
 (def selected-view (atom nil))
 
+
+(defn try-find-ns-root
+  [ns-sym]
+  (let [depth (some-> ns-sym str (clojure.string/split #"\.") count)]
+    (util/$- some-> ns-sym ns-interns vals first meta :file (clojure.string/split #"/") (drop-last depth $) (clojure.string/join "/" $))))
+
+(defn find-all-ns-roots
+  []
+  (some->> (all-ns) (map str) (map symbol) (map try-find-ns-root) distinct (remove empty?)))
+
+
 (defn register-view!
   [name view]
   (swap! views
@@ -528,6 +539,10 @@
             (-> tree :meta :name)
             (apply str (interleave (repeat " $s/")
                                    (take arg-count arglist-template-seq))))))
+
+(defn ^:nrepl sayid-find-all-ns-roots
+  [{:keys [transport] :as msg}]
+  (reply:clj->nrepl msg (find-all-ns-roots)))
 
 (defn ^:nrepl sayid-gen-instance-expr
   [{:keys [transport trace-id] :as msg}]

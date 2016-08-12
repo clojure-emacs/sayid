@@ -605,14 +605,30 @@
            (cadr head))
           (t (sayid-get-line-meta tail n)))))
 
+(defun sayid-find-existing-file (path)
+  (if (file-exists-p path)
+      path
+    (let ((paths (mapcar (lambda (a) (concat a "/" path))
+                         (sayid-req-get-value (list "op" "sayid-find-all-ns-roots")))))
+      (while (and (car paths)
+                  (not (file-exists-p (car paths))))
+        (setq paths (cdr paths)))
+      (car paths))))
+
+
+
 ;;;###autoload
 (defun sayid-buffer-nav-from-point ()
   (interactive)
   (let* ((file (get-text-property (point) 'src-file))
-         (line (get-text-property (point) 'src-line)))
-    (pop-to-buffer (find-file-noselect file))
-    (goto-char (point-min))
-    (forward-line (- line 1))))
+         (line (get-text-property (point) 'src-line))
+         (xfile (sayid-find-existing-file file)))
+    (if xfile
+        (progn
+          (pop-to-buffer (find-file-noselect xfile))
+          (goto-char (point-min))
+          (forward-line (- line 1)))
+      (message (concat "File not found: " file)))))
 
 ;;;###autoload
 (defun sayid-buffer-nav-to-prev ()
