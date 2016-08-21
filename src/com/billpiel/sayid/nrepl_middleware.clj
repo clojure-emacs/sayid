@@ -636,7 +636,7 @@
                       (query-tree->trio (sd/ws-view!)))))
 
 (defn magic-recusive-eval
-  "Let's us send vars to nrepl client and back. Madness."
+  "Lets us send vars to nrepl client and back. Madness."
   [frm]
   (cond (vector? frm) (mapv magic-recusive-eval frm)
         (seq? frm) (eval frm)
@@ -663,7 +663,13 @@
 (defn wrap-sayid
   [handler]
   (fn [{:keys [op] :as msg}]
-    ((get sayid-nrepl-ops op handler) msg)))
+    (try
+      ((get sayid-nrepl-ops op handler) msg)
+      (catch Throwable e
+          (println (.getMessage e))
+          (clojure.stacktrace/print-stack-trace e)
+          (reply:clj->nrepl msg (.getMessage e))))))
+
 
 (set-descriptor! #'wrap-sayid
                  {:handles (zipmap (keys sayid-nrepl-ops)
