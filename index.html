@@ -148,7 +148,7 @@ h3 {
 
       .rainbow-delimiters-depth-1 {
         /* rainbow-delimiters-depth-1-face */
-        color: #BB2222;
+        color: #DD2222;
       }
       .rainbow-delimiters-depth-2 {
         /* rainbow-delimiters-depth-2-face */
@@ -210,7 +210,7 @@ h3 {
       }
       .RED3 {
         /* (:foreground "red3") */
-        color: #cd0000;
+        color: #ee0000;
       }
       .RED3-BG {
         background: #cd0000;
@@ -243,39 +243,104 @@ h3 {
                     <div id="content" role="main">
                       <h1><img src='sayid-logo.png'></h1>
 
-                      <p>Sayid <i>(siy EED)</i> is a tool for debugging and profiling clojure code. It extracts secrets from code at run time.<br><br>
-                        Sayid works by intercepting and recording the inputs and outputs of functions. It can even record function calls that occur inside of functions. The user can select which functions to trace. Functions can be selected individually or by namespace. The recorded data can be displayed, queried and profiled.</p>
+                      <p>Sayid <i>(siy EED)</i> is a tool for
+                        debugging and profiling clojure code.<br><br>
+                        Sayid works by intercepting and recording the
+                        inputs and outputs of functions. It can even
+                        record function calls that occur inside of
+                        functions. The user can select which functions
+                        to trace. Functions can be selected
+                        individually or by namespace. The recorded
+                        data can be displayed, queried and
+                        profiled.</p>
 
+                      <p>The Sayid toolset currently has three components:
+
+                        <ul>
+                          <li><code>core</code> and its supporting namespaces</li>
+                          <li>nREPL middleware</li>
+                          <li>an emacs-cider nREPL client</li>
+                        </ul>
+
+                      <p>The <code>core</code> namespace is designed
+                      to be used directly via a repl and does not
+                      require emacs or cider.
+                      <b>BUT</b> the
+                      emacs-cider integration offers a far better
+                      experience, so it is the current focus of this
+                      page and my development efforts.
+                      </p>
+                      
+                      
                       <a id="contents-link" href="#contents" >contents</a>
                       <h2 id="contents">Contents</h2>
 
                       <ul>
-                        <li><a href="#nope">nope</a></li>
+                        <li><a href="#installation">Installation & Requirements</a></li>
+                        <li><a href="#demo1vid">Demo #1 - Video</a></li>
+                        <li><a href="#demo1wt">Demo #1 - Walkthrough</a></li>
                       </ul>
+                      
+                      <h2 id="installation">Installation & Requirements</h2>
 
+                      <p>Basic usage requires Clojure 1.6. Add this to the dependencies in your project.clj or lein profiles.clj:</p>
 
-                      <h3 id="video1">Demo Video #1</h3>
+                      <code>[com.billpiel/sayid "0.0.8"]</code><br><br>
 
-                      <iframe width="560" height="315" src="https://www.youtube.com/embed/wkduA4py-qk" frameborder="0" allowfullscreen></iframe>
-
-                      <h3 id="walkthrough1">Walkthrough #1</h3>
-
-                      <p>This is a written walkthrough of the same
-                      steps illustrated in the demo video above. It
-                      uses
-                      this <a href="http://github.com/bpiel/contrived-example">contrived
-                          example</a> project.
-
-                        If you want to play along, you'll need a profiles.clj with this stuff in it:
-
+                      <p>For the full emacs+cider experience, you'll
+                      want to include Sayid as a plug-in, as well as
+                      nREPL. I think the minimum required cider-nREPL
+                      version is "0.10.0". Here's an example of a
+                      bare-bones profiles.clj that works for me:</p>
+                      
                         <!-- profiles.clj -->
     <pre>
 <span class="rainbow-delimiters-depth-1"> {</span><span class="clojure-keyword">:user</span> <span class="rainbow-delimiters-depth-2">{</span><span class="clojure-keyword">:plugins</span> <span class="rainbow-delimiters-depth-3">[</span><span class="rainbow-delimiters-depth-4">[</span><span class="type">cider</span><span class="default">/</span>cider-nrepl <span class="string">"0.12.0"</span><span class="rainbow-delimiters-depth-4">]</span>
-                   <span class="rainbow-delimiters-depth-4">[</span><span class="type">com.billpiel</span><span class="default">/</span>sayid <span class="string">"0.0.8-dev"</span><span class="rainbow-delimiters-depth-4">]</span><span class="rainbow-delimiters-depth-3">]</span>
+                   <span class="rainbow-delimiters-depth-4">[</span><span class="type">com.billpiel</span><span class="default">/</span>sayid <span class="string">"0.0.8"</span><span class="rainbow-delimiters-depth-4">]</span><span class="rainbow-delimiters-depth-3">]</span>
          <span class="clojure-keyword">:dependencies</span> <span class="rainbow-delimiters-depth-3">[</span><span class="rainbow-delimiters-depth-4">[</span><span class="type">org.clojure</span><span class="default">/</span>tools.nrepl <span class="string">"0.2.12"</span><span class="rainbow-delimiters-depth-4">]</span><span class="rainbow-delimiters-depth-3">]</span><span class="rainbow-delimiters-depth-2">}</span><span class="rainbow-delimiters-depth-1">}</span>
 </pre>
+                  <!-- END profiles.clj -->
+                      <p>The emacs+cider setup also requires that the
+                      emacs package is installed. I haven't gotten
+                      around to submitting this to MELPA, so you'll
+                      have to add my site as a package repo. A snippet
+                      for that is below. Add it to
+                      your <code>init.el</code> or something.</p>
 
-                        <!-- END profiles.clj -->
+                        <!-- init.el -->
+                        <pre>
+<span class="rainbow-delimiters-depth-1"> (</span>add-to-list 'package-archives
+              '<span class="rainbow-delimiters-depth-2">(</span><span class="string">"billpiel"</span> . <span class="string">"http://billpiel.com/emacs-packages/"</span><span class="rainbow-delimiters-depth-2">)</span> t<span class="rainbow-delimiters-depth-1">)</span>
+ 
+<span class="rainbow-delimiters-depth-1"> (</span>package-initialize<span class="rainbow-delimiters-depth-1">)</span>
+</pre>
+                        <!-- END init.el -->
+
+                      <p>Now, install the Sayid package
+                      using <code>package-list-packages</code> or
+                      however you do it. I never know what kind of
+                      tricks you emacs users are up to.</p>
+
+
+                      
+                      <h2 id="demo1vid">Demo #1 - Video</h2>
+
+                      <p>A demo video I recorded after the very first
+                      alpha release. You can find
+                      the <a href="http://github.com/bpiel/contrived-example">contrived
+                      example</a> project here.</p>
+                      
+                      <iframe width="560" height="315" src="https://www.youtube.com/embed/wkduA4py-qk" frameborder="0" allowfullscreen></iframe>
+
+                      <h2 id="demo1wt">Demo #1 - Walkthrough</h2>
+
+                      <p>This is a written walkthrough of the same
+                      steps illustrated in the demo video above, but
+                      with Sayid v0.0.8. You can find
+                      the <a href="http://github.com/bpiel/contrived-example">contrived example</a> project here.
+                        
+
+                        If you want to play along, you'll need a profiles.clj with this stuff in it:
 
                         You'll also need a cider connection to the project.</p>
 
@@ -408,7 +473,14 @@ Traced functions:
 </pre>
                       <!-- END sayid ws 1 -->
 
-                      <p>What's the meaning of this? These are all the function calls that were made in the traced namespaced when we executes <code>test1</code>. Let's explore. Get your cursor to the first line of the output and press <span class="kbd">i</span>.</p>
+                      <p>What's the meaning of this? These are all the
+                      function calls that were made in the traced
+                      namespaced when we
+                        execute <code>test1</code>. </p>
+
+                      <p> Let's explore. Get your cursor to the first
+                      line of the output and
+                      press <span class="kbd">i</span>.</p>
 
                       <!-- sayid instance test1 -->
     <pre>
@@ -423,7 +495,7 @@ Traced functions:
                       <!-- END sayid instance test1 -->
 
                       <p>This shows us the details of
-                      that <i>instance</i> of <code>test1</code> being
+                      that <i><b>i</b>nstance</i> of <code>test1</code> being
                       called. We can see that a hash map was
                       returned. Despite us inserting only 41 cents for
                       an 85 cent taco, we see that a taco was
@@ -435,7 +507,7 @@ Traced functions:
                       intuition and decide
                       that <code>valid-selection</code> is the first
                       place of interest. Get your cursor to that line
-                        and press these to view the <i>instance</i> and all of its <i>descendants</i>.
+                        and press these keys to view the <i><b>i</b>nstance</i> and all of its <i><b>d</b>escendants</i>.
                         <span class="kbd">I</span>
                         <span class="kbd">d</span>
                         <span class="kbd">ENTER</span>
@@ -574,7 +646,7 @@ Traced functions:
         <div id="footer" class="site-footer">
             <div class="wrap">
 
-                <p class="site-credits">Copyright (c) Bill Piel, 2016.</p>
+              <p class="site-credits">Copyright (c) <a href="http://billpiel.com">Bill Piel</a>, 2016.</p>
 
             </div><!--.wrap-->
         </div><!--#footer-->
