@@ -19,6 +19,9 @@
               :children children})
       (vary-meta assoc
                  ::recording
+                 true)
+      (vary-meta assoc
+                 ::trace-root
                  true)))
 
 (defn ->recording

@@ -1,12 +1,12 @@
 (ns com.billpiel.sayid.core
-  (:require com.billpiel.sayid.string-output
-            [com.billpiel.sayid.trace :as trace]
-            [com.billpiel.sayid.deep-trace :as dtrace]
+  (:require [com.billpiel.sayid.trace :as trace]
+            [com.billpiel.sayid.inner-trace2 :as itrace]
             [com.billpiel.sayid.workspace :as ws]
             [com.billpiel.sayid.recording :as rec]
             [com.billpiel.sayid.query2 :as q]
+            [com.billpiel.sayid.view :as v]
             [com.billpiel.sayid.util.find-ns :as find-ns]
-            [com.billpiel.sayid.string-output :as so]
+            [com.billpiel.sayid.string-output2 :as so]
             [com.billpiel.sayid.profiling :as pro]
             [com.billpiel.sayid.util.other :as util]))
 
@@ -20,25 +20,20 @@
   or `r-`."
   (atom nil))
 
+(def view (atom nil))
+(def ^:dynamic *view* so/*view*)
+
 (def config
   "Configuration map. Indicates which namespaces should be used to shelf
   workspaces and recordings."
   (atom {:ws-ns '$ws
          :rec-ns '$rec}))
 
-(def ^:no-doc
-  default-printer {:max-chars so/*max-chars*
-                   :max-arg-lines so/*max-arg-lines*
-                   :selector so/*selector*})
-
-(def printer
-  "The printer that is applied by `with-printer` and print functions
-  such as `ws-print`."
-  (atom default-printer))
-
+(declare with-view)
 (declare ws-query*)
 (declare ws-query)
 (declare ws-print)
+(declare trees-print)
 
 ;; === Helper functions
 
@@ -70,13 +65,18 @@ user> (-> #'f1 meta :source)
   @(ws-init! :quiet))
 (util/defalias w-ga! ws-get-active!)
 
+(defn ws-show-traced*
+  [& [ws]]
+  (-> ws
+      (or (ws-get-active!))
+      :traced))
+
 (defn ws-show-traced
   "Pretty prints the map that contains the traces that are currently in
   place."
   [& [ws]]
   (-> ws
-      (or (ws-get-active!))
-      :traced
+      ws-show-traced*
       clojure.pprint/pprint))
 (util/defalias w-st ws-show-traced)
 
@@ -86,6 +86,13 @@ user> (-> #'f1 meta :source)
   (#'ws/remove-all-traces! workspace)
   (ws-show-traced))
 (util/defalias w-rat! ws-remove-all-traces!)
+
+(defn ws-remove-trace-fn!
+  "Disables and removes a trace on a function from the active workspace."
+  [fn-sym]
+  (#'ws/remove-trace-fn! workspace fn-sym)
+  (ws-show-traced))
+(util/defalias w-rtf! ws-remove-trace-fn!)
 
 (defn ws-reset!
   "Removes all traces set by active workspace. Resets the active workspace to nil."
@@ -115,22 +122,22 @@ user> (-> #'f1 meta :source)
   `(ws-add-trace-fn!* (util/fully-qualify-sym '~fn-sym)))
 (util/defalias-macro w-atf! ws-add-trace-fn!)
 
-(defn ^:no-doc ws-add-deep-trace-fn!*
+(defn ^:no-doc ws-add-inner-trace-fn!*
   [fn-sym]
   (#'ws/add-trace-*! (ws-init! :quiet)
-                     :deep-fn
+                     :inner-fn
                      fn-sym)
   fn-sym)
 
-(defmacro ws-add-deep-trace-fn!
+(defmacro ws-add-inner-trace-fn!
   "`fn-sym` is a symbol that references an existing function. Applies an
-  enabled *deep* trace to said functions. Adds the traces to the active
+  enabled *inner* trace to said functions. Adds the traces to the active
   workspace trace set. Deep traces capture all functions calls that
   occurr within the traced function."
   [fn-sym]
-  `(ws-add-deep-trace-fn!* (util/fully-qualify-sym ~(util/quote-if-sym fn-sym))))
+  `(ws-add-inner-trace-fn!* (util/fully-qualify-sym ~(util/quote-if-sym fn-sym))))
 
-(util/defalias-macro w-adtf! ws-add-deep-trace-fn!)
+(util/defalias-macro w-aitf! ws-add-inner-trace-fn!)
 
 (defn ^:no-doc ws-add-trace-ns!*
   "`ns-sym` is a symbol that references an existing namespace. Applies an enabled
@@ -162,12 +169,41 @@ user> (-> #'f1 meta :source)
   [] (#'ws/enable-all-traces! workspace))
 (util/defalias w-eat! ws-enable-all-traces!)
 
+(defn ws-enable-trace-fn!
+  "Enables a trace on a function. Function must already have trace added
+  to active workspace."
+  [fn-sym] (#'ws/enable-trace-fn! workspace
+                                  fn-sym))
+(util/defalias w-etf! ws-enable-trace-fn!)
+
+(defn ws-enable-trace-ns!
+  "Enables a trace on a namespace. Namespace must already have trace
+  added to active workspace."
+  [ns-sym] (#'ws/enable-all-traces! workspace
+                                    #(= % ns-sym)))
+
+
+(defn ws-disable-trace-ns!
+  "Enables a trace on a namespace. Namespace must already have trace
+  added to active workspace."
+  [ns-sym] (#'ws/disable-all-traces! workspace
+                                     #(or (= % ns-sym)
+                                          (-> %
+                                              util/disqualify-sym
+                                              first
+                                              (= ns-sym)))))
 
 (defn ws-disable-all-traces!
   "Disables all traces in active workspace. The active workspace trace set will be
   preserved and can be re-enabled."
   [] (#'ws/disable-all-traces! workspace))
 (util/defalias w-dat! ws-disable-all-traces!)
+
+(defn ws-disable-trace-fn!
+  "Disables a trace on a function. The active workspace trace set will
+  be preserved and can be re-enabled."
+  [fn-sym] (#'ws/disable-trace-fn! workspace fn-sym))
+(util/defalias w-dtf! ws-disable-trace-fn!)
 
 (defn ws-cycle-all-traces!
   "Disables and enables all traces in active workspace. You shouldn't
@@ -184,6 +220,13 @@ user> (-> #'f1 meta :source)
   [& [w]] (#'ws/deep-deref! (or w
                                 workspace)))
 (util/defalias w-drf! ws-deref!)
+
+(defn ws-view!
+  [& [w]]
+  (let [w' (or w
+               (ws-deref!))]
+    (q/q w' [*view*])))
+(util/defalias w-v! ws-view!)
 
 (defn ws-save!
   "Saves active workspace to the workspace shelf namespace in the pre-specified slot."
@@ -222,7 +265,7 @@ user> (-> #'f1 meta :source)
     (apply f a)))
 (util/defalias w-rpi! ws-replay-id!)
 
-(defn ^:no-doc deep-trace-apply*
+(defn ^:no-doc inner-trace-apply*
   [workspace qual-sym args]
   (let [meta' (-> qual-sym
                   resolve
@@ -230,58 +273,58 @@ user> (-> #'f1 meta :source)
         ns' (-> meta'
                 :ns
                 str)
-        dtraced-fn (dtrace/deep-tracer {:workspace nil
+        itraced-fn (itrace/inner-tracer {:workspace nil
                                         :qual-sym qual-sym
                                         :meta' meta'
                                         :ns' ns'}
                                        nil)]
     (binding [trace/*trace-log-parent* workspace]
-      (apply dtraced-fn args))))
+      (apply itraced-fn args))))
 
-(defn ws-query-deep-trace-replay
+(defn ws-query-inner-trace-replay
   "Queries the current workspace with `query`. Then takes the top-level
-  results, deep traces the functions and replays them. Returns the
+  results, inner traces the functions and replays them. Returns the
   resulting workspace, which is NOT the active workspace."
   [query]
   (let [results (ws-query* query)
         workspace (ws/default-workspace)]
     (doseq [{:keys [name args]} results]
-      (deep-trace-apply* workspace
+      (inner-trace-apply* workspace
                          name
                          args))
     (ws-deref! workspace)))
-(util/defalias w-qdtr ws-query-deep-trace-replay)
+(util/defalias w-qdtr ws-query-inner-trace-replay)
 
-(defn ws-query-deep-trace-replay-print
+(defn ws-query-inner-trace-replay-print
   "Queries the current workspace with `query`. Then takes the top-level
-  results, deep traces the functions, replays them then PRINTS the
+  results, inner traces the functions, replays them then PRINTS the
   resulting workspace, which is NOT the active workspace."
   [query]
   (-> query
-      ws-query-deep-trace-replay
+      ws-query-inner-trace-replay
       trees-print
-      with-printer))
-(util/defalias w-qdtrp ws-query-deep-trace-replay-print)
-(util/defalias w-$ ws-query-deep-trace-replay-print)
+      with-view))
+(util/defalias w-qdtrp ws-query-inner-trace-replay-print)
+(util/defalias w-$ ws-query-inner-trace-replay-print)
 
-(defn ws-deep-trace-apply
+(defn ws-inner-trace-apply
   "Deep traces the function indicated by the qualified symbol,
   `qual-sym`, and then call it with arguments `args`. Returns the
   resulting workspace, which is NOT the active workspace."
   [qual-sym args]
   (let [workspace (ws/default-workspace)]
-    (deep-trace-apply* workspace
+    (inner-trace-apply* workspace
                        qual-sym
                        args)
     (ws-deref! workspace)))
-(util/defalias w-dta ws-deep-trace-apply)
+(util/defalias w-dta ws-inner-trace-apply)
 
-(defn ws-deep-trace-apply-print
-  "Run `ws-deep-trace-apply` then prints the resulting workspace."
+(defn ws-inner-trace-apply-print
+  "Run `ws-inner-trace-apply` then prints the resulting workspace."
   [qual-sym args]
-  (ws-print (ws-deep-trace-apply qual-sym
+  (ws-print (ws-inner-trace-apply qual-sym
                                   args)))
-(util/defalias w-dtap ws-deep-trace-apply-print)
+(util/defalias w-itap ws-inner-trace-apply-print)
 
 
 ;; === END Workspace functions
@@ -354,7 +397,8 @@ user> (-> #'f1 meta :source)
       (sequential? v)
       v
 
-      ((some-fn ::ws/workspace
+      ((some-fn :trace-root
+                ::ws/workspace
                 ::rec/recording
                 ::q/query-result)
        mk)
@@ -372,27 +416,18 @@ user> (-> #'f1 meta :source)
                                  (keys v)
                                  (meta v)))))))
 
-
-(defmacro with-this-printer
-  "Sets the printer as `prn` for the lexical scope. `prn` may be a
-  printer map or a vector. See `(doc mk-printer)` for details on the
-  latter."
-  ([prn & body]
-   `(let [prn# (if (vector? ~prn)
-                 (mk-printer ~prn)
-                 ~prn)]
-      (binding [so/*max-chars* (or (:max-chars prn#)
-                                   so/*max-chars*)
-                so/*max-arg-lines* (or (:max-arg-lines prn#)
-                                       so/*max-arg-lines*)
-                so/*selector* (or (:selector prn#)
-                                  so/*selector*)]
+(defmacro with-this-view
+  ([view' & body]
+   `(let [v# (or ~view'
+                 so/*view*)]
+      (binding [*view* v#
+                so/*view* v#]
         ~@body))))
 
-(defmacro with-printer
-  "Puts the printer in effect for the lexical scope."
+(defmacro with-view
+  "Puts the view in effect for the lexical scope."
   ([& body]
-   `(with-this-printer @printer ~@body)))
+   `(with-this-view @view ~@body)))
 
 (defn trees-print
   "Prints `trees`, which may be either trace tree, a collection of trace
@@ -403,21 +438,14 @@ user> (-> #'f1 meta :source)
       (#'so/print-trees)))
 (util/defalias t-pr trees-print)
 
-(defn ws-print-unlimited
-  "Prints either the active workspace, or the first argument, but
-  without any restrictions on the output. Don't blow up your buffer!"
-  [& [ws]]
-  (#'so/print-tree-unlimited (or ws
-                       (ws-deref!))))
-(util/defalias w-pru ws-print-unlimited)
-
 (defn ws-print
   "Prints either the active workspace, or the first argument, using the
-  default printer, which puts safety restrictions on the output to
+  default view, which puts safety restrictions on the output to
   prevent overwhelming hugeness."
   [& [ws]]
-  (with-printer (#'so/print-tree (or ws
-                                     (ws-deref!)))))
+  (with-view (-> ws
+                 ws-view!
+                 (#'so/print-tree))))
 (util/defalias w-pr ws-print)
 
 (defn rec-print
@@ -426,56 +454,9 @@ user> (-> #'f1 meta :source)
                        @recording)))
 (util/defalias r-pr rec-print)
 
-(defn- mk-printer-*-list
-  [opts init-prn whitelist?]
-  (loop [prn init-prn
-         opts' opts]
-    (let [[fi se & re] opts'
-          limit ({:mc :max-chars
-                  :mal :max-arg-lines} fi)]
-      (cond
-        (nil? fi) prn
-        limit (recur (assoc prn limit se)
-                     re)
-        (map? fi) (recur (update-in prn
-                                    [:selector
-                                     :selects]
-                                    merge
-                                    fi)
-                         (rest opts'))
-        :else (recur (update-in prn [:selector]
-                                assoc fi whitelist?)
-                     (rest opts'))))))
-
-(defn- mk-printer-white-list
-  [opts]
-  (mk-printer-*-list opts
-                     (assoc default-printer
-                            :selector {})
-                     true))
-
-(defn- mk-printer-black-list
-  [opts]
-  (mk-printer-*-list opts
-                     default-printer
-                     false))
-
-(defn mk-printer
-  [opts]
-  (cond
-    (nil? opts) default-printer
-
-    (-> opts first (= :-))
-    (mk-printer-black-list (rest opts))
-
-    :else (mk-printer-white-list opts)))
-
-(defn set-printer!
-  "Sets the printer that is applied by `with-printer` and used by print
-  functions such as `ws-print`."
-  [& opts]
-  (reset! printer
-          (mk-printer opts)))
+(defn set-view!
+  [& [view']]
+  (reset! view view'))
 
 ;; === END String Output functions
 
@@ -549,8 +530,8 @@ user> (-> #'f1 meta :source)
 
 (defn ws-query*
   [& query]
-  (apply q/q
-         (ws-deref!)
+  (apply #'q/q
+         (ws-view!)
          query))
 
 (defmacro ws-query
@@ -561,7 +542,7 @@ user> (-> #'f1 meta :source)
 (defmacro ws-query-print
   "Queries the trace record of the active workspace and prints the results."
   [& body]
-  `(with-printer
+  `(with-view
      (trees-print (ws-query ~@body))))
 (util/defalias-macro w-qp ws-query-print)
 (util/defalias-macro q ws-query-print)
@@ -629,3 +610,26 @@ user> (-> #'f1 meta :source)
 (util/defalias p-gr pro-gross-repeats)
 
 ;; === END Profiling functions
+
+
+;; === TEMP
+
+(defn mk-src-pos-query-fn
+  [file line]
+  (fn [{:keys [src-pos]}]
+    (and (= (:file src-pos) file)
+         (<= (:line src-pos) line)
+         (>= (:end-line src-pos) line))))
+
+(defn ws-query-by-file-line
+  [file line]
+  (println)
+  (trees-print (ws-query* [(mk-src-pos-query-fn file line)]))
+  (println))
+
+;; used only by middleware
+(defn ws-query-by-file-pos
+  [file line]
+  (ws-query* [:id (q/get-ids-from-file-pos (ws-view!)
+                                           file
+                                           line)]))

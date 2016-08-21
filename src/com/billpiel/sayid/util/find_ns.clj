@@ -1,5 +1,5 @@
 (ns com.billpiel.sayid.util.find-ns
-  (:require [swiss.arrows :refer :all]))
+  (:require [com.billpiel.sayid.util.other :as util]))
 
 (defn unnest-symbol
   [s]
@@ -22,13 +22,13 @@
 
 (defn re-find-nses
   [q]
-  (when-let [re (some-<>> q
-                          name
-                          (re-find #"(.*?)\*$")
-                          second
-                          java.util.regex.Pattern/quote
-                          (str <> ".*")
-                          re-pattern)]
+  (when-let [re (util/$- some->> q
+                         name
+                         (re-find #"(.*?)\*$")
+                         second
+                         java.util.regex.Pattern/quote
+                         (str $ ".*")
+                         re-pattern)]
     (->> (all-ns)
          (filter #(->> %
                        str

@@ -1,23 +1,22 @@
 (ns com.billpiel.sayid.core-test
   (:require [midje.sweet :refer :all]
-            [com.billpiel.sayid.core :as mm]
-            [com.billpiel.sayid.trace :as mt]
-            [com.billpiel.sayid.query2 :as mq]
+            [com.billpiel.sayid.core :as sd]
+            [com.billpiel.sayid.trace :as sdt]
+            [com.billpiel.sayid.query2 :as sdq]
             [com.billpiel.sayid.test-utils :as t-utils]
             com.billpiel.sayid.test.ns1
-            [com.billpiel.sayid.expected-output1 :as ex-o1]
             [com.billpiel.sayid.test.ns1 :as ns1]
             [com.billpiel.sayid.string-output :as so]))
 
 
  (fact-group "basic test"
-   (mt/untrace-ns* 'com.billpiel.sayid.test.ns1)
-   (with-out-str (mm/ws-reset!))
-   (with-redefs [mt/now (t-utils/mock-now-fn)
+   (sdt/untrace-ns* 'com.billpiel.sayid.test.ns1)
+   (with-out-str (sd/ws-reset!))
+   (with-redefs [sdt/now (t-utils/mock-now-fn)
                  gensym (t-utils/mock-gensym-fn)]
-     (mm/ws-add-trace-ns! com.billpiel.sayid.test.ns1)
+     (sd/ws-add-trace-ns! com.billpiel.sayid.test.ns1)
      (com.billpiel.sayid.test.ns1/func1 :a)
-     (let [trace (mm/ws-deref!)
+     (let [trace (sd/ws-deref!)
               expected-trace {:arg-map nil,
                               :children
                               [{:args [:a],
@@ -58,7 +57,7 @@
                               :id :root10,
                               :path [:root10],
                               :traced
-                              {:deep-fn #{}, :fn #{}, :ns #{'com.billpiel.sayid.test.ns1}},
+                              {:inner-fn #{}, :fn #{}, :ns #{'com.billpiel.sayid.test.ns1}},
                               :ws-slot nil}]
 
           (fact "log is correct"
@@ -69,42 +68,42 @@
 
 
           (fact "remove trace"
-                  (mm/ws-remove-trace-ns! 'com.billpiel.sayid.test.ns1)
+                  (sd/ws-remove-trace-ns! 'com.billpiel.sayid.test.ns1)
                   (com.billpiel.sayid.test.ns1/func1 :b)
-                  (-> (mm/ws-deref!)
+                  (-> (sd/ws-deref!)
                       ((t-utils/redact-file-fn [:children 0 :meta :file]
                                                [:children 0 :children 0 :meta :file])))
                   => (assoc expected-trace
-                            :traced {:fn #{}, :ns #{}, :deep-fn #{}})))
+                            :traced {:fn #{}, :ns #{}, :inner-fn #{}})))
 
-     (mt/untrace-ns* 'com.billpiel.sayid.test.ns1)))
+     (sdt/untrace-ns* 'com.billpiel.sayid.test.ns1)))
 
  (fact-group "about enable/disable -all-traces!"
-  (mt/untrace-ns* 'com.billpiel.sayid.test.ns1)
-  (with-out-str (mm/ws-reset!))
-  (with-redefs [mt/now (t-utils/mock-now-fn)
+  (sdt/untrace-ns* 'com.billpiel.sayid.test.ns1)
+  (with-out-str (sd/ws-reset!))
+  (with-redefs [sdt/now (t-utils/mock-now-fn)
                 gensym (t-utils/mock-gensym-fn)]
 
-    (mm/ws-add-trace-ns! com.billpiel.sayid.test.ns1)
+    (sd/ws-add-trace-ns! com.billpiel.sayid.test.ns1)
 
     (fact "ws-disable-all-traces! works"
-      (mm/ws-disable-all-traces!)
+      (sd/ws-disable-all-traces!)
       (com.billpiel.sayid.test.ns1/func1 :a)
 
-      (mm/ws-deref!)
+      (sd/ws-deref!)
       => {:children []
           :depth 0
           :id :root10
           :path [:root10]
-          :traced {:deep-fn #{}, :fn #{}, :ns #{'com.billpiel.sayid.test.ns1}}
+          :traced {:inner-fn #{}, :fn #{}, :ns #{'com.billpiel.sayid.test.ns1}}
           :ws-slot nil
                     :arg-map nil})
 
     (fact "ws-enable-all-traces! works"
-      (mm/ws-enable-all-traces!)
+      (sd/ws-enable-all-traces!)
       (com.billpiel.sayid.test.ns1/func1 :a)
 
-      (-> (mm/ws-deref!)
+      (-> (sd/ws-deref!)
           ((t-utils/redact-file-fn [:children 0 :meta :file]
                                    [:children 0 :children 0 :meta :file])))
       => {:arg-map nil
@@ -142,35 +141,35 @@
           :depth 0
                     :id :root10
           :path [:root10]
-          :traced {:deep-fn #{}
+          :traced {:inner-fn #{}
                    :fn #{}
                    :ns #{'com.billpiel.sayid.test.ns1}}
           :ws-slot nil})
 
-    (mt/untrace-ns* 'com.billpiel.sayid.test.ns1)))
+    (sdt/untrace-ns* 'com.billpiel.sayid.test.ns1)))
 
 (fact-group "about remove-all-traces!"
-  (mt/untrace-ns* 'com.billpiel.sayid.test.ns1)
-  (with-out-str (mm/ws-reset!))
-  (with-redefs [mt/now (t-utils/mock-now-fn)
+  (sdt/untrace-ns* 'com.billpiel.sayid.test.ns1)
+  (with-out-str (sd/ws-reset!))
+  (with-redefs [sdt/now (t-utils/mock-now-fn)
                 gensym (t-utils/mock-gensym-fn)]
 
-    (mm/ws-add-trace-ns! com.billpiel.sayid.test.ns1)
+    (sd/ws-add-trace-ns! com.billpiel.sayid.test.ns1)
 
     (fact "remove-all-traces! works"
-      (with-out-str (mm/ws-remove-all-traces!))
+      (with-out-str (sd/ws-remove-all-traces!))
       (com.billpiel.sayid.test.ns1/func1 :a)
 
-      (mm/ws-deref!)
+      (sd/ws-deref!)
       => {:children []
           :depth 0
           :id :root10
           :path [:root10]
-          :traced {:fn #{} :ns #{} :deep-fn #{}}
+          :traced {:fn #{} :ns #{} :inner-fn #{}}
           :ws-slot nil
                     :arg-map nil})
 
-    (mt/untrace-ns* 'com.billpiel.sayid.test.ns1)))
+    (sdt/untrace-ns* 'com.billpiel.sayid.test.ns1)))
 
 (def mock-log {:children
                [{:args [:a]
@@ -380,21 +379,21 @@
 
 (fact-group "exception thrown"
 
-  (mt/untrace-ns* 'com.billpiel.sayid.test.ns1)
-  (with-redefs [mt/now (t-utils/mock-now-fn)
+  (sdt/untrace-ns* 'com.billpiel.sayid.test.ns1)
+  (with-redefs [sdt/now (t-utils/mock-now-fn)
                 gensym (t-utils/mock-gensym-fn)]
-    (let [trace-root (mm/ws-add-trace-ns! com.billpiel.sayid.test.ns1)
+    (let [trace-root (sd/ws-add-trace-ns! com.billpiel.sayid.test.ns1)
           _ (try
               (com.billpiel.sayid.test.ns1/func-throws :a)
               (catch Throwable t))
-          trace (mm/ws-deref!)]
+          trace (sd/ws-deref!)]
 
       (fact "log is correct"
         (dissoc trace :children)
         => {:depth 0
             :id :root10
             :path [:root10]
-            :traced {:fn #{}, :ns #{'com.billpiel.sayid.test.ns1}, :deep-fn #{}}
+            :traced {:fn #{}, :ns #{'com.billpiel.sayid.test.ns1}, :inner-fn #{}}
             :ws-slot nil
                         :arg-map nil})
 
@@ -437,24 +436,24 @@
                    :ns (the-ns 'com.billpiel.sayid.test.ns1)}
             :arg-map {'arg1 :a}})
 
-      (mt/untrace-ns* 'com.billpiel.sayid.test.ns1))))
+      (sdt/untrace-ns* 'com.billpiel.sayid.test.ns1))))
 
 (fact-group "querying with query/query"
 
-  (mt/untrace-ns* 'com.billpiel.sayid.test.ns1)
-  (mm/ws-clear-log!)
-  (with-out-str (mm/ws-reset!))
-  (with-redefs [mt/now (t-utils/mock-now-fn)
+  (sdt/untrace-ns* 'com.billpiel.sayid.test.ns1)
+  (sd/ws-clear-log!)
+  (with-out-str (sd/ws-reset!))
+  (with-redefs [sdt/now (t-utils/mock-now-fn)
                 gensym (t-utils/mock-gensym-fn)]
-    (let [trace-root (mm/ws-add-trace-ns! com.billpiel.sayid.test.ns1)
+    (let [trace-root (sd/ws-add-trace-ns! com.billpiel.sayid.test.ns1)
           _ (com.billpiel.sayid.test.ns1/func3-1 3 8)
-          trace (mm/ws-deref!)]
+          trace (sd/ws-deref!)]
 
       (fact "find node by name and all parents"
-        (def r  (->> (mm/t-query trace
+        (def r  (->> (sd/t-query trace
                                  :a
                                  [:name #".*func3-4"])
-                     (mapv mq/traverse-tree-dissoc-zipper)
+                     (mapv sdq/traverse-tree-dissoc-zipper)
                      ((t-utils/redact-file-fn [0 :children 0 :meta :file]
                                               [0 :children 0 :children 0 :meta :file]
                                               [0 :children 0 :children 0 :children 0 :meta :file]))))
@@ -510,26 +509,26 @@
              :depth 0
              :id :root10
              :path [:root10]
-             :traced {:deep-fn #{}
+             :traced {:inner-fn #{}
                       :fn #{}
                       :ns #{'com.billpiel.sayid.test.ns1}}
              :ws-slot nil}])
 
-      (mt/untrace-ns* 'com.billpiel.sayid.test.ns1))))
+      (sdt/untrace-ns* 'com.billpiel.sayid.test.ns1))))
 
 (fact-group "querying with q macro"
-  (mt/untrace-ns* 'com.billpiel.sayid.test.ns1)
-  (mm/ws-clear-log!)
-  (with-out-str (mm/ws-reset!))
-  (with-redefs [mt/now (t-utils/mock-now-fn)
+  (sdt/untrace-ns* 'com.billpiel.sayid.test.ns1)
+  (sd/ws-clear-log!)
+  (with-out-str (sd/ws-reset!))
+  (with-redefs [sdt/now (t-utils/mock-now-fn)
                 gensym (t-utils/mock-gensym-fn)]
-    (let [trace-root (mm/ws-add-trace-ns! com.billpiel.sayid.test.ns1)
+    (let [trace-root (sd/ws-add-trace-ns! com.billpiel.sayid.test.ns1)
           _ (com.billpiel.sayid.test.ns1/func3-1 3 8)
-          trace (mm/ws-deref!)]
+          trace (sd/ws-deref!)]
 
       (fact "find node by name and all parents"
-        (->> (mm/w-q :a [:name #".*func3-4"])
-             (mapv mq/traverse-tree-dissoc-zipper)
+        (->> (sd/w-q :a [:name #".*func3-4"])
+             (mapv sdq/traverse-tree-dissoc-zipper)
              ((t-utils/redact-file-fn [0 :children 0 :meta :file]
                                       [0 :children 0 :children 0 :meta :file]
                                       [0 :children 0 :children 0 :children 0 :meta :file])))
@@ -584,21 +583,21 @@
               :depth 0
                             :id :root10
               :path [:root10]
-              :traced {:deep-fn #{}
+              :traced {:inner-fn #{}
                        :fn #{}
                        :ns #{'com.billpiel.sayid.test.ns1}}
               :ws-slot nil}])
-      (mt/untrace-ns* 'com.billpiel.sayid.test.ns1))))
+      (sdt/untrace-ns* 'com.billpiel.sayid.test.ns1))))
 
 (fact-group "trace a namespace by alias"
-     (mt/untrace-ns* 'com.billpiel.sayid.test.ns1)
-     (with-out-str (mm/ws-reset!))
+     (sdt/untrace-ns* 'com.billpiel.sayid.test.ns1)
+     (with-out-str (sd/ws-reset!))
 
-     (with-redefs [mt/now (t-utils/mock-now-fn)
+     (with-redefs [sdt/now (t-utils/mock-now-fn)
                    gensym (t-utils/mock-gensym-fn)]
-       (mm/ws-add-trace-ns! ns1)
+       (sd/ws-add-trace-ns! ns1)
        (com.billpiel.sayid.test.ns1/func1 :a)
-       (let [trace (mm/ws-deref!)
+       (let [trace (sd/ws-deref!)
              expected-trace {:arg-map nil
                              :children [{:arg-map {'arg1 :a}
                                          :args [:a]
@@ -634,7 +633,7 @@
                              :depth 0
                              :id :root10
                              :path [:root10]
-                             :traced {:deep-fn #{}
+                             :traced {:inner-fn #{}
                                       :fn #{}
                                       :ns #{'com.billpiel.sayid.test.ns1}}
                              :ws-slot nil}]
@@ -645,47 +644,26 @@
                                         [:children 0 :children 0 :meta :file])))
            => expected-trace))
 
-       (mt/untrace-ns* 'com.billpiel.sayid.test.ns1)))
+       (sdt/untrace-ns* 'com.billpiel.sayid.test.ns1)))
 
 
-#_ (fact-group "deep trace a single function"
-     (mt/untrace-ns* 'com.billpiel.sayid.test.ns1)
-     (with-out-str (mm/ws-reset!))
+(fact-group "tracing then inner tracing a func results in only a inner trace"
+  (sdt/untrace-ns* 'com.billpiel.sayid.test.ns1)
+  (with-out-str (sd/ws-reset!))
 
-     (with-redefs [mt/now (t-utils/mock-now-fn)
-                   gensym (t-utils/mock-gensym-fn)]
-       (mm/ws-add-deep-trace-fn! ns1/func-complex)
-       (ns1/func-complex 2 3)
-       (let [trace (mm/ws-deref!)
-             expected-trace
-;; need a better way to clean this up
-             {:arg-map nil, :children [{:arg-map {'a 2, 'b 3}, :args [2 3], :children [{:arg-map {'a 2, 'b 3}, :args [2 3], :children [], :depth 2, :ended-at 2, :id :12, :name *, :ns 'com.billpiel.sayid.test.ns1, :parent-name 'func-complex, :path [:root10 :11 :12], :return 6, :src-map {:ol '$3_1_1_0, :olop ('$3_1_1_0 '$3_1_1_1 '$3_1_1_2), :olxp ('$3_1_1_0 '$3_1_1_1 '$3_1_1_2), :op (* 'a 'b), :sym *, :xl '$2_1_1_1_1_0, :xlop ('$2_1_1_1_1_0 '$2_1_1_1_1_1 '$2_1_1_1_1_2), :xlxp ('$2_1_1_1_1_0 '$2_1_1_1_1_1 '$2_1_1_1_1_2), :xp (* 'a 'b)}, :started-at 1} {:arg-map {c 6}, :args [6], :children [], :depth 2, :ended-at 4, :id :13, :name inc, :ns 'com.billpiel.sayid.test.ns1, :parent-name 'func-complex, :path [:root10 :11 :13], :return 7, :src-map {:ol '$3_2_2, :olop (-> '$3_2_1 '$3_2_2 ('$3_2_3_0 '$3_2_3_1) '$3_2_4 ('$3_2_5_0 [$3_2_5_1_0 '$3_2_5_1_1]) ('$3_2_6_0 '$3_2_6_1)), :olxp ('$3_2_2 '$3_2_1), :op (-> c inc (+ 'a) vector (into [11 22]) (conj 'b)), :sym inc, :xl '$2_1_1_2_1_1_1_1_0, :xlop (-> '$2_1_1_2_1_1_1_1_1 '$2_1_1_2_1_1_1_1_0 ('$2_1_1_2_1_1_1_0 '$2_1_1_2_1_1_1_2) '$2_1_1_2_1_1_0 ('$2_1_1_2_1_0 [$2_1_1_2_1_2_0 '$2_1_1_2_1_2_1]) ('$2_1_1_2_0 '$2_1_1_2_2)), :xlxp ('$2_1_1_2_1_1_1_1_0 '$2_1_1_2_1_1_1_1_1), :xp (inc c)}, :started-at 3} {:arg-map {a 2, (inc c) 7}, :args [7 2], :children [], :depth 2, :ended-at 6, :id :14, :name +, :ns 'com.billpiel.sayid.test.ns1, :parent-name 'func-complex, :path [:root10 :11 :14], :return 9, :src-map {:ol '$3_2_3_0, :olop ('$3_2_3_0 '$3_2_3_1), :olxp ('$3_2_3_0 ('$3_2_2 '$3_2_1) '$3_2_3_1), :op (+ 'a), :sym +, :xl '$2_1_1_2_1_1_1_0, :xlop ('$2_1_1_2_1_1_1_0 '$2_1_1_2_1_1_1_2), :xlxp ('$2_1_1_2_1_1_1_0 ('$2_1_1_2_1_1_1_1_0 '$2_1_1_2_1_1_1_1_1) '$2_1_1_2_1_1_1_2), :xp (+ (inc c) 'a)}, :started-at 5} {:arg-map {(+ (inc c) 'a) 9}, :args [9], :children [], :depth 2, :ended-at 8, :id :15, :name vector, :ns 'com.billpiel.sayid.test.ns1, :parent-name 'func-complex, :path [:root10 :11 :15], :return [9], :src-map {:ol '$3_2_4, :olop (-> '$3_2_1 '$3_2_2 ('$3_2_3_0 '$3_2_3_1) '$3_2_4 ('$3_2_5_0 [$3_2_5_1_0 '$3_2_5_1_1]) ('$3_2_6_0 '$3_2_6_1)), :olxp ('$3_2_4 ('$3_2_3_0 ('$3_2_2 '$3_2_1) '$3_2_3_1)), :op (-> c inc (+ 'a) vector (into [11 22]) (conj 'b)), :sym vector, :xl '$2_1_1_2_1_1_0, :xlop (-> '$2_1_1_2_1_1_1_1_1 '$2_1_1_2_1_1_1_1_0 ('$2_1_1_2_1_1_1_0 '$2_1_1_2_1_1_1_2) '$2_1_1_2_1_1_0 ('$2_1_1_2_1_0 [$2_1_1_2_1_2_0 '$2_1_1_2_1_2_1]) ('$2_1_1_2_0 '$2_1_1_2_2)), :xlxp ('$2_1_1_2_1_1_0 ('$2_1_1_2_1_1_1_0 ('$2_1_1_2_1_1_1_1_0 '$2_1_1_2_1_1_1_1_1) '$2_1_1_2_1_1_1_2)), :xp (vector (+ (inc c) 'a))}, :started-at 7} {:arg-map {[11 22] [11 22], (vector (+ (inc c) 'a)) [9]}, :args [[9] [11 22]], :children [], :depth 2, :ended-at 10, :id :16, :name into, :ns 'com.billpiel.sayid.test.ns1, :parent-name 'func-complex, :path [:root10 :11 :16], :return [9 11 22], :src-map {:ol '$3_2_5_0, :olop ('$3_2_5_0 [$3_2_5_1_0 '$3_2_5_1_1]), :olxp ('$3_2_5_0 ('$3_2_4 ('$3_2_3_0 ('$3_2_2 '$3_2_1) '$3_2_3_1)) [$3_2_5_1_0 '$3_2_5_1_1]), :op (into [11 22]), :sym into, :xl '$2_1_1_2_1_0, :xlop ('$2_1_1_2_1_0 [$2_1_1_2_1_2_0 '$2_1_1_2_1_2_1]), :xlxp ('$2_1_1_2_1_0 ('$2_1_1_2_1_1_0 ('$2_1_1_2_1_1_1_0 ('$2_1_1_2_1_1_1_1_0 '$2_1_1_2_1_1_1_1_1) '$2_1_1_2_1_1_1_2)) [$2_1_1_2_1_2_0 '$2_1_1_2_1_2_1]), :xp (into (vector (+ (inc c) 'a)) [11 22])}, :started-at 9} {:arg-map {b 3, (into (vector (+ (inc c) 'a)) [11 22]) [9 11 22]}, :args [[9 11 22] 3], :children [], :depth 2, :ended-at 12, :id :17, :name conj, :ns 'com.billpiel.sayid.test.ns1, :parent-name 'func-complex, :path [:root10 :11 :17], :return [9 11 22 3], :src-map {:ol '$3_2_6_0, :olop ('$3_2_6_0 '$3_2_6_1), :olxp ('$3_2_6_0 ('$3_2_5_0 ('$3_2_4 ('$3_2_3_0 ('$3_2_2 '$3_2_1) '$3_2_3_1)) [$3_2_5_1_0 '$3_2_5_1_1]) '$3_2_6_1), :op (conj 'b), :sym conj, :xl '$2_1_1_2_0, :xlop ('$2_1_1_2_0 '$2_1_1_2_2), :xlxp ('$2_1_1_2_0 ('$2_1_1_2_1_0 ('$2_1_1_2_1_1_0 ('$2_1_1_2_1_1_1_0 ('$2_1_1_2_1_1_1_1_0 '$2_1_1_2_1_1_1_1_1) '$2_1_1_2_1_1_1_2)) [$2_1_1_2_1_2_0 '$2_1_1_2_1_2_1]) '$2_1_1_2_2), :xp (conj (into (vector (+ (inc c) 'a)) [11 22]) 'b)}, :started-at 11}], :depth 1, :ended-at 13, :id :11, :meta {:arglists ([a 'b]), :column 1, :file "FILE", :line 63, :name func-complex, :ns 'com.billpiel.sayid.test.ns1 }, :name 'com.billpiel.sayid.test.ns1/func-complex, :path [:root10 :11], :return [9 11 22 3], :started-at 0}], :depth 0, :id :root10, :path [:root10], :traced {:deep-fn #{com.billpiel.sayid.test.ns1/func-complex}, :fn #{}, :ns #{}}, :ws-slot nil}
-             ]
-
-         (fact "deep trace of single func -- log is correct"
-           (-> trace
-               ((t-utils/redact-file-fn [:children 0 :meta :file])))
-           => expected-trace))
-
-       (mt/untrace-ns* 'com.billpiel.sayid.test.ns1)
-       (with-out-str (mm/ws-reset!))))
-
-(fact-group "tracing then deep tracing a func results in only a deep trace"
-  (mt/untrace-ns* 'com.billpiel.sayid.test.ns1)
-  (with-out-str (mm/ws-reset!))
-
-  (with-redefs [mt/now (t-utils/mock-now-fn)
+  (with-redefs [sdt/now (t-utils/mock-now-fn)
                 gensym (t-utils/mock-gensym-fn)]
     (let [original-func-complex com.billpiel.sayid.test.ns1/func-complex]
-      (mm/ws-add-trace-fn! ns1/func-complex)
+      (sd/ws-add-trace-fn! ns1/func-complex)
 
       (fact "trace is set in workspace"
-        (with-out-str (mm/ws-show-traced)) =>
-        "{:ns #{}, :fn #{com.billpiel.sayid.test.ns1/func-complex}, :deep-fn #{}}\n")
+        (:traced @sd/workspace) => {:fn #{'com.billpiel.sayid.test.ns1/func-complex}, :inner-fn #{}, :ns #{}}
+                                        ;"{:ns #{}, :fn #{com.billpiel.sayid.test.ns1/func-complex}, :inner-fn #{}}\n"
+        )
 
       (fact "trace is correct"
         (ns1/func-complex  2 3)
-        (-> (mm/ws-deref!)
+        (-> (sd/ws-deref!)
             :children
             ((t-utils/redact-file-fn [0 :meta :file])))
         => [{:arg-map {'a 2, 'b 3}
@@ -693,7 +671,7 @@
              :children []
              :depth 1
              :ended-at 1
-             :id :12
+             :id :11
              :meta {:arglists '([a b])
                     :column 1
                     :file "FILE"
@@ -701,37 +679,15 @@
                     :name 'func-complex
                     :ns (the-ns 'com.billpiel.sayid.test.ns1)}
              :name 'com.billpiel.sayid.test.ns1/func-complex
-             :path [:root10 :12]
+             :path [:root10 :11]
              :return [9 11 22 3]
              :started-at 0}])
 
-      (mm/ws-clear-log!)
+      (sd/ws-clear-log!)
 
-      (mm/ws-add-deep-trace-fn! ns1/func-complex)
-      (fact "only deep trace is set in workspace"
-        (with-out-str (mm/ws-show-traced)) => "{:ns #{}, :fn #{}, :deep-fn #{com.billpiel.sayid.test.ns1/func-complex}}\n")
-
-      #_      (fact "deep trace is correct"
-                (ns1/func-complex  2 3)
-                (-> (mm/ws-deref!)
-                    :children
-                    ((t-utils/redact-file-fn [0 :meta :file])))
-                => [{:arg-map {'a 2, 'b 3}
-                     :args [2 3]
-                     :children []
-                     :depth 1
-                     :ended-at 15
-                     :id :15
-                     :meta {:arglists '([a b])
-                            :column 1
-                            :file "FILE"
-                            :line 63
-                            :name 'func-complex
-                            :ns (the-ns 'com.billpiel.sayid.test.ns1)}
-                     :name 'com.billpiel.sayid.test.ns1/func-complex
-                     :path [:root10 :15]
-                     :return [9 11 22 3]
-                     :started-at 2}])
+      (sd/ws-add-inner-trace-fn! ns1/func-complex)
+      (fact "only inner trace is set in workspace"
+        (:traced @sd/workspace) => {:fn #{}, :inner-fn #{'com.billpiel.sayid.test.ns1/func-complex}, :ns #{}})
 
       (fact "meta shows trace applied"
         (-> (meta #'ns1/func-complex)
@@ -743,18 +699,17 @@
             :name 'func-complex
             :ns (the-ns 'com.billpiel.sayid.test.ns1)
             :com.billpiel.sayid.trace/traced [:root10 original-func-complex]
-            :com.billpiel.sayid.trace/trace-type :deep-fn}))
+            :com.billpiel.sayid.trace/trace-type :inner-fn}))
 
 
-    (with-out-str (mm/ws-remove-all-traces!))
-    (mm/ws-clear-log!)
+    (with-out-str (sd/ws-remove-all-traces!))
+    (sd/ws-clear-log!)
 
     (fact "all traces gone"
-      (with-out-str (mm/ws-show-traced)) => "{:ns #{}, :fn #{}, :deep-fn #{}}\n")
+      (:traced @sd/workspace) => {:fn #{}, :inner-fn #{}, :ns #{}})
 
-
-    (mt/untrace-ns* 'com.billpiel.sayid.test.ns1)
-    (with-out-str (mm/ws-reset!))))
+    (sdt/untrace-ns* 'com.billpiel.sayid.test.ns1)
+    (with-out-str (sd/ws-reset!))))
 
 
 (comment "
@@ -796,22 +751,22 @@ x split out and memoize arg map fn
     - arg-map slow?
   x profiling
   x querying
-x FIX adding a deep-trace to existing trace should undo trace before applying deep trace
+x FIX adding a inner-trace to existing trace should undo trace before applying inner trace
 - refator some things in string_output to multimethods?
-x deep-trace :name should just be name. Do string concat in presentation logic
-x test querying w/ deep trace
+x inner-trace :name should just be name. Do string concat in presentation logic
+x test querying w/ inner trace
 x safe print level/length for string out
 x upgrade puget -- use seq-limit
-- FIX adding only deep-trace throws execption on execution -- happened in scheduler
-~ test profiling w/ deep trace
+- FIX adding only inner-trace throws execption on execution -- happened in scheduler
+~ test profiling w/ inner trace
 ~ profile simulated tracer fn
 x FIX return values of `false` aren't displayed
 X should be able to query for func by func
 x profiling interface in core
-- FIX deep-traced fn returning fn blows up -- has no parent context -- throw explaining exception??
+x FIX inner-traced fn returning fn blows up -- has no parent context -- throw explaining exception??
 - rec-save-as should accept keyword or string
 - never return ws or recs from core fns
-x deep trace (inside fn)
+x inner trace (inside fn)
 x trace individual fns
 x re-exec traces
 x query selector funcs
@@ -819,16 +774,16 @@ x query selector funcs
   x toggle output components
 - switch to earlier clojure version -- deps too
   - get tests passing in all versions too
-- query output by line/column position -- for emacs plugin
+x query output by line/column position -- for emacs plugin
 - cursors
    - bisect recording trees to find bugs
 - split ns and fn name in trace rec and output
 x some kind of string output length limit options?
 - show file and line num in output
 - wrap args that are funcs
- - and deep search values for funcs?
+ - and inner search values for funcs?
 - wrap returns that are funcs
- - and deep search values for funcs?
+ - and inner search values for funcs?
 - diff entries
 - search fn syntax for dynamic vars to capture
 - tag vals w meta data and track?

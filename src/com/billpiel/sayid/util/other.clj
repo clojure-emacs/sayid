@@ -1,8 +1,23 @@
 (ns com.billpiel.sayid.util.other
-  (require [clj-time.core :as time]
-           [clj-time.coerce :as time-c]
-           [clojure.walk :as walk]
+  (require [clojure.walk :as walk]
+           [clojure.tools.reader :as r]
+           [clojure.tools.reader.reader-types :as rts]
            clojure.repl))
+
+(defn ->int
+  [v]
+  (try (cond (integer? v) v
+             (string? v) (Integer/parseInt v)
+             (float? v) (int v))
+       (catch Exception e
+         nil)))
+
+(defn ->vec
+  [v]
+  (cond (vector? v) v
+        (sequential? v) (vec v)
+        (coll? v) (vec v)
+        :else [v]))
 
 (defn def-ns-var
   [ws-ns-sym sym v]
@@ -12,6 +27,7 @@
 (defn eval-in-ns
   [ns-sym form]
   (binding [*ns* (create-ns ns-sym)]
+    (use 'clojure.core)
     (eval form)))
 
 (defmacro get-env
@@ -23,6 +39,17 @@
   [f m]
   (into {} (map (fn [[k v]] [k (f v)])
                 m)))
+
+(defn clear-meta
+  [v]
+  (with-meta v nil))
+
+(defn cleanse-arglist
+  "Clear out pre-condtions and tags."
+  [arglist]
+  (->> arglist
+       clear-meta
+       (mapv clear-meta)))
 
 (defn arg-matcher-fn
   [arglists]
@@ -36,20 +63,35 @@
 
 (defn arg-match
   [arglists args]
+  (def arglists' arglists)
+  (def args' args)
   (if (not-empty arglists)
     (let [args-v (vec args)
-          matcher-fn (arg-matcher-fn-memo arglists)]
-      (apply-to-map-vals #(if (seq? %) ;; Resolve LazySeqs
-                            (apply list %)
-                            %)
-                         (apply matcher-fn
-                                args-v)))
+          matcher-fn (->> arglists
+                          (map cleanse-arglist)
+                          arg-matcher-fn-memo)]
+      (apply matcher-fn args-v))
     (zipmap (range) args)))
+
+(defn arg-match-safe
+  [arglists args]
+  (try
+    (arg-match arglists args)
+    (catch Exception e
+      nil)))
 
 (defn qualify-sym
   [ns sym]
   (symbol (str ns)
           (str sym)))
+
+(defn disqualify-sym
+  [fn-sym]
+  (->> fn-sym
+       str
+       (re-find #"(.*?)/(.*)")
+       rest
+       (mapv symbol)))
 
 (defmacro fully-qualify-sym
   [sym]
@@ -59,6 +101,12 @@
          ns# (-> m# :ns str)
          name# (-> m# :name)]
      (qualify-sym ns# name#)))
+
+(defn resolve-to-qual-sym [ns-sym sym]
+  (try (when-let [{:keys [name ns]} (meta (ns-resolve ns-sym sym))]
+         (qualify-sym ns name))
+       (catch Exception e
+         nil)))
 
 (defn atom?
   [v]
@@ -119,11 +167,6 @@
       (obj-pred-action-else string? :t-fn symbol)
       (obj-pred-action-else symbol? :t-fn #(ns-resolve ns-sym %))
       derefable?->))
-
-(defn diff-dates-in-msec
-  [a b]
-  (- (-> a time-c/from-date time-c/to-long)
-     (-> b time-c/from-date time-c/to-long)))
 
 (defn replace$
   [form]
@@ -224,20 +267,38 @@
        symbol
        clojure.repl/source-fn))
 
+(defn mk-dummy-whitespace
+  [lines cols]
+  (apply str
+         (concat (repeat lines "\n")
+                 (repeat cols " "))))
+
+(defn mk-positionalble-src-logging-push-back-rdr
+  [s file line col]
+  (rts/source-logging-push-back-reader (str (mk-dummy-whitespace (dec line) ;;this seem unfortunate
+                                                                 (dec col))
+                                            s)
+                                       (+ (count s) line col 1)
+                                       file))
+
 (defn hunt-down-source
   [fn-sym]
-  (let [{:keys [source file line]} (-> fn-sym
-                                       resolve
-                                       meta)]
+  (let [{:keys [source file line column]} (-> fn-sym
+                                              resolve
+                                              meta)]
     (or source
-        (read-string (or
-                      (clojure.repl/source-fn fn-sym)
-                      (->> file
-                           slurp
-                           clojure.string/split-lines
-                           (drop (dec line))
-                           (clojure.string/join "\n"))
-                      "nil")))))
+        (r/read (mk-positionalble-src-logging-push-back-rdr
+                 (or
+                  (clojure.repl/source-fn fn-sym)
+                  (->> file
+                       slurp
+                       clojure.string/split-lines
+                       (drop (dec line))
+                       (clojure.string/join "\n"))
+                  "nil")
+                 file
+                 line
+                 column)))))
 
 (defmacro src-in-meta
   [& body]
@@ -266,12 +327,10 @@
 
 (defn flatten-map-kv-pairs
   [m]
-  (mapcat #(mapv
-            vector
-            (-> %
-                first
-                repeat)
-            (second %))
+  (mapcat (fn [[k v]]
+            (mapv vector
+                  (repeat k)
+                  v))
           m))
 
 (defmacro assoc-var-meta-to-fn
@@ -312,3 +371,24 @@
   (if (symbol? v)
     `'~v
     v))
+
+(defn first-match
+  [pred coll]
+  (let [[head & tail] coll]
+    (cond (nil? coll) nil
+          (empty? coll) nil
+          (pred head) head
+          :else (recur pred tail))))
+
+(defn get-src-file-path
+  [s]
+  (let [s' (clojure.string/replace s #"^file:" "")]
+    (if (.exists (java.io.File. s'))
+      s'
+      (when-let [r (clojure.java.io/resource s')]
+        (.getPath r)))))
+
+(defn fn*?
+  [maybe]
+  (or (fn? maybe)
+      (= (type maybe) clojure.lang.MultiFn)))

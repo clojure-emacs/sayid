@@ -5,7 +5,7 @@
 
 (def default-traced {:ns #{}
                        :fn #{}
-                       :deep-fn #{}})
+                       :inner-fn #{}})
 
 (defn default-workspace
   []
@@ -14,6 +14,9 @@
               :ws-slot nil})
       (vary-meta assoc
                  ::workspace
+                 true)
+      (vary-meta assoc
+                 :trace-root
                  true)))
 
 (defn workspace->tree
@@ -22,6 +25,16 @@
       (dissoc :traced
               :ws-slot)
       (vary-meta dissoc ::workspace)))
+
+(defn lookup-traces-by-fn
+  [ws fn-sym]
+  (let [[ns-sym] (util/disqualify-sym fn-sym)]
+    (->> ws
+         :traced
+         (filter #(some (or (-> % second)
+                            (constantly nil))
+                        [fn-sym ns-sym]))
+         (mapv first))))
 
 (defn init!
   [ws & [quiet]]
@@ -55,9 +68,12 @@
 
 (defn add-trace-*!
   [ws type sym]
-  (if (= type :deep-fn)
-    (remove-trace-*! ws  ;; deep traces must be applied to a clean surface
-                     :fn
+  (when-let [existing-trace-type (and (#{:fn :inner-fn} type)
+                                      (-> sym
+                                          trace/check-fn-trace-type
+                                          #{:fn :inner-fn}))]
+    (remove-trace-*! ws
+                     existing-trace-type
                      sym))
   (swap! ws (fn [ws'] (-> ws'
                           (update-in [:traced type]
@@ -65,26 +81,66 @@
   (trace/trace* type sym @ws))
 
 (defn enable-all-traces!
-  [ws]
-  (let [w @ws
-        f (fn [type] (doseq [sym (get-in w [:traced type])]
-                       (trace/trace* type sym w)))]
-    (doall (map f [:deep-fn
-                   :fn
-                   :ns]))
-    true))
+  ([ws]
+   (enable-all-traces! ws identity))
+  ([ws filter-fn]
+   (let [w @ws
+         f (fn [type] (doseq [sym (util/$- -> w
+                                           (get-in [:traced type])
+                                           (filter filter-fn $))]
+                        (trace/trace* type sym w)))]
+     (doall (map f [:inner-fn
+                    :fn
+                    :ns]))
+     true)))
+
+(defn enable-trace-fn!
+  [ws fn-sym]
+  (let [w @ws]
+    (when-let [traces (->> fn-sym
+                           (lookup-traces-by-fn w)
+                           (replace {:ns :fn}))]
+      (doseq [t traces]
+        (trace/trace* t fn-sym w))))
+  true)
 
 (defn disable-all-traces!
-  [ws]
-  (doseq [t (-> @ws
-                :traced
-                util/flatten-map-kv-pairs)]
-    (apply trace/untrace* t)))
+  ([ws] (disable-all-traces! ws identity))
+  ([ws filter-fn]
+   (doseq [t (->> @ws
+                  :traced
+                  util/flatten-map-kv-pairs
+                  (filter (comp filter-fn second)))]
+     (apply trace/untrace* t))))
+
+(defn disable-trace-fn!
+  [ws fn-sym]
+  (when-let [traces (->> fn-sym
+                         (lookup-traces-by-fn @ws)
+                         (replace {:ns :fn}))]
+    (doseq [t traces]
+      (trace/untrace* t fn-sym)))
+  true)
 
 (defn remove-all-traces!
   [ws]
   (disable-all-traces! ws)
   (swap! ws assoc :traced default-traced))
+
+(defn remove-trace-fn!
+  [ws fn-sym]
+  (when-let [trace-type (trace/check-fn-trace-type fn-sym)]
+    (println trace-type)
+    (remove-trace-*! ws
+                     trace-type
+                     fn-sym))
+  (doseq [t (->> fn-sym
+                 (lookup-traces-by-fn @ws)
+                 (filter #{:fn :inner-fn}))] ;; func may have been disabled or out of sync
+
+    (remove-trace-*! ws
+                     t
+                     fn-sym)))
 
 (defn deep-deref!
   [tree]

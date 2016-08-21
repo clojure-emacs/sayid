@@ -25,7 +25,7 @@
           :name name
           :args (vec args)
           :meta meta
-          :arg-map (delay (util/arg-match (-> meta
+          :arg-map (delay (util/arg-match-safe (-> meta
                                               :arglists
                                               vec)
                                           args))
@@ -81,10 +81,10 @@
   [workspace name f args meta']
   (let [parent (or *trace-log-parent*
                    workspace)
-        this    (mk-fn-tree :parent parent ;; mk-fn-tree = 200ms
-                            :name name
-                            :args args
-                            :meta meta')
+        this  (mk-fn-tree :parent parent ;; mk-fn-tree = 200ms
+                          :name name
+                          :args args
+                          :meta meta')
         idx  (-> (start-trace (:children parent) ;; start-trace = 20ms
                               this)
                  count
@@ -160,11 +160,17 @@
           (apply-trace-to-var v tracer-fn workspace))
         (apply-trace-to-var v tracer-fn workspace)))))
 
+(defn the-ns-safe
+  [ns]
+  (try (the-ns ns)
+       (catch Exception e
+         nil)))
+
 (defn trace-ns*
   [ns workspace]
-  (let [ns (the-ns ns)]
+  (when-let [ns (the-ns-safe ns)]
     (when-not ('#{clojure.core com.billpiel.sayid.core} (.name ns))
-      (let [ns-fns (->> ns ns-interns vals (filter (comp fn? var-get)))]
+      (let [ns-fns (->> ns ns-interns vals (filter (comp util/fn*? var-get)))]
         (doseq [f ns-fns]
           (trace-var* f
                       (util/assoc-var-meta-to-fn shallow-tracer
@@ -174,10 +180,69 @@
 
 (defn untrace-ns*
   [ns*]
-  (let [ns' (the-ns ns*)
-        ns-fns (->> ns' ns-interns vals)]
-    (doseq [f ns-fns]
-      (untrace-var* f))))
+  (when-let [ns' (the-ns-safe ns*)]
+    (let [ns-fns (->> ns' ns-interns vals)]
+      (doseq [f ns-fns]
+        (untrace-var* f)))))
+
+(defn apply->vec
+  [f]
+  (fn [v] [v (f v)]))
+
+(defn audit-fn
+  [fn-var trace-selection]
+  (let [fn-meta (meta fn-var)]
+    (-> fn-meta
+        (update-in [:ns] str)
+        (assoc :trace-type (::trace-type fn-meta)
+               :trace-selection trace-selection)
+        (dissoc ::trace-type
+                ::traced))))
+
+(defn audit-fn-sym
+  [fn-sym trace-selection]
+  (-> fn-sym
+      resolve
+      (audit-fn trace-selection)))
+
+(defn audit-ns
+  [ns-sym]
+  (try (let [mk-vec-fn (fn [fn-var]
+                         [(-> fn-var meta :name)
+                          (audit-fn fn-var :ns)])]
+         (->> ns-sym
+              ns-interns
+              vals
+              (filter (comp fn? var-get))
+              (map mk-vec-fn)
+              (into (sorted-map))))
+       (catch Exception ex
+         (sorted-map))))
+
+(defn audit-traces
+  [traced]
+  (let [{outer :fn inner :inner-fn ns' :ns} traced
+        f (fn [trace-type]
+            (fn [fn-sym]
+              (let [fn-var (resolve fn-sym)]
+                [(-> fn-var meta :name)
+                 (audit-fn fn-var trace-type)])))
+        fn-audits (->> (concat (map (f :fn) outer)
+                               (map (f :inner-fn) inner))
+                       (group-by #(-> % second :ns))
+                       (map (fn [[k v]] [(symbol k) (into (sorted-map) v)]))
+                       (into (sorted-map)))]
+    {:ns (into (sorted-map)
+               (map (apply->vec audit-ns)
+                    ns'))
+     :fn fn-audits}))
+
+(defn check-fn-trace-type
+  [fn-sym]
+  (-> fn-sym
+      resolve
+      meta
+      ::trace-type))
 
 (defmulti trace* (fn [type sym workspace] type))
 

@@ -15,7 +15,7 @@
           :depth 0
           :id :root10
           :path [:root10]
-          :traced {:ns #{}, :fn #{}, :deep-fn #{}}
+          :traced {:ns #{}, :fn #{}, :inner-fn #{}}
           :ws-slot '$ws/test1
           :arg-map nil}
 
@@ -28,7 +28,7 @@
           :depth 0
           :id :root10
           :path [:root10]
-          :traced {:ns #{}, :fn #{}, :deep-fn #{}}
+          :traced {:ns #{}, :fn #{}, :inner-fn #{}}
           :ws-slot '$ws/test1
           :arg-map nil}
 
@@ -49,7 +49,7 @@
           :depth 0
           :id :root10
           :path [:root10]
-          :traced {:ns #{}, :fn #{}, :deep-fn #{}}
+          :traced {:ns #{}, :fn #{}, :inner-fn #{}}
           :ws-slot '$ws/test1
           :arg-map nil}
 
@@ -73,7 +73,7 @@
           :depth 0
           :id :root10
           :path [:root10]
-          :traced {:ns #{}, :fn #{}, :deep-fn #{}}
+          :traced {:ns #{}, :fn #{}, :inner-fn #{}}
           :ws-slot '$ws/test1
           :arg-map nil}
 
@@ -97,7 +97,7 @@
           :depth 0
           :id :root10
           :path [:root10]
-          :traced {:ns #{}, :fn #{}, :deep-fn #{}}
+          :traced {:ns #{}, :fn #{}, :inner-fn #{}}
           :ws-slot '$ws/test1
           :arg-map nil}
 
@@ -120,7 +120,7 @@
           :depth 0
           :id :root11
           :path [:root11]
-          :traced {:ns #{}, :fn #{}, :deep-fn #{}}
+          :traced {:ns #{}, :fn #{}, :inner-fn #{}}
           :ws-slot nil
           :arg-map nil}
 
@@ -131,7 +131,7 @@
           :depth 0
           :id :root10
           :path [:root10]
-          :traced {:ns #{}, :fn #{}, :deep-fn #{}}
+          :traced {:ns #{}, :fn #{}, :inner-fn #{}}
           :ws-slot '$ws/test1
           :arg-map nil}
 
