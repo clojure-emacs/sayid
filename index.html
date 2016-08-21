@@ -81,60 +81,6 @@ h3 {
       td {
         padding: 0.5em;
       }
-      .ATTRLIST {
-        /* (foreground-color . "green3") */
-        color: #00cd00;
-      }
-      .ATTRLIST-1 {
-        /* (foreground-color . "yellow3") */
-        color: #cdcd00;
-      }
-      .ATTRLIST-2 {
-        /* (background-color . "black") */
-
-      }
-      .ATTRLIST-3 {
-        /* (foreground-color . "gray90") */
-        color: #e5e5e5;
-      }
-      .ATTRLIST-4 {
-        /* (foreground-color . "cyan3") */
-        color: #00cdcd;
-      }
-      .ATTRLIST-5 {
-        /* (foreground-color . "red3") */
-        color: #cd0000;
-      }
-      .cider-repl-input {
-        /* cider-repl-input-face */
-        font-weight: bold;
-      }
-      .cider-repl-output {
-        /* cider-repl-output-face */
-        color: #61CE3C;
-      }
-      .cider-repl-prompt {
-        /* cider-repl-prompt-face */
-        color: #FBDE2D;
-      }
-      .cider-repl-result {
-      }
-      .clojure-keyword {
-        /* clojure-keyword-face */
-        color: #4c83ff;
-      }
-      .function-name {
-        /* font-lock-function-name-face */
-        color: #ff1493;
-      }
-      .keyword {
-        /* font-lock-keyword-face */
-        color: #FBDE2D;
-      }
-      .type {
-        /* font-lock-type-face */
-        color: #D8FA3C;
-      }
 
       a {
         color: #5050CC;
@@ -155,6 +101,124 @@ h3 {
         background-color: #FFFFFF;
         border: solid 1px #333333;
       }
+
+    .kbd {
+     font-family: monospace;
+     padding: 3px 5px;
+     border: solid 1px #ccc;
+     background-color: #fcfcfc;
+     border-radius: 3px;
+     box-shadow: inset 0 -1px 0 #bbb;
+     display: inline-block;
+    }
+
+/* htmlize */
+
+      .clojure-keyword {
+        /* clojure-keyword-face */
+        color: #4c83ff;
+      }
+      .default {
+        /* default */
+        color: #EDEDED;
+        background-color: #000000;
+      }
+      .comment {
+        /* font-lock-comment-face */
+        color: #8B8989;
+        font-style: italic;
+      }
+      .comment-delimiter {
+        /* font-lock-comment-delimiter-face */
+        color: #8B8989;
+        font-style: italic;
+      }
+      .constant {
+        /* font-lock-constant-face */
+        color: #4c83ff;
+      }
+      .function-name {
+        /* font-lock-function-name-face */
+        color: #ff1493;
+      }
+      .keyword {
+        /* font-lock-keyword-face */
+        color: #FBDE2D;
+      }
+
+      .rainbow-delimiters-depth-1 {
+        /* rainbow-delimiters-depth-1-face */
+        color: #BB2222;
+      }
+      .rainbow-delimiters-depth-2 {
+        /* rainbow-delimiters-depth-2-face */
+        color: #BB7700;
+      }
+      .rainbow-delimiters-depth-3 {
+        /* rainbow-delimiters-depth-3-face */
+        color: #BBBB22;
+      }
+      .rainbow-delimiters-depth-4 {
+        /* rainbow-delimiters-depth-4-face */
+        color: #11BB11;
+      }
+      .string {
+        /* font-lock-string-face */
+        color: #61CE3C;
+      }
+      .type {
+        /* font-lock-type-face */
+        color: #D8FA3C;
+      }
+      .variable-name {
+        /* font-lock-variable-name-face */
+        color: #D8FA3C;
+      }
+
+
+      .PURPLE {
+        /* (:foreground "#DD88FF") */
+        color: #DD88FF;
+      }
+      .PURPLE-BG {
+        /* (:foreground "#DD88FF") */
+        background: #DD88FF;
+
+      }
+
+      .CYAN3 {
+        /* (:foreground "cyan3") */
+        color: #00cdcd;
+      }
+      .GREEN3 {
+        /* (:foreground "green3") */
+        color: #00cd00;
+      }
+      .YELLOW3 {
+        /* (:foreground "yellow3") */
+        color: #cdcd00;
+      }
+      .YELLOW3-BG {
+        background: #cdcd00;
+      }
+      .WHITE {
+        /* (:foreground "white") */
+        color: #ffffff;
+      }
+      .BLACK {
+        color: #000000;
+      }
+      .RED3 {
+        /* (:foreground "red3") */
+        color: #cd0000;
+      }
+      .RED3-BG {
+        background: #cd0000;
+      }
+
+/* END htmlize */
+
+
     -->
     </style>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -178,452 +242,328 @@ h3 {
                 <div id="primary">
                     <div id="content" role="main">
                       <h1>Sayid</h1>
-                      <p>Sayid <i>(siy EED)</i> is a library for debugging and profiling clojure code. It extracts secrets from code at run time.<br><br>
+                      <p>Sayid <i>(siy EED)</i> is a tool for debugging and profiling clojure code. It extracts secrets from code at run time.<br><br>
                         Sayid works by intercepting and recording the inputs and outputs of functions. It can even record function calls that occur inside of functions. The user can select which functions to trace. Functions can be selected individually or by namespace. The recorded data can be displayed, queried and profiled.</p>
 
                       <a id="contents-link" href="#contents" >contents</a>
                       <h2 id="contents">Contents</h2>
 
                       <ul>
-                        <li><a href="#quickish-start">Quick<i>ish</i> Start</li>
-                        <li><a href="#function-prefixes">Function Prefixes</a></li>
-                        <li><a href="#workspaces">Workspaces</a></li>
-                        <li><a href="#querying">Querying</a></li>
-                        <li><a href="#profiling">Profiling</a></li>
-                        <li><a href="#recordings">Recordings</a></li>
+                        <li><a href="#nope">nope</a></li>
                       </ul>
 
 
-                      <h3 id="quickish-start">Quick<i>ish</i> Start</h3>
+                      <h3 id="video1">Demo Video #1</h3>
+
+                      <iframe width="560" height="315" src="https://www.youtube.com/embed/wkduA4py-qk" frameborder="0" allowfullscreen></iframe>
+
+                      <h3 id="walkthrough1">Walkthrough #1</h3>
+
+                      <p>This is a written walkthrough of the same
+                      steps illustrated in the demo video above. It
+                      uses
+                      this <a href="http://github.com/bpiel/contrived-example">contrived
+                          example</a> project.
+
+                        If you want to play along, you'll need a profiles.clj with this stuff in it:
+
+                        <!-- profiles.clj -->
+    <pre>
+<span class="rainbow-delimiters-depth-1"> {</span><span class="clojure-keyword">:user</span> <span class="rainbow-delimiters-depth-2">{</span><span class="clojure-keyword">:plugins</span> <span class="rainbow-delimiters-depth-3">[</span><span class="rainbow-delimiters-depth-4">[</span><span class="type">cider</span><span class="default">/</span>cider-nrepl <span class="string">"0.12.0"</span><span class="rainbow-delimiters-depth-4">]</span>
+                   <span class="rainbow-delimiters-depth-4">[</span><span class="type">com.billpiel</span><span class="default">/</span>sayid <span class="string">"0.0.8-dev"</span><span class="rainbow-delimiters-depth-4">]</span><span class="rainbow-delimiters-depth-3">]</span>
+         <span class="clojure-keyword">:dependencies</span> <span class="rainbow-delimiters-depth-3">[</span><span class="rainbow-delimiters-depth-4">[</span><span class="type">org.clojure</span><span class="default">/</span>tools.nrepl <span class="string">"0.2.12"</span><span class="rainbow-delimiters-depth-4">]</span><span class="rainbow-delimiters-depth-3">]</span><span class="rainbow-delimiters-depth-2">}</span><span class="rainbow-delimiters-depth-1">}</span>
+</pre>
+
+                        <!-- END profiles.clj -->
+
+                        You'll also need a cider connection to the project.</p>
+
                       <p>
-                        Below is a tour of some of what's possible with Sayid in the repl. The following transcript shows how to: <br>
-                        <ul>
-                          <li>trace functions by namespace</li>
-                          <li>trace inside a function</li>
-                          <li>print out the results</li>
-                          <li>query the results</li>
-                        </ul>
+                      Below is the code to the test namespace. You can
+                      see that we have a vending machine that
+                      dispenses tacos for 85 cents. We execute
+                      the <code>test1</code> function, which inserts
+                      41 cents worth of change and presses the taco
+                      button.
                       </p>
-                      <p>Require the library and define some dummy example functions. Note the use of the <code>src-in-meta</code> macro. This macro allows Sayid to get at the source code of a function. However, it in not necessary for functions that are defined in a file, which is typically the case.</p>
-                          <!-- start repl -->
-    <pre>
-<span class="cider-repl-prompt">user&gt; </span><span class="cider-repl-input">(require '[</span><span class="type"><span class="cider-repl-input">com.billpiel.sayid.core</span></span><span class="cider-repl-input"> </span><span class="clojure-keyword"><span class="cider-repl-input">:as</span></span><span class="cider-repl-input"> sd])</span>
-<span class="cider-repl-result">nil</span>
-<span class="cider-repl-prompt">user&gt; </span><span class="cider-repl-input">(sd/src-in-meta
-       </span><span class="keyword"><span class="cider-repl-input">defn</span></span><span class="cider-repl-input"> </span><span class="function-name"><span class="cider-repl-input">func-example1</span></span><span class="cider-repl-input"> [a b]
-       (* a b))</span>
-{<span class="cider-repl-result">:arglists </span>([<span class="cider-repl-result">a b</span>])<span class="cider-repl-result">, :line 1, :column 1, :file "/tmp/form-init146658281467565287.clj", :name func-example1, :ns #object</span>[<span class="cider-repl-result">clojure.lang.Namespace 0x7bad5128 "user"</span>]<span class="cider-repl-result">, :source </span>(<span class="cider-repl-result">defn func-example1 </span>[<span class="cider-repl-result">a b</span>]<span class="cider-repl-result"> </span>(<span class="cider-repl-result">* a b</span>))}
-<span class="cider-repl-prompt">user&gt; </span><span class="cider-repl-input">(sd/src-in-meta
-       </span><span class="keyword"><span class="cider-repl-input">defn</span></span><span class="cider-repl-input"> </span><span class="function-name"><span class="cider-repl-input">func-example2</span></span><span class="cider-repl-input">
-       [a b]
-       (</span><span class="keyword"><span class="cider-repl-input">if</span></span><span class="cider-repl-input"> (&lt; a b)
-         (</span><span class="keyword"><span class="cider-repl-input">-&gt;</span></span><span class="cider-repl-input"> a
-             inc
-             (func-example1 b)
-             (* 2)
-             (vector a b))
-         (</span><span class="keyword"><span class="cider-repl-input">recur</span></span><span class="cider-repl-input"> a (inc b))))</span>
-{<span class="cider-repl-result">:arglists </span>([<span class="cider-repl-result">a b</span>])<span class="cider-repl-result">, :line 1, :column 1, :file "/tmp/form-init146658281467565287.clj", :name func-example2, :ns #object</span>[<span class="cider-repl-result">clojure.lang.Namespace 0x7bad5128 "user"</span>]<span class="cider-repl-result">, :source </span>(<span class="cider-repl-result">defn func-example2 </span>[<span class="cider-repl-result">a b</span>]<span class="cider-repl-result"> </span>(<span class="cider-repl-result">if </span>(<span class="cider-repl-result">&lt; a b</span>)<span class="cider-repl-result"> </span>(<span class="cider-repl-result">-&gt; a inc </span>(<span class="cider-repl-result">func-example1 b</span>)<span class="cider-repl-result"> </span>(<span class="cider-repl-result">* 2</span>)<span class="cider-repl-result"> </span>(<span class="cider-repl-result">vector a b</span>))<span class="cider-repl-result"> </span>(<span class="cider-repl-result">recur a </span>(<span class="cider-repl-result">inc b</span>))))}
-    </pre>
-   <p>Now the magic begins. We trace the <code>user</code> namespace. This wraps all functions (ie the two we defined above) in a tracer function that will record the arguments and return value of every call to that function. That trace will be in place until it is <i>untraced</i> or the function is <code>def</code>'d again.</p>
-    <pre>
-<span class="cider-repl-prompt">user&gt; </span><span class="cider-repl-input">(</span><span class="type"><span class="cider-repl-input">sd</span></span><span class="cider-repl-input">/ws-add-trace-ns! user)</span>
-[<span class="cider-repl-result">user</span>]
-<span class="cider-repl-prompt">user&gt; </span><span class="cider-repl-input">(func-example2 1 2)</span>
-[<span class="cider-repl-result">8 1 2</span>]
-    </pre>
 
-    <p>
-So, what did we just do? We wrapped every function in the namespace, <code>user</code>, in a tracer function. Then we called a function defined in the namespace. Everything <b>appears</b> to have executed normally -- we got the expected return value. But, behind the scenes, the function call was recorded in what Sayid calls a <b>workspace</b>. More details below on that, but just accept the term, understand that the <code>ws-</code> prefix in the function stands for "workspace" and let's move along.
-    </p>
-    <p>Now, let's print and see what we've got.</p>
-
+                      <!-- core_test -->
     <pre>
-<span class="cider-repl-prompt">user&gt; </span><span class="cider-repl-input">(</span><span class="type"><span class="cider-repl-input">sd</span></span><span class="cider-repl-input">/ws-print)</span>
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">v </span></span><span class="cider-repl-output"><span class="ATTRLIST-5"><span class="ATTRLIST-2">user/func-example2  </span></span></span><span class="cider-repl-output"><span class="ATTRLIST-3"><span class="ATTRLIST-2">:25398</span></span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">| a =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">1</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">| b =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">2</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">| returns =&gt; </span></span><span class="ATTRLIST-5">[</span><span class="cider-repl-output"><span class="ATTRLIST-4">8</span></span><span class="cider-repl-output"> </span><span class="cider-repl-output"><span class="ATTRLIST-4">1</span></span><span class="cider-repl-output"> </span><span class="cider-repl-output"><span class="ATTRLIST-4">2</span></span><span class="ATTRLIST-5">]</span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">v </span></span><span class="cider-repl-output"><span class="ATTRLIST-1"><span class="ATTRLIST-2">user/func-example1  </span></span></span><span class="cider-repl-output"><span class="ATTRLIST-3"><span class="ATTRLIST-2">:25399</span></span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| a =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">2</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| b =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">2</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| returned =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">4</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">^ </span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">| </span></span><span class="cider-repl-output"><span class="ATTRLIST-5"><span class="ATTRLIST-2">user/func-example2  </span></span></span><span class="cider-repl-output"><span class="ATTRLIST-3"><span class="ATTRLIST-2">:25398</span></span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">| a =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">1</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">| b =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">2</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">| returned =&gt; </span></span><span class="ATTRLIST-5">[</span><span class="cider-repl-output"><span class="ATTRLIST-4">8</span></span><span class="cider-repl-output"> </span><span class="cider-repl-output"><span class="ATTRLIST-4">1</span></span><span class="cider-repl-output"> </span><span class="cider-repl-output"><span class="ATTRLIST-4">2</span></span><span class="ATTRLIST-5">]</span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">^ </span></span><span class="cider-repl-output">
-</span><span class="cider-repl-result">nil</span>
+<span class="rainbow-delimiters-depth-1"> (</span><span class="keyword">ns</span> <span class="type">contrived-example.core-test</span>
+   <span class="rainbow-delimiters-depth-2">(</span><span class="clojure-keyword">:require</span> <span class="rainbow-delimiters-depth-3">[</span><span class="type">clojure.test</span> <span class="clojure-keyword">:refer</span> <span class="clojure-keyword">:all</span><span class="rainbow-delimiters-depth-3">]</span>
+             <span class="rainbow-delimiters-depth-3">[</span><span class="type">contrived-example.core</span> <span class="clojure-keyword">:as</span> ce<span class="rainbow-delimiters-depth-3">]</span><span class="rainbow-delimiters-depth-2">)</span><span class="rainbow-delimiters-depth-1">)</span>
+ 
+ 
+<span class="rainbow-delimiters-depth-1"> (</span><span class="keyword">def</span> <span class="variable-name">test-vending-machine</span> <span class="rainbow-delimiters-depth-2">{</span><span class="clojure-keyword">:inventory</span> <span class="rainbow-delimiters-depth-3">{</span><span class="clojure-keyword">:a1</span> <span class="rainbow-delimiters-depth-4">{</span><span class="clojure-keyword">:name</span> <span class="clojure-keyword">:taco</span>
+                                             <span class="clojure-keyword">:price</span> 0.85
+                                             <span class="clojure-keyword">:qty</span> 10<span class="rainbow-delimiters-depth-4">}</span><span class="rainbow-delimiters-depth-3">}</span>
+                            <span class="clojure-keyword">:coins-inserted</span> <span class="rainbow-delimiters-depth-3">[]</span>
+                            <span class="clojure-keyword">:coins-returned</span> <span class="rainbow-delimiters-depth-3">[]</span>
+                            <span class="clojure-keyword">:dispensed</span> <span class="constant">nil</span>
+                            <span class="clojure-keyword">:err-msg</span> <span class="constant">nil</span><span class="rainbow-delimiters-depth-2">}</span><span class="rainbow-delimiters-depth-1">)</span>
+ 
+<span class="rainbow-delimiters-depth-1"> (</span><span class="keyword">defn</span> <span class="function-name">test1</span> <span class="rainbow-delimiters-depth-2">[]</span>
+   <span class="rainbow-delimiters-depth-2">(</span><span class="keyword">-&gt;</span> test-vending-machine
+       <span class="rainbow-delimiters-depth-3">(</span><span class="type">ce</span><span class="default">/</span>insert-coin <span class="clojure-keyword">:quarter</span><span class="rainbow-delimiters-depth-3">)</span> <span class="comment-delimiter">;; </span><span class="comment">25
+</span>       <span class="rainbow-delimiters-depth-3">(</span><span class="type">ce</span><span class="default">/</span>insert-coin <span class="clojure-keyword">:dime</span><span class="rainbow-delimiters-depth-3">)</span>    <span class="comment-delimiter">;; </span><span class="comment">35
+</span>       <span class="rainbow-delimiters-depth-3">(</span><span class="type">ce</span><span class="default">/</span>insert-coin <span class="clojure-keyword">:nickel</span><span class="rainbow-delimiters-depth-3">)</span>  <span class="comment-delimiter">;; </span><span class="comment">40
+</span>       <span class="rainbow-delimiters-depth-3">(</span><span class="type">ce</span><span class="default">/</span>insert-coin <span class="clojure-keyword">:penny</span><span class="rainbow-delimiters-depth-3">)</span>   <span class="comment-delimiter">;; </span><span class="comment">41 cents
+</span>       <span class="rainbow-delimiters-depth-3">(</span><span class="type">ce</span><span class="default">/</span>press-button <span class="clojure-keyword">:a1</span><span class="rainbow-delimiters-depth-3">)</span><span class="rainbow-delimiters-depth-2">)</span><span class="rainbow-delimiters-depth-1">)</span>   <span class="comment-delimiter">;; </span><span class="comment">taco costs 85 cents
+</span> 
+<span class="rainbow-delimiters-depth-1"> (</span>test1<span class="rainbow-delimiters-depth-1">)</span>
 </pre>
-<p> Well, it's colorful. This output represents the call to the function, <code>func-example2</code>, that we made, and also the call that function made to <code>function-example</code>. By default, the function name, arguments and return value are all conveniently duplicated as execution enters and exits the function. This can be handy if the output is longer than the screen. In addition to those values, there is also a numeric keyword id printed in white next to the function name. That can be useful for certain operations when you want to specify a particular instance of a call to a function.
-</p>
-<p>Next we'll do a <b>deep</b> trace, which captures function calls made inside the source of a function. After setting the trace, we clear the workspace logs, call the function again, then print what was captured.
-</p>
-<pre>
-<span class="cider-repl-prompt">user&gt; </span><span class="cider-repl-input">(</span><span class="type"><span class="cider-repl-input">sd</span></span><span class="cider-repl-input">/ws-add-deep-trace-fn! func-example2)</span>
-<span class="cider-repl-result">user/func-example2</span>
-<span class="cider-repl-prompt">user&gt; </span><span class="cider-repl-input">(</span><span class="type"><span class="cider-repl-input">sd</span></span><span class="cider-repl-input">/ws-clear-log!)</span>
-[]
-<span class="cider-repl-prompt">user&gt; </span><span class="cider-repl-input">(func-example2 3 1)</span>
-[<span class="cider-repl-result">32 3 4</span>]
-<span class="cider-repl-prompt">user&gt; </span><span class="cider-repl-input">(</span><span class="type"><span class="cider-repl-input">sd</span></span><span class="cider-repl-input">/ws-print)</span>
-<span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">v </span></span><span class="cider-repl-output"><span class="ATTRLIST-5"><span class="ATTRLIST-2">user/func-example2  </span></span></span><span class="cider-repl-output"><span class="ATTRLIST-3"><span class="ATTRLIST-2">:25423</span></span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">| a =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">3</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">| b =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">1</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">| returns =&gt; </span></span><span class="ATTRLIST-5">[</span><span class="cider-repl-output"><span class="ATTRLIST-4">32</span></span><span class="cider-repl-output"> </span><span class="cider-repl-output"><span class="ATTRLIST-4">3</span></span><span class="cider-repl-output"> </span><span class="cider-repl-output"><span class="ATTRLIST-4">4</span></span><span class="ATTRLIST-5">]</span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">v </span></span><span class="cider-repl-output"><span class="ATTRLIST-1"><span class="ATTRLIST-2">&lt;  user/func-example2  </span></span></span><span class="cider-repl-output"><span class="ATTRLIST-3"><span class="ATTRLIST-2">:25424</span></span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| a =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">3</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| b =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">1</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">^ </span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">v </span></span><span class="cider-repl-output"><span class="ATTRLIST-1"><span class="ATTRLIST-2">inc  user/func-example2  </span></span></span><span class="cider-repl-output"><span class="ATTRLIST-3"><span class="ATTRLIST-2">:25425</span></span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| b =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">1</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| returned =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">2</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">^ </span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">v </span></span><span class="cider-repl-output"><span class="ATTRLIST-1"><span class="ATTRLIST-2">&lt;  user/func-example2  </span></span></span><span class="cider-repl-output"><span class="ATTRLIST-3"><span class="ATTRLIST-2">:25426</span></span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| a =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">3</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| b =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">2</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">^ </span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">v </span></span><span class="cider-repl-output"><span class="ATTRLIST-1"><span class="ATTRLIST-2">inc  user/func-example2  </span></span></span><span class="cider-repl-output"><span class="ATTRLIST-3"><span class="ATTRLIST-2">:25427</span></span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| b =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">2</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| returned =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">3</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">^ </span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">v </span></span><span class="cider-repl-output"><span class="ATTRLIST-1"><span class="ATTRLIST-2">&lt;  user/func-example2  </span></span></span><span class="cider-repl-output"><span class="ATTRLIST-3"><span class="ATTRLIST-2">:25428</span></span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| a =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">3</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| b =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">3</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">^ </span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">v </span></span><span class="cider-repl-output"><span class="ATTRLIST-1"><span class="ATTRLIST-2">inc  user/func-example2  </span></span></span><span class="cider-repl-output"><span class="ATTRLIST-3"><span class="ATTRLIST-2">:25429</span></span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| b =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">3</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| returned =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">4</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">^ </span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">v </span></span><span class="cider-repl-output"><span class="ATTRLIST-1"><span class="ATTRLIST-2">&lt;  user/func-example2  </span></span></span><span class="cider-repl-output"><span class="ATTRLIST-3"><span class="ATTRLIST-2">:25430</span></span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| a =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">3</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| b =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">4</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| returned =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST">true</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">^ </span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">v </span></span><span class="cider-repl-output"><span class="ATTRLIST-1"><span class="ATTRLIST-2">inc  user/func-example2  </span></span></span><span class="cider-repl-output"><span class="ATTRLIST-3"><span class="ATTRLIST-2">:25431</span></span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| a =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">3</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| returned =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">4</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">^ </span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">v </span></span><span class="cider-repl-output"><span class="ATTRLIST-1"><span class="ATTRLIST-2">func-example1  user/func-example2  </span></span></span><span class="cider-repl-output"><span class="ATTRLIST-3"><span class="ATTRLIST-2">:25432</span></span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| </span></span><span class="ATTRLIST-1">(</span><span class="cider-repl-output"><span class="ATTRLIST-1">inc a</span></span><span class="ATTRLIST-1">)</span><span class="cider-repl-output"><span class="ATTRLIST-1"> =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">4</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| b =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">4</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| returns =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">16</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">|</span></span><span class="cider-repl-output"><span class="ATTRLIST">v </span></span><span class="cider-repl-output"><span class="ATTRLIST"><span class="ATTRLIST-2">user/func-example1  </span></span></span><span class="cider-repl-output"><span class="ATTRLIST-3"><span class="ATTRLIST-2">:25433</span></span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">|</span></span><span class="cider-repl-output"><span class="ATTRLIST">| a =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">4</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">|</span></span><span class="cider-repl-output"><span class="ATTRLIST">| b =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">4</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">|</span></span><span class="cider-repl-output"><span class="ATTRLIST">| returned =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">16</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">|</span></span><span class="cider-repl-output"><span class="ATTRLIST">^ </span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| </span></span><span class="cider-repl-output"><span class="ATTRLIST-1"><span class="ATTRLIST-2">func-example1  user/func-example2  </span></span></span><span class="cider-repl-output"><span class="ATTRLIST-3"><span class="ATTRLIST-2">:25432</span></span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| </span></span><span class="ATTRLIST-1">(</span><span class="cider-repl-output"><span class="ATTRLIST-1">inc a</span></span><span class="ATTRLIST-1">)</span><span class="cider-repl-output"><span class="ATTRLIST-1"> =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">4</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| b =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">4</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| returned =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">16</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">^ </span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">v </span></span><span class="cider-repl-output"><span class="ATTRLIST-1"><span class="ATTRLIST-2">*  user/func-example2  </span></span></span><span class="cider-repl-output"><span class="ATTRLIST-3"><span class="ATTRLIST-2">:25434</span></span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| </span></span><span class="ATTRLIST-1">(</span><span class="cider-repl-output"><span class="ATTRLIST-1">func-example1 </span></span><span class="ATTRLIST-1">(</span><span class="cider-repl-output"><span class="ATTRLIST-1">inc a</span></span><span class="ATTRLIST-1">)</span><span class="cider-repl-output"><span class="ATTRLIST-1"> b</span></span><span class="ATTRLIST-1">)</span><span class="cider-repl-output"><span class="ATTRLIST-1"> =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">16</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| 2 =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">2</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| returned =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">32</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">^ </span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">v </span></span><span class="cider-repl-output"><span class="ATTRLIST-1"><span class="ATTRLIST-2">vector  user/func-example2  </span></span></span><span class="cider-repl-output"><span class="ATTRLIST-3"><span class="ATTRLIST-2">:25435</span></span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| </span></span><span class="ATTRLIST-1">(</span><span class="cider-repl-output"><span class="ATTRLIST-1">* </span></span><span class="ATTRLIST-1">(</span><span class="cider-repl-output"><span class="ATTRLIST-1">func-example1 </span></span><span class="ATTRLIST-1">(</span><span class="cider-repl-output"><span class="ATTRLIST-1">inc a</span></span><span class="ATTRLIST-1">)</span><span class="cider-repl-output"><span class="ATTRLIST-1"> b</span></span><span class="ATTRLIST-1">)</span><span class="cider-repl-output"><span class="ATTRLIST-1"> 2</span></span><span class="ATTRLIST-1">)</span><span class="cider-repl-output"><span class="ATTRLIST-1"> =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">32</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| a =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">3</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| b =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">4</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| returned =&gt; </span></span><span class="ATTRLIST-5">[</span><span class="cider-repl-output"><span class="ATTRLIST-4">32</span></span><span class="cider-repl-output"> </span><span class="cider-repl-output"><span class="ATTRLIST-4">3</span></span><span class="cider-repl-output"> </span><span class="cider-repl-output"><span class="ATTRLIST-4">4</span></span><span class="ATTRLIST-5">]</span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">^ </span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">| </span></span><span class="cider-repl-output"><span class="ATTRLIST-5"><span class="ATTRLIST-2">user/func-example2  </span></span></span><span class="cider-repl-output"><span class="ATTRLIST-3"><span class="ATTRLIST-2">:25423</span></span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">| a =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">3</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">| b =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">1</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">| returned =&gt; </span></span><span class="ATTRLIST-5">[</span><span class="cider-repl-output"><span class="ATTRLIST-4">32</span></span><span class="cider-repl-output"> </span><span class="cider-repl-output"><span class="ATTRLIST-4">3</span></span><span class="cider-repl-output"> </span><span class="cider-repl-output"><span class="ATTRLIST-4">4</span></span><span class="ATTRLIST-5">]</span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">^ </span></span><span class="cider-repl-output">
+                      
+                      <!-- END core_test -->
+
+                      <p>Let's press some keys to get Sayid going.</p>
+
+                      <p>eval the namespace - <span class="kbd">C-c C-k</span> (probably) </p>
+                      <p>trace the project namespaces - <span class="kbd">C-c s t p</span>  <code>contrived-example.*</code></p>
+
+                      <p>This should pop up. It shows how many functions have been traced in which namespaces. Execute <code>test1</code>!</p>
+                      <!-- sayid traced -->
+                      
+<pre>Traced namespaces:
+  5 / 5  contrived-example.core
+  1 / 1  contrived-example.core-test
+  8 / 8  contrived-example.inner-workings
 
 
-</span><span class="cider-repl-result">nil</span>
+Traced functions:
 </pre>
-<p>Whoa. Above we can see each function called within func-example2, the values of the expressions passed to the function and the final return value. This will come in handy while debugging a long threading-macro expression.</p>
-<p>At this point, you may be thinking that in a real debugging scenario a LOT of data may be captured -- much more than you'd want to print out and eyeball over. This is why you'd want to use the query functions. Let's search for all the calls to <code>inc</code>.</p>
-<pre><span class="cider-repl-prompt">user&gt; </span><span class="cider-repl-input">(</span><span class="type"><span class="cider-repl-input">sd</span></span><span class="cider-repl-input">/q [</span><span class="clojure-keyword"><span class="cider-repl-input">:name</span></span><span class="cider-repl-input"> 'inc])</span>
-<span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">v </span></span><span class="cider-repl-output"><span class="ATTRLIST-1"><span class="ATTRLIST-2">inc  user/func-example2  </span></span></span><span class="cider-repl-output"><span class="ATTRLIST-3"><span class="ATTRLIST-2">:25425</span></span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| b =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">1</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| returned =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">2</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">^ </span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">v </span></span><span class="cider-repl-output"><span class="ATTRLIST-1"><span class="ATTRLIST-2">inc  user/func-example2  </span></span></span><span class="cider-repl-output"><span class="ATTRLIST-3"><span class="ATTRLIST-2">:25427</span></span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| b =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">2</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| returned =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">3</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">^ </span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">v </span></span><span class="cider-repl-output"><span class="ATTRLIST-1"><span class="ATTRLIST-2">inc  user/func-example2  </span></span></span><span class="cider-repl-output"><span class="ATTRLIST-3"><span class="ATTRLIST-2">:25429</span></span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| b =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">3</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| returned =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">4</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">^ </span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">v </span></span><span class="cider-repl-output"><span class="ATTRLIST-1"><span class="ATTRLIST-2">inc  user/func-example2  </span></span></span><span class="cider-repl-output"><span class="ATTRLIST-3"><span class="ATTRLIST-2">:25431</span></span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| a =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">3</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| returned =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">4</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">^ </span></span><span class="cider-repl-output">
-</span><span class="cider-repl-result">nil</span>
+
+                      <!-- END sayid traced -->
+
+                      <p>You can't tell yet, but something magical
+                      happened. Press <span class="kbd">C-c s w</span>
+                      to get an overview of what has been captured in
+                      the Sayid workspace. This monster should
+                      appear:</p>
+
+                      <!-- sayid ws 1 -->
+                      <pre><span class="RED3">v</span> <span class="NOPE"><span class="RED3">contrived-example.core-test/test1</span></span>  <span class="WHITE">:13446</span>
+<span class="RED3">|</span><span class="YELLOW3">v</span> <span class="NOPE"><span class="YELLOW3">contrived-example.core/insert-coin</span></span>  <span class="WHITE">:13447</span>
+<span class="RED3">|</span><span class="YELLOW3">^</span> 
+<span class="RED3">|</span><span class="YELLOW3">v</span> <span class="NOPE"><span class="YELLOW3">contrived-example.core/insert-coin</span></span>  <span class="WHITE">:13448</span>
+<span class="RED3">|</span><span class="YELLOW3">^</span> 
+<span class="RED3">|</span><span class="YELLOW3">v</span> <span class="NOPE"><span class="YELLOW3">contrived-example.core/insert-coin</span></span>  <span class="WHITE">:13449</span>
+<span class="RED3">|</span><span class="YELLOW3">^</span> 
+<span class="RED3">|</span><span class="YELLOW3">v</span> <span class="NOPE"><span class="YELLOW3">contrived-example.core/insert-coin</span></span>  <span class="WHITE">:13450</span>
+<span class="RED3">|</span><span class="YELLOW3">^</span> 
+<span class="RED3">|</span><span class="YELLOW3">v</span> <span class="NOPE"><span class="YELLOW3">contrived-example.core/press-button</span></span>  <span class="WHITE">:13451</span>
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">v</span> <span class="NOPE"><span class="GREEN3">contrived-example.inner-workings/valid-selection</span></span>  <span class="WHITE">:13452</span>
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">v</span> <span class="NOPE"><span class="CYAN3">contrived-example.inner-workings/get-selection</span></span>  <span class="WHITE">:13453</span>
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">^</span> 
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">v</span> <span class="NOPE"><span class="CYAN3">contrived-example.inner-workings/calc-coin-value</span></span>  <span class="WHITE">:13454</span>
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">^</span> 
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span> <span class="NOPE"><span class="GREEN3">contrived-example.inner-workings/valid-selection</span></span>  <span class="WHITE">:13452</span>
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">^</span> 
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">v</span> <span class="NOPE"><span class="GREEN3">contrived-example.inner-workings/process-transaction</span></span>  <span class="WHITE">:13455</span>
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">v</span> <span class="NOPE"><span class="CYAN3">contrived-example.inner-workings/get-selection</span></span>  <span class="WHITE">:13456</span>
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">^</span> 
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">v</span> <span class="NOPE"><span class="CYAN3">contrived-example.inner-workings/calc-change-to-return</span></span>  <span class="WHITE">:13457</span>
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">v</span> <span class="NOPE"><span class="PURPLE">contrived-example.inner-workings/calc-coin-value</span></span>  <span class="WHITE">:13458</span>
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">^</span> 
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">v</span> <span class="NOPE"><span class="PURPLE">contrived-example.inner-workings/round-to-pennies</span></span>  <span class="WHITE">:13459</span>
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">^</span> 
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">v</span> <span class="NOPE"><span class="PURPLE">contrived-example.inner-workings/calc-change-to-return*</span></span>  <span class="WHITE">:13460</span>
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">v</span> <span class="NOPE"><span class="RED3">contrived-example.inner-workings/calc-coin-value</span></span>  <span class="WHITE">:13461</span>
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">^</span> 
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">v</span> <span class="NOPE"><span class="RED3">contrived-example.inner-workings/calc-change-to-return*</span></span>  <span class="WHITE">:13462</span>
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">v</span> <span class="NOPE"><span class="YELLOW3">contrived-example.inner-workings/calc-coin-value</span></span>  <span class="WHITE">:13463</span>
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">^</span> 
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">v</span> <span class="NOPE"><span class="YELLOW3">contrived-example.inner-workings/calc-change-to-return*</span></span>  <span class="WHITE">:13464</span>
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">v</span> <span class="NOPE"><span class="GREEN3">contrived-example.inner-workings/calc-coin-value</span></span>  <span class="WHITE">:13465</span>
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">^</span> 
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">v</span> <span class="NOPE"><span class="GREEN3">contrived-example.inner-workings/calc-change-to-return*</span></span>  <span class="WHITE">:13466</span>
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">v</span> <span class="NOPE"><span class="CYAN3">contrived-example.inner-workings/calc-coin-value</span></span>  <span class="WHITE">:13467</span>
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">^</span> 
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span> <span class="NOPE"><span class="GREEN3">contrived-example.inner-workings/calc-change-to-return*</span></span>  <span class="WHITE">:13466</span>
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">^</span> 
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">v</span> <span class="NOPE"><span class="GREEN3">contrived-example.inner-workings/calc-change-to-return*</span></span>  <span class="WHITE">:13468</span>
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">v</span> <span class="NOPE"><span class="CYAN3">contrived-example.inner-workings/calc-coin-value</span></span>  <span class="WHITE">:13469</span>
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">^</span> 
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span> <span class="NOPE"><span class="GREEN3">contrived-example.inner-workings/calc-change-to-return*</span></span>  <span class="WHITE">:13468</span>
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">^</span> 
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">v</span> <span class="NOPE"><span class="GREEN3">contrived-example.inner-workings/calc-change-to-return*</span></span>  <span class="WHITE">:13470</span>
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">v</span> <span class="NOPE"><span class="CYAN3">contrived-example.inner-workings/calc-coin-value</span></span>  <span class="WHITE">:13471</span>
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">^</span> 
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span> <span class="NOPE"><span class="GREEN3">contrived-example.inner-workings/calc-change-to-return*</span></span>  <span class="WHITE">:13470</span>
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">^</span> 
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">|</span> <span class="NOPE"><span class="YELLOW3">contrived-example.inner-workings/calc-change-to-return*</span></span>  <span class="WHITE">:13464</span>
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">^</span> 
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span> <span class="NOPE"><span class="RED3">contrived-example.inner-workings/calc-change-to-return*</span></span>  <span class="WHITE">:13462</span>
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">^</span> 
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span> <span class="NOPE"><span class="PURPLE">contrived-example.inner-workings/calc-change-to-return*</span></span>  <span class="WHITE">:13460</span>
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">^</span> 
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span> <span class="NOPE"><span class="CYAN3">contrived-example.inner-workings/calc-change-to-return</span></span>  <span class="WHITE">:13457</span>
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">^</span> 
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span> <span class="NOPE"><span class="GREEN3">contrived-example.inner-workings/process-transaction</span></span>  <span class="WHITE">:13455</span>
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">^</span> 
+<span class="RED3">|</span><span class="YELLOW3">|</span> <span class="NOPE"><span class="YELLOW3">contrived-example.core/press-button</span></span>  <span class="WHITE">:13451</span>
+<span class="RED3">|</span><span class="YELLOW3">^</span> 
+<span class="RED3">|</span> <span class="NOPE"><span class="RED3">contrived-example.core-test/test1</span></span>  <span class="WHITE">:13446</span>
+<span class="RED3">^</span> 
 </pre>
-<p>That worked. But, how did we do it? Let's go piece by piece. <code>q</code> stands for "query". I chose a one-letter name because I'm a slow typer. Following <code>q</code> is the actual query. Queries are represented as vectors where each element is a step in a path (think <code>get-in</code>) and the final element is a predicate. Sayid tries to be very understanding when it comes to these predicates. For example, we navigated to <code>:name</code> (where the function name is kept) and then applied the predicate <code>'inc</code>. Sayid (correctly) assumed that we wanted to do a simple equality check here. Most value types will get this treatment, but others such as regexes and functions will be applied in the ways you'd likely expect.
+                      <!-- END sayid ws 1 -->
 
-</p><p> Now let's look for each <code>inc</code> and all of its ancestors. We do this by inserting an <code>:a</code> before the query vector.</p>
-<pre>
-<span class="cider-repl-prompt">user&gt; </span><span class="cider-repl-input">(</span><span class="type"><span class="cider-repl-input">sd</span></span><span class="cider-repl-input">/p-t (</span><span class="type"><span class="cider-repl-input">sd</span></span><span class="cider-repl-input">/qw </span><span class="clojure-keyword"><span class="cider-repl-input">:a</span></span><span class="cider-repl-input"> [</span><span class="clojure-keyword"><span class="cider-repl-input">:name</span></span><span class="cider-repl-input"> 'inc]))</span>
-<span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">v </span></span><span class="cider-repl-output"><span class="ATTRLIST-5"><span class="ATTRLIST-2">user/func-example2  </span></span></span><span class="cider-repl-output"><span class="ATTRLIST-3"><span class="ATTRLIST-2">:25423</span></span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">| a =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">3</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">| b =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">1</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">| returns =&gt; </span></span><span class="ATTRLIST-5">[</span><span class="cider-repl-output"><span class="ATTRLIST-4">32</span></span><span class="cider-repl-output"> </span><span class="cider-repl-output"><span class="ATTRLIST-4">3</span></span><span class="cider-repl-output"> </span><span class="cider-repl-output"><span class="ATTRLIST-4">4</span></span><span class="ATTRLIST-5">]</span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">v </span></span><span class="cider-repl-output"><span class="ATTRLIST-1"><span class="ATTRLIST-2">inc  user/func-example2  </span></span></span><span class="cider-repl-output"><span class="ATTRLIST-3"><span class="ATTRLIST-2">:25425</span></span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| b =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">1</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| returned =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">2</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">^ </span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">v </span></span><span class="cider-repl-output"><span class="ATTRLIST-1"><span class="ATTRLIST-2">inc  user/func-example2  </span></span></span><span class="cider-repl-output"><span class="ATTRLIST-3"><span class="ATTRLIST-2">:25427</span></span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| b =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">2</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| returned =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">3</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">^ </span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">v </span></span><span class="cider-repl-output"><span class="ATTRLIST-1"><span class="ATTRLIST-2">inc  user/func-example2  </span></span></span><span class="cider-repl-output"><span class="ATTRLIST-3"><span class="ATTRLIST-2">:25429</span></span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| b =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">3</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| returned =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">4</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">^ </span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">v </span></span><span class="cider-repl-output"><span class="ATTRLIST-1"><span class="ATTRLIST-2">inc  user/func-example2  </span></span></span><span class="cider-repl-output"><span class="ATTRLIST-3"><span class="ATTRLIST-2">:25431</span></span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| a =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">3</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| returned =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">4</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">|</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">^ </span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">| </span></span><span class="cider-repl-output"><span class="ATTRLIST-5"><span class="ATTRLIST-2">user/func-example2  </span></span></span><span class="cider-repl-output"><span class="ATTRLIST-3"><span class="ATTRLIST-2">:25423</span></span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">| a =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">3</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">| b =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">1</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">| returned =&gt; </span></span><span class="ATTRLIST-5">[</span><span class="cider-repl-output"><span class="ATTRLIST-4">32</span></span><span class="cider-repl-output"> </span><span class="cider-repl-output"><span class="ATTRLIST-4">3</span></span><span class="cider-repl-output"> </span><span class="cider-repl-output"><span class="ATTRLIST-4">4</span></span><span class="ATTRLIST-5">]</span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5">^ </span></span><span class="cider-repl-output">
+                      <p>What's the meaning of this? These are all the function calls that were made in the traced namespaced when we executes <code>test1</code>. Let's explore. Get your cursor to the first line of the output and press <span class="kbd">i</span>.</p>
 
+                      <!-- sayid instance test1 -->
+    <pre>
+<span class="RED3"> v</span> <span class="WHITE"><span class="RED3">contrived-example.core-test/test1</span></span>  <span class="WHITE">:13446</span>
+<span class="RED3"> |</span> returned =&gt;  {<span class="keyword">:inventory</span> {<span class="keyword">:a1</span> {<span class="keyword">:name</span> <span class="keyword">:taco</span> <span class="keyword">:price</span> <span class="PURPLE">0.85</span> <span class="keyword">:qty</span> <span class="PURPLE">9</span>}} 
+<span class="RED3"> |</span>               <span class="keyword">:coins-inserted</span> []                                
+<span class="RED3"> |</span>               <span class="keyword">:coins-returned</span> [<span class="keyword">:quarter</span> <span class="keyword">:quarter</span> <span class="keyword">:nickel</span>]       
+<span class="RED3"> |</span>               <span class="keyword">:dispensed</span> {<span class="keyword">:name</span> <span class="keyword">:taco</span> <span class="keyword">:price</span> <span class="PURPLE">0.85</span> <span class="keyword">:qty</span> <span class="PURPLE">10</span>}      
+<span class="RED3"> |</span>               <span class="keyword">:err-msg</span> nil}                                     
+<span class="RED3"> ^</span> 
+ </pre>
+                      <!-- END sayid instance test1 -->
 
-</span><span class="cider-repl-result"> nil</span>
+                      <p>This shows us the details of
+                      that <i>instance</i> of <code>test1</code> being
+                      called. We can see that a hash map was
+                      returned. Despite us inserting only 41 cents for
+                      an 85 cent taco, we see that a taco was
+                        dispensed, plus change! That's a BUG.</p>
+
+                      <p>Hit <span class="kbd">backspace</span>. We're
+                      back at the overview. Scan the list of functions
+                      that are called. Let's assume some programmer's
+                      intuition and decide
+                      that <code>valid-selection</code> is the first
+                      place of interest. Get your cursor to that line
+                        and press these to view the <i>instance</i> and all of its <i>descendants</i>.
+                        <span class="kbd">I</span>
+                        <span class="kbd">d</span>
+                        <span class="kbd">ENTER</span>
+                      </p>
+
+                      <!-- sayid instance 2 and descendants -->
+    <pre>
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">v</span> <span class="CYAN3"><span class="GREEN3">contrived-example.inner-workings/valid-selection</span></span>  <span class="WHITE">:13452</span>
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span> machine =&gt; {<span class="YELLOW3">:inventory</span> {<span class="YELLOW3">:a1</span> {<span class="YELLOW3">:name</span> <span class="YELLOW3">:taco</span> <span class="YELLOW3">:price</span> <span class="CYAN3">0.85</span> <span class="YELLOW3">:qty</span> <span class="CYAN3">10</span>}} 
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span>             <span class="YELLOW3">:coins-inserted</span> [<span class="YELLOW3">:quarter</span> <span class="YELLOW3">:dime</span> <span class="YELLOW3">:nickel</span> <span class="YELLOW3">:penny</span>]    
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span>             <span class="YELLOW3">:coins-returned</span> []                                 
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span>             <span class="YELLOW3">:dispensed</span> nil                                     
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span>             <span class="YELLOW3">:err-msg</span> nil}                                      
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span> button =&gt; <span class="YELLOW3">:a1</span> 
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span> returns =&gt;  true 
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">v</span> <span class="CYAN3"><span class="CYAN3">contrived-example.inner-workings/get-selection</span></span>  <span class="WHITE">:13453</span>
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span> machine =&gt; {<span class="YELLOW3">:inventory</span> {<span class="YELLOW3">:a1</span> {<span class="YELLOW3">:name</span> <span class="YELLOW3">:taco</span> <span class="YELLOW3">:price</span> <span class="CYAN3">0.85</span> <span class="YELLOW3">:qty</span> <span class="CYAN3">10</span>}} 
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span>             <span class="YELLOW3">:coins-inserted</span> [<span class="YELLOW3">:quarter</span> <span class="YELLOW3">:dime</span> <span class="YELLOW3">:nickel</span> <span class="YELLOW3">:penny</span>]    
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span>             <span class="YELLOW3">:coins-returned</span> []                                 
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span>             <span class="YELLOW3">:dispensed</span> nil                                     
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span>             <span class="YELLOW3">:err-msg</span> nil}                                      
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span> button =&gt; <span class="YELLOW3">:a1</span> 
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span> returned =&gt;  {<span class="YELLOW3">:name</span> <span class="YELLOW3">:taco</span> <span class="YELLOW3">:price</span> <span class="CYAN3">0.85</span> <span class="YELLOW3">:qty</span> <span class="CYAN3">10</span>} 
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">^</span> 
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">v</span> <span class="CYAN3"><span class="CYAN3">contrived-example.inner-workings/calc-coin-value</span></span>  <span class="WHITE">:13454</span>
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span> coins =&gt; [<span class="YELLOW3">:quarter</span> <span class="YELLOW3">:dime</span> <span class="YELLOW3">:nickel</span> <span class="YELLOW3">:penny</span>] 
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span> returned =&gt;  <span class="CYAN3">1.4</span> 
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">^</span> 
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span> <span class="CYAN3"><span class="GREEN3">contrived-example.inner-workings/valid-selection</span></span>  <span class="WHITE">:13452</span>
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span> machine =&gt; {<span class="YELLOW3">:inventory</span> {<span class="YELLOW3">:a1</span> {<span class="YELLOW3">:name</span> <span class="YELLOW3">:taco</span> <span class="YELLOW3">:price</span> <span class="CYAN3">0.85</span> <span class="YELLOW3">:qty</span> <span class="CYAN3">10</span>}} 
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span>             <span class="YELLOW3">:coins-inserted</span> [<span class="YELLOW3">:quarter</span> <span class="YELLOW3">:dime</span> <span class="YELLOW3">:nickel</span> <span class="YELLOW3">:penny</span>]    
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span>             <span class="YELLOW3">:coins-returned</span> []                                 
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span>             <span class="YELLOW3">:dispensed</span> nil                                     
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span>             <span class="YELLOW3">:err-msg</span> nil}                                      
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span> button =&gt; <span class="YELLOW3">:a1</span> 
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span> returned =&gt;  true 
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">^</span> 
+ 
 </pre>
-<p>Not surprisingly, the call to <code>func-example2</code> was the only ancestor.</p>
-<p>The query functions take a few different modifiers:
-  <table>
-    <tr><td><code>:a</code></td><td>Returns ancestors of matching nodes.</td></tr>
-    <tr><td><code>:d</code></td><td>Returns descendants of matching nodes.</td></tr>
-    <tr><td><code>:s</code></td><td>Returns siblings of matching nodes.</td></tr>
-    <tr><td><code>:w</code></td><td>Wildcard! Returns ancestors, descendants and siblings of matching nodes.</td></tr>
-    <tr><td><code>:r</code></td><td>Range. Takes exactly two query vectors and returns nodes that are both descendants of the first and ancestors of the second.</td></tr>
-  </table>
+                      
+                      <!-- END sayid instance 2 and descendants -->
 
-  Additionally, any of <code>:a</code>, <code>:s</code> and <code>:d</code> can be composed into a single keyword, such as <code>:ad</code>.
-</p>
-<p>Finally, let's find all function calls where the second element of the return value equals 3.</p>
+                      <p>We can see that <code>valid-selection</code>
+                      makes calls to <code>get-selection</code>
+                      and <code>calc-coin-value</code>.  Looking at
+                      the return values, we might notice a
+                      problem: <code>calc-coin-value</code>
+                      receives <code>[:quarter :dime :nickel
+                      :penny]</code> but returns $1.40 as the
+                      value. Let's dig
+                      deeper. Press <span class="kbd">n</span> a
+                      couple times to get the cursor to the call
+                      to <code>calc-coin-value</code>. Now
+                      press <span class="kbd">N</span> and hold onto
+                      your hat.
+                      </p>
 
-<pre><span class="cider-repl-prompt"> user&gt; </span><span class="cider-repl-input">(</span><span class="type"><span class="cider-repl-input">sd</span></span><span class="cider-repl-input">/p-t (</span><span class="type"><span class="cider-repl-input">sd</span></span><span class="cider-repl-input">/qw [</span><span class="clojure-keyword"><span class="cider-repl-input">:return</span></span><span class="cider-repl-input"> second 3]))</span>
-<span class="cider-repl-output"><span class="ATTRLIST-5"> v </span></span><span class="cider-repl-output"><span class="ATTRLIST-5"><span class="ATTRLIST-2">user/func-example2  </span></span></span><span class="cider-repl-output"><span class="ATTRLIST-3"><span class="ATTRLIST-2">:25423</span></span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5"> | a =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">3</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5"> | b =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">1</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5"> | returns =&gt; </span></span><span class="ATTRLIST-5">[</span><span class="cider-repl-output"><span class="ATTRLIST-4">32</span></span><span class="cider-repl-output"> </span><span class="cider-repl-output"><span class="ATTRLIST-4">3</span></span><span class="cider-repl-output"> </span><span class="cider-repl-output"><span class="ATTRLIST-4">4</span></span><span class="ATTRLIST-5">]</span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5"> |</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">v </span></span><span class="cider-repl-output"><span class="ATTRLIST-1"><span class="ATTRLIST-2">vector  user/func-example2  </span></span></span><span class="cider-repl-output"><span class="ATTRLIST-3"><span class="ATTRLIST-2">:25435</span></span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5"> |</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| </span></span><span class="ATTRLIST-1">(</span><span class="cider-repl-output"><span class="ATTRLIST-1">* </span></span><span class="ATTRLIST-1">(</span><span class="cider-repl-output"><span class="ATTRLIST-1">func-example1 </span></span><span class="ATTRLIST-1">(</span><span class="cider-repl-output"><span class="ATTRLIST-1">inc a</span></span><span class="ATTRLIST-1">)</span><span class="cider-repl-output"><span class="ATTRLIST-1"> b</span></span><span class="ATTRLIST-1">)</span><span class="cider-repl-output"><span class="ATTRLIST-1"> 2</span></span><span class="ATTRLIST-1">)</span><span class="cider-repl-output"><span class="ATTRLIST-1"> =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">32</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5"> |</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| a =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">3</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5"> |</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| b =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">4</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5"> |</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">| returned =&gt; </span></span><span class="ATTRLIST-5">[</span><span class="cider-repl-output"><span class="ATTRLIST-4">32</span></span><span class="cider-repl-output"> </span><span class="cider-repl-output"><span class="ATTRLIST-4">3</span></span><span class="cider-repl-output"> </span><span class="cider-repl-output"><span class="ATTRLIST-4">4</span></span><span class="ATTRLIST-5">]</span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5"> |</span></span><span class="cider-repl-output"><span class="ATTRLIST-1">^ </span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5"> | </span></span><span class="cider-repl-output"><span class="ATTRLIST-5"><span class="ATTRLIST-2">user/func-example2  </span></span></span><span class="cider-repl-output"><span class="ATTRLIST-3"><span class="ATTRLIST-2">:25423</span></span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5"> | a =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">3</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5"> | b =&gt; </span></span><span class="cider-repl-output"><span class="ATTRLIST-4">1</span></span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5"> | returned =&gt; </span></span><span class="ATTRLIST-5">[</span><span class="cider-repl-output"><span class="ATTRLIST-4">32</span></span><span class="cider-repl-output"> </span><span class="cider-repl-output"><span class="ATTRLIST-4">3</span></span><span class="cider-repl-output"> </span><span class="cider-repl-output"><span class="ATTRLIST-4">4</span></span><span class="ATTRLIST-5">]</span><span class="cider-repl-output">
-</span><span class="cider-repl-output"><span class="ATTRLIST-5"> ^ </span></span><span class="cider-repl-output">
-</span><span class="cider-repl-result"> nil</span>
-<span class="cider-repl-prompt"> user&gt; </span></pre>
+                      <!-- inner trace -->
+                          <pre>
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">v</span> <span class="PURPLE-BG"><span class="BLACK">(-&gt;&gt; coins (keep coin-values) (apply +))</span></span><span class="ATTRLIST-5"><span class="PURPLE"> =&gt; (apply + (keep coin-values coins))  contrived-example.inner-workings/calc-coin-value</span></span>  <span class="WHITE">:13491</span>
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span> returns =&gt;  <span class="CYAN3">1.4</span> 
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">v</span> <span class="RED3-BG"><span class="BLACK">(apply + (keep coin-values coins))</span></span><span class="ATTRLIST-5"><span class="RED3">  contrived-example.inner-workings/calc-coin-value</span></span>  <span class="WHITE">:13492</span>
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span> #function[clojure.core/+] 
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span> (<span class="CYAN3">0.25</span> <span class="CYAN3">0.1</span> <span class="CYAN3">0.05</span> <span class="CYAN3">1</span>) 
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span> returns =&gt;  <span class="CYAN3">1.4</span> 
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">v</span> <span class="YELLOW3-BG"><span class="BLACK">(keep coin-values coins)</span></span><span class="ATTRLIST-5"><span class="YELLOW3">  contrived-example.inner-workings/calc-coin-value</span></span>  <span class="WHITE">:13493</span>
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">|</span> {<span class="YELLOW3">:quarter</span> <span class="CYAN3">0.25</span> <span class="YELLOW3">:dime</span> <span class="CYAN3">0.1</span> <span class="YELLOW3">:nickel</span> <span class="CYAN3">0.05</span> <span class="YELLOW3">:penny</span> <span class="CYAN3">1</span>} 
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">|</span> [<span class="YELLOW3">:quarter</span> <span class="YELLOW3">:dime</span> <span class="YELLOW3">:nickel</span> <span class="YELLOW3">:penny</span>] 
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">|</span> returned =&gt;  (<span class="CYAN3">0.25</span> <span class="CYAN3">0.1</span> <span class="CYAN3">0.05</span> <span class="CYAN3">1</span>) 
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">^</span> 
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span> <span class="RED3-BG"><span class="BLACK">(apply + (keep coin-values coins))</span></span><span class="ATTRLIST-5"><span class="RED3">  contrived-example.inner-workings/calc-coin-value</span></span>  <span class="WHITE">:13492</span>
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span> #function[clojure.core/+] 
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span> (<span class="CYAN3">0.25</span> <span class="CYAN3">0.1</span> <span class="CYAN3">0.05</span> <span class="CYAN3">1</span>) 
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span> returned =&gt;  <span class="CYAN3">1.4</span> 
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">^</span> 
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span> <span class="PURPLE-BG"><span class="BLACK">(-&gt;&gt; coins (keep coin-values) (apply +))</span></span><span class="ATTRLIST-5"><span class="PURPLE"> =&gt; (apply + (keep coin-values coins))  contrived-example.inner-workings/calc-coin-value</span></span>  <span class="WHITE">:13491</span>
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span> returned =&gt;  <span class="CYAN3">1.4</span> 
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">^</span>
+...truncated...
+</pre>
 
-<h3 id="function-prefixes">Function Prefixes</h3>
-<p>Sayid has multiple namespaces for function implementations, but all
-of the functions intended for use are contained in the <code>core</code>
-namespace. Because these functions are numerous and cleanly separated by
-what values they act on, they can be prefixed for clarity. For example,
-workspaces are discussed in the next section. Functions for working with
-workspaces are prefixed <code>ws-</code>.</p>
+                      <!-- END inner trace -->
+                      <p> <i>(jump to the top of the buffer)</i><br>
+                        What did we do? We applied an <i>inner
+                      trace</i> to the
+                      function <code>calc-coin-value</code> and then
+                      replayed the call to <code>test1</code> that we
+                      had captured originally.</p>
 
-<p>Additionally, there are abbreviated alias functions for those who
-don't have time for a excess of letters. For
-example, <code>ws-add-trace-ns!</code> has a
-matching <code>w-atn!</code> alias. These aliases exist for each public
-function in core. It's like the <code>-</code> and <code>--</code>
-argument convention implemented by many shell commands.
-</p>
+                      <p><i><b>An INNER trace?</b></i> YES! We can see the inputs and output values of each expression in the function. Look at it. Where do things go wrong? It's when we pass a hash map to <code>keep</code> that defines a penny as being worth a dollar. Bug located! Press <span class="kbd">n</span> a couple times to get your cursor to that call. Press <span class="kbd">ENTER</span> to jump to that line of code.  </p>
 
+                      <!-- inner workings -->
+                         <pre>
+<span class="rainbow-delimiters-depth-1"> (</span><span class="keyword">ns</span> <span class="type">contrived-example.inner-workings</span><span class="rainbow-delimiters-depth-1">)</span>
+ 
+<span class="rainbow-delimiters-depth-1"> (</span><span class="keyword">def</span> <span class="variable-name">coin-values</span>
+   <span class="rainbow-delimiters-depth-2">{</span><span class="clojure-keyword">:quarter</span> 0.25
+    <span class="clojure-keyword">:dime</span> 0.10
+    <span class="clojure-keyword">:nickel</span> 0.05
+    <span class="clojure-keyword">:penny</span> 1<span class="rainbow-delimiters-depth-2">}</span><span class="rainbow-delimiters-depth-1">)</span>
+ 
+<span class="rainbow-delimiters-depth-1"> (</span><span class="keyword">defn-</span> <span class="function-name">calc-coin-value</span>
+   <span class="rainbow-delimiters-depth-2">[</span>coins<span class="rainbow-delimiters-depth-2">]</span>
+   <span class="rainbow-delimiters-depth-2">(</span><span class="keyword">-&gt;&gt;</span> coins
+        <span class="rainbow-delimiters-depth-3">(</span><span class="function-name">keep</span> coin-values<span class="rainbow-delimiters-depth-3">)</span>
+        <span class="rainbow-delimiters-depth-3">(</span><span class="function-name">apply</span> <span class="function-name">+</span><span class="rainbow-delimiters-depth-3">)</span><span class="rainbow-delimiters-depth-2">)</span><span class="rainbow-delimiters-depth-1">)</span>
 
-<h3 id="workspaces">Workspaces</h3>
-<p>
-  When using Sayid, everything stems from workspaces. Here's an example
-  of what one looks like:
-  <pre>
-    {:id :root22440          ;; unique id
-     :path [:root22440]      ;; unique path
-     :depth 0                ;; depth from root of trace tree
-     :children (atom [])     ;; top-level function traces will go here
-     :traced {:ns #{com.billpiel.sayid.test.ns1}  ;; this ns is traced
-              :fn #{}        ;; no invididually traced functions
-              :deep-fn #{}}  ;; no deep traced functions
-     :ws-slot nil            ;; workspace has not been saved in the shelf
-     :arg-map nil}           ;; not applicable
-  </pre>
+...truncated...
+</pre>
+                      <!-- END inner workings -->
 
-  This probably raises more questions than it answers, but let's focus
-  on <code>:traced</code> and <code>:children</code> for now. Workspaces
-  serve two main functions. They keep track of what is traced and they
-  serve as the root of a trace tree.</p>
+                      <p>We now find ourselves at the troublesome call to <code>keep</code> causing our bug. The hash map, <code>coin-values</code>, is just above. Change the value of a penny from <code>1</code> to <code>0.01</code>. Let's eval our corrected code the Sayid way -- press <span class="kbd">C-c s !</span>. This will remove the traces, eval the buffer, then re-apply the traces. It also clears the workspace log. This is all helpful. Navigate back to <code>core-test</code> and run <code>test1</code> again. Repeating steps above, you can verify the output is now correct: no taco.
 
-<p>
-  Sayid maintains an atom for the <b>active</b> workspace. This is the
-  workspace that <code>ws-</code> functions will operate on by
-  default. Much of the functionality of this library is available
-  through the use of just one workspace. However, it is possible to
-  juggle more than one through the use of the <i>shelf.</i> Check these
-  out.
+                        <!-- fixed -->
+                        <pre>
+<span class="RED3"> v</span> <span class="ATTRLIST-4"><span class="RED3">contrived-example.core-test/test1</span></span>  <span class="ATTRLIST-2">:13579</span>
+<span class="RED3"> |</span> returned =&gt;  {<span class="YELLOW3">:inventory</span> {<span class="YELLOW3">:a1</span> {<span class="YELLOW3">:name</span> <span class="YELLOW3">:taco</span> <span class="YELLOW3">:price</span> <span class="CYAN3">0.85</span> <span class="YELLOW3">:qty</span> <span class="CYAN3">10</span>}} 
+<span class="RED3"> |</span>               <span class="YELLOW3">:coins-inserted</span> [<span class="YELLOW3">:quarter</span> <span class="YELLOW3">:dime</span> <span class="YELLOW3">:nickel</span> <span class="YELLOW3">:penny</span>]    
+<span class="RED3"> |</span>               <span class="YELLOW3">:coins-returned</span> []                                 
+<span class="RED3"> |</span>               <span class="YELLOW3">:dispensed</span> nil                                     
+<span class="RED3"> |</span>               <span class="YELLOW3">:err-msg</span> true}                                     
+<span class="RED3"> ^</span> 
+ 
+</pre>
 
-  <pre>
-<span class="cider-repl-prompt"> user&gt; </span><span class="cider-repl-input">(doc ws-save-as!)</span>
-<span class="cider-repl-output"> -------------------------
- com.billpiel.sayid.core/ws-save-as!
- ([slot])
-   Saves active workspace to the workspace shelf namespace in the specified `slot`.
-</span><span class="cider-repl-result"> nil</span>
-<span class="cider-repl-prompt"> user&gt; </span><span class="cider-repl-input">(doc ws-load!)</span>
-<span class="cider-repl-output"> -------------------------
- com.billpiel.sayid.core/ws-load!
- ([slot &amp; [force]])
-   Loads a workspace from the shelf namespace into the active
-   position. Will not overwrite an un-saved active workspace unless
-   `force` equals :f
-</span><span class="cider-repl-result"> nil</span>
-<span class="cider-repl-prompt"> user&gt; </span></pre>
+                        <!-- END fixed -->
 
-  Cool.
-</p>
-  <h3 id="querying">Querying</h3>
-<p>Once you have some traces captured, you'll want to examine them. You
-could just print the whole tree out, but that would be overwhelming for
-any non-trivial scenarios. Instead, you can query the tree. To keep
-things terse, the querying function you are likely to use most often is
-aliased as <code>q</code>. It queries the active workspace and prints
-the results. Below is an explanation of querying function arguments
-work.
-</p>
-
-    <pre>
-<span class="cider-repl-prompt"> user&gt; </span><span class="cider-repl-input">(doc query-docs)</span>
-<span class="cider-repl-output"> -------------------------
- com.billpiel.sayid.core/query-docs
-   There are several querying functions. Many of them take a variadic
-   `body` argument. The syntax of the `body` argument is described
-   below:
-
-   Body may or may not begin with a keyword modifier, followed by one or
-   more vectors or symbols. The keyword modifier expands the query
-   results to include nodes that have a specified type of relationship
-   with any nodes matching the query. The modifiers are listed here:
-
-   :a -- returns ancestors of matching nodes
-   :d -- returns descendants of matching nodes
-   :s -- returns siblings of matching nodes
-   :w -- wildcard! returns ancestors, descendants and siblings of matching nodes
-   :r -- range; takes exactly two query vectors and returns nodes that
-         are both descendants of the first and ancestors of the second
-
-   After the optional keyword modifier is one or more vectors or
-   symbols. These are the queries themselves. A vector is applied in a
-   `get-in` fashion to each trace node, with the final element acting as
-   a matching value or predicate function. If the final value is truthy,
-   the node is included in the query result set. For example, a `body` of
-
-   :a [:arg-map 'fruit :apple]
-
-   would match any trace node where an argument `fruit` took a
-   value :apple, as well as all ancestors of that node.
-
-   If the query is a symbol instead of a vector, the query will match any
-   node whose function name matches the symbol. For example, a `body` of
-
-   'somefunc
-
-   is equivalent to: [:name 'somefunc]
-
-</span><span class="cider-repl-result"> nil</span>
-<span class="cider-repl-prompt"> user&gt; </span></pre>
-
-    <h3 id="profiling">Profiling</h3>
-
-<p> As a trace occurs, Sayid records the execution start and end
-  time. This allows for any number of analyses. Out of the box, Sayid
-  provides the two that I find most useful. See docs below:</p>
-
-    <pre>
-<span class="cider-repl-prompt"> user&gt; </span><span class="cider-repl-input">(doc sd/pro-net-time)</span>
-<span class="cider-repl-output"> -------------------------
- com.billpiel.sayid.core/pro-net-time
- ([tree])
-   Takes a tree with profilings data (see `pro-analyze`) and prints a
-   table of functions and their profile metrics, sorted by net time
-   sum. 'Net time sum' is the amount of time spent in a function minus
-   the time spent executing its children. Functions with high net time
-   sum may be candidates for optimization.
-</span><span class="cider-repl-result"> nil</span>
-<span class="cider-repl-prompt"> user&gt; </span><span class="cider-repl-input">(doc sd/pro-gross-repeats)</span>
-<span class="cider-repl-output"> -------------------------
- com.billpiel.sayid.core/pro-gross-repeats
- ([tree])
-   Takes a tree with profilings data (see `pro-analyze`) and prints a
-   table of functions and their profile metrics, sorted by gross time of
-   repeated arguments. 'Gross of repeats' is the amount of time spent in
-   a function during calls where the args match those of a previous call
-   to the function. Functions with high gross of repeats may be
-   candidates for memoization.
-</span><span class="cider-repl-result"> nil</span>
-<span class="cider-repl-prompt"> user&gt; </span></pre>
-
-<p>Not bad, but how do you use the damn thing? Once you have a trace
-  tree in your workspace, you can decorate it with profiling data that
-  can then be analysed by the functions above.</p>
-
-    <pre>
-<span class="cider-repl-prompt"> user&gt; </span><span class="cider-repl-input">(def ppp (sd/pro-analyse (sd/ws-deref!)))</span>
-<span class="cider-repl-result"> #'user/ppp</span>
-<span class="cider-repl-prompt"> user&gt; </span><span class="cider-repl-input">(sd/pro-net-time ppp)</span>
-<span class="cider-repl-output" style="font-size: 0.8em">
- |                                :name | :net-time-sum | :net-time-avg | :count | :gross-time-sum | :gross-time-avg |
- |--------------------------------------+---------------+---------------+--------+-----------------+-----------------|
- | :com.billpiel.sayid.test.ns1/func3-1 |             0 |           0.0 |      1 |               0 |             0.0 |
- | :com.billpiel.sayid.test.ns1/func3-2 |             0 |           0.0 |      3 |               0 |             0.0 |
- | :com.billpiel.sayid.test.ns1/func3-3 |             0 |           0.0 |      1 |               0 |             0.0 |
- | :com.billpiel.sayid.test.ns1/func3-4 |             0 |           0.0 |      1 |               0 |             0.0 |
-</span><span class="cider-repl-result"> nil</span>
-<span class="cider-repl-prompt"> user&gt; </span><span class="cider-repl-input">(sd/pro-gross-repeats ppp)</span>
-<span class="cider-repl-output" style="font-size:0.7em">
- |                                :name | :gross-of-repeats | :count | :arg-cardinality | :repeat-arg-pct | :gross-time-sum | :gross-time-avg |
- |--------------------------------------+-------------------+--------+------------------+-----------------+-----------------+-----------------|
- | :com.billpiel.sayid.test.ns1/func3-1 |               0.0 |      1 |                1 |             0.0 |               0 |             0.0 |
- | :com.billpiel.sayid.test.ns1/func3-2 |               0.0 |      3 |                3 |             0.0 |               0 |             0.0 |
- | :com.billpiel.sayid.test.ns1/func3-3 |               0.0 |      1 |                1 |             0.0 |               0 |             0.0 |
- | :com.billpiel.sayid.test.ns1/func3-4 |               0.0 |      1 |                1 |             0.0 |               0 |             0.0 |
-</span><span class="cider-repl-result"> nil</span>
-<span class="cider-repl-prompt"> user&gt; </span></pre>
-
-<p>Note that I played an HTML trick and shrank the profiling output to
-better fit the page. Sorry if it still doesn't look right in a little
-screen. Also, ignore all the zeroes. In a better example, there'd
-be more rows and more interesting numbers. The key point here is that
-the table is sorted by the first column, which allows you two zero in on
-  the slow guys. Hopefully, you get the idea.</p>
-
-<h3 id="recordings">Recordings</h3>
-
-<p>If a workspace is the studio session, then recordings are the hard
-copy -- the CD or mp3 file or whatever the kids are into these
-days. They are static records of the trace tree of a workspace at a
-given time. They have no notion of what is traced, only what was
-captured. Besides that, they are very much like workspaces in that they
-can be queries, printed and put on the shelf. The default shelf
-namespace for recordings is <code>$rec</code>.
-</p>
-
-
-<p>Ok. That's it.</p>
-
-        <!-- end repl -->
+                      <p>Great work!</p>
+                        
                     </div><!-- #content -->
                 </div><!-- #primary -->
 
