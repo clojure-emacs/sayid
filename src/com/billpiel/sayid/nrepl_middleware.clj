@@ -1,5 +1,6 @@
 (ns com.billpiel.sayid.nrepl-middleware
-  (:require [clojure.tools.nrepl.middleware :refer [set-descriptor!]]
+  (:require [clojure.stacktrace :as st]
+            [clojure.tools.nrepl.middleware :refer [set-descriptor!]]
             [clojure.tools.nrepl.misc :refer [response-for]]
             [clojure.tools.nrepl.transport :as t]
             [com.billpiel.sayid.core :as sd]
@@ -398,7 +399,7 @@
                                          :value out)))
        (catch Exception e
          (t/send transport (response-for msg
-                                         :value (with-out-str (clojure.stacktrace/print-stack-trace e)))))
+                                         :value (with-out-str (st/print-stack-trace e)))))
        (finally
          (send-status-done msg))))
 
@@ -420,9 +421,9 @@
     (catch Exception e
       (println e)
       (println (with-out-str ;; I don't know why this is necessary
-                 (clojure.stacktrace/print-stack-trace e)))
+                 (st/print-stack-trace e)))
       (t/send transport (response-for msg
-                                      :value (with-out-str (clojure.stacktrace/print-stack-trace e)))))
+                                      :value (with-out-str (st/print-stack-trace e)))))
     (finally
       (send-status-done msg))))
 
@@ -667,7 +668,7 @@
       ((get sayid-nrepl-ops op handler) msg)
       (catch Throwable e
           (println (.getMessage e))
-          (clojure.stacktrace/print-stack-trace e)
+          (st/print-stack-trace e)
           (reply:clj->nrepl msg (.getMessage e))))))
 
 
