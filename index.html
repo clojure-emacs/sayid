@@ -671,6 +671,29 @@ C-c s V s -- Set the view
 C-c s h -- show this help
                       </pre>
 
+                      <p>In the *sayid* buffer, press <span class="kbd">h</span> to pop up the help buffer.</p>
+                      <pre>
+ENTER -- pop to function
+d -- def value to $s/*
+f -- query for calls to function
+F -- query for calls to function with modifier
+i -- show only this instance
+I -- query for this instance with modifier
+w -- show full workspace trace
+n -- jump to next call node
+N -- apply inner trace and reply workspace
+p -- jump to prev call node
+P -- pretty print value
+C -- clear workspace trace log
+v -- toggle view
+V -- set view (see register-view)
+l, backspace -- previous buffer state
+L, S-backspace -- forward buffer state
+g -- generate instance expression and put in kill ring
+h -- help                        
+                      </pre>
+                        
+                      
                       <p>In the *sayid-traced* buffer, press <span class="kbd">h</span> to pop up the help buffer.</p>
                       <pre>
 enter -- Drill into ns at point
