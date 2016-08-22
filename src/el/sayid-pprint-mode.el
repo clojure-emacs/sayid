@@ -6,6 +6,7 @@
 
 (setq sayid-pprint-mode-map
       (let ((map (make-sparse-keymap)))
+        (define-key map  (kbd "h") 'sayid-pprint-buf-show-help)
         (define-key map  (kbd "o") 'sayid-pprint-buf-out)
         (define-key map  (kbd "i") 'sayid-pprint-buf-in)
         (define-key map  (kbd "p") 'sayid-pprint-buf-prev)

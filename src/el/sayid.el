@@ -840,6 +840,15 @@ r -- Remove trace from fun at point
 l, <backspace> -- go back to trace overview (if in ns view)
 "))
 
+(defun sayid-pprint-buf-show-help ()
+  (interactive)
+  (display-message-or-buffer "
+ENTER -- show path in mini-buffer
+i -- jump into child node
+o -- jump out to parent node
+n -- jump to next sibling node
+p -- jump to previous sibling node
+"))
 
 ;;;###autoload
 (defun sayid-set-clj-mode-keys ()
