@@ -1,11 +1,11 @@
-(defproject com.billpiel/sayid "0.0.8-dev"
+(defproject com.billpiel/sayid "0.0.8"
   :description "Sayid is a library for debugging and profiling clojure code."
   :signing {:gpg-key "<bill@billpiel.com>"}
   :url "http://bpiel.github.io/sayid/"
   :license {:name "Apache License, Version 2.0"
             :url "http://www.apache.org/licenses/LICENSE-2.0"}
   :dependencies [[org.clojure/clojure "1.6.0"]
-                 [tamarin "0.1.1-dev"]
+                 [tamarin "0.1.1"]
                  [org.clojure/tools.reader "1.0.0-alpha3"]
                  [org.clojure/tools.namespace "0.2.11"]]
   :repl-options {:nrepl-middleware [com.billpiel.sayid.nrepl-middleware/wrap-sayid]}
