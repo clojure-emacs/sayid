@@ -279,6 +279,7 @@ h3 {
                         <li><a href="#installation">Installation & Requirements</a></li>
                         <li><a href="#demo1vid">Demo #1 - Video</a></li>
                         <li><a href="#demo1wt">Demo #1 - Walkthrough</a></li>
+                        <li><a href="#documentation">Documentation</a></li>
                       </ul>
                       
                       <h2 id="installation">Installation & Requirements</h2>
@@ -338,11 +339,7 @@ h3 {
                       steps illustrated in the demo video above, but
                       with Sayid v0.0.8. You can find
                       the <a href="http://github.com/bpiel/contrived-example">contrived example</a> project here.
-                        
-
-                        If you want to play along, you'll need a profiles.clj with this stuff in it:
-
-                        You'll also need a cider connection to the project.</p>
+                      </p>
 
                       <p>
                       Below is the code to the test namespace. You can
@@ -636,7 +633,66 @@ Traced functions:
                         <!-- END fixed -->
 
                       <p>Great work!</p>
-                        
+
+                      <h2 id="documentation">Documentation</h2>
+
+                      <p>Documentation is a little light at the
+                      moment. There are lists of
+                      keybindings. Helpfully, they are easily
+                      accessible from within emacs. Below are the
+                      contents of the various help buffers, as well as
+                      instructions on how to pop them up in time of
+                      need.</p>
+
+                      <p>In a clojure-mode buffer, press <span class="kbd">C-c s h</span> to pop up the help buffer.</p>
+                      <pre>
+C-c s ! -- Disble traces, eval current buffer, enable traces, clear the workspace log
+C-c s e -- Enables traces, evals the expression at point, disables traces, displays results with terse view
+C-c s f -- Queries the active workspace for entries that most closely match the context of the cursor position
+C-c s n -- Applies an inner trace to the function at point, replays workspace, displays results
+C-c s r -- Replays workspace, queries results by context of cursor
+C-c s w -- Shows workspace, using the current view
+C-c s t y -- Prompts for a dir, recursively traces all ns's in that dir and subdirs
+C-c s t p -- Prompts for a pattern (* = wildcare), and applies a trace to all *loaded* ns's whose name matches the patten
+C-c s t b -- Trace the ns in the current buffer
+C-c s t e -- Enable the *existing* (if any) trace of the function at point
+C-c s t E -- Enable all traces
+C-c s t d -- Disable the *existing* (if any) trace of the function at point
+C-c s t D -- Disable all traces
+C-c s t n -- Apply an inner trace to the symbol at point
+C-c s t o -- Apply an outer trace to the symbol at point
+C-c s t r -- Remove existing trace from the symbol at point
+C-c s t K -- Remove all traces
+C-c s c -- Clear the workspace trace log
+C-c s x -- Blow away workspace -- traces and logs
+C-c s s -- Popup buffer showing what it currently traced
+C-c s S -- Popup buffer showing what it currently traced in buffer's ns
+C-c s V s -- Set the view
+C-c s h -- show this help
+                      </pre>
+
+                      <p>In the *sayid-traced* buffer, press <span class="kbd">h</span> to pop up the help buffer.</p>
+                      <pre>
+enter -- Drill into ns at point
+e -- Enable trace
+d -- Disable trace
+E -- Enable ALL traces
+D -- Disable ALL traces
+i -- Apply inner trace to func at point
+o -- Apply outer trace to func at point
+r -- Remove trace from fun at point
+l, backspace -- go back to trace overview (if in ns view)
+                      </pre>
+
+                      <p>In the *sayid-pprint* buffer, press <span class="kbd">h</span> to pop up the help buffer.</p>
+<pre>
+ENTER -- show path in mini-buffer
+i -- jump into child node
+o -- jump out to parent node
+n -- jump to next sibling node
+p -- jump to previous sibling node
+</pre>
+
                     </div><!-- #content -->
                 </div><!-- #primary -->
 
