@@ -553,8 +553,11 @@
     (let [parent (z/node up)]
       (case (-> parent :type first)
         :map (get-path up)
+        :record (get-path up)
         :map-entry (conj (get-path up) (some-> up z/down z/node :string))
         :vector (get-path-of-vec-child z)
+        :list (get-path-of-vec-child z)
+        :listp (get-path-of-vec-child z)
         :seq  (get-path-of-vec-child z)))
     []))
 
