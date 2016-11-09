@@ -1,7 +1,6 @@
 (ns com.billpiel.sayid.query2
-  (require [clojure.zip :as z]
-           [com.billpiel.sayid.util.other :as util]
-           ))
+  (:require [clojure.zip :as z]
+            [com.billpiel.sayid.util.other :as util]))
 
 ;; === zipper iterators
 
