@@ -5,7 +5,7 @@
   :license {:name "Apache License, Version 2.0"
             :url "http://www.apache.org/licenses/LICENSE-2.0"}
   :dependencies [[org.clojure/clojure "1.6.0"]
-                 [tamarin "0.1.1"]
+                 [tamarin "0.1.2"]
                  [org.clojure/tools.reader "1.0.0-alpha3"]
                  [org.clojure/tools.namespace "0.2.11"]]
   :repl-options {:nrepl-middleware [com.billpiel.sayid.nrepl-middleware/wrap-sayid]}
@@ -17,7 +17,8 @@
              :1.5 {:dependencies [[org.clojure/clojure "1.5.0"]]}
              :1.6 {:dependencies [[org.clojure/clojure "1.6.0"]]}
              :1.7 {:dependencies [[org.clojure/clojure "1.7.0"]]}
-             :1.8 {:dependencies [[org.clojure/clojure "1.8.0"]]}}
+             :1.8 {:dependencies [[org.clojure/clojure "1.8.0"]]}
+             :1.9 {:dependencies [[org.clojure/clojure "1.9.0-alpha14"]]}}
   :codox {:project {:name "Sayid"}
           :namespaces [com.billpiel.sayid.core]}
-  :aliases {"test-all" ["with-profile" "+1.4:+1.5:+1.6:+1.7:+1.8" "midje"]})
+  :aliases {"test-all" ["with-profile" "+1.4:+1.5:+1.6:+1.7:+1.8:+1.9" "midje"]})
