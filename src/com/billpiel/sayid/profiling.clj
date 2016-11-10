@@ -1,7 +1,7 @@
 (ns com.billpiel.sayid.profiling
-  (require [com.billpiel.sayid.trace :as tr]
-           [com.billpiel.sayid.recording :as rec]
-           [com.billpiel.sayid.util.other :as util]))
+  (:require [com.billpiel.sayid.trace :as tr]
+            [com.billpiel.sayid.recording :as rec]
+            [com.billpiel.sayid.util.other :as util]))
 
 (defn merge-profile-values
   [a b]

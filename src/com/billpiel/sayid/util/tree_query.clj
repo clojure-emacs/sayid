@@ -1,6 +1,6 @@
 (ns com.billpiel.sayid.util.tree-query
-  (require [clojure.zip :as z]
-           [swiss.arrows :refer [-<> -<>>]]))
+  (:require [clojure.zip :as z]
+            [swiss.arrows :refer [-<> -<>>]]))
 
 (def ^:dynamic *get-tags-mz* nil)
 

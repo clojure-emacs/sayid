@@ -1,6 +1,6 @@
 (ns com.billpiel.sayid.inner-trace2
-  (require [com.billpiel.sayid.util.other :as util]
-           [com.billpiel.sayid.trace :as trace]))
+  (:require [com.billpiel.sayid.util.other :as util]
+            [com.billpiel.sayid.trace :as trace]))
 
 (defn prs
   [v]
