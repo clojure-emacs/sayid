@@ -56,7 +56,7 @@ user> (-> #'f1 meta :source)
 
 ;; === Workspace functions
 
-(defn- ws-init! [& [quiet]]
+(defn ws-init! [& [quiet]]
   (#'ws/init! workspace quiet))
 
 (defn ws-get-active!
@@ -156,13 +156,16 @@ user> (-> #'f1 meta :source)
     `(mapv ws-add-trace-ns!* (find-ns/search-nses '~ns-sym ~ref-ns))))
 (util/defalias-macro w-atn! ws-add-trace-ns!)
 
-(defn ws-remove-trace-ns!
+(defmacro ws-remove-trace-ns!
   "`ns-sym` is a symbol that references an existing namespace. Removes all
   traces applied to the namespace."
-  [ns-sym] (#'ws/remove-trace-*! (ws-init! :quiet)
-                                  :ns
-                                  ns-sym))
-(util/defalias w-rtn! ws-remove-trace-ns!)
+  [ns-sym]
+  (let [ref-ns *ns*]
+    `(mapv (partial #'ws/remove-trace-*!
+                    (ws-init! :quiet)
+                    :ns)
+           (find-ns/search-nses '~ns-sym ~ref-ns))))
+(util/defalias-macro w-rtn! ws-remove-trace-ns!)
 
 (defn ws-enable-all-traces!
   "Enables any disabled traces in active workspace."
