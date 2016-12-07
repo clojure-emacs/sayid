@@ -468,12 +468,6 @@ user> (-> #'f1 meta :source)
   `body` argument. The syntax of the `body` argument is described
   below:
 
-<<<<<<< HEAD
-  Body may or may not begin with a keyword modifier, followed by one or
-  more vectors or symbols. The keyword modifier expands the query
-  results to include nodes that have a specified type of relationship
-  with any nodes matching the query. The modifiers are listed here:
-=======
   Body may or may not begin with a keyword. If it doesn't, body is one
   or more vectors which specify a query.
 
@@ -482,7 +476,6 @@ user> (-> #'f1 meta :source)
   expands the query results to include nodes that have a specified type
   of relationship with any nodes matching the query. The modifiers are
   listed here:
->>>>>>> master
 
   :a -- returns ancestors of matching nodes
   :d -- returns descendants of matching nodes
