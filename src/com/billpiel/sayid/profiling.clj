@@ -1,7 +1,8 @@
 (ns com.billpiel.sayid.profiling
-  (require [com.billpiel.sayid.trace :as tr]
-           [com.billpiel.sayid.recording :as rec]
-           [com.billpiel.sayid.util.other :as util]))
+  (:require [com.billpiel.sayid.trace :as tr]
+            [com.billpiel.sayid.recording :as rec]
+            [com.billpiel.sayid.util.other :as util]
+            [clojure.walk :as w]))
 
 (defn merge-profile-values
   [a b]
@@ -57,6 +58,22 @@
                   children))
       entry)))
 
+(defn hash-safe
+  [x]
+  (hash (w/prewalk (fn [v]
+                     (if (seq? v)
+                       (take 10000 v)
+                       v))
+                   x)))
+
+(defn mk-arg-hash-set
+  [tree]
+  (->> tree
+       :args
+       (map hash-safe)
+       set))
+
+
 (defn add-durations-to-tree
   [tree]
   (let [gross-time (->> tree
@@ -74,7 +91,7 @@
            :profiling {:gross-time gross-time
                        :net-time net-time
                        :kids-time kids-time
-                       :arg-set #{(:args tree)}})))
+                       :arg-set (mk-arg-hash-set tree)})))
 
 (defn assoc-tree-with-profile
   [tree]

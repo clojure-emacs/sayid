@@ -1,8 +1,8 @@
 (ns com.billpiel.sayid.util.other
-  (require [clojure.walk :as walk]
-           [clojure.tools.reader :as r]
-           [clojure.tools.reader.reader-types :as rts]
-           clojure.repl))
+  (:require [clojure.walk :as walk]
+            [clojure.tools.reader :as r]
+            [clojure.tools.reader.reader-types :as rts]
+            clojure.repl))
 
 (defn ->int
   [v]

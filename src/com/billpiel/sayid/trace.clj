@@ -1,5 +1,5 @@
 (ns com.billpiel.sayid.trace
-  (require [com.billpiel.sayid.util.other :as util]))
+  (:require [com.billpiel.sayid.util.other :as util]))
 
 
 (def ^:dynamic *trace-log-parent* nil)
