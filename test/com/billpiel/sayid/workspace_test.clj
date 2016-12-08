@@ -106,8 +106,8 @@
     (ws/init! *ws*)
 
     
-    (ws/load! *ws* *shelf* 'test1)
-    => (throws Exception)
+    (t/is (thrown? Exception
+                   (ws/load! *ws* *shelf* 'test1)))
 
     (t/testing "; didn't overwrite"
       (t/is (= (ws/deep-deref! *ws*)
