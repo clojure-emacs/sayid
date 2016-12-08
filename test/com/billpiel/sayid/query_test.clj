@@ -231,37 +231,238 @@
                   :return "return F",
                   :children []}]}]}]})))
 
+(t/deftest ancestors-and-descendants
+  (t/is (= (q/traverse-tree-dissoc-zipper
+            (sd/tree-query test-trace
+                           :ad
+                           [:name "E"]
+                           [:name "C"]))
+           {:id :query-result10,
+            :children
+            [{:id 1,
+              :name "A",
+              :depth 0,
+              :args [1 2],
+              :return 3,
+              :children
+              [{:id 2,
+                :name "B",
+                :depth 1,
+                :args [3 4 5],
+                :return :b-return,
+                :children
+                [{:id 11,
+                  :name "E",
+                  :depth 2,
+                  :args [:a 1 :b 2],
+                  :return 5,
+                  :children []}]}
+               {:id 3,
+                :name "C",
+                :depth 1,
+                :args [1 {:a [10 11 12]} 5],
+                :return 8,
+                :children
+                [{:id 4,
+                  :name "F",
+                  :depth 2,
+                  :args [2 5 9],
+                  :return "return F",
+                  :children
+                  [{:id 5,
+                    :name "I",
+                    :depth 3,
+                    :args [],
+                    :return 0,
+                    :children
+                    [{:id 6,
+                      :name "L",
+                      :depth 4,
+                      :args [],
+                      :return 0,
+                      :children []}]}
+                   {:id 7,
+                    :name "M",
+                    :depth 3,
+                    :args [],
+                    :return 0,
+                    :children []}
+                   {:id 8,
+                    :name "N",
+                    :depth 3,
+                    :args [],
+                    :return 0,
+                    :children []}
+                   {:id 9,
+                    :name "O",
+                    :depth 3,
+                    :args [],
+                    :return 0,
+                    :children []}]}]}]}]})))
 
+(t/deftest ancestors-and-descendants-limited-distance
+  (t/is (= (q/traverse-tree-dissoc-zipper
+            (sd/tree-query test-trace
+                           :ad 2
+                           [:name "E"]
+                           [:name "C"]))
+           {:id :query-result10,
+            :children
+            [{:id 1,
+              :name "A",
+              :depth 0,
+              :args [1 2],
+              :return 3,
+              :children
+              [{:id 2,
+                :name "B",
+                :depth 1,
+                :args [3 4 5],
+                :return :b-return,
+                :children
+                [{:id 11,
+                  :name "E",
+                  :depth 2,
+                  :args [:a 1 :b 2],
+                  :return 5,
+                  :children []}]}
+               {:id 3,
+                :name "C",
+                :depth 1,
+                :args [1 {:a [10 11 12]} 5],
+                :return 8,
+                :children
+                [{:id 4,
+                  :name "F",
+                  :depth 2,
+                  :args [2 5 9],
+                  :return "return F",
+                  :children
+                  [{:id 5,
+                    :name "I",
+                    :depth 3,
+                    :args [],
+                    :return 0,
+                    :children []}
+                   {:id 7,
+                    :name "M",
+                    :depth 3,
+                    :args [],
+                    :return 0,
+                    :children []}
+                   {:id 8,
+                    :name "N",
+                    :depth 3,
+                    :args [],
+                    :return 0,
+                    :children []}
+                   {:id 9,
+                    :name "O",
+                    :depth 3,
+                    :args [],
+                    :return 0,
+                    :children []}]}]}]}]})))
 
+(t/deftest wildcard
+  (t/is (= (q/traverse-tree-dissoc-zipper
+            (sd/tree-query test-trace
+                           :w
+                           [:name "I"]))
+           {:id :query-result10,
+            :children
+            [{:id 1,
+              :name "A",
+              :depth 0,
+              :args [1 2],
+              :return 3,
+              :children
+              [{:id 3,
+                :name "C",
+                :depth 1,
+                :args [1 {:a [10 11 12]} 5],
+                :return 8,
+                :children
+                [{:id 4,
+                  :name "F",
+                  :depth 2,
+                  :args [2 5 9],
+                  :return "return F",
+                  :children
+                  [{:id 5,
+                    :name "I",
+                    :depth 3,
+                    :args [],
+                    :return 0,
+                    :children
+                    [{:id 6,
+                      :name "L",
+                      :depth 4,
+                      :args [],
+                      :return 0,
+                      :children []}]}
+                   {:id 7,
+                    :name "M",
+                    :depth 3,
+                    :args [],
+                    :return 0,
+                    :children []}
+                   {:id 8,
+                    :name "N",
+                    :depth 3,
+                    :args [],
+                    :return 0,
+                    :children []}
+                   {:id 9,
+                    :name "O",
+                    :depth 3,
+                    :args [],
+                    :return 0,
+                    :children []}]}]}]}]})))
 
+(t/deftest wildcard-limited-distance
+  (t/is (= (q/traverse-tree-dissoc-zipper
+            (sd/tree-query test-trace
+                           :w 1
+                           [:name "I"]))
+           {:id :query-result10,
+            :children
+            [{:id 4,
+              :name "F",
+              :depth 2,
+              :args [2 5 9],
+              :return "return F",
+              :children
+              [{:id 5,
+                :name "I",
+                :depth 3,
+                :args [],
+                :return 0,
+                :children
+                [{:id 6,
+                  :name "L",
+                  :depth 4,
+                  :args [],
+                  :return 0,
+                  :children []}]}
+               {:id 7, :name "M", :depth 3, :args [], :return 0, :children []}
+               {:id 8, :name "N", :depth 3, :args [], :return 0, :children []}
+               {:id 9,
+                :name "O",
+                :depth 3,
+                :args [],
+                :return 0,
+                :children []}]}]})))
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+(t/deftest siblings
+  (t/is (= (q/traverse-tree-dissoc-zipper
+            (sd/tree-query test-trace :s
+                           [:name "E"]))
+           {:id :query-result10,
+            :children
+            [{:id 10, :name "D", :depth 2, :args [], :return 4, :children []}
+             {:id 11,
+              :name "E",
+              :depth 2,
+              :args [:a 1 :b 2],
+              :return 5,
+              :children []}]})))
