@@ -187,15 +187,6 @@
         (t/is (= (-> trace :children first :throw :cause)
                  "Exception from func-throws: :a")))
 
-      (t/testing "; throw via"
-        (t/is (= (-> trace :children first :throw :via first)
-                 {:at {:class-name "com.billpiel.sayid.test_ns1$func_throws"
-                       :file-name "test_ns1.clj"
-                       :line-number 14
-                       :method-name "invoke"}
-                  :message "Exception from func-throws: :a"
-                  :type java.lang.Exception})))
-
       (t/testing "; first child"
         (t/is (= (-> trace
                      :children
