@@ -1,4 +1,4 @@
-(defproject com.billpiel/sayid "0.0.10"
+(defproject com.billpiel/sayid "0.0.11-dev"
   :description "Sayid is a library for debugging and profiling clojure code."
   :signing {:gpg-key "<bill@billpiel.com>"}
   :url "http://bpiel.github.io/sayid/"
@@ -13,12 +13,10 @@
                                   [org.clojure/tools.nrepl "0.2.10"]]
                    :plugins [[lein-midje "3.1.3"]
                              [lein-codox "0.9.4"]]}
-             :1.4 {:dependencies [[org.clojure/clojure "1.4.0"]]}
-             :1.5 {:dependencies [[org.clojure/clojure "1.5.0"]]}
              :1.6 {:dependencies [[org.clojure/clojure "1.6.0"]]}
              :1.7 {:dependencies [[org.clojure/clojure "1.7.0"]]}
              :1.8 {:dependencies [[org.clojure/clojure "1.8.0"]]}
              :1.9 {:dependencies [[org.clojure/clojure "1.9.0-alpha14"]]}}
   :codox {:project {:name "Sayid"}
           :namespaces [com.billpiel.sayid.core]}
-  :aliases {"test-all" ["with-profile" "+1.4:+1.5:+1.6:+1.7:+1.8:+1.9" "midje"]})
+  :aliases {"test-all" ["with-profile" "+1.6:+1.7:+1.8:+1.9" "test"]})

@@ -1,4 +1,4 @@
-(ns com.billpiel.sayid.test.ns1
+(ns com.billpiel.sayid.test-ns1
   (:require [com.billpiel.sayid.util.other :refer [$-]]))
 
 (defn func2
@@ -73,7 +73,3 @@
 (defn func-666
   [a b]
   (vector a (+ a (* 2 b))))
-
-(func-complex 2 5)
-
-(func3-1 2 5)
