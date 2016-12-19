@@ -178,8 +178,8 @@
   :NOT-IMPLEMENTED)
 
 (defn mk-tree-template
-  [src-map frm-meta fn-meta path-chain & {:keys [macro?]}]
-  (let [sub-src-map (util/$- -> path-chain
+  [src-map frm-meta fn-meta path-parent & {:keys [macro?]}]
+  (let [sub-src-map (util/$- -> path-parent
                              last
                              (remove #{:macro} $)
                              path->sym
@@ -187,13 +187,13 @@
         form (if macro?
                (:orig sub-src-map)
                (:x sub-src-map))]
-    {:inner-path-chain path-chain
+    {:inner-path-parent path-parent
      :name (if (seq? form)
              (first form)
              form)
      :form form
      :macro? macro?
-     :inner-path (last path-chain)
+     :inner-path (last path-parent)
      :parent-name (symbol (format "%s/%s"
                                   (-> fn-meta :ns str)
                                   (:name fn-meta)))
@@ -211,14 +211,14 @@
 (declare xpand-form)
 
 (defn xpand-all
-  [form src-map fn-meta path path-chain]
+  [form src-map fn-meta path path-parent]
   (when-not (nil? form)
     (util/back-into form
                     (doall (map-indexed #(xpand-form %2
                                                      src-map
                                                      fn-meta
                                                      (conj path %)
-                                                     path-chain)
+                                                     path-parent)
                                         form)))))
 
 (defn get-form-meta-somehow
@@ -226,7 +226,7 @@
   (or (meta form)
       (-> form first meta)))
 
-(defn xpand-fn-form
+#_(defn xpand-fn-form
   [head form template]
   (cons (list `tr-fn
               '$$
@@ -234,25 +234,32 @@
               (first form))
         (rest form)))
 
+(defn xpand-fn-form
+  [head form path-sym]
+  `(tr-fn ~path-sym
+          ~'$$
+          ~(first form)
+          ~@(rest form)))
+
 (defn xpand-fn
-  [head form src-map fn-meta path path-chain]
-  (let [path-chain' (conj path-chain path)]
-    {:template (mk-tree-template src-map
-                                 (get-form-meta-somehow form)
-                                 fn-meta
-                                 path-chain')
+  [head form src-map fn-meta path path-parent]
+  (let [path-parent' (conj path-parent path)]
+    {:template {path (mk-tree-template src-map
+                                       (get-form-meta-somehow form)
+                                       fn-meta
+                                       path-parent')}
      :form (xpand-fn-form head
                           (xpand-all form
                                      src-map
                                      fn-meta
                                      path
-                                     path-chain'))}))
+                                     path-parent'))}))
 
 #_(defn xpand-form
-  [form src-map fn-meta & [path path-chain]]
+  [form src-map fn-meta & [path path-parent]]
   (let [path' (or path [])
-        path-chain' (or path-chain [])
-        args [form src-map fn-meta path' path-chain']]
+        path-parent' (or path-parent [])
+        args [form src-map fn-meta path' path-parent']]
     (cond
       (seq? form)
       (let [head (first form)]
@@ -264,8 +271,8 @@
       :else form)))
 
 (defn xpand-form
-  [form src-map fn-meta path parent-path]
-  (let [args [form src-map fn-meta path' path-chain']]
+  [form src-map fn-meta path path-parent]
+  (let [args [form src-map fn-meta path path-parent]]
     (cond
       (seq? form)
       (let [head (first form)]
@@ -300,10 +307,10 @@
              (rest fn-bod))))
 
 (defn xpand-body
-  [parent-fn-meta fn-body idx]
-  (let [[args & tail] fn-body']
+  [parent-fn-meta idx fn-body]
+  (let [[args & tail] fn-body]
     (cons args  ;; wrong
-          (xpand (with-meta (vec fn-body')
+          (xpand (with-meta (vec tail)
                    {:outer true})
                  idx
                  parent-fn-meta))))
@@ -317,10 +324,11 @@
           bods)))
 
 (defn prep-traced-bods
-  []
+  [r]
   {:templates ['$0-0 {}]
    :path {'$0-1 ['$$$ '$$$]}
-   :bods '(([] 123))}
+   :bods '(([] 123))
+   :r r}
   :NOT-IMPLEMENTED)
 
 (defn xpand-fn*
@@ -330,8 +338,8 @@
                   (map-indexed (partial xpand-body
                                         parent-fn-meta))
                   prep-traced-bods)]
-    `(let [~@(:templates bods)
-           ~'$$p ~(:paths bods)]
+    `(let [~'$$p ~(:paths bods)
+           ~@(:templates bods)]
        (fn ~@(:bods bods)))))
 
 (defn get-fn
@@ -364,10 +372,20 @@
   [a]
   (inc a))
 
-#_(let [$0-0-inc (partial tr-fn {:... :...})]
+#_(let [$paths {:... :...}
+        $0-0-inc (partial tr-fn {:... :...} $paths)]
     (fn [a]
       (let [$$ (atom [])
             $return ($0-0-inc inc $$ a)]
+        (record-trace-tree! $$)
+        $return)))
+
+#_(let [$paths {:... :...}
+        $0-0-inc {:paths $paths
+                  :template {:... :...}}]
+    (fn [a]
+      (let [$$ (atom [])
+            $return (tr-fn $0-0-inc $$ inc a)]
         (record-trace-tree! $$)
         $return)))
 
@@ -375,9 +393,3 @@
                   :meta' {:ns 'com.billpiel.sayid.inner-trace2
                           :name 'com.billpiel.sayid.inner-trace2/f1}
                  :ns' 'com.billpiel.sayid.inner-trace2})
-
-
-
-
-
-
