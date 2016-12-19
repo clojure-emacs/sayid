@@ -136,38 +136,19 @@
                                    (clojure.walk/macroexpand-all form))
         olop->op (util/deep-zipmap (swap-in-path-syms form) form)
         f (fn [xl]
-            {(if (coll? xl)
-               (sym-seq->parent xl)
-               xl)
-             {:tree nil ;; placeholder for trace tree
-              :xl xl    ;; expanded location
-              :orig (-> xl
+            {(sym->path
+              (if (coll? xl)
+                (sym-seq->parent xl)
+                xl))
+             {:orig (-> xl
                         xl->xform
                         xform->form) ;; original symbol or value
               :x (-> xl
-                     xl->xform)
-              :xlxp (xl->xlxp xl) ;; expanded locations expanded parent
-              :ol (xloc->oloc xl)
-              :olop (-> xl
-                        xloc->oloc
-                        ol->olop)
-              :xp  (-> xl
-                       xl->xlxp
-                       xlxp->xp)
-              :op (-> xl
-                      xloc->oloc
-                      ol->olop
-                      olop->op)
-              :olxp (-> xl
-                        xloc->oloc
-                        ol->olxp)
-              :xlop (-> xl
-                        xloc->oloc
-                        ol->olop
-                        ((partial deep-replace-symbols oloc->xloc)))}})]
+                     xl->xform)}})]
     (util/$- ->> xls
              (map f)
              (apply merge))))
+
 
 (defn record-trace-tree!
   [tree-atom]
@@ -178,27 +159,25 @@
   :NOT-IMPLEMENTED)
 
 (defn mk-tree-template
-  [src-map frm-meta fn-meta path-parent & {:keys [macro?]}]
-  (let [sub-src-map (util/$- -> path-parent
-                             last
-                             (remove #{:macro} $)
-                             path->sym
-                             src-map)
+  [src-map frm-meta fn-meta path & {:keys [macro?]}]
+  (let [sub-src-map (->> path
+                         rest
+                         (remove #{:macro})
+                         src-map)
         form (if macro?
                (:orig sub-src-map)
                (:x sub-src-map))]
-    {:inner-path-parent path-parent
+    {:inner-body-idx (first path)
+     :inner-path path
      :name (if (seq? form)
              (first form)
              form)
      :form form
      :macro? macro?
-     :inner-path (last path-parent)
      :parent-name (symbol (format "%s/%s"
                                   (-> fn-meta :ns str)
                                   (:name fn-meta)))
      :ns (-> fn-meta :ns str symbol)
-     :xpanded-parent (:xp sub-src-map)
      :xpanded-frm (:x sub-src-map)
      :src-pos (select-keys frm-meta [:line :column :end-line :end-column :file])}))
 
@@ -210,16 +189,39 @@
 
 (declare xpand-form)
 
+(defn merge-xpansion-maps
+  [ms]
+  {:templates (->> ms
+                   (map :templates)
+                   (apply merge))
+   :path-parents (->> ms
+                      (map :path-parents)
+                      (apply merge))
+   :form (map :form ms)})
+
+(defn layer-xpansion-maps
+  [bottom top]
+  (assoc top
+         :templates (->> [bottom top]
+                         (map :templates)
+                         (apply merge))
+         :path-parents (->> [bottom top]
+                            (map :path-parents)
+                            (apply merge))))
+
 (defn xpand-all
   [form src-map fn-meta path path-parent]
   (when-not (nil? form)
-    (util/back-into form
-                    (doall (map-indexed #(xpand-form %2
-                                                     src-map
-                                                     fn-meta
-                                                     (conj path %)
-                                                     path-parent)
-                                        form)))))
+    (let [xmap (merge-xpansion-maps (doall (map-indexed #(xpand-form %2
+                                                                     src-map
+                                                                     fn-meta
+                                                                     (conj path %)
+                                                                     path-parent)
+                                                        form)))]
+      (update-in xmap
+                 [:form]
+                 (partial util/back-into
+                          form)))))
 
 (defn get-form-meta-somehow
   [form]
@@ -243,17 +245,20 @@
 
 (defn xpand-fn
   [head form src-map fn-meta path path-parent]
-  (let [path-parent' (conj path-parent path)]
-    {:template {path (mk-tree-template src-map
-                                       (get-form-meta-somehow form)
-                                       fn-meta
-                                       path-parent')}
-     :form (xpand-fn-form head
-                          (xpand-all form
-                                     src-map
-                                     fn-meta
-                                     path
-                                     path-parent'))}))
+  (let [xmap (xpand-all form
+                        src-map
+                        fn-meta
+                        path
+                        path-parent)]
+    (layer-xpansion-maps xmap
+                         {:path-parents {path path-parent}
+                          :templates {path (mk-tree-template src-map
+                                                             (get-form-meta-somehow form)
+                                                             fn-meta
+                                                             path)}
+                          :form (xpand-fn-form head
+                                               (:form xmap)
+                                               (path->sym path))})))
 
 #_(defn xpand-form
   [form src-map fn-meta & [path path-parent]]
@@ -281,7 +286,7 @@
           :else (apply xpand-fn head args)))
 
       (coll? form) (apply xpand-all args)
-      :else form)))
+      :else {:form form})))
 
 #_ (defn xpand
   [form parent-fn-meta]
@@ -309,11 +314,12 @@
 (defn xpand-body
   [parent-fn-meta idx fn-body]
   (let [[args & tail] fn-body]
-    (cons args  ;; wrong
-          (xpand (with-meta (vec tail)
+    (assoc (xpand (with-meta (vec tail)
                    {:outer true})
                  idx
-                 parent-fn-meta))))
+                 parent-fn-meta)
+           :args
+           args)))
 
 #_(defn xpand-fn*
   [form parent-fn-meta]
@@ -323,13 +329,29 @@
     (cons (first form)
           bods)))
 
+(defn quote* [x] `'~x)
+
 (defn prep-traced-bods
-  [r]
-  {:templates ['$0-0 {}]
-   :path {'$0-1 ['$$$ '$$$]}
-   :bods '(([] 123))
-   :r r}
-  :NOT-IMPLEMENTED)
+  [traced-bods]
+  {:templates (->> traced-bods
+                   (map :templates)
+                   (apply merge)
+                   (mapcat (fn [[k v]]
+                             [(path->sym k) (-> v
+                                                (update-in [:ns] quote*)
+                                                (update-in [:name] quote*)
+                                                (update-in [:parent-name] quote*)
+                                                (update-in [:form] quote*)
+                                                (update-in [:xpanded-frm] quote*)
+                                                (assoc :path-parents '$$paths))])))
+   :path-parents (->> traced-bods
+                      (map :path-parents)
+                      (apply merge))
+   :form (map (fn [m]
+                `(~(:args m)
+                  (let [~'$$ (atom [])]
+                    ~@(apply list (:form m)))))
+              traced-bods)})
 
 (defn xpand-fn*
   [form parent-fn-meta]
@@ -338,9 +360,9 @@
                   (map-indexed (partial xpand-body
                                         parent-fn-meta))
                   prep-traced-bods)]
-    `(let [~'$$p ~(:paths bods)
+    `(let [~'$$paths ~(:paths bods)
            ~@(:templates bods)]
-       (fn ~@(:bods bods)))))
+       (fn ~@(:form bods)))))
 
 (defn get-fn
   [[d s f & r]]
@@ -389,7 +411,7 @@
         (record-trace-tree! $$)
         $return)))
 
-#_ (inner-tracer {:qual-sym 'com.billpiel.sayid.inner-trace2/f1
-                  :meta' {:ns 'com.billpiel.sayid.inner-trace2
-                          :name 'com.billpiel.sayid.inner-trace2/f1}
-                 :ns' 'com.billpiel.sayid.inner-trace2})
+#_ (inner-tracer {:qual-sym 'com.billpiel.sayid.inner-trace3/f1
+                  :meta' {:ns 'com.billpiel.sayid.inner-trace3
+                          :name 'com.billpiel.sayid.inner-trace3/f1}
+                 :ns' 'com.billpiel.sayid.inner-trace3})
