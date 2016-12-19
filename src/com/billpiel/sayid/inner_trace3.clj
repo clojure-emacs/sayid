@@ -149,14 +149,119 @@
              (map f)
              (apply merge))))
 
+(defn deref-children
+  [tree-atom]
+  (if (util/atom? tree-atom)
+    (do
+      (swap! (:children @tree-atom)
+             #(mapv deref-children %))
+      @tree-atom)
+    tree-atom))
 
 (defn record-trace-tree!
   [tree-atom]
-  :NOT-IMPLEMENTED)
+  (let [children (some-> (@tree-atom nil)
+                         deref-children
+                         :children
+                         deref)]
+    (doseq [child children]
+      (swap! (:children trace/*trace-log-parent*)
+             conj
+             child))))
+
+(defn get-temp-root-tree
+  []
+  (-> trace/*trace-log-parent*
+      (select-keys [:depth :path])
+      (assoc :children (atom [])
+             :inner-path nil)
+      atom))
+
+(defn push-to-tree-atom!
+  [new-tree tree-atom]
+  (swap! tree-atom
+         assoc
+         (:inner-path @new-tree)
+         new-tree))
+
+(declare produce-recent-tree-atom!)
+
+(defn update-tree!
+  [tree tree-atom]
+  (reset! (-> tree
+              :inner-path
+              (@tree-atom))
+          tree))
+
+(defn conj-to-parent!
+  [node-atom parent-atom]
+  (swap! (:children @parent-atom)
+         conj
+         node-atom))
+
+(defn mk-recent-tree-at-inner-path
+  [path path-parents tree-atom]
+  (if (empty? path) ;; TODO is this the right way to detect root?
+    (let [new-tree (get-temp-root-tree)]
+      (push-to-tree-atom!  new-tree
+                           tree-atom)
+      new-tree)
+    (let [parent (produce-recent-tree-atom! (path-parents path)
+                                            path-parents
+                                            tree-atom)
+          new-tree (-> (trace/mk-tree :parent @parent)
+                       (assoc :inner-path path
+                              :parent-path (:path @parent))
+                       atom)]
+      (push-to-tree-atom! new-tree
+                          tree-atom)
+      (conj-to-parent! new-tree
+                       parent)
+      new-tree)))
+
+(defn get-recent-tree-at-inner-path
+  [path tree-atom & {:keys [skip-closed-check]}]
+  (let [entry (@tree-atom path)]
+    (if (or skip-closed-check
+            (not (some->> entry
+                          deref
+                          keys
+                          (some #{:return :throw}))))
+      entry
+      nil)))
+
+(defn produce-recent-tree-atom!
+  [path path-parents tree-atom & {:keys [skip-closed-check]}]
+  (if-let [tree-atom (get-recent-tree-at-inner-path (path-parents path)
+                                                    tree-atom
+                                                    :skip-closed-check skip-closed-check)]
+    tree-atom
+    (mk-recent-tree-at-inner-path path path-parents tree-atom)))
 
 (defn tr-fn
-  [template f tree-atom & args]
-  :NOT-IMPLEMENTED)
+  [template tree-atom f & args]
+  (let [this (-> (produce-recent-tree-atom! (:inner-path template)
+                                            (:path-parents template)
+                                            tree-atom)
+                 deref
+                 (merge template)
+                 (assoc :args (vec args)
+                        :arg-map nil
+                        :started-at (trace/now)))
+        _ (update-tree! this tree-atom)
+        [value throw] (binding [trace/*trace-log-parent* this]
+                        (try
+                          [(apply f args) nil]
+                          (catch Throwable t
+                            ;; TODO what's the best we can do here?
+                            [nil (trace/Throwable->map** t)])))
+        this' (assoc this
+                     :return value
+                     :throw throw ;;TODO not right
+                     :ended-at (trace/now))]
+    (update-tree! this'
+                  tree-atom)
+    value))
 
 (defn mk-tree-template
   [src-map frm-meta fn-meta path & {:keys [macro?]}]
@@ -349,8 +454,10 @@
                       (apply merge))
    :form (map (fn [m]
                 `(~(:args m)
-                  (let [~'$$ (atom [])]
-                    ~@(apply list (:form m)))))
+                  (let [~'$$ (atom {})
+                        ~'$$return (do ~@(apply list (:form m)))]
+                    (record-trace-tree! ~'$$)
+                    ~'$$return)))
               traced-bods)})
 
 (defn xpand-fn*
@@ -360,7 +467,7 @@
                   (map-indexed (partial xpand-body
                                         parent-fn-meta))
                   prep-traced-bods)]
-    `(let [~'$$paths ~(:paths bods)
+    `(let [~'$$paths ~(:path-parents bods)
            ~@(:templates bods)]
        (fn ~@(:form bods)))))
 
@@ -390,9 +497,31 @@
            (clojure.pprint/pprint traced-form)
            (throw e)))))
 
+
+(defn ^{::trace/trace-type :inner-fn} composed-tracer-fn
+  [m _]
+  (->> m
+       inner-tracer
+       (trace/shallow-tracer m)))
+
+(defmethod trace/trace* :inner-fn
+  [_ fn-sym workspace]
+  (-> fn-sym
+      resolve
+      (trace/trace-var* (util/assoc-var-meta-to-fn composed-tracer-fn
+                                                   ::trace/trace-type)
+                        workspace)))
+
+(defmethod trace/untrace* :inner-fn
+  [_ fn-sym]
+  (-> fn-sym
+      resolve
+      trace/untrace-var*))
+
+
 (defn f1
   [a]
-  (inc a))
+  (inc (dec a)))
 
 #_(let [$paths {:... :...}
         $0-0-inc (partial tr-fn {:... :...} $paths)]
@@ -415,3 +544,19 @@
                   :meta' {:ns 'com.billpiel.sayid.inner-trace3
                           :name 'com.billpiel.sayid.inner-trace3/f1}
                  :ns' 'com.billpiel.sayid.inner-trace3})
+
+#_ (binding [trace/*trace-log-parent* {:id :root1 :children (atom [])}]
+     (let [f1 (inner-tracer {:qual-sym 'com.billpiel.sayid.inner-trace3/f1
+                            :meta' {:ns 'com.billpiel.sayid.inner-trace3
+                          :name 'com.billpiel.sayid.inner-trace3/f1}
+                            :ns' 'com.billpiel.sayid.inner-trace3})]
+       (f1 2)
+       (clojure.pprint/pprint trace/*trace-log-parent*)))
+
+#_ (binding [trace/*trace-log-parent* @com.billpiel.sayid.core/workspace]
+     (let [f1 (inner-tracer {:qual-sym 'com.billpiel.sayid.inner-trace3/f1
+                            :meta' {:ns 'com.billpiel.sayid.inner-trace3
+                          :name 'com.billpiel.sayid.inner-trace3/f1}
+                            :ns' 'com.billpiel.sayid.inner-trace3})]
+       (f1 2)
+       #_       (clojure.pprint/pprint trace/*trace-log-parent*)))
