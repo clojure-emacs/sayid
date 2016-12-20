@@ -159,8 +159,8 @@
     tree-atom))
 
 (defn record-trace-tree!
-  [tree-atom]
-  (let [children (some-> (@tree-atom nil)
+  [tree-atom root-path]
+  (let [children (some-> (@tree-atom root-path)
                          deref-children
                          :children
                          deref)]
@@ -170,11 +170,11 @@
              child))))
 
 (defn get-temp-root-tree
-  []
+  [path]
   (-> trace/*trace-log-parent*
       (select-keys [:depth :path])
       (assoc :children (atom [])
-             :inner-path nil)
+             :inner-path path)
       atom))
 
 (defn push-to-tree-atom!
@@ -201,8 +201,8 @@
 
 (defn mk-recent-tree-at-inner-path
   [path path-parents tree-atom]
-  (if (empty? path) ;; TODO is this the right way to detect root?
-    (let [new-tree (get-temp-root-tree)]
+  (if (= (count path) 1) ;; TODO is this the right way to detect root?
+    (let [new-tree (get-temp-root-tree path)]
       (push-to-tree-atom!  new-tree
                            tree-atom)
       new-tree)
@@ -321,7 +321,7 @@
                                                                      src-map
                                                                      fn-meta
                                                                      (conj path %)
-                                                                     path-parent)
+                                                                     path #_path-parent)
                                                         form)))]
       (update-in xmap
                  [:form]
@@ -423,8 +423,8 @@
                    {:outer true})
                  idx
                  parent-fn-meta)
-           :args
-           args)))
+           :body-idx idx
+           :args args)))
 
 #_(defn xpand-fn*
   [form parent-fn-meta]
@@ -456,7 +456,7 @@
                 `(~(:args m)
                   (let [~'$$ (atom {})
                         ~'$$return (do ~@(apply list (:form m)))]
-                    (record-trace-tree! ~'$$)
+                    (record-trace-tree! ~'$$ [~(:body-idx m)])
                     ~'$$return)))
               traced-bods)})
 
@@ -559,4 +559,4 @@
                           :name 'com.billpiel.sayid.inner-trace3/f1}
                             :ns' 'com.billpiel.sayid.inner-trace3})]
        (f1 2)
-       #_       (clojure.pprint/pprint trace/*trace-log-parent*)))
+       (clojure.pprint/pprint trace/*trace-log-parent*)))
