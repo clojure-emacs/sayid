@@ -333,13 +333,38 @@
   (or (meta form)
       (-> form first meta)))
 
-#_(defn xpand-fn-form
-  [head form template]
-  (cons (list `tr-fn
-              '$$
-              `'~template
-              (first form))
-        (rest form)))
+(defn xpand-if-form
+  [[_ test then else] path-sym]
+  `(tr-if-ret ~path-sym
+              ~'$$
+              (if (tr-if-test ~path-sym
+                              ~'$$
+                              ~test)
+                (tr-if-branch ~path-sym
+                              ~'$$
+                              true
+                              ~then)
+                ~(when-not (nil? else)
+                   `(tr-if-branch ~path-sym
+                                  ~'$$
+                                  false
+                                  ~else)))))
+
+(defn xpand-if
+  [form src-map fn-meta path path-parent]
+  (let [xmap (xpand-all form
+                        src-map
+                        fn-meta
+                        path
+                        path-parent)]
+    (layer-xpansion-maps xmap
+                         {:path-parents {path path-parent}
+                          :templates {path (mk-tree-template src-map
+                                                             (get-form-meta-somehow form)
+                                                             fn-meta
+                                                             path)}
+                          :form (xpand-if-form (:form xmap)
+                                               (path->sym path))})))
 
 (defn xpand-fn-form
   [head form path-sym]
@@ -365,21 +390,6 @@
                                                (:form xmap)
                                                (path->sym path))})))
 
-#_(defn xpand-form
-  [form src-map fn-meta & [path path-parent]]
-  (let [path' (or path [])
-        path-parent' (or path-parent [])
-        args [form src-map fn-meta path' path-parent']]
-    (cond
-      (seq? form)
-      (let [head (first form)]
-        (cond
-          false "TODO"
-          :else (apply xpand-fn head args)))
-
-      (coll? form) (apply xpand-all args)
-      :else form)))
-
 (defn xpand-form
   [form src-map fn-meta path path-parent]
   (let [args [form src-map fn-meta path path-parent]]
@@ -388,19 +398,11 @@
       (let [head (first form)]
         (cond
           false "TODO"
+          (= 'if head) (apply xpand-if args)
           :else (apply xpand-fn head args)))
 
       (coll? form) (apply xpand-all args)
       :else {:form form})))
-
-#_ (defn xpand
-  [form parent-fn-meta]
-  (let [expr-map (mk-expr-mapping form)
-        xform (xpand-form form expr-map parent-fn-meta)]
-    `(let [~'$$ (atom {})
-           ~'$return ~xform]
-       (record-trace-tree! ~'$$)
-       ~'$return)))
 
 (defn xpand
   [form body-idx parent-fn-meta]
@@ -409,12 +411,6 @@
               parent-fn-meta
               [body-idx]
               []))
-
-#_(defn xpand-bod
-  [fn-bod parent-fn-meta]
-  (cons (first fn-bod)
-        (map #(xpand % parent-fn-meta)
-             (rest fn-bod))))
 
 (defn xpand-body
   [parent-fn-meta idx fn-body]
@@ -425,14 +421,6 @@
                  parent-fn-meta)
            :body-idx idx
            :args args)))
-
-#_(defn xpand-fn*
-  [form parent-fn-meta]
-  (let [bods (->> form
-                  rest
-                  (map #(xpand-bod % parent-fn-meta)))]
-    (cons (first form)
-          bods)))
 
 (defn quote* [x] `'~x)
 
@@ -521,7 +509,9 @@
 
 (defn f1
   [a]
-  (inc (dec a)))
+  (if true
+    (inc a)
+    a))
 
 #_(let [$paths {:... :...}
         $0-0-inc (partial tr-fn {:... :...} $paths)]
