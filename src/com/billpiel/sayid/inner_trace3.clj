@@ -232,7 +232,7 @@
 
 (defn produce-recent-tree-atom!
   [path path-parents tree-atom & {:keys [skip-closed-check]}]
-  (if-let [tree-atom (get-recent-tree-at-inner-path (path-parents path)
+  (if-let [tree-atom (get-recent-tree-at-inner-path path
                                                     tree-atom
                                                     :skip-closed-check skip-closed-check)]
     tree-atom
