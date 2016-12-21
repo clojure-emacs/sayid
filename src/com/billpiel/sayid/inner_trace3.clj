@@ -333,6 +333,33 @@
   (or (meta form)
       (-> form first meta)))
 
+(defn tr-recur
+  [template tree-atom & args]
+  
+  )
+
+(defn xpand-recur-form
+  [[_ & form] path-sym]
+  `(tr-recur ~path-sym
+             ~'$$
+             ~@form))
+
+(defn xpand-recur
+  [form src-map fn-meta path path-parent]
+  (let [xmap (xpand-all form
+                        src-map
+                        fn-meta
+                        path
+                        path-parent)]
+    (layer-xpansion-maps xmap
+                         {:path-parents {path path-parent}
+                          :templates {path (mk-tree-template src-map
+                                                             (get-form-meta-somehow form)
+                                                             fn-meta
+                                                             path)}
+                          :form (xpand-recur-form (:form xmap)
+                                               (path->sym path))})))
+
 (defn tr-if-ret
   [template tree-atom v]
   (-> (produce-recent-tree-atom! (:inner-path template)
@@ -429,6 +456,7 @@
       (let [head (first form)]
         (cond
           false "TODO"
+          (= 'recur head) (apply xpand-recur args)
           (= 'if head) (apply xpand-if args)
           :else (apply xpand-fn head args)))
 
@@ -540,26 +568,10 @@
 
 (defn f1
   [a]
-  (if true
-    (inc a)
+  (if (< a 2)
+    (recur (inc a))
     a))
 
-#_(let [$paths {:... :...}
-        $0-0-inc (partial tr-fn {:... :...} $paths)]
-    (fn [a]
-      (let [$$ (atom [])
-            $return ($0-0-inc inc $$ a)]
-        (record-trace-tree! $$)
-        $return)))
-
-#_(let [$paths {:... :...}
-        $0-0-inc {:paths $paths
-                  :template {:... :...}}]
-    (fn [a]
-      (let [$$ (atom [])
-            $return (tr-fn $0-0-inc $$ inc a)]
-        (record-trace-tree! $$)
-        $return)))
 
 #_ (inner-tracer {:qual-sym 'com.billpiel.sayid.inner-trace3/f1
                   :meta' {:ns 'com.billpiel.sayid.inner-trace3
