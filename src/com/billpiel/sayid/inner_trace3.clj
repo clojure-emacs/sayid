@@ -333,6 +333,39 @@
   (or (meta form)
       (-> form first meta)))
 
+(defn tr-if-ret
+  [template tree-atom v]
+  (-> (produce-recent-tree-atom! (:inner-path template)
+                                 (:path-parents template)
+                                 tree-atom)
+      deref
+      (merge template)
+      (assoc :return v
+             :inner-tags [:if])
+      (update-tree! tree-atom))
+  v)
+
+(defn tr-if-test
+  [template tree-atom v]
+  (-> (produce-recent-tree-atom! (:inner-path template)
+                                 (:path-parents template)
+                                 tree-atom)
+      deref
+      (assoc :args [v])
+      (update-tree! tree-atom))
+  v)
+
+(defn tr-if-branch
+  [template tree-atom v]
+  (-> (produce-recent-tree-atom! (:inner-path template)
+                                 (:path-parents template)
+                                 tree-atom)
+      deref
+      (assoc-in [:args 1] v)
+      (update-tree! tree-atom))
+  v)
+
+
 (defn xpand-if-form
   [[_ test then else] path-sym]
   `(tr-if-ret ~path-sym
@@ -342,12 +375,10 @@
                               ~test)
                 (tr-if-branch ~path-sym
                               ~'$$
-                              true
                               ~then)
                 ~(when-not (nil? else)
                    `(tr-if-branch ~path-sym
                                   ~'$$
-                                  false
                                   ~else)))))
 
 (defn xpand-if
