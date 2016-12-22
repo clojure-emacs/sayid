@@ -335,8 +335,16 @@
 
 (defn tr-recur
   [template tree-atom & args]
-  
-  )
+  (let [args' (with-meta (vec args) {::recur true})]
+    (-> (produce-recent-tree-atom! (:inner-path template)
+                                   (:path-parents template)
+                                   tree-atom)
+        deref
+        (merge template)
+        (assoc :return args'
+               :inner-tags [:recur])
+        (update-tree! tree-atom))
+    args'))
 
 (defn xpand-recur-form
   [[_ & form] path-sym]
@@ -359,6 +367,8 @@
                                                              path)}
                           :form (xpand-recur-form (:form xmap)
                                                (path->sym path))})))
+
+
 
 (defn tr-if-ret
   [template tree-atom v]
@@ -483,6 +493,10 @@
 
 (defn quote* [x] `'~x)
 
+(defn recur?
+  [v]
+  (-> v meta ::recur))
+
 (defn prep-traced-bods
   [traced-bods]
   {:templates (->> traced-bods
@@ -504,7 +518,9 @@
                   (let [~'$$ (atom {})
                         ~'$$return (do ~@(apply list (:form m)))]
                     (record-trace-tree! ~'$$ [~(:body-idx m)])
-                    ~'$$return)))
+                    (if (recur? ~'$$return)
+                      (recur (first ~'$$return))
+                      ~'$$return))))
               traced-bods)})
 
 (defn xpand-fn*
@@ -591,5 +607,5 @@
                             :meta' {:ns 'com.billpiel.sayid.inner-trace3
                           :name 'com.billpiel.sayid.inner-trace3/f1}
                             :ns' 'com.billpiel.sayid.inner-trace3})]
-       (f1 2)
+       (f1 1)
        (clojure.pprint/pprint trace/*trace-log-parent*)))

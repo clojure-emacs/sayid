@@ -23,6 +23,12 @@
 
 (def line-break-token {:string "\n" :length 1 :line-break true})
 
+(defn render-tkns
+  [v]
+  (if (-> v meta ::com.billpiel.sayid.inner-trace3/recur)
+    (tam/render-tokens (apply list 'recur v))
+    (tam/render-tokens v)))
+
 (defn tkn
   [s & {:keys [fg fg* bg bg* bold] :as props}]
   (if (= s "\n")
@@ -141,7 +147,7 @@
        (map (fn [[label value]]
               [(get-line-meta tree
                               :path [:arg-map label])
-               (multi-line-indent2 :cols [[(tkn [label " =>"])] (tam/render-tokens value)]
+               (multi-line-indent2 :cols [[(tkn [label " =>"])] (render-tkns value)]
                                       :indent-base (:depth tree))]))
        vec))
 
@@ -149,7 +155,7 @@
   [tree m]
   (->> m
        (map (fn [[label value]]
-              (multi-line-indent2 :cols [[(tkn [label " =>"])] (tam/render-tokens value)]
+              (multi-line-indent2 :cols [[(tkn [label " =>"])] (render-tkns value)]
                                     :indent-base (:depth tree)
                                     :indent-offset  3)))
        vec))
@@ -173,7 +179,7 @@
                       :path [:throw])
      (multi-line-indent2 :cols [[(tkn "THROW" :fg 1 :bg 7)
                                     (tkn " => ")]
-                                   (tam/render-tokens thrown)]
+                                   (render-tkns thrown)]
                             :indent-base (:depth tree))]))
 
 (defn return-str
@@ -186,7 +192,7 @@
                                                :before "returns"
                                                :after "returned")
                                             " => "])]
-                                     (tam/render-tokens return)]
+                                     (render-tkns return)]
                               :indent-base (:depth tree))])))
 
 (defn args-map-str
@@ -200,7 +206,7 @@
     (->> args
          (map-indexed (fn [i value]
                         [(get-line-meta tree :path [:args i])
-                         (multi-line-indent2 :cols [(tam/render-tokens value)]
+                         (multi-line-indent2 :cols [(render-tkns value)]
                                                 :indent-base (:depth tree))]))
          vec)))
 
@@ -212,9 +218,9 @@
                       [(get-line-meta tree :path [:let-binds i 0])
                        (multi-line-indent2 :cols [[(tkn sym)
                                                       (tkn " <= ")]
-                                                     (tam/render-tokens val)
+                                                     (render-tkns val)
                                                      [(tkn " <= ")]
-                                                     (tam/render-tokens frm)]
+                                                     (render-tkns frm)]
                                               :indent-base (:depth tree))]))
        vec))
 
@@ -484,7 +490,7 @@
 (defn value->text-prop-pair
   [a]
   (->> a
-       tam/render-tokens
+       render-tkns
        flatten
        (remove nil?)
        split-text-tag-coll))
@@ -587,7 +593,7 @@
 (defn value->text-prop-pair*
   [a]
   (->> a
-       tam/render-tokens
+       render-tkns
        flatten
        (remove nil?)
        (map decorate-token)
