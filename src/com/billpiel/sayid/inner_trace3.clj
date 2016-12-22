@@ -339,6 +339,43 @@
   (or (meta form)
       (-> form first meta)))
 
+(defn tr-loop
+  [template tree-atom v]
+  (-> (produce-recent-tree-atom! (:inner-path template)
+                                 (:path-parents template)
+                                 tree-atom)
+      deref
+      (merge template)
+      (assoc :return v
+             :inner-tags [:loop])
+      (update-tree! tree-atom))
+  v)
+
+(defn xpand-loop-form
+  [[_ binds & body] path-sym recur-arities]
+  `(tr-loop ~path-sym
+            ~'$$
+            (loop ~binds
+              (let [~'$$return ~@body]
+                ~(mk-recur-handler recur-arities)))))
+
+(defn xpand-loop
+  [form src-map fn-meta path path-parent]
+  (let [xmap (xpand-all form
+                        src-map
+                        fn-meta
+                        path
+                        path-parent)]
+    (layer-xpansion-maps xmap
+                         {:path-parents {path path-parent}
+                          :templates {path (mk-tree-template src-map
+                                                             (get-form-meta-somehow form)
+                                                             fn-meta
+                                                             path)}
+                          :form (xpand-loop-form (:form xmap)
+                                                 (path->sym path)
+                                                 (:recur xmap))})))
+
 (defn tr-recur
   [template tree-atom & args]
   (let [args' (with-meta (vec args) {::util/recur true})]
@@ -409,7 +446,6 @@
       (update-tree! tree-atom))
   v)
 
-
 (defn xpand-if-form
   [[_ test then else] path-sym]
   `(tr-if-ret ~path-sym
@@ -473,6 +509,7 @@
       (let [head (first form)]
         (cond
           false "TODO"
+          (= 'loop head) (apply xpand-loop args)
           (= 'recur head) (apply xpand-recur args)
           (= 'if head) (apply xpand-if args)
           :else (apply xpand-fn head args)))
@@ -607,8 +644,15 @@
     (recur (inc a))
     a))
 
+(defn f2
+  [a]
+  (inc a)
+  (loop [b a]
+    (if (< b 2)
+      (recur (inc b))
+      b)))
 
-#_ (inner-tracer {:qual-sym 'com.billpiel.sayid.inner-trace3/f1
+#_ (inner-tracer {:qual-sym 'com.billpiel.sayid.inner-trace3/f2
                   :meta' {:ns 'com.billpiel.sayid.inner-trace3
                           :name 'com.billpiel.sayid.inner-trace3/f1}
                  :ns' 'com.billpiel.sayid.inner-trace3})
@@ -622,9 +666,9 @@
        (clojure.pprint/pprint trace/*trace-log-parent*)))
 
 #_ (binding [trace/*trace-log-parent* @com.billpiel.sayid.core/workspace]
-     (let [f1 (inner-tracer {:qual-sym 'com.billpiel.sayid.inner-trace3/f1
+     (let [f2 (inner-tracer {:qual-sym 'com.billpiel.sayid.inner-trace3/f2
                             :meta' {:ns 'com.billpiel.sayid.inner-trace3
-                          :name 'com.billpiel.sayid.inner-trace3/f1}
+                          :name 'com.billpiel.sayid.inner-trace3/f2}
                             :ns' 'com.billpiel.sayid.inner-trace3})]
-       (f1 1)
-       (clojure.pprint/pprint trace/*trace-log-parent*)))
+       (f2 1)
+#_       (clojure.pprint/pprint trace/*trace-log-parent*)))
