@@ -302,7 +302,10 @@
    :path-parents (->> ms
                       (map :path-parents)
                       (apply merge))
-   :form (map :form ms)})
+   :form (map :form ms)
+   :recur (->> ms
+               (map :recur)
+               (apply clojure.set/union))})
 
 (defn layer-xpansion-maps
   [bottom top]
@@ -312,7 +315,10 @@
                          (apply merge))
          :path-parents (->> [bottom top]
                             (map :path-parents)
-                            (apply merge))))
+                            (apply merge))
+         :recur (->> [bottom top]
+                     (map :recur)
+                     (apply clojure.set/union))))
 
 (defn xpand-all
   [form src-map fn-meta path path-parent]
@@ -335,7 +341,7 @@
 
 (defn tr-recur
   [template tree-atom & args]
-  (let [args' (with-meta (vec args) {::recur true})]
+  (let [args' (with-meta (vec args) {::util/recur true})]
     (-> (produce-recent-tree-atom! (:inner-path template)
                                    (:path-parents template)
                                    tree-atom)
@@ -366,7 +372,8 @@
                                                              fn-meta
                                                              path)}
                           :form (xpand-recur-form (:form xmap)
-                                               (path->sym path))})))
+                                                  (path->sym path))
+                          :recur #{(-> xmap :form count dec)}})))
 
 
 
@@ -493,9 +500,23 @@
 
 (defn quote* [x] `'~x)
 
-(defn recur?
+(defn recur-arity
   [v]
-  (-> v meta ::recur))
+  (when (-> v meta ::util/recur)
+    (count v)))
+
+(def lazy-recur
+  (concat '(recur)
+          (for [x (range)]
+            `(nth ~'$$return ~x))))
+
+(defn mk-recur-handler
+  [arity-set]
+  `(case (recur-arity ~'$$return)
+     ~@(apply concat
+              (for [a arity-set]
+                [a (take (inc a) lazy-recur)]))
+     nil ~'$$return))
 
 (defn prep-traced-bods
   [traced-bods]
@@ -518,9 +539,7 @@
                   (let [~'$$ (atom {})
                         ~'$$return (do ~@(apply list (:form m)))]
                     (record-trace-tree! ~'$$ [~(:body-idx m)])
-                    (if (recur? ~'$$return)
-                      (recur (first ~'$$return))
-                      ~'$$return))))
+                    ~(mk-recur-handler (:recur m)))))
               traced-bods)})
 
 (defn xpand-fn*

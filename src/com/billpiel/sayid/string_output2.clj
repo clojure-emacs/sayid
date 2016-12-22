@@ -25,7 +25,7 @@
 
 (defn render-tkns
   [v]
-  (if (-> v meta ::com.billpiel.sayid.inner-trace3/recur)
+  (if (-> v meta ::util/recur)
     (tam/render-tokens (apply list 'recur v))
     (tam/render-tokens v)))
 
