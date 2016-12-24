@@ -199,6 +199,15 @@
          conj
          node-atom))
 
+(defn find-closest-parent
+  [path path-parents]
+  (clojure.pprint/pprint path)
+  (if-let [parent (path-parents path)]
+    parent
+    (when-not (or (nil? path) (empty? path))
+      (recur (drop-last path)
+             path-parents))))
+
 (defn mk-recent-tree-at-inner-path
   [path path-parents tree-atom]
   (if (= (count path) 1) ;; TODO is this the right way to detect root?
@@ -206,7 +215,8 @@
       (push-to-tree-atom!  new-tree
                            tree-atom)
       new-tree)
-    (let [parent (produce-recent-tree-atom! (path-parents path)
+    (let [parent (produce-recent-tree-atom! (find-closest-parent path
+                                                                 path-parents)
                                             path-parents
                                             tree-atom)
           new-tree (-> (trace/mk-tree :parent @parent)
@@ -339,6 +349,27 @@
   (or (meta form)
       (-> form first meta)))
 
+(defn tr-loop-bind
+  [template tree-atom v bnd-frm val-frm]
+  (-> (produce-recent-tree-atom! (:inner-path template)
+                                 (:path-parents template)
+                                 tree-atom)
+      deref
+      (update-in [:let-binds] conj [v bnd-frm val-frm])
+      (update-tree! tree-atom))
+  v)
+
+(defn xpand-loop-binds
+  [xbinds orig-binds path-sym]
+  (vec (mapcat (fn [[xb xv] [ob ov]]
+                 `(~ob (tr-loop-bind ~path-sym
+                                    ~'$$
+                                    ~xv
+                                    '~ob
+                                    '~ov)))
+               (partition 2 xbinds)
+               (partition 2 orig-binds))))
+
 (defn tr-loop
   [template tree-atom v]
   (-> (produce-recent-tree-atom! (:inner-path template)
@@ -352,15 +383,15 @@
   v)
 
 (defn xpand-loop-form
-  [[_ binds & body] path-sym recur-arities]
+  [[_ binds & body] orig-binds path-sym recur-arities]
   `(tr-loop ~path-sym
             ~'$$
-            (loop ~binds
+            (loop ~(xpand-loop-binds binds orig-binds path-sym)
               (let [~'$$return ~@body]
                 ~(mk-recur-handler recur-arities)))))
 
 (defn xpand-loop
-  [form src-map fn-meta path path-parent]
+  [[_ binds :as form] src-map fn-meta path path-parent]
   (let [xmap (xpand-all form
                         src-map
                         fn-meta
@@ -373,6 +404,7 @@
                                                              fn-meta
                                                              path)}
                           :form (xpand-loop-form (:form xmap)
+                                                 binds
                                                  (path->sym path)
                                                  (:recur xmap))})))
 
@@ -647,7 +679,7 @@
 (defn f2
   [a]
   (inc a)
-  (loop [b a]
+  (loop [b (+ a 0)]
     (if (< b 2)
       (recur (inc b))
       b)))
@@ -667,8 +699,8 @@
 
 #_ (binding [trace/*trace-log-parent* @com.billpiel.sayid.core/workspace]
      (let [f2 (inner-tracer {:qual-sym 'com.billpiel.sayid.inner-trace3/f2
-                            :meta' {:ns 'com.billpiel.sayid.inner-trace3
-                          :name 'com.billpiel.sayid.inner-trace3/f2}
-                            :ns' 'com.billpiel.sayid.inner-trace3})]
+                             :meta' {:ns 'com.billpiel.sayid.inner-trace3
+                                     :name 'com.billpiel.sayid.inner-trace3/f2}
+                             :ns' 'com.billpiel.sayid.inner-trace3})]
        (f2 1)
-#_       (clojure.pprint/pprint trace/*trace-log-parent*)))
+       (clojure.pprint/pprint trace/*trace-log-parent*)))
