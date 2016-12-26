@@ -159,8 +159,8 @@
     tree-atom))
 
 (defn record-trace-tree!
-  [tree-atom root-path]
-  (let [children (some-> (@tree-atom [] #_root-path)
+  [tree-atom]
+  (let [children (some-> (@tree-atom [])
                          deref-children
                          :children
                          deref)]
@@ -201,7 +201,6 @@
 
 (defn find-closest-parent
   [path path-parents]
-  (clojure.pprint/pprint path)
   (if-let [parent (path-parents path)]
     parent
     (when-not (or (nil? path) (empty? path))
@@ -606,7 +605,7 @@
                 `(~(:args m)
                   (let [~'$$ (atom {})
                         ~'$$return (do ~@(apply list (:form m)))]
-                    (record-trace-tree! ~'$$ [~(:body-idx m)])
+                    (record-trace-tree! ~'$$)
                     ~(mk-recur-handler (:recur m)))))
               traced-bods)})
 
