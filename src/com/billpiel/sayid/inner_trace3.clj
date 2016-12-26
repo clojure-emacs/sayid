@@ -160,7 +160,7 @@
 
 (defn record-trace-tree!
   [tree-atom root-path]
-  (let [children (some-> (@tree-atom root-path)
+  (let [children (some-> (@tree-atom [] #_root-path)
                          deref-children
                          :children
                          deref)]
@@ -210,13 +210,12 @@
 
 (defn mk-recent-tree-at-inner-path
   [path path-parents tree-atom]
-  (if (= (count path) 1) ;; TODO is this the right way to detect root?
+  (if (= (count path) 0) ;; TODO is this the right way to detect root?
     (let [new-tree (get-temp-root-tree path)]
       (push-to-tree-atom!  new-tree
                            tree-atom)
       new-tree)
-    (let [parent (produce-recent-tree-atom! (find-closest-parent path
-                                                                 path-parents)
+    (let [parent (produce-recent-tree-atom! (find-closest-parent path path-parents)
                                             path-parents
                                             tree-atom)
           new-tree (-> (trace/mk-tree :parent @parent)
@@ -337,7 +336,7 @@
                                                                      src-map
                                                                      fn-meta
                                                                      (conj path %)
-                                                                     path #_path-parent)
+                                                                     path-parent)
                                                         form)))]
       (update-in xmap
                  [:form]
@@ -396,7 +395,7 @@
                         src-map
                         fn-meta
                         path
-                        path-parent)]
+                        path)]
     (layer-xpansion-maps xmap
                          {:path-parents {path path-parent}
                           :templates {path (mk-tree-template src-map
@@ -433,7 +432,7 @@
                         src-map
                         fn-meta
                         path
-                        path-parent)]
+                        path)]
     (layer-xpansion-maps xmap
                          {:path-parents {path path-parent}
                           :templates {path (mk-tree-template src-map
@@ -499,7 +498,7 @@
                         src-map
                         fn-meta
                         path
-                        path-parent)]
+                        path)]
     (layer-xpansion-maps xmap
                          {:path-parents {path path-parent}
                           :templates {path (mk-tree-template src-map
@@ -522,7 +521,7 @@
                         src-map
                         fn-meta
                         path
-                        path-parent)]
+                        path)]
     (layer-xpansion-maps xmap
                          {:path-parents {path path-parent}
                           :templates {path (mk-tree-template src-map
