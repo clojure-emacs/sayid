@@ -347,6 +347,54 @@
   (or (meta form)
       (-> form first meta)))
 
+(defn tr-macro
+  [template tree-atom mcro v]
+  (let [tree @(produce-recent-tree-atom! (:inner-path template)
+                                         (:path-parents template)
+                                         tree-atom
+                                         :skip-closed-check true)]
+    (-> tree
+        (assoc :return v
+               :inner-tags [:macro mcro])
+        (merge template)
+        (update-tree! tree-atom))
+    v))
+
+(defn xpand-macro-form
+  [head form path-sym]
+  (list `tr-macro
+        path-sym
+        '$$
+        (keyword head)
+        form))
+
+(defn with-meta-safe
+  [v m]
+  (try
+    (with-meta v m)
+    (catch Exception e
+      v)))
+
+(defn xpand-macro
+  [head form src-map fn-meta path path-parent]
+  (let [xform (with-meta-safe (macroexpand form) (meta form))] ;; TODO be sure this is doing something
+    (let [path' (conj path :macro)
+          xmap (xpand-form xform
+                           src-map
+                           fn-meta
+                           path'
+                           path)]
+      (layer-xpansion-maps xmap
+                           {:path-parents {path path-parent}
+                            :templates {path (mk-tree-template src-map
+                                                               (get-form-meta-somehow form)
+                                                               fn-meta
+                                                               path
+                                                               :macro? true)}
+                            :form (xpand-macro-form head
+                                                    (:form xmap)
+                                                    (path->sym path))}))))
+
 (defn tr-loop-bind
   [template tree-atom v bnd-frm val-frm]
   (-> (produce-recent-tree-atom! (:inner-path template)
@@ -538,7 +586,7 @@
       (seq? form)
       (let [head (first form)]
         (cond
-          false "TODO"
+          (util/macro? head) (apply xpand-macro head args)
           (= 'loop head) (apply xpand-loop args)
           (= 'recur head) (apply xpand-recur args)
           (= 'if head) (apply xpand-if args)
@@ -670,19 +718,11 @@
 
 (defn f1
   [a]
-  (if (< a 2)
-    (recur (inc a))
-    a))
+  (-> a
+      inc
+      dec))
 
-(defn f2
-  [a]
-  (inc a)
-  (loop [b (+ a 0)]
-    (if (< b 2)
-      (recur (inc b))
-      b)))
-
-#_ (inner-tracer {:qual-sym 'com.billpiel.sayid.inner-trace3/f2
+#_ (inner-tracer {:qual-sym 'com.billpiel.sayid.inner-trace3/f1
                   :meta' {:ns 'com.billpiel.sayid.inner-trace3
                           :name 'com.billpiel.sayid.inner-trace3/f1}
                  :ns' 'com.billpiel.sayid.inner-trace3})
@@ -696,9 +736,9 @@
        (clojure.pprint/pprint trace/*trace-log-parent*)))
 
 #_ (binding [trace/*trace-log-parent* @com.billpiel.sayid.core/workspace]
-     (let [f2 (inner-tracer {:qual-sym 'com.billpiel.sayid.inner-trace3/f2
+     (let [f1 (inner-tracer {:qual-sym 'com.billpiel.sayid.inner-trace3/f1
                              :meta' {:ns 'com.billpiel.sayid.inner-trace3
-                                     :name 'com.billpiel.sayid.inner-trace3/f2}
+                                     :name 'com.billpiel.sayid.inner-trace3/f1}
                              :ns' 'com.billpiel.sayid.inner-trace3})]
-       (f2 1)
+       (f1 1)
        (clojure.pprint/pprint trace/*trace-log-parent*)))
