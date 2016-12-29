@@ -106,14 +106,47 @@
 
 ;; mk-fn-tree + start-trace + binding + end-trace = 345ms
 
-(defn ^{::trace-type :fn} shallow-tracer
-  [{:keys [workspace qual-sym meta']} original-fn]
+(defn shallow-tracer-multifn*
+  [workspace qual-sym meta' original-fn]
   (fn tracing-wrapper [& args]
-    (trace-fn-call workspace
-                   qual-sym
-                   original-fn
-                   args
-                   meta')))
+    (let [dispatch-fn (.-dispatchFn original-fn)
+          dispatch-val (trace-fn-call workspace
+                                      (symbol (format "%s-DISPATCHER" qual-sym))
+                                      dispatch-fn
+                                      args
+                                      {})
+          target-fn (.getMethod original-fn dispatch-val)]
+      (trace-fn-call workspace
+                     qual-sym
+                     target-fn
+                     args
+                     meta'))))
+
+(defn shallow-tracer-multifn
+  [{:keys [workspace qual-sym meta']} original-fn]
+  (let [mfn (new clojure.lang.MultiFn
+                 (str qual-sym)
+                 (fn [& args] nil)
+                 nil
+                 (clojure.lang.Var/create))]
+    (.addMethod mfn
+                nil
+                (shallow-tracer-multifn* workspace
+                                         qual-sym
+                                         meta'
+                                         original-fn))
+    mfn))
+
+(defn ^{::trace-type :fn} shallow-tracer
+  [{:keys [workspace qual-sym meta'] :as m} original-fn]
+  (if (= (type original-fn) clojure.lang.MultiFn)
+    (shallow-tracer-multifn m original-fn)
+    (fn tracing-wrapper [& args]
+      (trace-fn-call workspace
+                     qual-sym
+                     original-fn
+                     args
+                     meta'))))
 
 (defn apply-trace-to-var
   [^clojure.lang.Var v tracer-fn workspace]
