@@ -136,17 +136,17 @@
                                    (clojure.walk/macroexpand-all form))
         olop->op (util/deep-zipmap (swap-in-path-syms form) form)
         f (fn [xl]
-            {(sym->path
-              (if (coll? xl)
-                (sym-seq->parent xl)
-                xl))
-             {:orig (-> xl
-                        xl->xform
-                        xform->form) ;; original symbol or value
-              :x (-> xl
-                     xl->xform)}})]
+            (when-let [xl' (if (coll? xl)
+                             (sym-seq->parent xl)
+                             xl)]
+              {(sym->path xl')
+               {:orig (-> xl
+                          xl->xform
+                          xform->form) ;; original symbol or value
+                :x (-> xl
+                       xl->xform)}}))]
     (util/$- ->> xls
-             (map f)
+             (keep f)
              (apply merge))))
 
 (defn deref-children
@@ -346,6 +346,24 @@
   [form]
   (or (meta form)
       (-> form first meta)))
+
+(def lazy-recur
+  (concat '(recur)
+          (for [x (range)]
+            `(nth ~'$$return ~x))))
+
+(defn recur-arity
+  [v]
+  (when (-> v meta ::util/recur)
+    (count v)))
+
+(defn mk-recur-handler
+  [arity-set]
+  `(case (recur-arity ~'$$return)
+     ~@(apply concat
+              (for [a arity-set]
+                [a (take (inc a) lazy-recur)]))
+     nil ~'$$return))
 
 (defn tr-macro
   [template tree-atom mcro v]
@@ -579,6 +597,12 @@
                                                (:form xmap)
                                                (path->sym path))})))
 
+(defn dot-sym?
+  [sym]
+  (-> sym
+      str
+      (.startsWith ".")))
+
 (defn xpand-form
   [form src-map fn-meta path path-parent]
   (let [args [form src-map fn-meta path path-parent]]
@@ -586,10 +610,14 @@
       (seq? form)
       (let [head (first form)]
         (cond
+          (= 'fn* head) {:form form}
           (util/macro? head) (apply xpand-macro head args)
           (= 'loop head) (apply xpand-loop args)
           (= 'recur head) (apply xpand-recur args)
           (= 'if head) (apply xpand-if args)
+          (or (special-symbol? head)
+              (dot-sym? head)) ;; TODO better way to detect these?
+          (apply xpand-all args)
           :else (apply xpand-fn head args)))
 
       (coll? form) (apply xpand-all args)
@@ -614,24 +642,6 @@
            :args args)))
 
 (defn quote* [x] `'~x)
-
-(defn recur-arity
-  [v]
-  (when (-> v meta ::util/recur)
-    (count v)))
-
-(def lazy-recur
-  (concat '(recur)
-          (for [x (range)]
-            `(nth ~'$$return ~x))))
-
-(defn mk-recur-handler
-  [arity-set]
-  `(case (recur-arity ~'$$return)
-     ~@(apply concat
-              (for [a arity-set]
-                [a (take (inc a) lazy-recur)]))
-     nil ~'$$return))
 
 (defn prep-traced-bods
   [traced-bods]
@@ -718,9 +728,8 @@
 
 (defn f1
   [a]
-  (-> a
-      inc
-      dec))
+  (for [b [a (inc a)]]
+    b))
 
 #_ (inner-tracer {:qual-sym 'com.billpiel.sayid.inner-trace3/f1
                   :meta' {:ns 'com.billpiel.sayid.inner-trace3
@@ -742,3 +751,4 @@
                              :ns' 'com.billpiel.sayid.inner-trace3})]
        (f1 1)
        (clojure.pprint/pprint trace/*trace-log-parent*)))
+
