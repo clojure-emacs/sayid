@@ -365,6 +365,63 @@
                 [a (take (inc a) lazy-recur)]))
      nil ~'$$return))
 
+(defn tr-let-ret
+  [template tree-atom v]
+  (-> (produce-recent-tree-atom! (:inner-path template)
+                                 (:path-parents template)
+                                 tree-atom)
+      deref
+      (merge template)
+      (assoc :return v
+             :inner-tags [:let])
+      (update-tree! tree-atom))
+  v)
+
+(defn tr-let-bind
+  [template tree-atom v bnd-frm val-frm]
+  (-> (produce-recent-tree-atom! (:inner-path template)
+                                 (:path-parents template)
+                                 tree-atom)
+      deref
+      (update-in [:let-binds] conj [v bnd-frm val-frm])
+      (update-tree! tree-atom))
+  v)
+
+(defn xpand-let-binds
+  [xbinds orig-binds path-sym]
+  (vec (mapcat (fn [[xb xv] [ob ov]]
+                 `(~ob (tr-let-bind ~path-sym
+                         ~'$$
+                         ~xv
+                         '~ob
+                         '~ov)))
+               (partition 2 xbinds)
+               (partition 2 orig-binds))))
+
+(defn xpand-let-form
+  [[_ binds & body] orig-binds path-sym]
+  `(tr-let-ret ~path-sym
+     ~'$$
+     (let ~(xpand-let-binds binds orig-binds path-sym)
+       ~@body)))
+
+(defn xpand-let
+  [[_ binds :as form] src-map fn-meta path path-parent]
+  (let [xmap (xpand-all form
+                        src-map
+                        fn-meta
+                        path
+                        path)]
+    (layer-xpansion-maps xmap
+                         {:path-parents {path path-parent}
+                          :templates {path (mk-tree-template src-map
+                                                             (get-form-meta-somehow form)
+                                                             fn-meta
+                                                             path)}
+                          :form (xpand-let-form (:form xmap)
+                                  binds
+                                  (path->sym path))})))
+
 (defn tr-macro
   [template tree-atom mcro v]
   (let [tree @(produce-recent-tree-atom! (:inner-path template)
@@ -611,6 +668,7 @@
       (let [head (first form)]
         (cond
           (= 'fn* head) {:form form}
+          (= 'let head) (apply xpand-let args)
           (util/macro? head) (apply xpand-macro head args)
           (= 'loop head) (apply xpand-loop args)
           (= 'recur head) (apply xpand-recur args)
@@ -728,7 +786,7 @@
 
 (defn f1
   [a]
-  (for [b [a (inc a)]]
+  (let [b (inc a)]
     b))
 
 #_ (inner-tracer {:qual-sym 'com.billpiel.sayid.inner-trace3/f1
