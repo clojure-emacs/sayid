@@ -518,16 +518,17 @@
                         fn-meta
                         path
                         path)]
-    (layer-xpansion-maps xmap
-                         {:path-parents {path path-parent}
-                          :templates {path (mk-tree-template src-map
-                                                             (get-form-meta-somehow form)
-                                                             fn-meta
-                                                             path)}
-                          :form (xpand-loop-form (:form xmap)
-                                                 binds
-                                                 (path->sym path)
-                                                 (:recur xmap))})))
+    (-> xmap
+        (layer-xpansion-maps {:path-parents {path path-parent}
+                              :templates {path (mk-tree-template src-map
+                                                                 (get-form-meta-somehow form)
+                                                                 fn-meta
+                                                                 path)}
+                              :form (xpand-loop-form (:form xmap)
+                                                     binds
+                                                     (path->sym path)
+                                                     (:recur xmap))})
+        (assoc :recur #{}))))
 
 (defn tr-recur
   [template tree-atom & args]
@@ -669,10 +670,10 @@
         (cond
           (= 'fn* head) {:form form}
           (= 'let head) (apply xpand-let args)
-          (util/macro? head) (apply xpand-macro head args)
           (= 'loop head) (apply xpand-loop args)
           (= 'recur head) (apply xpand-recur args)
           (= 'if head) (apply xpand-if args)
+          (util/macro? head) (apply xpand-macro head args)
           (or (special-symbol? head)
               (dot-sym? head)) ;; TODO better way to detect these?
           (apply xpand-all args)
