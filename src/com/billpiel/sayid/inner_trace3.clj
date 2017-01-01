@@ -1,5 +1,5 @@
 (ns com.billpiel.sayid.inner-trace3
-  (:require [com.billpiel.sayid.util.other :as util]
+  (:require [com.billpiel.sayid.util.other :as util :refer [$-]]
             [com.billpiel.sayid.trace :as trace]
             clojure.pprint
             clojure.set))
@@ -24,12 +24,13 @@
       clojure.set/map-invert))
 
 (defn swap-in-path-syms*
-  [form func parent path skip-macro?]
+  [ns-sym form func parent path skip-macro?]
   (cond
     (and skip-macro?
-         (util/macro? form)) form
+         (util/macro? ns-sym form)) form
     (coll? form)  (util/back-into form
-                                  (doall (map-indexed #(swap-in-path-syms* %2
+                                  (doall (map-indexed #(swap-in-path-syms* ns-sym
+                                                                           %2
                                                                            func
                                                                            form
                                                                            (conj path %)
@@ -44,19 +45,22 @@
                 parent)))
 
 (defn swap-in-path-syms
-  ([form func]
-   (swap-in-path-syms* form
+  ([ns-sym form func]
+   (swap-in-path-syms* ns-sym
+                       form
                        func
                        nil
                        []
                        false))
-  ([form]
-   (swap-in-path-syms form
-                       #(first %&))))
+  ([ns-sym form]
+   (swap-in-path-syms ns-sym
+                      form
+                      #(first %&))))
 
 (defn swap-in-path-syms-skip-macro
-  [form]
-  (swap-in-path-syms* form
+  [ns-sym form]
+  (swap-in-path-syms* ns-sym
+                      form
                       #(first %&)
                       nil
                       []
@@ -110,31 +114,33 @@
                          coll))
 
 (defn mk-expr-mapping
-  [form]
+  [ns-sym form]
   (let [xls (->> form
-                 clojure.walk/macroexpand-all
-                 swap-in-path-syms
+                 (util/macroexpand-all-in-ns ns-sym)
+                 (swap-in-path-syms ns-sym)
                  (tree-seq coll? seq))
-        xloc->oloc (util/deep-zipmap (-> form clojure.walk/macroexpand-all swap-in-path-syms)
-                                     (-> form swap-in-path-syms-skip-macro clojure.walk/macroexpand-all))
+        xloc->oloc (util/deep-zipmap (->> form (util/macroexpand-all-in-ns ns-sym) (swap-in-path-syms ns-sym))
+                                     (->> form (swap-in-path-syms-skip-macro ns-sym) (util/macroexpand-all-in-ns ns-sym)))
         oloc->xloc (clojure.set/map-invert xloc->oloc)
-        xl->xform  (util/deep-zipmap (-> form clojure.walk/macroexpand-all swap-in-path-syms)
-                                     (clojure.walk/macroexpand-all form))
+        xl->xform  (util/deep-zipmap (->> form (util/macroexpand-all-in-ns ns-sym) (swap-in-path-syms ns-sym))
+                                     (util/macroexpand-all-in-ns ns-sym form))
         xform->form (xform->form-map form)
-        ol->olop (-> form
-                     swap-in-path-syms
-                     get-path->form-maps)
-        xl->xlxp (-> form
-                     clojure.walk/macroexpand-all
-                     swap-in-path-syms
-                     get-path->form-maps)
-        ol->olxp (-> form
-                     swap-in-path-syms
-                     clojure.walk/macroexpand-all
-                     get-path->form-maps)
-        xlxp->xp (util/deep-zipmap (-> form clojure.walk/macroexpand-all swap-in-path-syms)
-                                   (clojure.walk/macroexpand-all form))
-        olop->op (util/deep-zipmap (swap-in-path-syms form) form)
+        ol->olop (->> form
+                      (swap-in-path-syms ns-sym)
+                      get-path->form-maps)
+        xl->xlxp (->> form
+                      (util/macroexpand-all-in-ns ns-sym)
+                      (swap-in-path-syms ns-sym)
+                      get-path->form-maps)
+        ol->olxp (->> form
+                      (swap-in-path-syms ns-sym)
+                      (util/macroexpand-all-in-ns ns-sym)
+                      get-path->form-maps)
+        xlxp->xp (util/deep-zipmap (->> form
+                                        (util/macroexpand-all-in-ns ns-sym)
+                                        (swap-in-path-syms ns-sym))
+                                   (util/macroexpand-all-in-ns ns-sym form))
+        olop->op (util/deep-zipmap (swap-in-path-syms ns-sym form) form)
         f (fn [xl]
             (when-let [xl' (if (coll? xl)
                              (sym-seq->parent xl)
@@ -452,7 +458,9 @@
 
 (defn xpand-macro
   [head form src-map fn-meta path path-parent]
-  (let [xform (with-meta-safe (macroexpand form) (meta form))] ;; TODO be sure this is doing something
+  (let [xform (with-meta-safe (util/macroexpand-in-ns (:ns-sym fn-meta)
+                                                      form)
+                (meta form))] ;; TODO be sure this is doing something
     (let [path' (conj path :macro)
           xmap (xpand-form xform
                            src-map
@@ -673,7 +681,7 @@
           (= 'loop head) (apply xpand-loop args)
           (= 'recur head) (apply xpand-recur args)
           (= 'if head) (apply xpand-if args)
-          (util/macro? head) (apply xpand-macro head args)
+          (util/macro? (:ns-sym fn-meta) head) (apply xpand-macro head args)
           (or (special-symbol? head)
               (dot-sym? head)) ;; TODO better way to detect these?
           (apply xpand-all args)
@@ -685,7 +693,7 @@
 (defn xpand
   [form body-idx parent-fn-meta]
   (xpand-form form
-              (mk-expr-mapping form)
+              (mk-expr-mapping (:ns-sym parent-fn-meta) form)
               parent-fn-meta
               [body-idx]
               []))
@@ -749,13 +757,16 @@
 
 (defn inner-tracer
   [{:keys [workspace qual-sym meta' ns']}] ;; original-fn and workspace not used! IS THAT RIGHT??
-  (let [src (-> qual-sym
+  (let [ns-sym (util/->symbol ns')
+        meta'' (assoc meta' :ns-sym ns-sym)
+        src (-> qual-sym
                 symbol
                 util/hunt-down-source)
-        traced-form (-> src
-                        macroexpand
+        traced-form ($- ->
+                        src
+                        (util/macroexpand-in-ns ns-sym $)
                         get-fn
-                        (xpand-fn* meta'))]
+                        (xpand-fn* meta''))]
     (clojure.pprint/pprint traced-form)
     (try (util/eval-in-ns (-> ns' str symbol)
                           traced-form)
@@ -787,8 +798,11 @@
 
 (defn f1
   [a]
-  (let [b (inc a)]
-    b))
+  (loop [b a
+         c 2]
+    (if (= b 0)
+      (recur 1 666)
+      b)))
 
 #_ (inner-tracer {:qual-sym 'com.billpiel.sayid.inner-trace3/f1
                   :meta' {:ns 'com.billpiel.sayid.inner-trace3
@@ -808,6 +822,6 @@
                              :meta' {:ns 'com.billpiel.sayid.inner-trace3
                                      :name 'com.billpiel.sayid.inner-trace3/f1}
                              :ns' 'com.billpiel.sayid.inner-trace3})]
-       (f1 1)
-       (clojure.pprint/pprint trace/*trace-log-parent*)))
+       (f1 0)
+#_       (clojure.pprint/pprint trace/*trace-log-parent*)))
 
