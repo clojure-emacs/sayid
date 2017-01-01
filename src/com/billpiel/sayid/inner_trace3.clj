@@ -5,23 +5,25 @@
             clojure.set))
 
 (defn form->xform-map*
-  [form]
+  [ns-sym form]
   (if (coll? form)
-    (let [x (macroexpand form)
-          xx (clojure.walk/macroexpand-all form)] ;; TODO better way?
-      (conj (mapcat form->xform-map* x)
+    (let [x (util/macroexpand-in-ns ns-sym form)
+          xx (util/macroexpand-all-in-ns ns-sym form)]
+      (conj (mapcat (partial form->xform-map*
+                             ns-sym)
+                    x)
             {form xx}))
     [{form form}]))
 
 (defn form->xform-map
-  [form]
-  (apply merge (form->xform-map* form)))
+  [ns-sym form]
+  (apply merge (form->xform-map* ns-sym form)))
 
 (defn xform->form-map
-  [form]
-  (-> form
-      form->xform-map
-      clojure.set/map-invert))
+  [ns-sym form]
+  (->> form
+       (form->xform-map ns-sym)
+       clojure.set/map-invert))
 
 (defn swap-in-path-syms*
   [ns-sym form func parent path skip-macro?]
@@ -124,7 +126,7 @@
         oloc->xloc (clojure.set/map-invert xloc->oloc)
         xl->xform  (util/deep-zipmap (->> form (util/macroexpand-all-in-ns ns-sym) (swap-in-path-syms ns-sym))
                                      (util/macroexpand-all-in-ns ns-sym form))
-        xform->form (xform->form-map form)
+        xform->form (xform->form-map ns-sym form)
         ol->olop (->> form
                       (swap-in-path-syms ns-sym)
                       get-path->form-maps)
@@ -798,11 +800,9 @@
 
 (defn f1
   [a]
-  (loop [b a
-         c 2]
-    (if (= b 0)
-      (recur 1 666)
-      b)))
+  (-> a
+      inc
+      dec))
 
 #_ (inner-tracer {:qual-sym 'com.billpiel.sayid.inner-trace3/f1
                   :meta' {:ns 'com.billpiel.sayid.inner-trace3
