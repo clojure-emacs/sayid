@@ -1,4 +1,5 @@
 (ns com.billpiel.sayid.sayid-multifn
+  (:require [com.billpiel.sayid.trace :as t])
   (:gen-class :name com.billpiel.sayid.SayidMultiFn
               :init init
               :constructors {[clojure.lang.IPersistentMap
@@ -23,6 +24,22 @@
   (.addMethod (:original (.state this))
               dispatch-val
               method))
+
+(defn -invoke
+  [this & args]
+  (let [{:keys [workspace name' meta' original]} (.state this)
+        dispatch-fn (.-dispatchFn original)
+        dispatch-val (t/trace-fn-call workspace
+                                      (symbol (str name' "--DISPATCHER"))
+                                      dispatch-fn
+                                      args
+                                      meta')
+        method (.getMethod original dispatch-val)]
+    (t/trace-fn-call workspace
+                     name'
+                     method
+                     args
+                     meta')))
 
 #_ (compile 'com.billpiel.sayid.sayid-multifn)
 

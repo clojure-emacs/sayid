@@ -89,8 +89,11 @@
 
 #_ (import 'com.billpiel.sayid.SayidMultiFn)
 
-(def smm (com.billpiel.sayid.SayidMultiFn. {:original mm} "TestName" (fn []) nil (clojure.lang.Var/create)))
+#_(def smm (com.billpiel.sayid.SayidMultiFn. {:original mm :name' "NAME" :meta' {} :workspace nil} "TestName" (fn []) nil (clojure.lang.Var/create)))
 
-(mm 3)
+#_(mm 3)
 
-(.addMethod smm 3 (fn [_] :three))
+#_(.addMethod smm 3 (fn [_] :three))
+
+#_ (binding [com.billpiel.sayid.trace/*trace-log-parent* @com.billpiel.sayid.core/workspace]
+  (smm 3))
