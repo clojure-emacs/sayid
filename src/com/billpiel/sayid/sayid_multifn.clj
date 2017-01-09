@@ -18,7 +18,11 @@
   [m n dispatch-fn default r]
   [[n dispatch-fn default r] m])
 
-
+(defn -addMethod
+  [this dispatch-val method]
+  (.addMethod (:original (.state this))
+              dispatch-val
+              method))
 
 #_ (compile 'com.billpiel.sayid.sayid-multifn)
 

@@ -89,6 +89,8 @@
 
 #_ (import 'com.billpiel.sayid.SayidMultiFn)
 
-#_ (def smm (com.billpiel.sayid.SayidMultiFn. {:a 1} "TestName" (fn []) nil (clojure.lang.Var/create)))
+(def smm (com.billpiel.sayid.SayidMultiFn. {:original mm} "TestName" (fn []) nil (clojure.lang.Var/create)))
 
+(mm 3)
 
+(.addMethod smm 3 (fn [_] :three))
