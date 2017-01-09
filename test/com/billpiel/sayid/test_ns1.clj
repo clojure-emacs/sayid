@@ -73,3 +73,22 @@
 (defn func-666
   [a b]
   (vector a (+ a (* 2 b))))
+
+
+(def mm nil)
+(defmulti mm (fn [a] a))
+
+(defmethod mm 1
+  [_]
+  (println "mm 1")
+  :a)
+
+(defmethod mm 2
+  [_] :b)
+
+
+#_ (import 'com.billpiel.sayid.SayidMultiFn)
+
+#_ (def smm (com.billpiel.sayid.SayidMultiFn. {:a 1} "TestName" (fn []) nil (clojure.lang.Var/create)))
+
+

@@ -104,9 +104,7 @@
                   :ended-at (now)})
       value)))
 
-;; mk-fn-tree + start-trace + binding + end-trace = 345ms
-
-(defn shallow-tracer-multifn*
+#_ (defn shallow-tracer-multifn*
   [workspace qual-sym meta' original-fn]
   (fn tracing-wrapper [& args]
     (let [dispatch-fn (.-dispatchFn original-fn)
@@ -124,18 +122,20 @@
 
 (defn shallow-tracer-multifn
   [{:keys [workspace qual-sym meta']} original-fn]
-  (let [mfn (new clojure.lang.MultiFn
-                 (str qual-sym)
-                 (fn [& args] nil)
-                 nil
-                 (clojure.lang.Var/create))]
-    (.addMethod mfn
-                nil
-                (shallow-tracer-multifn* workspace
-                                         qual-sym
-                                         meta'
-                                         original-fn))
-    mfn))
+  (let [method-table (.getMethodTable original-fn)]
+    (clojure.stacktrace/print-stack-trace (Exception. "what?"))
+    (clojure.pprint/pprint method-table)
+    (doseq [[k v] method-table]
+      (println [k v])
+      (.addMethod original-fn
+                  k
+                  (fn tracing-wrapper [& args]
+                    (trace-fn-call workspace
+                                   (symbol (str qual-sym "<" k ">"))
+                                   v
+                                   args
+                                   meta')))))
+  original-fn)
 
 (defn ^{::trace-type :fn} shallow-tracer
   [{:keys [workspace qual-sym meta'] :as m} original-fn]
