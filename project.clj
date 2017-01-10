@@ -4,6 +4,7 @@
   :url "http://bpiel.github.io/sayid/"
   :license {:name "Apache License, Version 2.0"
             :url "http://www.apache.org/licenses/LICENSE-2.0"}
+  :aot [com.billpiel.sayid.sayid-multifn]
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [tamarin "0.1.2"]
                  [org.clojure/tools.reader "1.0.0-alpha3"]

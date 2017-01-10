@@ -1,11 +1,7 @@
 (ns com.billpiel.sayid.sayid-multifn
   (:gen-class :name com.billpiel.sayid.SayidMultiFn
               :init init
-              :constructors {[clojure.lang.IPersistentMap
-                              String
-                              clojure.lang.IFn
-                              Object
-                              clojure.lang.IRef]
+              :constructors {[clojure.lang.IPersistentMap]
                              [String
                               clojure.lang.IFn
                               Object
@@ -16,8 +12,12 @@
 
 (defn -init
   [m]
-  [["DUMMY" vector nil (clojure.lang.Var/create)] m])
-
+  (let [original (:original m)]
+    [["SAYID-MULTIFN"
+      (.-dispatchFn original)
+      (.-defaultDispatchVal original)
+      (.-hierarchy original)]
+     m]))
 
 (defn -invoke
   [this & args]
@@ -49,18 +49,8 @@
 
 (defn -getMethodTable
   [this]
-  (-> this .state :original .getMethodTable))
+  (some-> this .state :original .getMethodTable))
 
 (defn -getPreferTable
   [this]
   (-> this .state :original .getPreferTable))
-
-
-
-#_ (compile 'com.billpiel.sayid.sayid-multifn)
-
-#_ (import 'com.billpiel.sayid.SayidMultiFn)
-
-#_ (import 'com.billpiel.sayid.sayid_multifn)
-
-#_ (com.billpiel.sayid.SayidMultiFn.)

@@ -93,7 +93,11 @@
 
 #_(mm 3)
 
+#_(mm 2)
+
 #_(.addMethod smm 3 (fn [_] :three))
+
+#_(.addMethod mm 3 (fn [_] :three))
 
 #_ (binding [com.billpiel.sayid.trace/*trace-log-parent* @com.billpiel.sayid.core/workspace]
   (smm 3))

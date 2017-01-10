@@ -2,7 +2,6 @@
   (:require [com.billpiel.sayid.util.other :as util])
   (:import com.billpiel.sayid.SayidMultiFn))
 
-
 (def ^:dynamic *trace-log-parent* nil)
 
 (defn now [] (System/currentTimeMillis))
@@ -115,13 +114,11 @@
                                                                          args
                                                                          meta'))
                                      :trace-method-fn (fn [f args]
-                                                          (trace-fn-call workspace
-                                                                         qual-sym
-                                                                         f
-                                                                         args
-                                                                         meta'))}
-                                    "DUMMY"
-                                    ))
+                                                        (trace-fn-call workspace
+                                                                       qual-sym
+                                                                       f
+                                                                       args
+                                                                       meta'))}))
 
 (defn ^{::trace-type :fn} shallow-tracer
   [{:keys [workspace qual-sym meta'] :as m} original-fn]
