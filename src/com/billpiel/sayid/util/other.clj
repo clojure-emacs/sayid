@@ -19,6 +19,13 @@
         (coll? v) (vec v)
         :else [v]))
 
+(defn ->symbol
+  [v]
+  (cond (= (type v) clojure.lang.Namespace) (symbol (.getName v))
+        (keyword? v) (-> v name symbol)
+        (string? v) (symbol v)
+        :else (-> v str symbol)))
+
 (defn def-ns-var
   [ws-ns-sym sym v]
   (binding [*ns* (create-ns ws-ns-sym)]
@@ -29,6 +36,22 @@
   (binding [*ns* (create-ns ns-sym)]
     (use 'clojure.core)
     (eval form)))
+
+(defn macroexpand-in-ns
+  [ns-sym form]
+  (eval-in-ns ns-sym `(macroexpand '~form)))
+
+(defn macroexpand-all-in-ns
+  [ns-sym form]
+  (eval-in-ns ns-sym `(walk/macroexpand-all '~form)))
+
+(defn macro?
+  [ns-sym m-sym]
+  (try (some->> m-sym
+                (ns-resolve ns-sym)
+                meta
+                :macro)
+       (catch Exception e false)))
 
 (defmacro get-env
   []
@@ -238,23 +261,6 @@
        keys
        (map (partial ns-unmap ns'))
        dorun))
-
-(defn macro?
-  [v]
-  (try (-> v
-           (obj-pred-action-else symbol?
-                                 :t-fn
-                                 find-var)
-           meta
-           :macro)
-       (catch java.lang.IllegalArgumentException e
-         (macro? (qualify-sym 'clojure.core v)))))
-
-(defn special-operator?
-  [v]
-  ((some-fn macro?
-            special-symbol?)
-   v))
 
 (defn source-fn-var
   [fn-var]
