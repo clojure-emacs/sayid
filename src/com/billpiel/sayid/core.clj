@@ -258,16 +258,6 @@ user> (-> #'f1 meta :source)
   true)
 (util/defalias w-l! ws-load!)
 
-(defn ws-replay-id!
-  "Replays the function call recorded in the active workspace with an id
-  of `id`."
-  [id]
-  (let [t (-> (ws-query [:id id]) first)
-        f (-> t :name resolve)
-        a (:args t)]
-    (apply f a)))
-(util/defalias w-rpi! ws-replay-id!)
-
 (defn ^:no-doc inner-trace-apply*
   [workspace qual-sym args]
   (let [meta' (-> qual-sym
@@ -283,32 +273,6 @@ user> (-> #'f1 meta :source)
                                        nil)]
     (binding [trace/*trace-log-parent* workspace]
       (apply itraced-fn args))))
-
-(defn ws-query-inner-trace-replay
-  "Queries the current workspace with `query`. Then takes the top-level
-  results, inner traces the functions and replays them. Returns the
-  resulting workspace, which is NOT the active workspace."
-  [query]
-  (let [results (ws-query* query)
-        workspace (ws/default-workspace)]
-    (doseq [{:keys [name args]} results]
-      (inner-trace-apply* workspace
-                         name
-                         args))
-    (ws-deref! workspace)))
-(util/defalias w-qdtr ws-query-inner-trace-replay)
-
-(defn ws-query-inner-trace-replay-print
-  "Queries the current workspace with `query`. Then takes the top-level
-  results, inner traces the functions, replays them then PRINTS the
-  resulting workspace, which is NOT the active workspace."
-  [query]
-  (-> query
-      ws-query-inner-trace-replay
-      trees-print
-      with-view))
-(util/defalias w-qdtrp ws-query-inner-trace-replay-print)
-(util/defalias w-$ ws-query-inner-trace-replay-print)
 
 (defn ws-inner-trace-apply
   "Deep traces the function indicated by the qualified symbol,

@@ -77,7 +77,7 @@
          [idx]
          #(merge % tree)))
 
-(defn  trace-fn-call
+(defn trace-fn-call
   [workspace name f args meta']
   (let [parent (or *trace-log-parent*
                    workspace)

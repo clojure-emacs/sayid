@@ -233,13 +233,6 @@
     (sayid-show-traced))
 
 ;;;###autoload
-(defun sayid-replay-workspace-query-point ()
-  (interactive)
-  (sayid-trace-enable-all)
-  (nrepl-send-sync-request (list "op" "sayid-replay-workspace")
-                           (cider-current-connection))
-  (sayid-query-form-at-point))
-
 (defun sayid-load-enable-clear ()
   (interactive)
   (sayid-trace-disable-all)
@@ -248,28 +241,6 @@
   (sleep-for 0.5)
   (sayid-trace-enable-all)
   (sayid-clear-log))
-
-;;;###autoload
-(defun sayid-replay-with-inner-trace ()
-  (interactive)
-  (sayid-req-insert-meta-ansi (list "op" "sayid-replay-with-inner-trace-at-point"
-                                    "source" (buffer-string)
-                                    "file" (buffer-file-name)
-                                    "line" (line-number-at-pos))))
-
-;;;###autoload
-(defun sayid-buf-replay-with-inner-trace ()
-  (interactive)
-  (sayid-req-insert-meta-ansi (list "op" "sayid-replay-with-inner-trace"
-                                    "func" (get-text-property (point) 'fn-name))))
-
-;;;###autoload
-(defun sayid-replay-at-point ()
-  (interactive)
-  (sayid-req-insert-meta-ansi (list "op" "sayid-replay-at-point"
-                                    "source" (buffer-string)
-                                    "file" (buffer-file-name)
-                                    "line" (line-number-at-pos))))
 
 ;; make-symbol is a liar
 (defun str-to-sym (s) (car (read-from-string s)))
@@ -804,8 +775,6 @@ h -- help
   (display-message-or-buffer "
 C-c s e -- Enables traces, evals the expression at point, disables traces, displays results with terse view
 C-c s f -- Queries the active workspace for entries that most closely match the context of the cursor position
-C-c s n -- Applies an inner trace to the function at point, replays workspace, displays results
-C-c s r -- Replays workspace, queries results by context of cursor
 C-c s w -- Shows workspace, using the current view
 C-c s t y -- Prompts for a dir, recursively traces all ns's in that dir and subdirs
 C-c s t p -- Prompts for a pattern (* = wildcare), and applies a trace to all *loaded* ns's whose name matches the patten
@@ -854,8 +823,6 @@ p -- jump to previous sibling node
 (defun sayid-set-clj-mode-keys ()
   (define-key clojure-mode-map (kbd "C-c s e") 'sayid-eval-last-sexp)
   (define-key clojure-mode-map (kbd "C-c s f") 'sayid-query-form-at-point)
-  (define-key clojure-mode-map (kbd "C-c s n") 'sayid-replay-with-inner-trace)
-  (define-key clojure-mode-map (kbd "C-c s r") 'sayid-replay-workspace-query-point)
   (define-key clojure-mode-map (kbd "C-c s !") 'sayid-load-enable-clear)
   (define-key clojure-mode-map (kbd "C-c s w") 'sayid-get-workspace)
   (define-key clojure-mode-map (kbd "C-c s t y") 'sayid-trace-all-ns-in-dir)

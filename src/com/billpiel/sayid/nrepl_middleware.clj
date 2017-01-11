@@ -197,19 +197,6 @@
        nil?
        not))
 
-(defn replay!
-  [trees]
-  (doseq [{:keys [name args]} trees]
-    (apply (resolve name)
-           args)))
-
-(defn inner-replay!
-  [[{:keys [name]} :as matches]]
-  (sd/ws-add-inner-trace-fn!* name)
-  (doseq [{:keys [name args]} matches]
-    (apply (resolve name)
-           args)))
-
 (defn query-ws-by-file-line-range
   "Find the tree node that: is smallest or starts latest, contains line
   and starts at or after start-line."
@@ -344,88 +331,6 @@
   [{:keys [transport fn-ns] :as msg}]
   (sd/ws-remove-trace-ns! (symbol fn-ns))
   (send-status-done msg))
-
-(defn ^:nrepl sayid-replay-workspace
-  [{:keys [transport] :as msg}]
-  (let [kids (:children (sd/ws-deref!))]
-    (sd/ws-cycle-all-traces!)
-    (sd/ws-clear-log!)
-    (replay! kids))
-  (send-status-done msg))
-
-;; DEPRECATE OR FIX?
-#_ (defn ^:nrepl sayid-replay-at-point
-  [{:keys [transport source file line] :as msg}]
-  (try (let [{start-line :line} (get-meta-at-pos-in-source file line source)
-             matches (query-ws-by-file-line-range file start-line line)
-             matches' (when-not (empty? matches)
-                        (do (replay! matches)
-                            (query-ws-by-file-line-range file start-line line)))
-             out (if-not (nil? matches')
-                   (-> matches'
-                       so/tree->string+meta)
-                   {:string (str "No trace records found for function at line: " line)})]
-         (t/send transport (response-for msg
-                                         :value (:string out)
-                                         :meta (-> out :meta process-line-meta))))
-       (catch Exception e
-         (t/send transport (response-for msg
-                                         :value (with-out-str (clojure.stacktrace/print-stack-trace e)))))
-       (finally
-         (send-status-done msg))))
-
-(defn ^:nrepl sayid-replay-with-inner-trace-at-point
-  [{:keys [transport source file line] :as msg}]
-  (try (let [{start-line :line} (get-meta-at-pos-in-source file line source)
-             matches (:children (query-ws-by-file-line-range file
-                                                             start-line
-                                                             line))
-             [{:keys [name inner-path]}] matches
-             kids (:children (sd/ws-deref!))
-             _ (do (when-not (empty? matches)
-                     (sd/ws-cycle-all-traces!)
-                     (sd/ws-clear-log!)
-                     (when (nil? inner-path) ;; don't inner-trace an inner trace
-                       (sd/ws-add-inner-trace-fn!* name))
-                     (replay! kids)))
-             matches' (query-ws-by-file-line-range file start-line line)
-             out (if-not (or (empty? matches)
-                             (empty? matches'))
-                   (-> matches'
-                       query-tree->trio ;so/tree->text-prop-pair
-                       clj->nrepl)
-                   (clj->nrepl [[nil (str "No trace records found for function at line: " line)]]))]
-         (t/send transport (response-for msg
-                                         :value out)))
-       (catch Exception e
-         (t/send transport (response-for msg
-                                         :value (with-out-str (st/print-stack-trace e)))))
-       (finally
-         (send-status-done msg))))
-
-(defn ^:nrepl sayid-replay-with-inner-trace
-  [{:keys [transport func] :as msg}]
-  (try
-    (let [fn-sym (symbol func)
-          kids (:children (sd/ws-deref!))
-          _ (do (sd/ws-add-inner-trace-fn!* fn-sym)
-                (sd/ws-cycle-all-traces!)
-                (sd/ws-clear-log!)
-                (replay! kids))
-          matches (-> (query* [:parent-name fn-sym])
-                      query-tree->trio
-                      clj->nrepl)
-          out (clj->nrepl matches)] ;; TODO clj->nrepl called twice
-      (t/send transport (response-for msg
-                                      :value out)))
-    (catch Exception e
-      (println e)
-      (println (with-out-str ;; I don't know why this is necessary
-                 (st/print-stack-trace e)))
-      (t/send transport (response-for msg
-                                      :value (with-out-str (st/print-stack-trace e)))))
-    (finally
-      (send-status-done msg))))
 
 (defn ^:nrepl sayid-query-form-at-point
   [{:keys [file line] :as msg}]
