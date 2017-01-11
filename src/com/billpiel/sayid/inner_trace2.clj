@@ -1,6 +1,8 @@
 (ns com.billpiel.sayid.inner-trace2
   (:require [com.billpiel.sayid.util.other :as util]
-            [com.billpiel.sayid.trace :as trace]))
+            [com.billpiel.sayid.trace :as trace]
+            clojure.pprint
+            clojure.set))
 
 (defn prs
   [v]
@@ -608,6 +610,7 @@
                         macroexpand
                         get-fn
                         (xpand-fn* meta'))]
+    (clojure.pprint/pprint traced-form)
     (try (util/eval-in-ns (-> ns' str symbol)
                           traced-form)
          (catch Exception e
@@ -636,8 +639,9 @@
 
 
  (defn f1
-     []
-     (let [a (inc 1)] a))
+   [a]
+   (inc a))
+
 
 #_ (inner-tracer {:qual-sym 'com.billpiel.sayid.inner-trace2/f1
                   :meta' {:ns 'com.billpiel.sayid.inner-trace2

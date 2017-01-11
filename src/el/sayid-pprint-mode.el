@@ -14,6 +14,7 @@
         (define-key map  (kbd "<return>") 'sayid-pprint-buf-show-path)
         (define-key map  (kbd "<backspace>") 'sayid-pprint-buf-exit)
         (define-key map  (kbd "l") 'sayid-pprint-buf-exit)
+        (define-key map  (kbd "q") 'quit-window)
         map))
 
  ;;;###autoload

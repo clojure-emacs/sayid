@@ -27,6 +27,7 @@
         (define-key map  (kbd "g") 'sayid-gen-instance-expr)
         (define-key map  (kbd "C") 'sayid-clear-log)
         (define-key map  (kbd "h") 'sayid-buf-show-help)
+        (define-key map  (kbd "q") 'quit-window)
         map))
 
  ;;;###autoload

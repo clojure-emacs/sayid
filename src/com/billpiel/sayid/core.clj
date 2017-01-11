@@ -1,6 +1,6 @@
 (ns com.billpiel.sayid.core
   (:require [com.billpiel.sayid.trace :as trace]
-            [com.billpiel.sayid.inner-trace2 :as itrace]
+            [com.billpiel.sayid.inner-trace3 :as itrace]
             [com.billpiel.sayid.workspace :as ws]
             [com.billpiel.sayid.recording :as rec]
             [com.billpiel.sayid.query2 :as q]
@@ -56,7 +56,7 @@ user> (-> #'f1 meta :source)
 
 ;; === Workspace functions
 
-(defn- ws-init! [& [quiet]]
+(defn ws-init! [& [quiet]]
   (#'ws/init! workspace quiet))
 
 (defn ws-get-active!
@@ -156,13 +156,16 @@ user> (-> #'f1 meta :source)
     `(mapv ws-add-trace-ns!* (find-ns/search-nses '~ns-sym ~ref-ns))))
 (util/defalias-macro w-atn! ws-add-trace-ns!)
 
-(defn ws-remove-trace-ns!
+(defmacro ws-remove-trace-ns!
   "`ns-sym` is a symbol that references an existing namespace. Removes all
   traces applied to the namespace."
-  [ns-sym] (#'ws/remove-trace-*! (ws-init! :quiet)
-                                  :ns
-                                  ns-sym))
-(util/defalias w-rtn! ws-remove-trace-ns!)
+  [ns-sym]
+  (let [ref-ns *ns*]
+    `(mapv (partial #'ws/remove-trace-*!
+                    (ws-init! :quiet)
+                    :ns)
+           (find-ns/search-nses '~ns-sym ~ref-ns))))
+(util/defalias-macro w-rtn! ws-remove-trace-ns!)
 
 (defn ws-enable-all-traces!
   "Enables any disabled traces in active workspace."
@@ -255,16 +258,6 @@ user> (-> #'f1 meta :source)
   true)
 (util/defalias w-l! ws-load!)
 
-(defn ws-replay-id!
-  "Replays the function call recorded in the active workspace with an id
-  of `id`."
-  [id]
-  (let [t (-> (ws-query [:id id]) first)
-        f (-> t :name resolve)
-        a (:args t)]
-    (apply f a)))
-(util/defalias w-rpi! ws-replay-id!)
-
 (defn ^:no-doc inner-trace-apply*
   [workspace qual-sym args]
   (let [meta' (-> qual-sym
@@ -280,32 +273,6 @@ user> (-> #'f1 meta :source)
                                        nil)]
     (binding [trace/*trace-log-parent* workspace]
       (apply itraced-fn args))))
-
-(defn ws-query-inner-trace-replay
-  "Queries the current workspace with `query`. Then takes the top-level
-  results, inner traces the functions and replays them. Returns the
-  resulting workspace, which is NOT the active workspace."
-  [query]
-  (let [results (ws-query* query)
-        workspace (ws/default-workspace)]
-    (doseq [{:keys [name args]} results]
-      (inner-trace-apply* workspace
-                         name
-                         args))
-    (ws-deref! workspace)))
-(util/defalias w-qdtr ws-query-inner-trace-replay)
-
-(defn ws-query-inner-trace-replay-print
-  "Queries the current workspace with `query`. Then takes the top-level
-  results, inner traces the functions, replays them then PRINTS the
-  resulting workspace, which is NOT the active workspace."
-  [query]
-  (-> query
-      ws-query-inner-trace-replay
-      trees-print
-      with-view))
-(util/defalias w-qdtrp ws-query-inner-trace-replay-print)
-(util/defalias w-$ ws-query-inner-trace-replay-print)
 
 (defn ws-inner-trace-apply
   "Deep traces the function indicated by the qualified symbol,

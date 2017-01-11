@@ -1,6 +1,6 @@
 (ns com.billpiel.sayid.trace
-  (:require [com.billpiel.sayid.util.other :as util]))
-
+  (:require [com.billpiel.sayid.util.other :as util])
+  (:import com.billpiel.sayid.SayidMultiFn))
 
 (def ^:dynamic *trace-log-parent* nil)
 
@@ -70,14 +70,14 @@
          conj
          tree))  ;; string!!
 
-(defn  end-trace
+(defn end-trace
   [trace-log idx tree]
   (swap! trace-log
          update-in
          [idx]
          #(merge % tree)))
 
-(defn  trace-fn-call
+(defn trace-fn-call
   [workspace name f args meta']
   (let [parent (or *trace-log-parent*
                    workspace)
@@ -104,16 +104,32 @@
                   :ended-at (now)})
       value)))
 
-;; mk-fn-tree + start-trace + binding + end-trace = 345ms
+(defn shallow-tracer-multifn
+  [{:keys [workspace qual-sym meta']} original-fn]
+  (com.billpiel.sayid.SayidMultiFn. {:original original-fn
+                                     :trace-dispatch-fn (fn [f args]
+                                                          (trace-fn-call workspace
+                                                                         (symbol (str qual-sym "--DISPATCHER"))
+                                                                         f
+                                                                         args
+                                                                         meta'))
+                                     :trace-method-fn (fn [f args]
+                                                        (trace-fn-call workspace
+                                                                       qual-sym
+                                                                       f
+                                                                       args
+                                                                       meta'))}))
 
 (defn ^{::trace-type :fn} shallow-tracer
-  [{:keys [workspace qual-sym meta']} original-fn]
-  (fn tracing-wrapper [& args]
-    (trace-fn-call workspace
-                   qual-sym
-                   original-fn
-                   args
-                   meta')))
+  [{:keys [workspace qual-sym meta'] :as m} original-fn]
+  (if (= (type original-fn) clojure.lang.MultiFn)
+    (shallow-tracer-multifn m original-fn)
+    (fn tracing-wrapper [& args]
+      (trace-fn-call workspace
+                     qual-sym
+                     original-fn
+                     args
+                     meta'))))
 
 (defn apply-trace-to-var
   [^clojure.lang.Var v tracer-fn workspace]

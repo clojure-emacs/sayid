@@ -1,4 +1,4 @@
-(ns com.billpiel.sayid.test.ns1
+(ns com.billpiel.sayid.test-ns1
   (:require [com.billpiel.sayid.util.other :refer [$-]]))
 
 (defn func2
@@ -74,6 +74,30 @@
   [a b]
   (vector a (+ a (* 2 b))))
 
-(func-complex 2 5)
 
-(func3-1 2 5)
+(def mm nil)
+(defmulti mm (fn [a] a))
+
+(defmethod mm 1
+  [_]
+  (println "mm 1")
+  :a)
+
+(defmethod mm 2
+  [_] :b)
+
+
+#_ (import 'com.billpiel.sayid.SayidMultiFn)
+
+#_(def smm (com.billpiel.sayid.SayidMultiFn. {:original mm :name' "NAME" :meta' {} :workspace nil} "TestName" (fn []) nil (clojure.lang.Var/create)))
+
+#_(mm 3)
+
+#_(mm 2)
+
+#_(.addMethod smm 3 (fn [_] :three))
+
+#_(.addMethod mm 3 (fn [_] :three))
+
+#_ (binding [com.billpiel.sayid.trace/*trace-log-parent* @com.billpiel.sayid.core/workspace]
+  (smm 3))
