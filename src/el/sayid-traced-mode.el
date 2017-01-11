@@ -17,6 +17,7 @@
         (define-key map  (kbd "<backspace>") 'sayid-show-traced)
         (define-key map  (kbd "l") 'sayid-show-traced)
         (define-key map  (kbd "h") 'sayid-traced-buf-show-help)
+        (define-key map  (kbd "q") 'quit-window)
         map))
 
  ;;;###autoload

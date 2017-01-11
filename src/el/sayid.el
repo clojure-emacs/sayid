@@ -792,7 +792,7 @@ C-c s x -- Blow away workspace -- traces and logs
 C-c s s -- Popup buffer showing what it currently traced
 C-c s S -- Popup buffer showing what it currently traced in buffer's ns
 C-c s V s -- Set the view
-C-c h -- show this help
+C-c s h -- show this help
 "))
 
 (defun sayid-traced-buf-show-help ()
@@ -805,8 +805,9 @@ E -- Enable ALL traces
 D -- Disable ALL traces
 i -- Apply inner trace to func at point
 o -- Apply outer trace to func at point
-r -- Remove trace from fun at point
+r -- Remove trace from func at point
 l, <backspace> -- go back to trace overview (if in ns view)
+q -- quit window
 "))
 
 (defun sayid-pprint-buf-show-help ()
@@ -817,6 +818,8 @@ i -- jump into child node
 o -- jump out to parent node
 n -- jump to next sibling node
 p -- jump to previous sibling node
+l -- back to trace buffer
+q -- quit window
 "))
 
 ;;;###autoload
