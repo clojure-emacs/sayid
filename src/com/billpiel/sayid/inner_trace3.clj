@@ -769,7 +769,6 @@
                         (util/macroexpand-in-ns ns-sym $)
                         get-fn
                         (xpand-fn* meta''))]
-    (clojure.pprint/pprint traced-form)
     (try (util/eval-in-ns (-> ns' str symbol)
                           traced-form)
          (catch Exception e
