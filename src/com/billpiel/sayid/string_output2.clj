@@ -328,29 +328,31 @@
                                          :end end-pos)
                                   (conj agg $)))))))
 
+;; 102
 (defn remove-nil-vals
   [m]
-  (->> m
-       (remove #(-> % second nil?))
-       (into {})))
+  (apply merge (for [[k v] m :when (not (nil? v))] {k v})))
 
 (defn tkn->simple-type
   [t]
   (-> t :type first))
 
+(def ^:const  type->color {:int :cyan
+                           :float :cyan
+                           :string :magenta
+                           :keyword :yellow
+                           :symbol :cyan
+                           :truncator :black})
+
+(def ^:const  type->bg-color {:truncator :white})
+
 (defn apply-type-colors-to-token
   [token]
-  (let [type->color {:int :cyan
-                     :float :cyan
-                     :string :magenta
-                     :keyword :yellow
-                     :symbol :cyan
-                     :truncator :black}
-        type->bg-color {:truncator :white}]
+  (let [st (tkn->simple-type token)]
     (merge token
-           (when-let [color (type->color (tkn->simple-type token))]
+           (when-let [color (type->color st)]
              {:fg-color color})
-           (when-let [color (type->bg-color (tkn->simple-type token))]
+           (when-let [color (type->bg-color st)]
              {:bg-color color}))))
 
 (defn mk-text-props
@@ -605,22 +607,3 @@
        flatten
        (remove nil?)
        split-text-tag-coll))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
