@@ -271,8 +271,8 @@
       "white"))
 
 (defun mk-font-face (p)
-  (let ((fg (cadr (assoc "fg-color" p)))
-        (bg (cadr (assoc "bg-color" p))))
+  (let ((fg (cadr (assoc "fg-color" (list p))))
+        (bg (cadr (assoc "bg-color" (list p)))))
     (if (or fg bg)
         (append (if fg (list (list ':foreground (ansi-str->face fg))))
                 (if bg (list (list ':background (ansi-str->face bg))))))))
@@ -292,17 +292,16 @@
                            (cadr p)
                            buf)))))
 
-(defun prep-text-prop-alist (a)
-  (apply 'append
-         (mapcar (lambda (x) (list (str-to-sym (car x))
-                                   (cadr x)))
-                 a)))
+(defun prep-text-prop-alist (x)
+  (list (str-to-sym (car x))
+        (cadr x)))
 
 (defun put-alist-text-props (a start end buf)
-  (add-text-properties (+ 1  start)
-                       (+ 1 end)
-                       (prep-text-prop-alist a)
-                       buf)
+  (put-text-property (+ 1  start)
+                     (+ 1 end)
+                     (str-to-sym (car a))
+                     (cadr a)
+                     buf)
   (let ((ff (mk-font-face a)))
     (if ff (put-text-property (+ 1  start)
                               (+ 1 end)
@@ -319,17 +318,29 @@
 (defun xx1 (props1 buf)
   (dolist (p1 props1)
     (dolist (p2 (cadr p1))
-      (let ((prop (list (list (car p1) (car p2)))))
+      (let ((prop (list (car p1) (car p2))))
         (dolist (p3 (cadr p2))
           (put-alist-text-props prop
                                 (car p3)
                                 (cadr p3)
                                 buf))))))
 
+(defun xx2 (props1 buf)
+  (dolist (p1 props1)
+    (dolist (p2 (cadr p1))
+      (let ((prop (list (car p1) (car p2))))
+        (dolist (p3 (cadr p2))
+          (let ((l (car p3)))
+            (dolist (p4 (cadr p3))
+              (put-alist-text-props prop
+                                    p4
+                                    (+ p4 l)
+                                    buf))))))))
+
 (defun write-resp-val-to-buf (val buf)
   (set-buffer buf)
   (insert (car val))
-  (xx1 (cadr val) buf)
+  (xx2 (cadr val) buf)
 ;(put-text-props-series (cadr val) buf)
   )
 

@@ -371,7 +371,7 @@
                    :line-break
                    :string
                    :zipper)
-           remove-nil-vals
+;           remove-nil-vals
            apply-type-colors-to-token
            [start end $]))
 
@@ -385,17 +385,7 @@
         )])
 
 
-#_(defn tf4
-  [pos-pairs start end]
-  (cond (empty? pos-pairs) [[start end]]
-        :else
-        (let [[last-start last-end] (last pos-pairs)]
-          (if (= last-end start)
-            (conj (vec (drop-last  pos-pairs))
-                  [last-start end])
-            (conj pos-pairs [start end])))))
-
-(defn tf4
+#_ (defn tf4
   [pos-pairs start end]
   (cond (empty? pos-pairs) (list end start) 
         :else
@@ -403,6 +393,18 @@
           (if (= last-end start)
             (conj r end)
             (into pos-pairs (list start end))))))
+
+(defn tf4
+  [pos-pairs start end]
+  (cond (empty? pos-pairs) {:last-start start :last-end end :pairs []}
+        :else
+        (let [{:keys [last-start last-end pairs]} pos-pairs]
+          (if (= last-end start)
+            (assoc pos-pairs :last-end end)
+            (assoc pos-pairs
+                   :last-start start
+                   :last-end end
+                   :pairs (conj pairs [last-start last-end]))))))
 
 (defn tf3
   [start end agg [k v]]
@@ -414,7 +416,7 @@
           agg
           props))
 
-(defn tf5
+#_(defn tf5
   [m]
   (reduce (fn [agg [a b c]]
             (assoc-in agg [a b] c))
@@ -422,6 +424,25 @@
           (for [[k kv] m
                 [k2 v] kv]
             [k k2 (partition 2 (reverse v))])))
+
+(defn tf6
+  [pairs]
+  (reduce (fn [agg [start end]]
+            (update agg (- end start)
+                    conj start))
+          {}
+          pairs))
+
+(defn tf5
+  [m]
+  (reduce (fn [agg [a b c]]
+            (if b
+              (assoc-in agg [a b] (tf6 c))
+              agg))
+          {}
+          (for [[k kv] m
+                [k2 {:keys [last-end last-start pairs]}] kv]
+            [k k2 (conj pairs [last-start last-end]) ])))
 
 (defn tf1
   [triples]
@@ -649,7 +670,8 @@
   [(->> tokens (map :string) (apply str))
    (->> tokens
         (mapv mk-text-props)
-        (remove #(or (nil? (first %)) (nil? (second %)))))])
+        (remove #(or (nil? (first %)) (nil? (second %))))
+        tf1)])
 
 (defn value->text-prop-pair*
   [a]
