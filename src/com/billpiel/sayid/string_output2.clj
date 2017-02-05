@@ -360,6 +360,7 @@
   (util/$- -> token
            (dissoc :coll?
                    :column
+                   :start
                    :end
                    :end-col
                    :end-column
@@ -379,7 +380,65 @@
   [(->> tokens (map :string) (apply str))
    (->> tokens
         assoc-tokens-pos
-        (mapv mk-text-props))])
+        (mapv mk-text-props)
+        tf1
+        )])
+
+
+#_(defn tf4
+  [pos-pairs start end]
+  (cond (empty? pos-pairs) [[start end]]
+        :else
+        (let [[last-start last-end] (last pos-pairs)]
+          (if (= last-end start)
+            (conj (vec (drop-last  pos-pairs))
+                  [last-start end])
+            (conj pos-pairs [start end])))))
+
+(defn tf4
+  [pos-pairs start end]
+  (cond (empty? pos-pairs) (list end start) 
+        :else
+        (let [[last-end & r] pos-pairs]
+          (if (= last-end start)
+            (conj r end)
+            (into pos-pairs (list start end))))))
+
+(defn tf3
+  [start end agg [k v]]
+  (update-in agg [k v] tf4 start end))
+
+(defn tf2
+  [agg [start end props]]
+  (reduce (partial tf3 start end)
+          agg
+          props))
+
+(defn tf5
+  [m]
+  (reduce (fn [agg [a b c]]
+            (assoc-in agg [a b] c))
+          {}
+          (for [[k kv] m
+                [k2 v] kv]
+            [k k2 (partition 2 (reverse v))])))
+
+(defn tf1
+  [triples]
+  (def trip1 triples)
+  (tf5 (reduce tf2 {} triples)))
+
+
+
+#_(def xxx (time (tf1 trip1)))
+
+#_(clojure.pprint/pprint xxx)
+
+
+
+#_(def xxo xxx)
+
+#_(clojure.pprint/pprint xxo)
 
 (defn tree->text-prop-pair
   [tree]

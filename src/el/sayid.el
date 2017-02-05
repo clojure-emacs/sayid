@@ -316,10 +316,22 @@
                           (cadr s)
                           buf)))
 
+(defun xx1 (props1 buf)
+  (dolist (p1 props1)
+    (dolist (p2 (cadr p1))
+      (let ((prop (list (list (car p1) (car p2)))))
+        (dolist (p3 (cadr p2))
+          (put-alist-text-props prop
+                                (car p3)
+                                (cadr p3)
+                                buf))))))
+
 (defun write-resp-val-to-buf (val buf)
   (set-buffer buf)
   (insert (car val))
-  (put-text-props-series (cadr val) buf))
+  (xx1 (cadr val) buf)
+;(put-text-props-series (cadr val) buf)
+  )
 
 ;; I have no idea why I seem to need this
 (defun read-if-string (v)
