@@ -277,25 +277,6 @@
         (append (if fg (list (list ':foreground (ansi-str->face fg))))
                 (if bg (list (list ':background (ansi-str->face bg))))))))
 
-
-(defun put-all-text-props (props start end buf)
-  (dolist (p props)
-    (let ((name-sym (if-str-to-sym (car p))))
-      (if (eq name-sym 'text-color)
-          (put-text-property start
-                             end
-                             'font-lock-face
-                             (mk-font-face p))
-        (put-text-property (+ 1 start)
-                           (+ 1 end)
-                           (if-str-to-sym (car p))
-                           (cadr p)
-                           buf)))))
-
-(defun prep-text-prop-alist (x)
-  (list (str-to-sym (car x))
-        (cadr x)))
-
 (defun put-alist-text-props (a start end buf)
   (put-text-property (+ 1  start)
                      (+ 1 end)
@@ -314,16 +295,6 @@
                           (car s)
                           (cadr s)
                           buf)))
-
-(defun xx1 (props1 buf)
-  (dolist (p1 props1)
-    (dolist (p2 (cadr p1))
-      (let ((prop (list (car p1) (car p2))))
-        (dolist (p3 (cadr p2))
-          (put-alist-text-props prop
-                                (car p3)
-                                (cadr p3)
-                                buf))))))
 
 (defun xx2 (props1 buf)
   (dolist (p1 props1)

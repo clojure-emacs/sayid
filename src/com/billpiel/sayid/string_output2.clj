@@ -4,7 +4,9 @@
             [com.billpiel.sayid.util.other :as util]
             [tamarin.core :as tam]
             [clojure.zip :as z]
-            clojure.string))
+            clojure.string
+            [taoensso.tufte :as p]
+            ))
 
 (def ^:dynamic *view* (fn [x] {:args true
                                :return true
@@ -328,10 +330,10 @@
                                          :end end-pos)
                                   (conj agg $)))))))
 
-;; 102
 (defn remove-nil-vals
   [m]
-  (apply merge (for [[k v] m :when (not (nil? v))] {k v})))
+  #_  (apply merge (for [[k v] m :when (not (nil? v))] {k v}))
+  (for [[k v] m :when (not (nil? v))] [k v]))
 
 (defn tkn->simple-type
   [t]
@@ -371,59 +373,32 @@
                    :line-break
                    :string
                    :zipper)
-;           remove-nil-vals
            apply-type-colors-to-token
+           remove-nil-vals
            [start end $]))
 
-(defn split-text-tag-coll
-  [tokens]
-  [(->> tokens (map :string) (apply str))
-   (->> tokens
-        assoc-tokens-pos
-        (mapv mk-text-props)
-        tf1
-        )])
-
-
-#_ (defn tf4
-  [pos-pairs start end]
-  (cond (empty? pos-pairs) (list end start) 
-        :else
-        (let [[last-end & r] pos-pairs]
-          (if (= last-end start)
-            (conj r end)
-            (into pos-pairs (list start end))))))
 
 (defn tf4
   [pos-pairs start end]
-  (cond (empty? pos-pairs) {:last-start start :last-end end :pairs []}
-        :else
-        (let [{:keys [last-start last-end pairs]} pos-pairs]
-          (if (= last-end start)
-            (assoc pos-pairs :last-end end)
-            (assoc pos-pairs
-                   :last-start start
-                   :last-end end
-                   :pairs (conj pairs [last-start last-end]))))))
+  (if (empty? pos-pairs) {:last-start start :last-end end :pairs []}
+      (let [{:keys [last-start last-end pairs]} pos-pairs]
+        (if (= last-end start)
+          (assoc pos-pairs :last-end end)
+          (assoc pos-pairs
+                 :last-start start
+                 :last-end end
+                 :pairs (conj pairs [last-start last-end]))))))
 
 (defn tf3
-  [start end agg [k v]]
-  (update-in agg [k v] tf4 start end))
+  [start end]
+  (fn [agg pos-pairs]
+    (update-in agg pos-pairs tf4 start end)))
 
 (defn tf2
   [agg [start end props]]
-  (reduce (partial tf3 start end)
+  (reduce (tf3 start end)
           agg
           props))
-
-#_(defn tf5
-  [m]
-  (reduce (fn [agg [a b c]]
-            (assoc-in agg [a b] c))
-          {}
-          (for [[k kv] m
-                [k2 v] kv]
-            [k k2 (partition 2 (reverse v))])))
 
 (defn tf6
   [pairs]
@@ -446,8 +421,9 @@
 
 (defn tf1
   [triples]
-  (def trip1 triples)
+#_  (def trip1 triples)
   (tf5 (reduce tf2 {} triples)))
+
 
 
 
@@ -460,6 +436,18 @@
 #_(def xxo xxx)
 
 #_(clojure.pprint/pprint xxo)
+
+
+#_(p/add-basic-println-handler! {})
+
+(defn split-text-tag-coll
+  [tokens]
+  [(->> tokens (map :string) (apply str))
+   (->> tokens
+        assoc-tokens-pos
+        (mapv mk-text-props)
+        tf1
+        )])
 
 (defn tree->text-prop-pair
   [tree]

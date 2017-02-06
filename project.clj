@@ -11,7 +11,8 @@
                  [org.clojure/tools.namespace "0.2.11"]]
   :repl-options {:nrepl-middleware [com.billpiel.sayid.nrepl-middleware/wrap-sayid]}
   :profiles {:dev {:dependencies [[midje "1.8.3"]
-                                  [org.clojure/tools.nrepl "0.2.10"]]
+                                  [org.clojure/tools.nrepl "0.2.10"]
+                                  [com.taoensso/tufte "1.1.1"]]
                    :plugins [[lein-midje "3.1.3"]
                              [lein-codox "0.9.4"]]}
              :1.6 {:dependencies [[org.clojure/clojure "1.6.0"]]}
