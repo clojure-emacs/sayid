@@ -277,7 +277,7 @@
         (append (if fg (list (list ':foreground (ansi-str->face fg))))
                 (if bg (list (list ':background (ansi-str->face bg))))))))
 
-(defun put-alist-text-props (a start end buf)
+(defun put-text-prop (a start end buf)
   (put-text-property (+ 1  start)
                      (+ 1 end)
                      (str-to-sym (car a))
@@ -289,31 +289,22 @@
                               'font-lock-face
                               ff))))
 
-(defun put-text-props-series (series buf)
-  (dolist (s series)
-    (put-alist-text-props (sayid-caddr s)
-                          (car s)
-                          (cadr s)
-                          buf)))
-
-(defun xx2 (props1 buf)
+(defun put-text-props (props1 buf)
   (dolist (p1 props1)
     (dolist (p2 (cadr p1))
       (let ((prop (list (car p1) (car p2))))
         (dolist (p3 (cadr p2))
           (let ((l (car p3)))
             (dolist (p4 (cadr p3))
-              (put-alist-text-props prop
-                                    p4
-                                    (+ p4 l)
-                                    buf))))))))
+              (put-text-prop prop
+                             p4
+                             (+ p4 l)
+                             buf))))))))
 
 (defun write-resp-val-to-buf (val buf)
   (set-buffer buf)
   (insert (car val))
-  (xx2 (cadr val) buf)
-;(put-text-props-series (cadr val) buf)
-  )
+  (put-text-props (cadr val) buf))
 
 ;; I have no idea why I seem to need this
 (defun read-if-string (v)

@@ -1,5 +1,10 @@
 # Change Log
 
+## [0.0.12] - WIP
+
+- improve render speed in emacs
+- support sets in pretty-print buffer
+
 ## [0.0.11] - 2016-01-10
 ### Added
 - CHANGELOG.md

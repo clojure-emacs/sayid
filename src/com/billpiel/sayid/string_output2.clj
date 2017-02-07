@@ -431,8 +431,7 @@
    (->> tokens
         assoc-tokens-pos
         (mapv mk-text-props)
-        tkn-prop-grouper
-        )])
+        tkn-prop-grouper)])
 
 (defn tree->text-prop-pair
   [tree]
