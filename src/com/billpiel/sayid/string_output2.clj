@@ -4,9 +4,7 @@
             [com.billpiel.sayid.util.other :as util]
             [tamarin.core :as tam]
             [clojure.zip :as z]
-            clojure.string
-            [taoensso.tufte :as p]
-            ))
+            clojure.string))
 
 (def ^:dynamic *view* (fn [x] {:args true
                                :return true
@@ -332,7 +330,6 @@
 
 (defn remove-nil-vals
   [m]
-  #_  (apply merge (for [[k v] m :when (not (nil? v))] {k v}))
   (for [[k v] m :when (not (nil? v))] [k v]))
 
 (defn tkn->simple-type
@@ -378,7 +375,7 @@
            [start end $]))
 
 
-(defn tf4
+(defn token-prop-grouper4
   [pos-pairs start end]
   (if (empty? pos-pairs) {:last-start start :last-end end :pairs []}
       (let [{:keys [last-start last-end pairs]} pos-pairs]
@@ -389,56 +386,44 @@
                  :last-end end
                  :pairs (conj pairs [last-start last-end]))))))
 
-(defn tf3
+(defn token-prop-grouper3
   [start end]
   (fn [agg pos-pairs]
-    (update-in agg pos-pairs tf4 start end)))
+    (update-in agg pos-pairs token-prop-grouper4 start end)))
 
-(defn tf2
+(defn token-prop-grouper2
   [agg [start end props]]
-  (reduce (tf3 start end)
+  (reduce (token-prop-grouper3 start end)
           agg
           props))
 
-(defn tf6
+(defn token-prop-grouper6
   [pairs]
   (reduce (fn [agg [start end]]
-            (update agg (- end start)
-                    conj start))
+            (update-in agg
+                       [(- end start)]
+                       conj start))
           {}
           pairs))
 
-(defn tf5
+(defn token-prop-grouper5
   [m]
   (reduce (fn [agg [a b c]]
             (if b
-              (assoc-in agg [a b] (tf6 c))
+              (assoc-in agg
+                        [a b]
+                        (token-prop-grouper6 c))
               agg))
           {}
           (for [[k kv] m
                 [k2 {:keys [last-end last-start pairs]}] kv]
             [k k2 (conj pairs [last-start last-end]) ])))
 
-(defn tf1
+(defn tkn-prop-grouper
   [triples]
-#_  (def trip1 triples)
-  (tf5 (reduce tf2 {} triples)))
-
-
-
-
-#_(def xxx (time (tf1 trip1)))
-
-#_(clojure.pprint/pprint xxx)
-
-
-
-#_(def xxo xxx)
-
-#_(clojure.pprint/pprint xxo)
-
-
-#_(p/add-basic-println-handler! {})
+  (token-prop-grouper5 (reduce token-prop-grouper2
+                               {}
+                               triples)))
 
 (defn split-text-tag-coll
   [tokens]
@@ -446,7 +431,7 @@
    (->> tokens
         assoc-tokens-pos
         (mapv mk-text-props)
-        tf1
+        tkn-prop-grouper
         )])
 
 (defn tree->text-prop-pair
@@ -660,7 +645,7 @@
    (->> tokens
         (mapv mk-text-props)
         (remove #(or (nil? (first %)) (nil? (second %))))
-        tf1)])
+        tkn-prop-grouper)])
 
 (defn value->text-prop-pair*
   [a]

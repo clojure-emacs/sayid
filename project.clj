@@ -1,4 +1,4 @@
-(defproject com.billpiel/sayid "0.0.11"
+(defproject com.billpiel/sayid "0.0.12-dev"
   :description "Sayid is a library for debugging and profiling clojure code."
   :signing {:gpg-key "<bill@billpiel.com>"}
   :url "http://bpiel.github.io/sayid/"
@@ -11,8 +11,7 @@
                  [org.clojure/tools.namespace "0.2.11"]]
   :repl-options {:nrepl-middleware [com.billpiel.sayid.nrepl-middleware/wrap-sayid]}
   :profiles {:dev {:dependencies [[midje "1.8.3"]
-                                  [org.clojure/tools.nrepl "0.2.10"]
-                                  [com.taoensso/tufte "1.1.1"]]
+                                  [org.clojure/tools.nrepl "0.2.10"]]
                    :plugins [[lein-midje "3.1.3"]
                              [lein-codox "0.9.4"]]}
              :1.6 {:dependencies [[org.clojure/clojure "1.6.0"]]}
