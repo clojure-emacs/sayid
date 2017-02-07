@@ -32,6 +32,8 @@
 (require 'sayid-pprint-mode)
 (require 'cider)
 
+(defvar sayid-version- "0.0.12-dev")
+
 (defvar sayid-trace-ns-dir nil)
 (defvar sayid-meta)
 
@@ -42,6 +44,14 @@
 
 (defvar sayid-ring)
 (setq sayid-ring '())
+
+(defun sayid-version ()
+  (interactive)
+  (message (concat  "clj="
+                    (sayid-req-get-value
+                     (list "op" "sayid-version"))
+                    " el="
+                    (message sayid-version-))))
 
 (defun sayid-caddr (v)
   (car (cdr (cdr v))))

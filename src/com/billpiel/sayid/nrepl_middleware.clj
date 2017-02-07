@@ -137,6 +137,10 @@
   (second (re-find #"\(\s*ns\s+([\w$.*-]+)"
                    source)))
 
+(defn ^:nrepl sayid-version
+  [msg]
+  (reply:clj->nrepl msg sd/version))
+
 (defn ^:nrepl sayid-trace-fn-enable-at-point
   [{:keys [transport file line column source] :as msg}]
   (let [sym (get-sym-at-pos-in-source file line column source)
