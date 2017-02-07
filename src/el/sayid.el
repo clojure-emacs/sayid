@@ -245,20 +245,6 @@
 ;; make-symbol is a liar
 (defun str-to-sym (s) (car (read-from-string s)))
 
-(defun if-str-to-sym (s)
-  (if (stringp s)
-      (str-to-sym s)
-    s))
-
-(defun first-to-sym (p)
-  (list (str-to-sym (car p))
-        (cadr p)))
-
-(defun str-alist-to-sym-alist (sal)
-  (apply 'append
-         (mapcar 'first-to-sym
-                 sal)))
-
 (defun ansi-str->face (s)
   (or (cdr (assoc s '(("black" . "black")
                       ("red" . "red3")
