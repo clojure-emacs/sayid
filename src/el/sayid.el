@@ -132,20 +132,22 @@
       cb)))
 
 (defun sayid-setup-buf (meta-ansi save-to-ring pos)
-  (let ((id-at-point (get-text-property (point) 'id))  ;; we might not be in the sayid buffer, but whatever
-        (orig-buf (sayid-current-buffer-except-sayid))
-        (sayid-buf (sayid-init-buf)))
-    (if save-to-ring
-        (push-buf-state-to-ring meta-ansi))
-    (write-resp-val-to-buf meta-ansi sayid-buf)
-    (funcall (cdr sayid-selected-buf))
-    (if pos
-        (goto-char pos)
-      (if id-at-point
-          (try-goto-prop 'id id-at-point)
-        (goto-char 1)))
-    (when orig-buf
-      (pop-to-buffer orig-buf (cons nil (list (cons 'reusable-frames 'visible)))))))
+  (if meta-ansi
+      (let ((id-at-point (get-text-property (point) 'id)) ;; we might not be in the sayid buffer, but whatever
+            (orig-buf (sayid-current-buffer-except-sayid))
+            (sayid-buf (sayid-init-buf)))
+        (if save-to-ring
+            (push-buf-state-to-ring meta-ansi))
+        (write-resp-val-to-buf meta-ansi sayid-buf)
+        (funcall (cdr sayid-selected-buf))
+        (if pos
+            (goto-char pos)
+          (if id-at-point
+              (try-goto-prop 'id id-at-point)
+            (goto-char 1)))
+        (when orig-buf
+          (pop-to-buffer orig-buf (cons nil (list (cons 'reusable-frames 'visible))))))
+    (message "Sayid didn't respond. Is it loaded?")))
 
 (defun colorize ()
   (interactive)
