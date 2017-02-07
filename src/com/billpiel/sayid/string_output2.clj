@@ -634,7 +634,8 @@
         :vector (get-path-of-vec-child z)
         :list (get-path-of-vec-child z)
         :listp (get-path-of-vec-child z)
-        :seq  (get-path-of-vec-child z)))
+        :seq (get-path-of-vec-child z)
+        :set (get-path-of-vec-child z)))
     []))
 
 (defn decorate-token
