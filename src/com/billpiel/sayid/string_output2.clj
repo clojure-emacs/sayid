@@ -375,7 +375,7 @@
            [start end $]))
 
 
-(defn token-prop-grouper4
+(defn tkn-prop-grouper4
   [pos-pairs start end]
   (if (empty? pos-pairs) {:last-start start :last-end end :pairs []}
       (let [{:keys [last-start last-end pairs]} pos-pairs]
@@ -386,18 +386,18 @@
                  :last-end end
                  :pairs (conj pairs [last-start last-end]))))))
 
-(defn token-prop-grouper3
+(defn tkn-prop-grouper3
   [start end]
   (fn [agg pos-pairs]
-    (update-in agg pos-pairs token-prop-grouper4 start end)))
+    (update-in agg pos-pairs tkn-prop-grouper4 start end)))
 
-(defn token-prop-grouper2
+(defn tkn-prop-grouper2
   [agg [start end props]]
-  (reduce (token-prop-grouper3 start end)
+  (reduce (tkn-prop-grouper3 start end)
           agg
           props))
 
-(defn token-prop-grouper6
+(defn tkn-prop-grouper6
   [pairs]
   (reduce (fn [agg [start end]]
             (update-in agg
@@ -406,13 +406,13 @@
           {}
           pairs))
 
-(defn token-prop-grouper5
+(defn tkn-prop-grouper5
   [m]
   (reduce (fn [agg [a b c]]
             (if b
               (assoc-in agg
                         [a b]
-                        (token-prop-grouper6 c))
+                        (tkn-prop-grouper6 c))
               agg))
           {}
           (for [[k kv] m
@@ -421,9 +421,9 @@
 
 (defn tkn-prop-grouper
   [triples]
-  (token-prop-grouper5 (reduce token-prop-grouper2
-                               {}
-                               triples)))
+  (tkn-prop-grouper5 (reduce tkn-prop-grouper2
+                             {}
+                             triples)))
 
 (defn split-text-tag-coll
   [tokens]
