@@ -499,7 +499,7 @@ Disable traces, load buffer, enable traces, clear log."
 
 ;;;###autoload
 (defun sayid-traced-buf-enable ()
-  "Enable trace from trace buffer."  
+  "Enable trace from trace buffer."
   (interactive)
   (let ((pos (point))
         (buf-ns (get-text-property 1 'ns))
@@ -520,7 +520,7 @@ Disable traces, load buffer, enable traces, clear log."
 
 ;;;###autoload
 (defun sayid-traced-buf-disable ()
-  "Disable trace from trace buffer."  
+  "Disable trace from trace buffer."
   (interactive)
   (let ((pos (point))
         (buf-ns (get-text-property 1 'ns))
@@ -541,7 +541,7 @@ Disable traces, load buffer, enable traces, clear log."
 
 ;;;###autoload
 (defun sayid-traced-buf-remove-trace ()
-  "Remove trace from trace buffer."  
+  "Remove trace from trace buffer."
   (interactive)
   (let ((pos (point))
         (ns (get-text-property 1 'ns))
@@ -668,7 +668,7 @@ Disable traces, load buffer, enable traces, clear log."
 
 ;;;###autoload
 (defun sayid-buf-inspect-at-point ()
-  "Def value at point and pass to cider-inspect."
+  "Def value at point and pass to 'cider-inspect'."
   (interactive)
   (sayid-send-and-message (list "op" "sayid-buf-def-at-point"
                                 "trace-id" (get-text-property (point) 'id)
@@ -851,7 +851,7 @@ q -- quit window
 
 ;;;###autoload
 (defun sayid-set-clj-mode-keys ()
-  "Define clojure-mode keybindings."
+  "Define 'clojure-mode' keybindings."
   (define-key clojure-mode-map (kbd "C-c s f") 'sayid-query-form-at-point)
   (define-key clojure-mode-map (kbd "C-c s !") 'sayid-load-enable-clear)
   (define-key clojure-mode-map (kbd "C-c s w") 'sayid-get-workspace)
