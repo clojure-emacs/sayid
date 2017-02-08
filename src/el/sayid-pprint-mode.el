@@ -1,5 +1,11 @@
 ;;; sayid-pprint-mode.el --- Sayid major mode for showing a pretty print
 
+
+;;; Commentary:
+;;  Sayid pretty-print buffer
+
+;;; Code:
+
 (defvar sayid-pprint-mode-hook nil)
 
 (defvar sayid-pprint-mode-map)
@@ -19,7 +25,7 @@
 
  ;;;###autoload
 (defun sayid-pprint-mode ()
-  "A major mode for displaying Sayid pretty print output"
+  "A major mode for displaying Sayid pretty print output."
   (interactive)
   (kill-all-local-variables)
   (setq major-mode 'sayid-pprint-mode)
@@ -32,3 +38,7 @@
 (put 'sayid-pprint-mode 'mode-class 'special)
 
 (provide 'sayid-pprint-mode)
+
+(provide 'sayid-pprint-mode)
+
+;;; sayid-pprint-mode.el ends here

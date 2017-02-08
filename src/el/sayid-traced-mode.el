@@ -1,5 +1,11 @@
 ;;; sayid-traced-mode.el --- Sayid major mode for showing what's traced
 
+
+;;; Commentary:
+;; Sayid traced buffer.  Shows what is traced.
+
+;;; Code:
+
 (defvar sayid-traced-mode-hook nil)
 
 (defvar sayid-traced-mode-map)
@@ -22,7 +28,7 @@
 
  ;;;###autoload
 (defun sayid-traced-mode ()
-  "A major mode for displaying Sayid output"
+  "A major mode for displaying Sayid output."
   (interactive)
   (kill-all-local-variables)
   (setq major-mode 'sayid-traced-mode)
@@ -35,3 +41,7 @@
 (put 'sayid-traced-mode 'mode-class 'special)
 
 (provide 'sayid-traced-mode)
+
+(provide 'sayid-traced-mode)
+
+;;; sayid-traced-mode.el ends here
