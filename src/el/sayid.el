@@ -129,7 +129,7 @@
         (message fail-msg)
       (message x))))
 
-(defun try-goto-prop (prop val)
+(defun sayid-try-goto-prop (prop val)
   "Move cursor to first position where property PROP has value VAL."
   (let ((p 1))
     (while (and p
@@ -158,12 +158,12 @@ state.  POS is the position to move cursor to."
             (sayid-buf (sayid-init-buf)))
         (if save-to-ring
             (push-buf-state-to-ring content))
-        (write-resp-val-to-buf content sayid-buf)
+        (sayid-write-resp-val-to-buf content sayid-buf)
         (funcall (cdr sayid-selected-buf))
         (if pos
             (goto-char pos)
           (if id-at-point
-              (try-goto-prop 'id id-at-point)
+              (sayid-try-goto-prop 'id id-at-point)
             (goto-char 1)))
         (when orig-buf
           (pop-to-buffer orig-buf (cons nil (list (cons 'reusable-frames 'visible))))))
@@ -270,11 +270,11 @@ Disable traces, load buffer, enable traces, clear log."
   (sayid-clear-log))
 
 ;; make-symbol is a liar
-(defun str-to-sym (s)
+(defun sayid-str-to-sym (s)
   "Make a symbol from string S.  Make-symbol seems to return symbols that didn't equate when they should."
   (car (read-from-string s)))
 
-(defun color-str->face (s)
+(defun sayid-color-str->face (s)
   "Translate color-name string S to a face string."
   (or (cdr (assoc s '(("black" . "black")
                       ("red" . "red3")
@@ -286,28 +286,28 @@ Disable traces, load buffer, enable traces, clear log."
                       ("white" . "white"))))
       "white"))
 
-(defun mk-font-face (p)
+(defun sayid-mk-font-face (p)
   "Make a font face from property pair P."
   (let ((fg (cadr (assoc "fg-color" (list p))))
         (bg (cadr (assoc "bg-color" (list p)))))
     (if (or fg bg)
-        (append (if fg (list (list ':foreground (color-str->face fg))))
-                (if bg (list (list ':background (color-str->face bg))))))))
+        (append (if fg (list (list ':foreground (sayid-color-str->face fg))))
+                (if bg (list (list ':background (sayid-color-str->face bg))))))))
 
-(defun put-text-prop (a start end buf)
+(defun sayid-put-text-prop (a start end buf)
   "Put property pair A to text in range START to END in buffer BUF."
   (put-text-property (+ 1  start)
                      (+ 1 end)
-                     (str-to-sym (car a))
+                     (sayid-str-to-sym (car a))
                      (cadr a)
                      buf)
-  (let ((ff (mk-font-face a)))
+  (let ((ff (sayid-mk-font-face a)))
     (if ff (put-text-property (+ 1  start)
                               (+ 1 end)
                               'font-lock-face
                               ff))))
 
-(defun put-text-props (props buf)
+(defun sayid-put-text-props (props buf)
   "Apply sayid property struct PROPS to buffer BUF."
   (dolist (p1 props)
     (dolist (p2 (cadr p1))
@@ -315,70 +315,70 @@ Disable traces, load buffer, enable traces, clear log."
         (dolist (p3 (cadr p2))
           (let ((l (car p3)))
             (dolist (p4 (cadr p3))
-              (put-text-prop prop
+              (sayid-put-text-prop prop
                              p4
                              (+ p4 l)
                              buf))))))))
 
-(defun write-resp-val-to-buf (val buf)
+(defun sayid-write-resp-val-to-buf (val buf)
   "Write response value VAL to buffer BUF."
   (set-buffer buf)
   (insert (car val))
-  (put-text-props (cadr val) buf))
+  (sayid-put-text-props (cadr val) buf))
 
 ;; I have no idea why I seem to need this
-(defun read-if-string (v)
+(defun sayid-read-if-string (v)
   "Sometimes V is a string? Seems to depend on versions of cider or something."
   (if (stringp v)
       (read v)
     v))
 
-(defun list-take (n l)
+(defun sayid-list-take (n l)
   "Take N items from end of list L."
   (butlast l (- (length l) n)))
 
-(defun push-to-ring (v)
+(defun sayid-push-to-ring (v)
   "Push buffer state V to ring."
-  (setq sayid-ring (list-take 5 (cons v sayid-ring))))
+  (setq sayid-ring (sayid-list-take 5 (cons v sayid-ring))))
 
-(defun peek-first-in-ring ()
+(defun sayid-peek-first-in-ring ()
   "Peek at first in ring."
   (car sayid-ring))
 
-(defun swap-first-in-ring (v)
+(defun sayid-swap-first-in-ring (v)
   "Swap out first item in ring for V."
   (setq sayid-ring (cons v (cdr sayid-ring))))
 
-(defun cycle-ring ()
+(defun sayid-cycle-ring ()
   "Move first item to last and return new first."
   (setq sayid-ring
         (append (cdr sayid-ring)
                 (list (car sayid-ring))))
   (car sayid-ring))
 
-(defun cycle-ring-back ()
+(defun sayid-cycle-ring-back ()
   "Move last item to first and return it."
   (setq sayid-ring
         (append (last sayid-ring)
                 (butlast sayid-ring)))
   (car sayid-ring))
 
-(defun update-buf-pos-to-ring ()
+(defun sayid-update-buf-pos-to-ring ()
   "Update first in ring with new buffer position."
   (if (eq sayid-selected-buf sayid-buf-spec)
-      (let ((current (peek-first-in-ring)))
+      (let ((current (sayid-peek-first-in-ring)))
         (if current
-            (swap-first-in-ring (list (car current)
+            (sayid-swap-first-in-ring (list (car current)
                                       (sayid-buf-point)))))))
 
-(defun push-buf-state-to-ring (content)
+(defun sayid-push-buf-state-to-ring (content)
   "Push buffer content CONTENT to ring."
   (if (eq sayid-selected-buf sayid-buf-spec)
-      (push-to-ring (list content (sayid-buf-point)))))
+      (sayid-push-to-ring (list content (sayid-buf-point)))))
 
-(defun peek-query-str ()
+(defun sayid-peek-query-str ()
   "Peek at first query string in ring."
-  (car (cdr (cdr (car (peek-first-in-ring))))))
+  (car (cdr (cdr (car (sayid-peek-first-in-ring))))))
 
 ;;;###autoload
 (defun sayid-get-workspace ()
@@ -390,7 +390,7 @@ Disable traces, load buffer, enable traces, clear log."
   "Refresh sayid buffer by rerunning last query."
   (interactive)
   (sayid-req-insert-content (list "op" "sayid-query"
-                                  "query" (peek-query-str))))
+                                  "query" (sayid-peek-query-str))))
 
 ;;;###autoload
 (defun sayid-show-traced (&optional ns)
@@ -756,8 +756,8 @@ Place expression in kill ring."
 (defun sayid-buf-back ()
   "Move to previous sayid buffer state."
   (interactive)
-  (update-buf-pos-to-ring)
-  (let ((buf-state (cycle-ring)))
+  (sayid-update-buf-pos-to-ring)
+  (let ((buf-state (sayid-cycle-ring)))
     (sayid-setup-buf (car buf-state)
                      nil
                      (cadr buf-state))))
@@ -766,8 +766,8 @@ Place expression in kill ring."
 (defun sayid-buf-forward ()
   "Move to next sayid buffer state."
   (interactive)
-  (update-buf-pos-to-ring)
-  (let ((buf-state (cycle-ring-back)))
+  (sayid-update-buf-pos-to-ring)
+  (let ((buf-state (sayid-cycle-ring-back)))
     (sayid-setup-buf (car buf-state)
                      nil
                      (cadr buf-state))))
