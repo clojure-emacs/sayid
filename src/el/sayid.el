@@ -20,7 +20,7 @@
 
 ;;; Commentary:
 
-;; Sayid is a debugger for clojure. This package, sayid.el, is a client
+;; Sayid is a debugger for clojure.  This package, sayid.el, is a client
 ;; for the sayid nrepl middleware.
 
 ;;; Code:
@@ -46,6 +46,7 @@
 (setq sayid-ring '())
 
 (defun sayid-version ()
+  "Show which version of Sayid and the sayid Emacs package are in use."
   (interactive)
   (message (concat  "clj="
                     (sayid-req-get-value
@@ -53,27 +54,26 @@
                     " el="
                     (message sayid-version-))))
 
-(defun sayid-caddr (v)
-  (car (cdr (cdr v))))
-
 (defun sayid-select-default-buf ()
+  "Select sayid default buffer."
   (setq sayid-selected-buf sayid-buf-spec))
 
 (defun sayid-select-traced-buf ()
-    (setq sayid-selected-buf sayid-traced-buf-spec))
+  "Select sayid trace buffer."
+  (setq sayid-selected-buf sayid-traced-buf-spec))
 
 (defun sayid-select-pprint-buf ()
+    "Select sayid pretty-prrint buffer."
   (setq sayid-selected-buf sayid-pprint-buf-spec))
 
 (defun sayid-buf-point ()
+  "Get point of selected sayid buffer."
   (set-buffer (car sayid-selected-buf))
   (point))
 
-(defun expanded-buffer-file-name ()
-  (expand-file-name (buffer-file-name)))
-
 ;;;###autoload
 (defun sayid-get-trace-ns-dir ()
+  "Return current trace ns dir, or prompt for it if not set."
   (interactive)
   (or sayid-trace-ns-dir
       (let* ((default-dir (file-name-directory (buffer-file-name)))
@@ -85,6 +85,7 @@
 
 ;;;###autoload
 (defun sayid-set-trace-ns-dir ()
+  "Prompt for trace ns dir and store value."
   (interactive)
   (let* ((default-dir (file-name-directory (buffer-file-name)))
          (input (expand-file-name
@@ -95,11 +96,13 @@
     input))
 
 (defun sayid-find-a-window ()
+  "Try to find an existing sayid buffer window."
   (or (get-buffer-window (car sayid-buf-spec) 'visible)
       (get-buffer-window (car sayid-traced-buf-spec) 'visible)
       (get-buffer-window (car sayid-pprint-buf-spec) 'visible)))
 
 (defun sayid-pop-to-buffer-reuse-visible-sayid (buf-name-)
+  "Try to find a visible sayid buffer and pop to it.  BUF-NAME- is name of new buffer."
   (let ((w (sayid-find-a-window)))
     (if w
         (progn
@@ -109,6 +112,7 @@
       (pop-to-buffer buf-name-))))
 
 (defun sayid-init-buf ()
+  "Initialize a buffer for sayid."
   (let ((buf-name- (car sayid-selected-buf)))
     (sayid-pop-to-buffer-reuse-visible-sayid buf-name-)
     
@@ -118,6 +122,7 @@
     (get-buffer buf-name-)))
 
 (defun sayid-send-and-message (req &optional fail-msg)
+  "Send REQ to nrepl and show results as message.  Show FAIL-MSG on failure."
   (let* ((resp (nrepl-send-sync-request req (cider-current-connection)))
          (x (nrepl-dict-get resp "value")))
     (if (and fail-msg (string= x "\"\""))
@@ -125,6 +130,7 @@
       (message x))))
 
 (defun try-goto-prop (prop val)
+  "Move cursor to first position where property PROP has value VAL."
   (let ((p 1))
     (while (and p
                 (<= p (point-max)))
@@ -135,20 +141,24 @@
         (setq p (next-single-property-change p prop))))))
 
 (defun sayid-current-buffer-except-sayid ()
-  (let ((cb (current-buffer) ))
+  "Return current buffer, if not a sayid buffer."
+  (let ((cb (current-buffer)))
     (if (eq (sayid-find-a-window)
             (get-buffer-window cb))
         nil
       cb)))
 
-(defun sayid-setup-buf (meta-ansi save-to-ring pos)
-  (if meta-ansi
+(defun sayid-setup-buf (content save-to-ring pos)
+  "Setup a sayid buffer.  CONTENT is a sayid triple.
+SAVE-TO-RING is a bool indicating whether to push the buffer
+state.  POS is the position to move cursor to."
+  (if content
       (let ((id-at-point (get-text-property (point) 'id)) ;; we might not be in the sayid buffer, but whatever
             (orig-buf (sayid-current-buffer-except-sayid))
             (sayid-buf (sayid-init-buf)))
         (if save-to-ring
-            (push-buf-state-to-ring meta-ansi))
-        (write-resp-val-to-buf meta-ansi sayid-buf)
+            (push-buf-state-to-ring content))
+        (write-resp-val-to-buf content sayid-buf)
         (funcall (cdr sayid-selected-buf))
         (if pos
             (goto-char pos)
@@ -159,30 +169,28 @@
           (pop-to-buffer orig-buf (cons nil (list (cons 'reusable-frames 'visible))))))
     (message "Sayid didn't respond. Is it loaded?")))
 
-(defun colorize ()
-  (interactive)
-  (mapcar (lambda (x)
-            (put-text-property x (+ x 1) 'font-lock-face '(:foreground "red")))
-          (number-sequence (point-min) (- (point-max) 1))))
-
 (defun sayid-req-get-value (req)
+  "Send REQ to nrepl and return response."
   (read-if-string (nrepl-dict-get (nrepl-send-sync-request req
                                                            (cider-current-connection))
                                   "value")))
 
-(defun sayid-req-insert-meta-ansi (req)
+(defun sayid-req-insert-content (req)
+  "Send REQ to nrepl and populate buffer with response."
   (sayid-setup-buf (sayid-req-get-value req) t nil))
 
 
 ;;;###autoload
 (defun sayid-query-form-at-point ()
+  "Query sayid for calls made to function defined at point."
   (interactive)
-  (sayid-req-insert-meta-ansi (list "op" "sayid-query-form-at-point"
+  (sayid-req-insert-content (list "op" "sayid-query-form-at-point"
                                     "file" (buffer-file-name)
                                     "line" (line-number-at-pos))))
 
 ;;;###autoload
 (defun sayid-get-meta-at-point ()
+  "Query sayid for meta data of form at point."
   (interactive)
   (sayid-send-and-message (list "op" "sayid-get-meta-at-point"
                                 "source" (buffer-string)
@@ -191,6 +199,7 @@
 
 ;;;###autoload
 (defun sayid-trace-fn-enable ()
+  "Enable tracing for symbol at point.  Symbol should point to a fn var."
   (interactive)
   (sayid-send-and-message (list "op" "sayid-trace-fn-enable-at-point"
                                 "file" (buffer-file-name)
@@ -202,6 +211,7 @@
 
 ;;;###autoload
 (defun sayid-trace-fn-disable ()
+  "Disable tracing for symbol at point.  Symbol should point to a fn var."
   (interactive)
   (sayid-send-and-message (list "op" "sayid-trace-fn-disable-at-point"
                                 "file" (buffer-file-name)
@@ -213,6 +223,7 @@
 
 ;;;###autoload
 (defun sayid-outer-trace-fn ()
+  "Add outer tracing for symbol at point.  Symbol should point to a fn var."
   (interactive)
   (sayid-send-and-message (list "op" "sayid-trace-fn-outer-trace-at-point"
                                 "file" (buffer-file-name)
@@ -224,6 +235,7 @@
 
 ;;;###autoload
 (defun sayid-inner-trace-fn ()
+  "Add inner tracing for symbol at point.  Symbol should point to a fn var."
   (interactive)
   (sayid-send-and-message (list "op" "sayid-trace-fn-inner-trace-at-point"
                                 "file" (buffer-file-name)
@@ -235,6 +247,7 @@
 
 ;;;###autoload
 (defun sayid-remove-trace-fn ()
+  "Remove tracing for symbol at point.  Symbol should point to a fn var."
   (interactive)
   (sayid-send-and-message (list "op" "sayid-remove-trace-fn-at-point"
                                 "file" (buffer-file-name)
@@ -246,6 +259,8 @@
 
 ;;;###autoload
 (defun sayid-load-enable-clear ()
+  "Workflow helper function.
+Disable traces, load buffer, enable traces, clear log."
   (interactive)
   (sayid-trace-disable-all)
   (sleep-for 0.5)
@@ -255,9 +270,12 @@
   (sayid-clear-log))
 
 ;; make-symbol is a liar
-(defun str-to-sym (s) (car (read-from-string s)))
+(defun str-to-sym (s)
+  "Make a symbol from string S.  Make-symbol seems to return symbols that didn't equate when they should."
+  (car (read-from-string s)))
 
-(defun ansi-str->face (s)
+(defun color-str->face (s)
+  "Translate color-name string S to a face string."
   (or (cdr (assoc s '(("black" . "black")
                       ("red" . "red3")
                       ("green" . "green3")
@@ -269,13 +287,15 @@
       "white"))
 
 (defun mk-font-face (p)
+  "Make a font face from property pair P."
   (let ((fg (cadr (assoc "fg-color" (list p))))
         (bg (cadr (assoc "bg-color" (list p)))))
     (if (or fg bg)
-        (append (if fg (list (list ':foreground (ansi-str->face fg))))
-                (if bg (list (list ':background (ansi-str->face bg))))))))
+        (append (if fg (list (list ':foreground (color-str->face fg))))
+                (if bg (list (list ':background (color-str->face bg))))))))
 
 (defun put-text-prop (a start end buf)
+  "Put property pair A to text in range START to END in buffer BUF."
   (put-text-property (+ 1  start)
                      (+ 1 end)
                      (str-to-sym (car a))
@@ -287,8 +307,9 @@
                               'font-lock-face
                               ff))))
 
-(defun put-text-props (props1 buf)
-  (dolist (p1 props1)
+(defun put-text-props (props buf)
+  "Apply sayid property struct PROPS to buffer BUF."
+  (dolist (p1 props)
     (dolist (p2 (cadr p1))
       (let ((prop (list (car p1) (car p2))))
         (dolist (p3 (cadr p2))
@@ -300,12 +321,14 @@
                              buf))))))))
 
 (defun write-resp-val-to-buf (val buf)
+  "Write response value VAL to buffer BUF."
   (set-buffer buf)
   (insert (car val))
   (put-text-props (cadr val) buf))
 
 ;; I have no idea why I seem to need this
 (defun read-if-string (v)
+  "Sometimes V is a string? Seems to depend on versions of cider or something."
   (if (stringp v)
       (read v)
     v))
@@ -341,9 +364,9 @@
             (swap-first-in-ring (list (car current)
                                       (sayid-buf-point)))))))
 
-(defun push-buf-state-to-ring (meta-ansi)
+(defun push-buf-state-to-ring (content)
   (if (eq sayid-selected-buf sayid-buf-spec)
-      (push-to-ring (list meta-ansi (sayid-buf-point)))))
+      (push-to-ring (list content (sayid-buf-point)))))
 
 (defun peek-query-str ()
   (car (cdr (cdr (car (peek-first-in-ring))))))
@@ -351,18 +374,18 @@
 ;;;###autoload
 (defun sayid-get-workspace ()
   (interactive)
-  (sayid-req-insert-meta-ansi (list "op" "sayid-get-workspace")))
+  (sayid-req-insert-content (list "op" "sayid-get-workspace")))
 
 (defun sayid-refresh-view ()
   (interactive)
-  (sayid-req-insert-meta-ansi (list "op" "sayid-query"
+  (sayid-req-insert-content (list "op" "sayid-query"
                                     "query" (peek-query-str))))
 
 ;;;###autoload
 (defun sayid-show-traced (&optional ns)
   (interactive)
   (sayid-select-traced-buf)
-  (sayid-req-insert-meta-ansi (list "op" "sayid-show-traced"
+  (sayid-req-insert-content (list "op" "sayid-show-traced"
                                     "ns" ns))
   (sayid-select-default-buf))
 
@@ -379,7 +402,7 @@
         (ns (get-text-property (point) 'ns)))
     (cond
      ((stringp name) 1) ;; goto func
-     ((stringp ns) (sayid-req-insert-meta-ansi (list "op" "sayid-show-traced"
+     ((stringp ns) (sayid-req-insert-content (list "op" "sayid-show-traced"
                                                      "ns" ns)))
      (t 0)))
   (sayid-select-default-buf))
@@ -607,28 +630,28 @@
 ;;;###autoload
 (defun sayid-query-id-w-mod ()
   (interactive)
-  (sayid-req-insert-meta-ansi (list "op" "sayid-buf-query-id-w-mod"
+  (sayid-req-insert-content (list "op" "sayid-buf-query-id-w-mod"
                                     "trace-id" (get-text-property (point) 'id)
                                     "mod" (read-string "query modifier: "))))
 
 ;;;###autoload
 (defun sayid-query-id ()
   (interactive)
-    (sayid-req-insert-meta-ansi (list "op" "sayid-buf-query-id-w-mod"
+    (sayid-req-insert-content (list "op" "sayid-buf-query-id-w-mod"
                                     "trace-id" (get-text-property (point) 'id)
                                     "mod" "")))
 
 ;;;###autoload
 (defun sayid-query-fn-w-mod ()
   (interactive)
-  (sayid-req-insert-meta-ansi (list "op" "sayid-buf-query-fn-w-mod"
+  (sayid-req-insert-content (list "op" "sayid-buf-query-fn-w-mod"
                                "fn-name" (get-text-property (point) 'fn-name)
                                "mod" (read-string "query modifier: "))))
 
 ;;;###autoload
 (defun sayid-query-fn ()
   (interactive)
-  (sayid-req-insert-meta-ansi (list "op" "sayid-buf-query-fn-w-mod"
+  (sayid-req-insert-content (list "op" "sayid-buf-query-fn-w-mod"
                                "fn-name" (get-text-property (point) 'fn-name)
                                "mod" "")))
 
@@ -651,7 +674,7 @@
 (defun sayid-buf-pprint-at-point ()
   (interactive)
   (sayid-select-pprint-buf)
-  (sayid-req-insert-meta-ansi (list "op" "sayid-buf-pprint-at-point"
+  (sayid-req-insert-content (list "op" "sayid-buf-pprint-at-point"
                                     "trace-id" (get-text-property (point) 'id)
                                     "path" (get-text-property (point) 'path)))
   (goto-char 1)
