@@ -116,7 +116,7 @@
   (let ((buf-name- (car sayid-selected-buf)))
     (sayid-pop-to-buffer-reuse-visible-sayid buf-name-)
     
-    (update-buf-pos-to-ring)
+    (sayid-update-buf-pos-to-ring)
     (read-only-mode 0)
     (erase-buffer)
     (get-buffer buf-name-)))
@@ -157,7 +157,7 @@ state.  POS is the position to move cursor to."
             (orig-buf (sayid-current-buffer-except-sayid))
             (sayid-buf (sayid-init-buf)))
         (if save-to-ring
-            (push-buf-state-to-ring content))
+            (sayid-push-buf-state-to-ring content))
         (sayid-write-resp-val-to-buf content sayid-buf)
         (funcall (cdr sayid-selected-buf))
         (if pos
@@ -171,7 +171,7 @@ state.  POS is the position to move cursor to."
 
 (defun sayid-req-get-value (req)
   "Send REQ to nrepl and return response."
-  (read-if-string (nrepl-dict-get (nrepl-send-sync-request req
+  (sayid-read-if-string (nrepl-dict-get (nrepl-send-sync-request req
                                                            (cider-current-connection))
                                   "value")))
 
