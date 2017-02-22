@@ -45,6 +45,7 @@
 (defvar sayid-ring)
 (setq sayid-ring '())
 
+;;;###autoload
 (defun sayid-version ()
   "Show which version of Sayid and the sayid Emacs package are in use."
   (interactive)
