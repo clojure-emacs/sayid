@@ -1,14 +1,16 @@
 # Change Log
 
-## [0.0.12] - WIP
+## [0.0.12] - 2017-02-21
 
 ### Changed
-- improve render speed in emacs
+- emacs: improve render speed
+- emacs: prepare package for submission to melpa
+- emacs: useful message when sayid not responding
 
 ### Fixed
 - support sets in pretty-print buffer
 
-## [0.0.11] - 2016-01-10
+## [0.0.11] - 2017-01-10
 ### Added
 - CHANGELOG.md
 

@@ -32,7 +32,7 @@
 (require 'sayid-pprint-mode)
 (require 'cider)
 
-(defvar sayid-version- "0.0.12-dev")
+(defvar sayid-version- "0.0.12")
 
 (defvar sayid-trace-ns-dir nil)
 (defvar sayid-meta)
