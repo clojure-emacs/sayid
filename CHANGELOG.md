@@ -1,5 +1,10 @@
 # Change Log
 
+## [0.0.13] - 2017-02-22
+
+### Fixed
+- emacs: messed up some function names
+
 ## [0.0.12] - 2017-02-21
 
 ### Changed

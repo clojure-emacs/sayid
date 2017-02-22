@@ -3,7 +3,7 @@
 ;; Copyright (c) 2016-2017 Bill Piel
 
 ;; Author: Bill Piel <bill@billpiel.com>
-;; Version: 0.0.12
+;; Version: 0.0.13
 ;; URL: https://github.com/bpiel/sayid
 
 ;; Licensed under the Apache License, Version 2.0 (the "License");
