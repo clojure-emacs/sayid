@@ -1,8 +1,26 @@
 ;;; sayid-pprint-mode.el --- Sayid major mode for showing a pretty print
 
+;; Copyright (c) 2016-2017 Bill Piel
+
+;; Author: Bill Piel <bill@billpiel.com>
+;; Version: 0.0.12
+;; URL: https://github.com/bpiel/sayid
+
+;; Licensed under the Apache License, Version 2.0 (the "License");
+;; you may not use this file except in compliance with the License.
+;; You may obtain a copy of the License at
+
+;;     http://www.apache.org/licenses/LICENSE-2.0
+
+;; Unless required by applicable law or agreed to in writing, software
+;; distributed under the License is distributed on an "AS IS" BASIS,
+;; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+;; See the License for the specific language governing permissions and
+;; limitations under the License.
 
 ;;; Commentary:
-;;  Sayid pretty-print buffer
+
+;; This is part of the sayid Emacs package.  See sayid.el
 
 ;;; Code:
 
@@ -36,8 +54,6 @@
   (run-hooks 'sayid-pprint-mode-hook))
 
 (put 'sayid-pprint-mode 'mode-class 'special)
-
-(provide 'sayid-pprint-mode)
 
 (provide 'sayid-pprint-mode)
 

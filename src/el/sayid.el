@@ -1,6 +1,6 @@
 ;;; sayid.el --- sayid nREPL middleware client
 
-;; Copyright (c) 2016 Bill Piel
+;; Copyright (c) 2016-2017 Bill Piel
 
 ;; Author: Bill Piel <bill@billpiel.com>
 ;; Version: 0.0.12
