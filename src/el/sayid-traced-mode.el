@@ -44,21 +44,12 @@
         (define-key map  (kbd "q") 'quit-window)
         map))
 
- ;;;###autoload
-(defun sayid-traced-mode ()
-  "A major mode for displaying Sayid output."
-  (interactive)
-  (kill-all-local-variables)
-  (setq major-mode 'sayid-traced-mode)
-  (setq mode-name "SAYID-TRACED")
+;;;###autoload
+(define-derived-mode sayid-traced-mode fundamental-mode "SAYID-TRACED"
+  "A major mode for displaying Sayid trace output."
   (read-only-mode t)
   (setq truncate-lines t)
-  (use-local-map sayid-traced-mode-map)
   (run-hooks 'sayid-traced-mode-hook))
-
-(put 'sayid-traced-mode 'mode-class 'special)
-
-(provide 'sayid-traced-mode)
 
 (provide 'sayid-traced-mode)
 

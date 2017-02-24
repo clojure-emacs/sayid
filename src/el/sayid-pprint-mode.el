@@ -41,19 +41,13 @@
         (define-key map  (kbd "q") 'quit-window)
         map))
 
- ;;;###autoload
-(defun sayid-pprint-mode ()
+;;;###autoload
+(define-derived-mode sayid-pprint-mode fundamental-mode "SAYID-PPRINT"
   "A major mode for displaying Sayid pretty print output."
-  (interactive)
-  (kill-all-local-variables)
-  (setq major-mode 'sayid-pprint-mode)
-  (setq mode-name "SAYID-PPRINT")
   (read-only-mode t)
   (setq truncate-lines t)
-  (use-local-map sayid-pprint-mode-map)
   (run-hooks 'sayid-pprint-mode-hook))
 
-(put 'sayid-pprint-mode 'mode-class 'special)
 
 (provide 'sayid-pprint-mode)
 

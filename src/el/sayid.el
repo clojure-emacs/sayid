@@ -26,8 +26,6 @@
 
 ;;; Code:
 
-(setq nrepl-log-messages nil) ;; logging REALLY slows things down
-
 (require 'sayid-mode)
 (require 'sayid-traced-mode)
 (require 'sayid-pprint-mode)
@@ -851,7 +849,6 @@ l -- back to trace buffer
 q -- quit window
 "))
 
-;;;###autoload
 (defun sayid-set-clj-mode-keys ()
   "Define 'clojure-mode' keybindings."
   (define-key clojure-mode-map (kbd "C-c s f") 'sayid-query-form-at-point)
@@ -859,27 +856,26 @@ q -- quit window
   (define-key clojure-mode-map (kbd "C-c s w") 'sayid-get-workspace)
   (define-key clojure-mode-map (kbd "C-c s t y") 'sayid-trace-all-ns-in-dir)
   (define-key clojure-mode-map (kbd "C-c s t p") 'sayid-trace-ns-by-pattern)
-  (define-key clojure-mode-map (kbd "C-c s t b") 'sayid-trace-ns-in-file) ;; b = buffer
-  (define-key clojure-mode-map (kbd "C-c s t e") 'sayid-trace-fn-enable) ;;TODO
+  (define-key clojure-mode-map (kbd "C-c s t b") 'sayid-trace-ns-in-file) 
+  (define-key clojure-mode-map (kbd "C-c s t e") 'sayid-trace-fn-enable)
   (define-key clojure-mode-map (kbd "C-c s t E") 'sayid-trace-enable-all)
-  (define-key clojure-mode-map (kbd "C-c s t d") 'sayid-trace-fn-disable) ;;TODO
+  (define-key clojure-mode-map (kbd "C-c s t d") 'sayid-trace-fn-disable)
   (define-key clojure-mode-map (kbd "C-c s t D") 'sayid-trace-disable-all)
-  (define-key clojure-mode-map (kbd "C-c s t n") 'sayid-inner-trace-fn) ;;TODO
-  (define-key clojure-mode-map (kbd "C-c s t o") 'sayid-outer-trace-fn) ;;TODO
-  (define-key clojure-mode-map (kbd "C-c s t r") 'sayid-remove-trace-fn) ;;TODO
+  (define-key clojure-mode-map (kbd "C-c s t n") 'sayid-inner-trace-fn) 
+  (define-key clojure-mode-map (kbd "C-c s t o") 'sayid-outer-trace-fn) 
+  (define-key clojure-mode-map (kbd "C-c s t r") 'sayid-remove-trace-fn)
   (define-key clojure-mode-map (kbd "C-c s t K") 'sayid-kill-all-traces)
   (define-key clojure-mode-map (kbd "C-c s c") 'sayid-clear-log)
   (define-key clojure-mode-map (kbd "C-c s x") 'sayid-reset-workspace)
   (define-key clojure-mode-map (kbd "C-c s s") 'sayid-show-traced)
-  (define-key clojure-mode-map (kbd "C-c s S") 'sayid-show-traced-ns) ;;TODO
+  (define-key clojure-mode-map (kbd "C-c s S") 'sayid-show-traced-ns)
   (define-key clojure-mode-map (kbd "C-c s V s") 'sayid-set-view)
   (define-key clojure-mode-map (kbd "C-c s h") 'sayid-show-help))
 
-
-
 ;;;###autoload
-(eval-after-load 'clojure-mode
-  '(add-hook 'clojure-mode-hook 'sayid-set-clj-mode-keys))
+(defun sayid-setup-package ()
+  (interactive)
+  (sayid-set-clj-mode-keys))
 
 (provide 'sayid)
 ;;; sayid.el ends here

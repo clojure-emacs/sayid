@@ -54,19 +54,12 @@
         (define-key map  (kbd "q") 'quit-window)
         map))
 
- ;;;###autoload
-(defun sayid-mode ()
+;;;###autoload
+(define-derived-mode sayid-mode fundamental-mode "SAYID"
   "A major mode for displaying Sayid output"
-  (interactive)
-  (kill-all-local-variables)
-  (setq major-mode 'sayid-mode)
-  (setq mode-name "SAYID")
   (read-only-mode t)
   (setq truncate-lines t)
-  (use-local-map sayid-mode-map)
   (run-hooks 'sayid-mode-hook))
-
-(put 'sayid-mode 'mode-class 'special)
 
 (provide 'sayid-mode)
 
