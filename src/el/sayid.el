@@ -31,9 +31,6 @@
 
 ;;; Code:
 
-(require 'sayid-mode)
-(require 'sayid-traced-mode)
-(require 'sayid-pprint-mode)
 (require 'cider)
 
 (defvar sayid-version- "0.0.13")
@@ -777,85 +774,6 @@ Place expression in kill ring."
                      nil
                      (cadr buf-state))))
 
-(defun sayid-buf-show-help ()
-  "Show sayid buffer help buffer."
-  (interactive)
-  (display-message-or-buffer "
-<RET> -- pop to function
-d -- def value to $s/*
-f -- query for calls to function
-F -- query for calls to function with modifier
-i -- show only this instance
-I -- query for this instance with modifier
-w -- show full workspace trace
-n -- jump to next call node
-p -- jump to prev call node
-P -- pretty print value
-C -- clear workspace trace log
-v -- toggle view
-V -- set view (see register-view)
-l, <backspace> -- previous buffer state
-L, <S-backspace> -- forward buffer state
-g -- generate instance expression and put in kill ring
-h -- help
-"))
-
-(defun sayid-show-help ()
-  "Show sayid help buffer."
-  (interactive)
-  (display-message-or-buffer "
-C-c s f -- Queries the active workspace for entries that most closely match the context of the cursor position
-C-c s w -- Shows workspace, using the current view
-C-c s t y -- Prompts for a dir, recursively traces all ns's in that dir and subdirs
-C-c s t p -- Prompts for a pattern (* = wildcare), and applies a trace to all *loaded* ns's whose name matches the patten
-C-c s t b -- Trace the ns in the current buffer
-C-c s t e -- Enable the *existing* (if any) trace of the function at point
-C-c s t E -- Enable all traces
-C-c s t d -- Disable the *existing* (if any) trace of the function at point
-C-c s t D -- Disable all traces
-C-c s t n -- Apply an inner trace to the symbol at point
-C-c s t o -- Apply an outer trace to the symbol at point
-C-c s t r -- Remove existing trace from the symbol at point
-C-c s t K -- Remove all traces
-C-c s c -- Clear the workspace trace log
-C-c s x -- Blow away workspace -- traces and logs
-C-c s s -- Popup buffer showing what it currently traced
-C-c s S -- Popup buffer showing what it currently traced in buffer's ns
-C-c s V s -- Set the view
-C-c s h -- show this help
-"))
-
-(defun sayid-traced-buf-show-help ()
-  "Show sayid traced buffer help buffer."
-  (interactive)
-  (display-message-or-buffer "
-<RET> -- Drill into ns at point
-e -- Enable trace
-d -- Disable trace
-E -- Enable ALL traces
-D -- Disable ALL traces
-i -- Apply inner trace to func at point
-o -- Apply outer trace to func at point
-r -- Remove trace from func at point
-l, <backspace> -- go back to trace overview (if in ns view)
-q -- quit window
-"))
-
-(defun sayid-pprint-buf-show-help ()
-  "Show sayid pretty-print buffer help buffer."
-  (interactive)
-  (display-message-or-buffer "
-ENTER -- show path in mini-buffer
-i -- jump into child node
-o -- jump out to parent node
-n -- jump to next sibling node
-p -- jump to previous sibling node
-l -- back to trace buffer
-q -- quit window
-"))
-
-
-
 (defvar sayid-clj-mode-keys (make-sparse-keymap))
 
 (define-key sayid-clj-mode-keys (kbd "f") 'sayid-query-form-at-point)
@@ -879,9 +797,170 @@ q -- quit window
 (define-key sayid-clj-mode-keys (kbd "V s") 'sayid-set-view)
 (define-key sayid-clj-mode-keys (kbd "h") 'sayid-show-help)
 
+(defun sayid-show-help ()
+  "Show sayid help buffer."
+  (interactive)
+  (display-message-or-buffer "
+f -- Queries the active workspace for entries that most closely match the context of the cursor position
+w -- Shows workspace, using the current view
+t y -- Prompts for a dir, recursively traces all ns's in that dir and subdirs
+t p -- Prompts for a pattern (* = wildcare), and applies a trace to all *loaded* ns's whose name matches the patten
+t b -- Trace the ns in the current buffer
+t e -- Enable the *existing* (if any) trace of the function at point
+t E -- Enable all traces
+t d -- Disable the *existing* (if any) trace of the function at point
+t D -- Disable all traces
+t n -- Apply an inner trace to the symbol at point
+t o -- Apply an outer trace to the symbol at point
+t r -- Remove existing trace from the symbol at point
+t K -- Remove all traces
+c -- Clear the workspace trace log
+x -- Blow away workspace -- traces and logs
+s -- Popup buffer showing what it currently traced
+S -- Popup buffer showing what it currently traced in buffer's ns
+V s -- Set the view
+h -- show this help
+"))
+
 (defun sayid-set-clj-mode-keys (prefix)
   "Define 'clojure-mode' keybindings."
   (define-key clojure-mode-map prefix sayid-clj-mode-keys))
+
+
+(defvar sayid-mode-map)
+
+(setq sayid-mode-map
+      (let ((map (make-sparse-keymap)))
+        (define-key map  (kbd "<RET>") 'sayid-buffer-nav-from-point)
+        (define-key map  (kbd "d") 'sayid-buf-def-at-point)
+        (define-key map  (kbd "f") 'sayid-query-fn)
+        (define-key map  (kbd "F") 'sayid-query-fn-w-mod)
+        (define-key map  (kbd "i") 'sayid-query-id)
+        (define-key map  (kbd "I") 'sayid-query-id-w-mod)
+        (define-key map  (kbd "w") 'sayid-get-workspace)
+        (define-key map  (kbd "n") 'sayid-buffer-nav-to-next)
+        (define-key map  (kbd "N") 'sayid-buf-replay-with-inner-trace)
+        (define-key map  (kbd "p") 'sayid-buffer-nav-to-prev)
+        (define-key map  (kbd "P") 'sayid-buf-pprint-at-point)
+        (define-key map  (kbd "v") 'sayid-toggle-view)
+        (define-key map  (kbd "V") 'sayid-set-view)
+        (define-key map  (kbd "<backspace>") 'sayid-buf-back)
+        (define-key map  (kbd "<S-backspace>") 'sayid-buf-forward)
+        (define-key map  (kbd "l") 'sayid-buf-back)
+        (define-key map  (kbd "L") 'sayid-buf-forward)
+        (define-key map  (kbd "c i") 'sayid-buf-inspect-at-point)
+        (define-key map  (kbd "g") 'sayid-gen-instance-expr)
+        (define-key map  (kbd "C") 'sayid-clear-log)
+        (define-key map  (kbd "h") 'sayid-buf-show-help)
+        (define-key map  (kbd "q") 'quit-window)
+        map))
+
+(defun sayid-buf-show-help ()
+  "Show sayid buffer help buffer."
+  (interactive)
+  (display-message-or-buffer "
+<RET> -- pop to function
+d -- def value to $s/*
+f -- query for calls to function
+F -- query for calls to function with modifier
+i -- show only this instance
+I -- query for this instance with modifier
+w -- show full workspace trace
+n -- jump to next call node
+p -- jump to prev call node
+P -- pretty print value
+C -- clear workspace trace log
+v -- toggle view
+V -- set view (see register-view)
+l, <backspace> -- previous buffer state
+L, <S-backspace> -- forward buffer state
+g -- generate instance expression and put in kill ring
+h -- help
+"))
+
+;;;###autoload
+(define-derived-mode sayid-mode fundamental-mode "SAYID"
+  "A major mode for displaying Sayid output"
+  (read-only-mode t)
+  (setq truncate-lines t))
+
+
+
+(defvar sayid-traced-mode-map)
+
+(setq sayid-traced-mode-map
+      (let ((map (make-sparse-keymap)))
+        (define-key map  (kbd "<RET>") 'sayid-traced-buf-enter)
+        (define-key map  (kbd "e") 'sayid-traced-buf-enable)
+        (define-key map  (kbd "d") 'sayid-traced-buf-disable)
+        (define-key map  (kbd "E") 'sayid-trace-enable-all)
+        (define-key map  (kbd "D") 'sayid-trace-disable-all)
+        (define-key map  (kbd "i") 'sayid-traced-buf-inner-trace-fn)
+        (define-key map  (kbd "o") 'sayid-traced-buf-outer-trace-fn)
+        (define-key map  (kbd "r") 'sayid-traced-buf-remove-trace)
+        (define-key map  (kbd "<backspace>") 'sayid-show-traced)
+        (define-key map  (kbd "l") 'sayid-show-traced)
+        (define-key map  (kbd "h") 'sayid-traced-buf-show-help)
+        (define-key map  (kbd "q") 'quit-window)
+        map))
+
+(defun sayid-traced-buf-show-help ()
+  "Show sayid traced buffer help buffer."
+  (interactive)
+  (display-message-or-buffer "
+<RET> -- Drill into ns at point
+e -- Enable trace
+d -- Disable trace
+E -- Enable ALL traces
+D -- Disable ALL traces
+i -- Apply inner trace to func at point
+o -- Apply outer trace to func at point
+r -- Remove trace from func at point
+l, <backspace> -- go back to trace overview (if in ns view)
+q -- quit window
+"))
+
+;;;###autoload
+(define-derived-mode sayid-traced-mode fundamental-mode "SAYID-TRACED"
+  "A major mode for displaying Sayid trace output."
+  (read-only-mode t)
+  (setq truncate-lines t))
+
+
+(defvar sayid-pprint-mode-map)
+
+(setq sayid-pprint-mode-map
+      (let ((map (make-sparse-keymap)))
+        (define-key map  (kbd "h") 'sayid-pprint-buf-show-help)
+        (define-key map  (kbd "o") 'sayid-pprint-buf-out)
+        (define-key map  (kbd "i") 'sayid-pprint-buf-in)
+        (define-key map  (kbd "p") 'sayid-pprint-buf-prev)
+        (define-key map  (kbd "n") 'sayid-pprint-buf-next)
+        (define-key map  (kbd "<return>") 'sayid-pprint-buf-show-path)
+        (define-key map  (kbd "<backspace>") 'sayid-pprint-buf-exit)
+        (define-key map  (kbd "l") 'sayid-pprint-buf-exit)
+        (define-key map  (kbd "q") 'quit-window)
+        map))
+
+(defun sayid-pprint-buf-show-help ()
+  "Show sayid pretty-print buffer help buffer."
+  (interactive)
+  (display-message-or-buffer "
+ENTER -- show path in mini-buffer
+i -- jump into child node
+o -- jump out to parent node
+n -- jump to next sibling node
+p -- jump to previous sibling node
+l -- back to trace buffer
+q -- quit window
+"))
+
+;;;###autoload
+(define-derived-mode sayid-pprint-mode fundamental-mode "SAYID-PPRINT"
+  "A major mode for displaying Sayid pretty print output."
+  (read-only-mode t)
+  (setq truncate-lines t))
+
 
 ;;;###autoload
 (defun sayid-setup-package (&optional prefix)
