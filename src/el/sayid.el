@@ -854,33 +854,39 @@ l -- back to trace buffer
 q -- quit window
 "))
 
-(defun sayid-set-clj-mode-keys ()
+
+
+(defvar sayid-clj-mode-keys (make-sparse-keymap))
+
+(define-key sayid-clj-mode-keys (kbd "f") 'sayid-query-form-at-point)
+(define-key sayid-clj-mode-keys (kbd "!") 'sayid-load-enable-clear)
+(define-key sayid-clj-mode-keys (kbd "w") 'sayid-get-workspace)
+(define-key sayid-clj-mode-keys (kbd "t y") 'sayid-trace-all-ns-in-dir)
+(define-key sayid-clj-mode-keys (kbd "t p") 'sayid-trace-ns-by-pattern)
+(define-key sayid-clj-mode-keys (kbd "t b") 'sayid-trace-ns-in-file) 
+(define-key sayid-clj-mode-keys (kbd "t e") 'sayid-trace-fn-enable)
+(define-key sayid-clj-mode-keys (kbd "t E") 'sayid-trace-enable-all)
+(define-key sayid-clj-mode-keys (kbd "t d") 'sayid-trace-fn-disable)
+(define-key sayid-clj-mode-keys (kbd "t D") 'sayid-trace-disable-all)
+(define-key sayid-clj-mode-keys (kbd "t n") 'sayid-inner-trace-fn) 
+(define-key sayid-clj-mode-keys (kbd "t o") 'sayid-outer-trace-fn) 
+(define-key sayid-clj-mode-keys (kbd "t r") 'sayid-remove-trace-fn)
+(define-key sayid-clj-mode-keys (kbd "t K") 'sayid-kill-all-traces)
+(define-key sayid-clj-mode-keys (kbd "c") 'sayid-clear-log)
+(define-key sayid-clj-mode-keys (kbd "x") 'sayid-reset-workspace)
+(define-key sayid-clj-mode-keys (kbd "s") 'sayid-show-traced)
+(define-key sayid-clj-mode-keys (kbd "S") 'sayid-show-traced-ns)
+(define-key sayid-clj-mode-keys (kbd "V s") 'sayid-set-view)
+(define-key sayid-clj-mode-keys (kbd "h") 'sayid-show-help)
+
+(defun sayid-set-clj-mode-keys (prefix)
   "Define 'clojure-mode' keybindings."
-  (define-key clojure-mode-map (kbd "C-c s f") 'sayid-query-form-at-point)
-  (define-key clojure-mode-map (kbd "C-c s !") 'sayid-load-enable-clear)
-  (define-key clojure-mode-map (kbd "C-c s w") 'sayid-get-workspace)
-  (define-key clojure-mode-map (kbd "C-c s t y") 'sayid-trace-all-ns-in-dir)
-  (define-key clojure-mode-map (kbd "C-c s t p") 'sayid-trace-ns-by-pattern)
-  (define-key clojure-mode-map (kbd "C-c s t b") 'sayid-trace-ns-in-file) 
-  (define-key clojure-mode-map (kbd "C-c s t e") 'sayid-trace-fn-enable)
-  (define-key clojure-mode-map (kbd "C-c s t E") 'sayid-trace-enable-all)
-  (define-key clojure-mode-map (kbd "C-c s t d") 'sayid-trace-fn-disable)
-  (define-key clojure-mode-map (kbd "C-c s t D") 'sayid-trace-disable-all)
-  (define-key clojure-mode-map (kbd "C-c s t n") 'sayid-inner-trace-fn) 
-  (define-key clojure-mode-map (kbd "C-c s t o") 'sayid-outer-trace-fn) 
-  (define-key clojure-mode-map (kbd "C-c s t r") 'sayid-remove-trace-fn)
-  (define-key clojure-mode-map (kbd "C-c s t K") 'sayid-kill-all-traces)
-  (define-key clojure-mode-map (kbd "C-c s c") 'sayid-clear-log)
-  (define-key clojure-mode-map (kbd "C-c s x") 'sayid-reset-workspace)
-  (define-key clojure-mode-map (kbd "C-c s s") 'sayid-show-traced)
-  (define-key clojure-mode-map (kbd "C-c s S") 'sayid-show-traced-ns)
-  (define-key clojure-mode-map (kbd "C-c s V s") 'sayid-set-view)
-  (define-key clojure-mode-map (kbd "C-c s h") 'sayid-show-help))
+  (define-key clojure-mode-map prefix sayid-clj-mode-keys))
 
 ;;;###autoload
-(defun sayid-setup-package ()
+(defun sayid-setup-package (&optional prefix)
   (interactive)
-  (sayid-set-clj-mode-keys))
+  (sayid-set-clj-mode-keys (or prefix (kbd "C-c s"))))
 
 (provide 'sayid)
 
