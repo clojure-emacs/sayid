@@ -881,7 +881,7 @@ h -- help
 ;;;###autoload
 (define-derived-mode sayid-mode fundamental-mode "SAYID"
   "A major mode for displaying Sayid output"
-  (read-only-mode t)
+  (read-only-mode 1)
   (setq truncate-lines t))
 
 
@@ -923,7 +923,7 @@ q -- quit window
 ;;;###autoload
 (define-derived-mode sayid-traced-mode fundamental-mode "SAYID-TRACED"
   "A major mode for displaying Sayid trace output."
-  (read-only-mode t)
+  (read-only-mode 1)
   (setq truncate-lines t))
 
 
@@ -958,7 +958,7 @@ q -- quit window
 ;;;###autoload
 (define-derived-mode sayid-pprint-mode fundamental-mode "SAYID-PPRINT"
   "A major mode for displaying Sayid pretty print output."
-  (read-only-mode t)
+  (read-only-mode 1)
   (setq truncate-lines t))
 
 
