@@ -3,7 +3,7 @@
 ;; Copyright (c) 2016-2017 Bill Piel
 
 ;; Author: Bill Piel <bill@billpiel.com>
-;; Version: 0.0.13
+;; Version: 0.0.14
 ;; URL: https://github.com/bpiel/sayid
 ;; Package-Requires: ((cider "0.14.0"))
 
@@ -33,7 +33,7 @@
 
 (require 'cider)
 
-(defvar sayid-version- "0.0.13")
+(defvar sayid-version- "0.0.14")
 
 (defvar sayid-trace-ns-dir nil)
 (defvar sayid-meta)

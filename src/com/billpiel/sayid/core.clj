@@ -10,7 +10,7 @@
             [com.billpiel.sayid.profiling :as pro]
             [com.billpiel.sayid.util.other :as util]))
 
-(def version "0.0.13")
+(def version "0.0.14")
 
 (def workspace
   "The activce workspace. Used by default in any function prefixed `ws-`
