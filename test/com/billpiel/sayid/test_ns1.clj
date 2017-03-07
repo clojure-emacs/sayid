@@ -101,3 +101,7 @@
 
 #_ (binding [com.billpiel.sayid.trace/*trace-log-parent* @com.billpiel.sayid.core/workspace]
   (smm 3))
+
+#_(mapv #(func3-1 % 3) (range 1 50))
+
+#_ (func3-1 2 4)

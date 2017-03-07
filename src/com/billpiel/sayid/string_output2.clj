@@ -330,27 +330,28 @@
 
 (defn remove-nil-vals
   [m]
-  (->> m
-       (remove #(-> % second nil?))
-       (into {})))
+  (for [[k v] m :when (not (nil? v))] [k v]))
 
 (defn tkn->simple-type
   [t]
   (-> t :type first))
 
+(def ^:const  type->color {:int :cyan
+                           :float :cyan
+                           :string :magenta
+                           :keyword :yellow
+                           :symbol :cyan
+                           :truncator :black})
+
+(def ^:const  type->bg-color {:truncator :white})
+
 (defn apply-type-colors-to-token
   [token]
-  (let [type->color {:int :cyan
-                     :float :cyan
-                     :string :magenta
-                     :keyword :yellow
-                     :symbol :cyan
-                     :truncator :black}
-        type->bg-color {:truncator :white}]
+  (let [st (tkn->simple-type token)]
     (merge token
-           (when-let [color (type->color (tkn->simple-type token))]
+           (when-let [color (type->color st)]
              {:fg-color color})
-           (when-let [color (type->bg-color (tkn->simple-type token))]
+           (when-let [color (type->bg-color st)]
              {:bg-color color}))))
 
 (defn mk-text-props
@@ -358,6 +359,7 @@
   (util/$- -> token
            (dissoc :coll?
                    :column
+                   :start
                    :end
                    :end-col
                    :end-column
@@ -368,16 +370,68 @@
                    :line-break
                    :string
                    :zipper)
-           remove-nil-vals
            apply-type-colors-to-token
+           remove-nil-vals
            [start end $]))
+
+
+(defn tkn-prop-grouper4
+  [pos-pairs start end]
+  (if (empty? pos-pairs) {:last-start start :last-end end :pairs []}
+      (let [{:keys [last-start last-end pairs]} pos-pairs]
+        (if (= last-end start)
+          (assoc pos-pairs :last-end end)
+          (assoc pos-pairs
+                 :last-start start
+                 :last-end end
+                 :pairs (conj pairs [last-start last-end]))))))
+
+(defn tkn-prop-grouper3
+  [start end]
+  (fn [agg pos-pairs]
+    (update-in agg pos-pairs tkn-prop-grouper4 start end)))
+
+(defn tkn-prop-grouper2
+  [agg [start end props]]
+  (reduce (tkn-prop-grouper3 start end)
+          agg
+          props))
+
+(defn tkn-prop-grouper6
+  [pairs]
+  (reduce (fn [agg [start end]]
+            (update-in agg
+                       [(- end start)]
+                       conj start))
+          {}
+          pairs))
+
+(defn tkn-prop-grouper5
+  [m]
+  (reduce (fn [agg [a b c]]
+            (if b
+              (assoc-in agg
+                        [a b]
+                        (tkn-prop-grouper6 c))
+              agg))
+          {}
+          (for [[k kv] m
+                [k2 {:keys [last-end last-start pairs]}] kv]
+            [k k2 (conj pairs [last-start last-end]) ])))
+
+(defn tkn-prop-grouper
+  [triples]
+  (tkn-prop-grouper5 (reduce tkn-prop-grouper2
+                             {}
+                             triples)))
 
 (defn split-text-tag-coll
   [tokens]
   [(->> tokens (map :string) (apply str))
    (->> tokens
         assoc-tokens-pos
-        (mapv mk-text-props))])
+        (mapv mk-text-props)
+        tkn-prop-grouper)])
 
 (defn tree->text-prop-pair
   [tree]
@@ -564,7 +618,8 @@
         :vector (get-path-of-vec-child z)
         :list (get-path-of-vec-child z)
         :listp (get-path-of-vec-child z)
-        :seq  (get-path-of-vec-child z)))
+        :seq (get-path-of-vec-child z)
+        :set (get-path-of-vec-child z)))
     []))
 
 (defn decorate-token
@@ -588,7 +643,8 @@
   [(->> tokens (map :string) (apply str))
    (->> tokens
         (mapv mk-text-props)
-        (remove #(or (nil? (first %)) (nil? (second %)))))])
+        (remove #(or (nil? (first %)) (nil? (second %))))
+        tkn-prop-grouper)])
 
 (defn value->text-prop-pair*
   [a]
@@ -605,22 +661,3 @@
        flatten
        (remove nil?)
        split-text-tag-coll))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
