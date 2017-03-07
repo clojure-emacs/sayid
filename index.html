@@ -254,14 +254,19 @@ h3 {
                         data can be displayed, queried and
                         profiled.</p>
 
-                      <p>The Sayid toolset currently has three components:
+                      <p>Sayid currently has three components:
 
                         <ul>
                           <li><code>core</code> and its supporting namespaces</li>
                           <li>nREPL middleware</li>
                           <li>an emacs-cider nREPL client</li>
+                          <ul>
+                            <li>although a 3rd-party vim plugin also exists.
+                              See <a href="http://arsenerei.com/blog/posts/2017-02-24-vim-sayid/">this</a>
+                              and <a href="https://github.com/arsenerei/vim-sayid">this</a>.</li>
+                          </ul>
                         </ul>
-
+                        
                       <p>The <code>core</code> namespace is designed
                       to be used directly via a repl and does not
                       require emacs or cider.
@@ -278,6 +283,7 @@ h3 {
 
                       <ul>
                         <li><a href="#installation">Installation & Requirements</a></li>
+                        <li><a href="#conj2016">Conj 2016 Presentation</a></li>
                         <li><a href="#demo1vid">Demo #1 - Video</a></li>
                         <li><a href="#demo1wt">Demo #1 - Walkthrough</a></li>
                         <li><a href="#documentation">Documentation</a></li>
@@ -287,7 +293,7 @@ h3 {
 
                       <p>Basic usage requires Clojure 1.6. Add this to the dependencies in your project.clj or lein profiles.clj:</p>
 
-                      <code>[com.billpiel/sayid "0.0.11"]</code><br><br>
+                      <code>[com.billpiel/sayid "0.0.14"]</code><br><br>
 
                       <p>For the full emacs+cider experience, you'll
                       want to include Sayid as a plug-in, as well as
@@ -295,34 +301,32 @@ h3 {
                       version is "0.10.0". Here's an example of a
                       bare-bones profiles.clj that works for me:</p>
                       
-                        <!-- profiles.clj -->
-    <pre>
-<span class="rainbow-delimiters-depth-1"> {</span><span class="clojure-keyword">:user</span> <span class="rainbow-delimiters-depth-2">{</span><span class="clojure-keyword">:plugins</span> <span class="rainbow-delimiters-depth-3">[</span><span class="rainbow-delimiters-depth-4">[</span><span class="type">cider</span><span class="default">/</span>cider-nrepl <span class="string">"0.12.0"</span><span class="rainbow-delimiters-depth-4">]</span>
-                   <span class="rainbow-delimiters-depth-4">[</span><span class="type">com.billpiel</span><span class="default">/</span>sayid <span class="string">"0.0.11"</span><span class="rainbow-delimiters-depth-4">]</span><span class="rainbow-delimiters-depth-3">]</span>
-         <span class="clojure-keyword">:dependencies</span> <span class="rainbow-delimiters-depth-3">[</span><span class="rainbow-delimiters-depth-4">[</span><span class="type">org.clojure</span><span class="default">/</span>tools.nrepl <span class="string">"0.2.12"</span><span class="rainbow-delimiters-depth-4">]</span><span class="rainbow-delimiters-depth-3">]</span><span class="rainbow-delimiters-depth-2">}</span><span class="rainbow-delimiters-depth-1">}</span>
+                      <!-- profiles.clj -->
+                          <pre>
+<font color="#BB2222"> {</font><font color="#4c83ff">:user</font> <font color="#BB7700">{</font><font color="#4c83ff">:plugins</font> <font color="#BBBB22">[</font><font color="#11BB11">[</font><font color="#D8FA3C">cider</font><font color="#EDEDED">/</font>cider-nrepl <font color="#61CE3C">"0.14.0"</font><font color="#11BB11">]</font>
+                   <font color="#11BB11">[</font><font color="#D8FA3C">com.billpiel</font><font color="#EDEDED">/</font>sayid <font color="#61CE3C">"0.0.13"</font><font color="#11BB11">]</font><font color="#BBBB22">]</font>
+         <font color="#4c83ff">:dependencies</font> <font color="#BBBB22">[</font><font color="#11BB11">[</font><font color="#D8FA3C">org.clojure</font><font color="#EDEDED">/</font>tools.nrepl <font color="#61CE3C">"0.2.12"</font><font color="#11BB11">]</font><font color="#BBBB22">]</font><font color="#BB7700">}</font><font color="#BB2222">}</font>
 </pre>
                   <!-- END profiles.clj -->
                       <p>The emacs+cider setup also requires that the
-                      emacs package is installed. I haven't gotten
-                      around to submitting this to MELPA, so you'll
-                      have to add my site as a package repo. A snippet
-                      for that is below. Add it to
-                      your <code>init.el</code> or something.</p>
+                        emacs package is installed. It's available
+                        on <a href="http://melpa.milkbox.net/#/">MELPA</a>
+                        and MELPA Stable. Put this code
+                        in <code>init.el</code>, or somewhere, to load
+                        keybindings for clojure-mode buffers.
 
-                        <!-- init.el -->
-                        <pre>
-<span class="rainbow-delimiters-depth-1"> (</span>add-to-list 'package-archives
-              '<span class="rainbow-delimiters-depth-2">(</span><span class="string">"billpiel"</span> . <span class="string">"http://billpiel.com/emacs-packages/"</span><span class="rainbow-delimiters-depth-2">)</span> t<span class="rainbow-delimiters-depth-1">)</span>
- 
-<span class="rainbow-delimiters-depth-1"> (</span>package-initialize<span class="rainbow-delimiters-depth-1">)</span>
-</pre>
+                      <!-- init.el -->
+    <pre>
+<font color="#BB2222"> (</font>eval-after-load 'clojure-mode
+   '<font color="#BB7700">(</font>sayid-setup-package<font color="#BB7700">)</font><font color="#BB2222">)</font></pre>
                         <!-- END init.el -->
 
-                      <p>Now, install the Sayid package
-                      using <code>package-list-packages</code> or
-                      however you do it. I never know what kind of
-                      tricks you emacs users are up to.</p>
 
+                      <h2 id="conj2016">Conj 2016 Presentation</h2>
+
+                      <p>I presented Sayid at the Clojure Conj conference in Austin in 2016.</p>
+                      
+                      <iframe width="560" height="315" src="https://www.youtube.com/embed/ipDhvd1NsmE" frameborder="0" allowfullscreen></iframe>
 
                       
                       <h2 id="demo1vid">Demo #1 - Video</h2>
