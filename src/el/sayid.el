@@ -883,7 +883,8 @@ h -- help
 (define-derived-mode sayid-mode fundamental-mode "SAYID"
   "A major mode for displaying Sayid output"
   (read-only-mode 1)
-  (setq truncate-lines t))
+  (setq truncate-lines t)
+  (buffer-disable-undo))
 
 
 
@@ -960,7 +961,8 @@ q -- quit window
 (define-derived-mode sayid-pprint-mode fundamental-mode "SAYID-PPRINT"
   "A major mode for displaying Sayid pretty print output."
   (read-only-mode 1)
-  (setq truncate-lines t))
+  (setq truncate-lines t)
+  (buffer-disable-undo))
 
 
 ;;;###autoload
