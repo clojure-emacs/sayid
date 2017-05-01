@@ -276,7 +276,7 @@ Disable traces, load buffer, enable traces, clear log."
   "Make a symbol from string S.  Make-symbol seems to return symbols that didn't equate when they should."
   (car (read-from-string s)))
 
-(defun sayid-color-str->face (s)
+(defun sayid-color-str->face (s def)
   "Translate color-name string S to a face string."
   (or (cdr (assoc s '(("black" . "black")
                       ("red" . "red3")
@@ -286,15 +286,27 @@ Disable traces, load buffer, enable traces, clear log."
                       ("magenta" . "#DD88FF")
                       ("cyan" . "cyan3")
                       ("white" . "white"))))
-      "white"))
+      def))
+
+;; (defun sayid-mk-font-face (p)
+;;   "Make a font face from property pair P."
+;;   (let ((fg (cadr (assoc "fg-color" (list p))))
+;;         (bg (cadr (assoc "bg-color" (list p)))))
+;;     (if (or fg bg)
+;;         (append (if fg (list (list ':foreground (sayid-color-str->face fg))))
+;;                 (if bg (list (list ':background (sayid-color-str->face bg))))))))
+
+(sayid-mk-font-face '("color" ("red" "white")))
+(cadr (assoc "color" (list '("color" ("red" "white")))))
 
 (defun sayid-mk-font-face (p)
   "Make a font face from property pair P."
-  (let ((fg (cadr (assoc "fg-color" (list p))))
-        (bg (cadr (assoc "bg-color" (list p)))))
+  (let* ((clr (cadr (assoc "color" (list p))))
+         (fg (car clr))
+         (bg (cadr clr)))
     (if (or fg bg)
-        (append (if fg (list (list ':foreground (sayid-color-str->face fg))))
-                (if bg (list (list ':background (sayid-color-str->face bg))))))))
+        (append (if fg (list (list ':foreground (sayid-color-str->face fg "white"))))
+                (if bg (list (list ':background (sayid-color-str->face bg "black"))))))))
 
 (defun sayid-put-text-prop (a start end buf)
   "Put property pair A to text in range START to END in buffer BUF."

@@ -41,8 +41,8 @@
           (assoc 
            :string s'
            :length (count s')
-           :fg-color (get colors-kw (or fg (apply-color-palette fg*)))
-           :bg-color (get colors-kw (or bg (apply-color-palette bg*)))
+           :color [(get colors-kw (or fg (apply-color-palette fg*)))
+                   (get colors-kw (or bg (apply-color-palette bg*)))]
            :bold bold)))))
 
 (defn mk-lazy-color-fg*-str
@@ -346,13 +346,11 @@
 (def ^:const  type->bg-color {:truncator :white})
 
 (defn apply-type-colors-to-token
-  [token]
+  [{[fg-color bg-color] :color :as token}]
   (let [st (tkn->simple-type token)]
-    (merge token
-           (when-let [color (type->color st)]
-             {:fg-color color})
-           (when-let [color (type->bg-color st)]
-             {:bg-color color}))))
+    (assoc token
+           :color [(or (type->color st) fg-color)
+                   (or (type->bg-color st) bg-color)])))
 
 (defn mk-text-props
   [{:keys [start end] :as token}]

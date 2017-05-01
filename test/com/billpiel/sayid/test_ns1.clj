@@ -74,34 +74,3 @@
   [a b]
   (vector a (+ a (* 2 b))))
 
-
-(def mm nil)
-(defmulti mm (fn [a] a))
-
-(defmethod mm 1
-  [_]
-  (println "mm 1")
-  :a)
-
-(defmethod mm 2
-  [_] :b)
-
-
-#_ (import 'com.billpiel.sayid.SayidMultiFn)
-
-#_(def smm (com.billpiel.sayid.SayidMultiFn. {:original mm :name' "NAME" :meta' {} :workspace nil} "TestName" (fn []) nil (clojure.lang.Var/create)))
-
-#_(mm 3)
-
-#_(mm 2)
-
-#_(.addMethod smm 3 (fn [_] :three))
-
-#_(.addMethod mm 3 (fn [_] :three))
-
-#_ (binding [com.billpiel.sayid.trace/*trace-log-parent* @com.billpiel.sayid.core/workspace]
-  (smm 3))
-
-#_(mapv #(func3-1 % 3) (range 1 50))
-
-#_ (func3-1 2 4)
