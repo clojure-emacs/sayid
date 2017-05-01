@@ -1,5 +1,7 @@
 # Change Log
 
+## [Unreleased]
+
 ## [0.0.14] - 2017-03-06
 ### Changed
  - emacs: several misc things for MELPA

@@ -5,7 +5,7 @@
   (-> project
       (update-in [:dependencies]
                  (fnil into [])
-                 [['com.billpiel/sayid "0.0.14"]])
+                 [['com.billpiel/sayid "0.0.15-dev"]])
       (update-in [:repl-options :nrepl-middleware]
                  (fnil into [])
                  ['com.billpiel.sayid.nrepl-middleware/wrap-sayid])))
