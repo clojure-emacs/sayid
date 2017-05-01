@@ -288,17 +288,6 @@ Disable traces, load buffer, enable traces, clear log."
                       ("white" . "white"))))
       def))
 
-;; (defun sayid-mk-font-face (p)
-;;   "Make a font face from property pair P."
-;;   (let ((fg (cadr (assoc "fg-color" (list p))))
-;;         (bg (cadr (assoc "bg-color" (list p)))))
-;;     (if (or fg bg)
-;;         (append (if fg (list (list ':foreground (sayid-color-str->face fg))))
-;;                 (if bg (list (list ':background (sayid-color-str->face bg))))))))
-
-(sayid-mk-font-face '("color" ("red" "white")))
-(cadr (assoc "color" (list '("color" ("red" "white")))))
-
 (defun sayid-mk-font-face (p)
   "Make a font face from property pair P."
   (let* ((clr (cadr (assoc "color" (list p))))
