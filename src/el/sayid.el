@@ -33,7 +33,8 @@
 
 (require 'cider)
 
-(defvar sayid-version- "0.0.15")
+(defvar sayid-version-)
+(setq sayid-version- "0.0.15")
 
 (defvar sayid-trace-ns-dir nil)
 (defvar sayid-meta)
