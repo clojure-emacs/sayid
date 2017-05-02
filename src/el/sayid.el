@@ -3,7 +3,7 @@
 ;; Copyright (c) 2016-2017 Bill Piel
 
 ;; Author: Bill Piel <bill@billpiel.com>
-;; Version: 0.0.14
+;; Version: 0.0.15
 ;; URL: https://github.com/bpiel/sayid
 ;; Package-Requires: ((cider "0.14.0"))
 
@@ -33,7 +33,8 @@
 
 (require 'cider)
 
-(defvar sayid-version- "0.0.14")
+(defvar sayid-version-)
+(setq sayid-version- "0.0.15")
 
 (defvar sayid-trace-ns-dir nil)
 (defvar sayid-meta)
@@ -276,7 +277,7 @@ Disable traces, load buffer, enable traces, clear log."
   "Make a symbol from string S.  Make-symbol seems to return symbols that didn't equate when they should."
   (car (read-from-string s)))
 
-(defun sayid-color-str->face (s)
+(defun sayid-color-str->face (s def)
   "Translate color-name string S to a face string."
   (or (cdr (assoc s '(("black" . "black")
                       ("red" . "red3")
@@ -286,15 +287,16 @@ Disable traces, load buffer, enable traces, clear log."
                       ("magenta" . "#DD88FF")
                       ("cyan" . "cyan3")
                       ("white" . "white"))))
-      "white"))
+      def))
 
 (defun sayid-mk-font-face (p)
   "Make a font face from property pair P."
-  (let ((fg (cadr (assoc "fg-color" (list p))))
-        (bg (cadr (assoc "bg-color" (list p)))))
+  (let* ((clr (cadr (assoc "color" (list p))))
+         (fg (car clr))
+         (bg (cadr clr)))
     (if (or fg bg)
-        (append (if fg (list (list ':foreground (sayid-color-str->face fg))))
-                (if bg (list (list ':background (sayid-color-str->face bg))))))))
+        (append (if fg (list (list ':foreground (sayid-color-str->face fg "white"))))
+                (if bg (list (list ':background (sayid-color-str->face bg "black"))))))))
 
 (defun sayid-put-text-prop (a start end buf)
   "Put property pair A to text in range START to END in buffer BUF."
@@ -882,7 +884,8 @@ h -- help
 (define-derived-mode sayid-mode fundamental-mode "SAYID"
   "A major mode for displaying Sayid output"
   (read-only-mode 1)
-  (setq truncate-lines t))
+  (setq truncate-lines t)
+  (buffer-disable-undo))
 
 
 
@@ -959,7 +962,8 @@ q -- quit window
 (define-derived-mode sayid-pprint-mode fundamental-mode "SAYID-PPRINT"
   "A major mode for displaying Sayid pretty print output."
   (read-only-mode 1)
-  (setq truncate-lines t))
+  (setq truncate-lines t)
+  (buffer-disable-undo))
 
 
 ;;;###autoload
