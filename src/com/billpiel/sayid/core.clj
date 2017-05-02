@@ -13,7 +13,7 @@
 (def version "0.0.15")
 
 (def workspace
-  "The activce workspace. Used by default in any function prefixed `ws-`
+  "The active workspace. Used by default in any function prefixed `ws-`
   or `w-`."
   (atom nil))
 
