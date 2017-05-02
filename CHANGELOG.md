@@ -1,6 +1,10 @@
 # Change Log
 
-## [Unreleased]
+## [0.0.15] - 2017-05-02
+### Fixed
+ - emacs: disable undo to avoid buffer limit error
+ - emacs: fix background colors in pretty-print buffer
+ - support inner-tracing of `loop` form with multi-form body
 
 ## [0.0.14] - 2017-03-06
 ### Changed
