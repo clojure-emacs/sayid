@@ -518,7 +518,7 @@
   `(tr-loop ~path-sym
             ~'$$
             (loop ~(xpand-loop-binds binds orig-binds path-sym)
-              (let [~'$$return ~@body]
+              (let [~'$$return (do ~@body)]
                 ~(mk-recur-handler recur-arities)))))
 
 (defn xpand-loop
@@ -799,9 +799,9 @@
 
 (defn f1
   [a]
-  (-> a
-      inc
-      dec))
+  (loop [a 1]
+    (inc a)
+    (inc a)))
 
 #_ (inner-tracer {:qual-sym 'com.billpiel.sayid.inner-trace3/f1
                   :meta' {:ns 'com.billpiel.sayid.inner-trace3

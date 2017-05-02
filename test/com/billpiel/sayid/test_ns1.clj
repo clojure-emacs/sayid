@@ -74,3 +74,10 @@
   [a b]
   (vector a (+ a (* 2 b))))
 
+
+(defn func-loop
+  [a]
+  (loop [b a]
+    (inc b)
+    (+ b a)))
+
