@@ -266,7 +266,7 @@ h3 {
                               and <a href="https://github.com/arsenerei/vim-sayid">this</a>.</li>
                           </ul>
                         </ul>
-                        
+
                       <p>The <code>core</code> namespace is designed
                       to be used directly via a repl and does not
                       require emacs or cider.
@@ -277,7 +277,7 @@ h3 {
                       </p>
 
                       <p><a href='http://github.com/bpiel/sayid'>github repo</a></p>
-                      
+
                       <a id="contents-link" href="#contents" >contents</a>
                       <h2 id="contents">Contents</h2>
 
@@ -288,26 +288,52 @@ h3 {
                         <li><a href="#demo1wt">Demo #1 - Walkthrough</a></li>
                         <li><a href="#documentation">Documentation</a></li>
                       </ul>
-                      
+
                       <h2 id="installation">Installation & Requirements</h2>
 
-                      <p>Basic usage requires Clojure 1.7. Add this to the dependencies in your project.clj or lein profiles.clj:</p>
+                      <p>Basic usage requires Clojure 1.7. Add this to the
+                      dependencies in your project.clj or build.boot:</p>
 
                       <code>[com.billpiel/sayid "0.0.15"]</code><br><br>
 
-                      <p>For the full emacs+cider experience, you'll
-                      want to include Sayid as a plug-in, as well as
-                      nREPL. I think the minimum required cider-nREPL
-                      version is "0.10.0". Here's an example of a
+                      <p>For the full emacs+cider or vim+fireplace experience,
+                      you'll want to include Sayid as a plug-in, as well as
+                      nREPL. I think the minimum required cider-nREPL version is
+                      "0.10.0".</p>
+
+                      <h3 id="leiningen">Leiningen</h3>
+
+                      <p>Here's an example of a
                       bare-bones profiles.clj that works for me:</p>
-                      
+
                       <!-- profiles.clj -->
                           <pre>
 <font color="#BB2222"> {</font><font color="#4c83ff">:user</font> <font color="#BB7700">{</font><font color="#4c83ff">:plugins</font> <font color="#BBBB22">[</font><font color="#11BB11">[</font><font color="#D8FA3C">cider</font><font color="#EDEDED">/</font>cider-nrepl <font color="#61CE3C">"0.14.0"</font><font color="#11BB11">]</font>
                    <font color="#11BB11">[</font><font color="#D8FA3C">com.billpiel</font><font color="#EDEDED">/</font>sayid <font color="#61CE3C">"0.0.15"</font><font color="#11BB11">]</font><font color="#BBBB22">]</font>
          <font color="#4c83ff">:dependencies</font> <font color="#BBBB22">[</font><font color="#11BB11">[</font><font color="#D8FA3C">org.clojure</font><font color="#EDEDED">/</font>tools.nrepl <font color="#61CE3C">"0.2.12"</font><font color="#11BB11">]</font><font color="#BBBB22">]</font><font color="#BB7700">}</font><font color="#BB2222">}</font>
 </pre>
-                  <!-- END profiles.clj -->
+                      <!-- END profiles.clj -->
+
+                      <h3 id="boot">Boot</h3>
+
+                      <p>Add the following to your profile.boot:</p>
+
+                      <!-- profile.boot -->
+                      <pre>
+(set-env! :dependencies '[[org.clojure/tools.nrepl "0.2.12"]])
+
+(swap! boot.repl/*default-dependencies*
+       concat '[[cider/cider-nrepl "0.14.0"]
+                [com.billpiel/sayid "0.0.15"]])
+
+(swap! boot.repl/*default-middleware*
+       concat '[cider.nrepl/cider-middleware
+                com.billpiel.sayid.nrepl-middleware/wrap-sayid])
+</pre>
+                      <!-- END profile.boot -->
+
+                      <h3 id="emacs">Emacs</h3>
+
                       <p>The emacs+cider setup also requires that the
                         emacs package is installed. It's available
                         on <a href="http://melpa.milkbox.net/#/">MELPA</a>
@@ -321,21 +347,33 @@ h3 {
    '<font color="#BB7700">(</font>sayid-setup-package<font color="#BB7700">)</font><font color="#BB2222">)</font></pre>
                         <!-- END init.el -->
 
+                      <h3 id="vim">Vim</h3>
+
+                      <p>
+                        For integration with Vim, install
+                        <a href="https://github.com/tpope/vim-fireplace">
+                          vim-fireplace
+                        </a>
+                        and
+                        <a href="https://github.com/arsenerei/vim-sayid">
+                          vim-sayid
+                        </a>.
+                      </p>
 
                       <h2 id="conj2016">Conj 2016 Presentation</h2>
 
                       <p>I presented Sayid at the Clojure Conj conference in Austin in 2016.</p>
-                      
+
                       <iframe width="560" height="315" src="https://www.youtube.com/embed/ipDhvd1NsmE" frameborder="0" allowfullscreen></iframe>
 
-                      
+
                       <h2 id="demo1vid">Demo #1 - Video</h2>
 
                       <p>A demo video I recorded after the very first
                       alpha release. You can find
                       the <a href="http://github.com/bpiel/contrived-example">contrived
                       example</a> project here.</p>
-                      
+
                       <iframe width="560" height="315" src="https://www.youtube.com/embed/wkduA4py-qk" frameborder="0" allowfullscreen></iframe>
 
                       <h2 id="demo1wt">Demo #1 - Walkthrough</h2>
@@ -360,8 +398,8 @@ h3 {
 <span class="rainbow-delimiters-depth-1"> (</span><span class="keyword">ns</span> <span class="type">contrived-example.core-test</span>
    <span class="rainbow-delimiters-depth-2">(</span><span class="clojure-keyword">:require</span> <span class="rainbow-delimiters-depth-3">[</span><span class="type">clojure.test</span> <span class="clojure-keyword">:refer</span> <span class="clojure-keyword">:all</span><span class="rainbow-delimiters-depth-3">]</span>
              <span class="rainbow-delimiters-depth-3">[</span><span class="type">contrived-example.core</span> <span class="clojure-keyword">:as</span> ce<span class="rainbow-delimiters-depth-3">]</span><span class="rainbow-delimiters-depth-2">)</span><span class="rainbow-delimiters-depth-1">)</span>
- 
- 
+
+
 <span class="rainbow-delimiters-depth-1"> (</span><span class="keyword">def</span> <span class="variable-name">test-vending-machine</span> <span class="rainbow-delimiters-depth-2">{</span><span class="clojure-keyword">:inventory</span> <span class="rainbow-delimiters-depth-3">{</span><span class="clojure-keyword">:a1</span> <span class="rainbow-delimiters-depth-4">{</span><span class="clojure-keyword">:name</span> <span class="clojure-keyword">:taco</span>
                                              <span class="clojure-keyword">:price</span> 0.85
                                              <span class="clojure-keyword">:qty</span> 10<span class="rainbow-delimiters-depth-4">}</span><span class="rainbow-delimiters-depth-3">}</span>
@@ -369,7 +407,7 @@ h3 {
                             <span class="clojure-keyword">:coins-returned</span> <span class="rainbow-delimiters-depth-3">[]</span>
                             <span class="clojure-keyword">:dispensed</span> <span class="constant">nil</span>
                             <span class="clojure-keyword">:err-msg</span> <span class="constant">nil</span><span class="rainbow-delimiters-depth-2">}</span><span class="rainbow-delimiters-depth-1">)</span>
- 
+
 <span class="rainbow-delimiters-depth-1"> (</span><span class="keyword">defn</span> <span class="function-name">test1</span> <span class="rainbow-delimiters-depth-2">[]</span>
    <span class="rainbow-delimiters-depth-2">(</span><span class="keyword">-&gt;</span> test-vending-machine
        <span class="rainbow-delimiters-depth-3">(</span><span class="type">ce</span><span class="default">/</span>insert-coin <span class="clojure-keyword">:quarter</span><span class="rainbow-delimiters-depth-3">)</span> <span class="comment-delimiter">;; </span><span class="comment">25
@@ -377,10 +415,10 @@ h3 {
 </span>       <span class="rainbow-delimiters-depth-3">(</span><span class="type">ce</span><span class="default">/</span>insert-coin <span class="clojure-keyword">:nickel</span><span class="rainbow-delimiters-depth-3">)</span>  <span class="comment-delimiter">;; </span><span class="comment">40
 </span>       <span class="rainbow-delimiters-depth-3">(</span><span class="type">ce</span><span class="default">/</span>insert-coin <span class="clojure-keyword">:penny</span><span class="rainbow-delimiters-depth-3">)</span>   <span class="comment-delimiter">;; </span><span class="comment">41 cents
 </span>       <span class="rainbow-delimiters-depth-3">(</span><span class="type">ce</span><span class="default">/</span>press-button <span class="clojure-keyword">:a1</span><span class="rainbow-delimiters-depth-3">)</span><span class="rainbow-delimiters-depth-2">)</span><span class="rainbow-delimiters-depth-1">)</span>   <span class="comment-delimiter">;; </span><span class="comment">taco costs 85 cents
-</span> 
+</span>
 <span class="rainbow-delimiters-depth-1"> (</span>test1<span class="rainbow-delimiters-depth-1">)</span>
 </pre>
-                      
+
                       <!-- END core_test -->
 
                       <p>Let's press some keys to get Sayid going.</p>
@@ -390,7 +428,7 @@ h3 {
 
                       <p>This should pop up. It shows how many functions have been traced in which namespaces. Execute <code>test1</code>!</p>
                       <!-- sayid traced -->
-                      
+
 <pre>Traced namespaces:
   5 / 5  contrived-example.core
   1 / 1  contrived-example.core-test
@@ -411,67 +449,67 @@ Traced functions:
                       <!-- sayid ws 1 -->
                       <pre><span class="RED3">v</span> <span class="NOPE"><span class="RED3">contrived-example.core-test/test1</span></span>  <span class="WHITE">:13446</span>
 <span class="RED3">|</span><span class="YELLOW3">v</span> <span class="NOPE"><span class="YELLOW3">contrived-example.core/insert-coin</span></span>  <span class="WHITE">:13447</span>
-<span class="RED3">|</span><span class="YELLOW3">^</span> 
+<span class="RED3">|</span><span class="YELLOW3">^</span>
 <span class="RED3">|</span><span class="YELLOW3">v</span> <span class="NOPE"><span class="YELLOW3">contrived-example.core/insert-coin</span></span>  <span class="WHITE">:13448</span>
-<span class="RED3">|</span><span class="YELLOW3">^</span> 
+<span class="RED3">|</span><span class="YELLOW3">^</span>
 <span class="RED3">|</span><span class="YELLOW3">v</span> <span class="NOPE"><span class="YELLOW3">contrived-example.core/insert-coin</span></span>  <span class="WHITE">:13449</span>
-<span class="RED3">|</span><span class="YELLOW3">^</span> 
+<span class="RED3">|</span><span class="YELLOW3">^</span>
 <span class="RED3">|</span><span class="YELLOW3">v</span> <span class="NOPE"><span class="YELLOW3">contrived-example.core/insert-coin</span></span>  <span class="WHITE">:13450</span>
-<span class="RED3">|</span><span class="YELLOW3">^</span> 
+<span class="RED3">|</span><span class="YELLOW3">^</span>
 <span class="RED3">|</span><span class="YELLOW3">v</span> <span class="NOPE"><span class="YELLOW3">contrived-example.core/press-button</span></span>  <span class="WHITE">:13451</span>
 <span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">v</span> <span class="NOPE"><span class="GREEN3">contrived-example.inner-workings/valid-selection</span></span>  <span class="WHITE">:13452</span>
 <span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">v</span> <span class="NOPE"><span class="CYAN3">contrived-example.inner-workings/get-selection</span></span>  <span class="WHITE">:13453</span>
-<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">^</span> 
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">^</span>
 <span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">v</span> <span class="NOPE"><span class="CYAN3">contrived-example.inner-workings/calc-coin-value</span></span>  <span class="WHITE">:13454</span>
-<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">^</span> 
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">^</span>
 <span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span> <span class="NOPE"><span class="GREEN3">contrived-example.inner-workings/valid-selection</span></span>  <span class="WHITE">:13452</span>
-<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">^</span> 
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">^</span>
 <span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">v</span> <span class="NOPE"><span class="GREEN3">contrived-example.inner-workings/process-transaction</span></span>  <span class="WHITE">:13455</span>
 <span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">v</span> <span class="NOPE"><span class="CYAN3">contrived-example.inner-workings/get-selection</span></span>  <span class="WHITE">:13456</span>
-<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">^</span> 
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">^</span>
 <span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">v</span> <span class="NOPE"><span class="CYAN3">contrived-example.inner-workings/calc-change-to-return</span></span>  <span class="WHITE">:13457</span>
 <span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">v</span> <span class="NOPE"><span class="PURPLE">contrived-example.inner-workings/calc-coin-value</span></span>  <span class="WHITE">:13458</span>
-<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">^</span> 
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">^</span>
 <span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">v</span> <span class="NOPE"><span class="PURPLE">contrived-example.inner-workings/round-to-pennies</span></span>  <span class="WHITE">:13459</span>
-<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">^</span> 
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">^</span>
 <span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">v</span> <span class="NOPE"><span class="PURPLE">contrived-example.inner-workings/calc-change-to-return*</span></span>  <span class="WHITE">:13460</span>
 <span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">v</span> <span class="NOPE"><span class="RED3">contrived-example.inner-workings/calc-coin-value</span></span>  <span class="WHITE">:13461</span>
-<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">^</span> 
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">^</span>
 <span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">v</span> <span class="NOPE"><span class="RED3">contrived-example.inner-workings/calc-change-to-return*</span></span>  <span class="WHITE">:13462</span>
 <span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">v</span> <span class="NOPE"><span class="YELLOW3">contrived-example.inner-workings/calc-coin-value</span></span>  <span class="WHITE">:13463</span>
-<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">^</span> 
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">^</span>
 <span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">v</span> <span class="NOPE"><span class="YELLOW3">contrived-example.inner-workings/calc-change-to-return*</span></span>  <span class="WHITE">:13464</span>
 <span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">v</span> <span class="NOPE"><span class="GREEN3">contrived-example.inner-workings/calc-coin-value</span></span>  <span class="WHITE">:13465</span>
-<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">^</span> 
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">^</span>
 <span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">v</span> <span class="NOPE"><span class="GREEN3">contrived-example.inner-workings/calc-change-to-return*</span></span>  <span class="WHITE">:13466</span>
 <span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">v</span> <span class="NOPE"><span class="CYAN3">contrived-example.inner-workings/calc-coin-value</span></span>  <span class="WHITE">:13467</span>
-<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">^</span> 
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">^</span>
 <span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span> <span class="NOPE"><span class="GREEN3">contrived-example.inner-workings/calc-change-to-return*</span></span>  <span class="WHITE">:13466</span>
-<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">^</span> 
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">^</span>
 <span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">v</span> <span class="NOPE"><span class="GREEN3">contrived-example.inner-workings/calc-change-to-return*</span></span>  <span class="WHITE">:13468</span>
 <span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">v</span> <span class="NOPE"><span class="CYAN3">contrived-example.inner-workings/calc-coin-value</span></span>  <span class="WHITE">:13469</span>
-<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">^</span> 
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">^</span>
 <span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span> <span class="NOPE"><span class="GREEN3">contrived-example.inner-workings/calc-change-to-return*</span></span>  <span class="WHITE">:13468</span>
-<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">^</span> 
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">^</span>
 <span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">v</span> <span class="NOPE"><span class="GREEN3">contrived-example.inner-workings/calc-change-to-return*</span></span>  <span class="WHITE">:13470</span>
 <span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">v</span> <span class="NOPE"><span class="CYAN3">contrived-example.inner-workings/calc-coin-value</span></span>  <span class="WHITE">:13471</span>
-<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">^</span> 
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">^</span>
 <span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span> <span class="NOPE"><span class="GREEN3">contrived-example.inner-workings/calc-change-to-return*</span></span>  <span class="WHITE">:13470</span>
-<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">^</span> 
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">^</span>
 <span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">|</span> <span class="NOPE"><span class="YELLOW3">contrived-example.inner-workings/calc-change-to-return*</span></span>  <span class="WHITE">:13464</span>
-<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">^</span> 
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">^</span>
 <span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span> <span class="NOPE"><span class="RED3">contrived-example.inner-workings/calc-change-to-return*</span></span>  <span class="WHITE">:13462</span>
-<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">^</span> 
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">^</span>
 <span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span> <span class="NOPE"><span class="PURPLE">contrived-example.inner-workings/calc-change-to-return*</span></span>  <span class="WHITE">:13460</span>
-<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">^</span> 
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">^</span>
 <span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span> <span class="NOPE"><span class="CYAN3">contrived-example.inner-workings/calc-change-to-return</span></span>  <span class="WHITE">:13457</span>
-<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">^</span> 
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">^</span>
 <span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">|</span> <span class="NOPE"><span class="GREEN3">contrived-example.inner-workings/process-transaction</span></span>  <span class="WHITE">:13455</span>
-<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">^</span> 
+<span class="RED3">|</span><span class="YELLOW3">|</span><span class="GREEN3">^</span>
 <span class="RED3">|</span><span class="YELLOW3">|</span> <span class="NOPE"><span class="YELLOW3">contrived-example.core/press-button</span></span>  <span class="WHITE">:13451</span>
-<span class="RED3">|</span><span class="YELLOW3">^</span> 
+<span class="RED3">|</span><span class="YELLOW3">^</span>
 <span class="RED3">|</span> <span class="NOPE"><span class="RED3">contrived-example.core-test/test1</span></span>  <span class="WHITE">:13446</span>
-<span class="RED3">^</span> 
+<span class="RED3">^</span>
 </pre>
                       <!-- END sayid ws 1 -->
 
@@ -487,12 +525,12 @@ Traced functions:
                       <!-- sayid instance test1 -->
     <pre>
 <span class="RED3"> v</span> <span class="WHITE"><span class="RED3">contrived-example.core-test/test1</span></span>  <span class="WHITE">:13446</span>
-<span class="RED3"> |</span> returned =&gt;  {<span class="keyword">:inventory</span> {<span class="keyword">:a1</span> {<span class="keyword">:name</span> <span class="keyword">:taco</span> <span class="keyword">:price</span> <span class="PURPLE">0.85</span> <span class="keyword">:qty</span> <span class="PURPLE">9</span>}} 
-<span class="RED3"> |</span>               <span class="keyword">:coins-inserted</span> []                                
-<span class="RED3"> |</span>               <span class="keyword">:coins-returned</span> [<span class="keyword">:quarter</span> <span class="keyword">:quarter</span> <span class="keyword">:nickel</span>]       
-<span class="RED3"> |</span>               <span class="keyword">:dispensed</span> {<span class="keyword">:name</span> <span class="keyword">:taco</span> <span class="keyword">:price</span> <span class="PURPLE">0.85</span> <span class="keyword">:qty</span> <span class="PURPLE">10</span>}      
-<span class="RED3"> |</span>               <span class="keyword">:err-msg</span> nil}                                     
-<span class="RED3"> ^</span> 
+<span class="RED3"> |</span> returned =&gt;  {<span class="keyword">:inventory</span> {<span class="keyword">:a1</span> {<span class="keyword">:name</span> <span class="keyword">:taco</span> <span class="keyword">:price</span> <span class="PURPLE">0.85</span> <span class="keyword">:qty</span> <span class="PURPLE">9</span>}}
+<span class="RED3"> |</span>               <span class="keyword">:coins-inserted</span> []
+<span class="RED3"> |</span>               <span class="keyword">:coins-returned</span> [<span class="keyword">:quarter</span> <span class="keyword">:quarter</span> <span class="keyword">:nickel</span>]
+<span class="RED3"> |</span>               <span class="keyword">:dispensed</span> {<span class="keyword">:name</span> <span class="keyword">:taco</span> <span class="keyword">:price</span> <span class="PURPLE">0.85</span> <span class="keyword">:qty</span> <span class="PURPLE">10</span>}
+<span class="RED3"> |</span>               <span class="keyword">:err-msg</span> nil}
+<span class="RED3"> ^</span>
  </pre>
                       <!-- END sayid instance test1 -->
 
@@ -518,38 +556,38 @@ Traced functions:
                       <!-- sayid instance 2 and descendants -->
     <pre>
 <span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">v</span> <span class="CYAN3"><span class="GREEN3">contrived-example.inner-workings/valid-selection</span></span>  <span class="WHITE">:13452</span>
-<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span> machine =&gt; {<span class="YELLOW3">:inventory</span> {<span class="YELLOW3">:a1</span> {<span class="YELLOW3">:name</span> <span class="YELLOW3">:taco</span> <span class="YELLOW3">:price</span> <span class="CYAN3">0.85</span> <span class="YELLOW3">:qty</span> <span class="CYAN3">10</span>}} 
-<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span>             <span class="YELLOW3">:coins-inserted</span> [<span class="YELLOW3">:quarter</span> <span class="YELLOW3">:dime</span> <span class="YELLOW3">:nickel</span> <span class="YELLOW3">:penny</span>]    
-<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span>             <span class="YELLOW3">:coins-returned</span> []                                 
-<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span>             <span class="YELLOW3">:dispensed</span> nil                                     
-<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span>             <span class="YELLOW3">:err-msg</span> nil}                                      
-<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span> button =&gt; <span class="YELLOW3">:a1</span> 
-<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span> returns =&gt;  true 
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span> machine =&gt; {<span class="YELLOW3">:inventory</span> {<span class="YELLOW3">:a1</span> {<span class="YELLOW3">:name</span> <span class="YELLOW3">:taco</span> <span class="YELLOW3">:price</span> <span class="CYAN3">0.85</span> <span class="YELLOW3">:qty</span> <span class="CYAN3">10</span>}}
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span>             <span class="YELLOW3">:coins-inserted</span> [<span class="YELLOW3">:quarter</span> <span class="YELLOW3">:dime</span> <span class="YELLOW3">:nickel</span> <span class="YELLOW3">:penny</span>]
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span>             <span class="YELLOW3">:coins-returned</span> []
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span>             <span class="YELLOW3">:dispensed</span> nil
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span>             <span class="YELLOW3">:err-msg</span> nil}
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span> button =&gt; <span class="YELLOW3">:a1</span>
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span> returns =&gt;  true
 <span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">v</span> <span class="CYAN3"><span class="CYAN3">contrived-example.inner-workings/get-selection</span></span>  <span class="WHITE">:13453</span>
-<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span> machine =&gt; {<span class="YELLOW3">:inventory</span> {<span class="YELLOW3">:a1</span> {<span class="YELLOW3">:name</span> <span class="YELLOW3">:taco</span> <span class="YELLOW3">:price</span> <span class="CYAN3">0.85</span> <span class="YELLOW3">:qty</span> <span class="CYAN3">10</span>}} 
-<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span>             <span class="YELLOW3">:coins-inserted</span> [<span class="YELLOW3">:quarter</span> <span class="YELLOW3">:dime</span> <span class="YELLOW3">:nickel</span> <span class="YELLOW3">:penny</span>]    
-<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span>             <span class="YELLOW3">:coins-returned</span> []                                 
-<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span>             <span class="YELLOW3">:dispensed</span> nil                                     
-<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span>             <span class="YELLOW3">:err-msg</span> nil}                                      
-<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span> button =&gt; <span class="YELLOW3">:a1</span> 
-<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span> returned =&gt;  {<span class="YELLOW3">:name</span> <span class="YELLOW3">:taco</span> <span class="YELLOW3">:price</span> <span class="CYAN3">0.85</span> <span class="YELLOW3">:qty</span> <span class="CYAN3">10</span>} 
-<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">^</span> 
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span> machine =&gt; {<span class="YELLOW3">:inventory</span> {<span class="YELLOW3">:a1</span> {<span class="YELLOW3">:name</span> <span class="YELLOW3">:taco</span> <span class="YELLOW3">:price</span> <span class="CYAN3">0.85</span> <span class="YELLOW3">:qty</span> <span class="CYAN3">10</span>}}
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span>             <span class="YELLOW3">:coins-inserted</span> [<span class="YELLOW3">:quarter</span> <span class="YELLOW3">:dime</span> <span class="YELLOW3">:nickel</span> <span class="YELLOW3">:penny</span>]
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span>             <span class="YELLOW3">:coins-returned</span> []
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span>             <span class="YELLOW3">:dispensed</span> nil
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span>             <span class="YELLOW3">:err-msg</span> nil}
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span> button =&gt; <span class="YELLOW3">:a1</span>
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span> returned =&gt;  {<span class="YELLOW3">:name</span> <span class="YELLOW3">:taco</span> <span class="YELLOW3">:price</span> <span class="CYAN3">0.85</span> <span class="YELLOW3">:qty</span> <span class="CYAN3">10</span>}
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">^</span>
 <span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">v</span> <span class="CYAN3"><span class="CYAN3">contrived-example.inner-workings/calc-coin-value</span></span>  <span class="WHITE">:13454</span>
-<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span> coins =&gt; [<span class="YELLOW3">:quarter</span> <span class="YELLOW3">:dime</span> <span class="YELLOW3">:nickel</span> <span class="YELLOW3">:penny</span>] 
-<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span> returned =&gt;  <span class="CYAN3">1.4</span> 
-<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">^</span> 
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span> coins =&gt; [<span class="YELLOW3">:quarter</span> <span class="YELLOW3">:dime</span> <span class="YELLOW3">:nickel</span> <span class="YELLOW3">:penny</span>]
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span> returned =&gt;  <span class="CYAN3">1.4</span>
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">^</span>
 <span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span> <span class="CYAN3"><span class="GREEN3">contrived-example.inner-workings/valid-selection</span></span>  <span class="WHITE">:13452</span>
-<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span> machine =&gt; {<span class="YELLOW3">:inventory</span> {<span class="YELLOW3">:a1</span> {<span class="YELLOW3">:name</span> <span class="YELLOW3">:taco</span> <span class="YELLOW3">:price</span> <span class="CYAN3">0.85</span> <span class="YELLOW3">:qty</span> <span class="CYAN3">10</span>}} 
-<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span>             <span class="YELLOW3">:coins-inserted</span> [<span class="YELLOW3">:quarter</span> <span class="YELLOW3">:dime</span> <span class="YELLOW3">:nickel</span> <span class="YELLOW3">:penny</span>]    
-<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span>             <span class="YELLOW3">:coins-returned</span> []                                 
-<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span>             <span class="YELLOW3">:dispensed</span> nil                                     
-<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span>             <span class="YELLOW3">:err-msg</span> nil}                                      
-<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span> button =&gt; <span class="YELLOW3">:a1</span> 
-<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span> returned =&gt;  true 
-<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">^</span> 
- 
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span> machine =&gt; {<span class="YELLOW3">:inventory</span> {<span class="YELLOW3">:a1</span> {<span class="YELLOW3">:name</span> <span class="YELLOW3">:taco</span> <span class="YELLOW3">:price</span> <span class="CYAN3">0.85</span> <span class="YELLOW3">:qty</span> <span class="CYAN3">10</span>}}
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span>             <span class="YELLOW3">:coins-inserted</span> [<span class="YELLOW3">:quarter</span> <span class="YELLOW3">:dime</span> <span class="YELLOW3">:nickel</span> <span class="YELLOW3">:penny</span>]
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span>             <span class="YELLOW3">:coins-returned</span> []
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span>             <span class="YELLOW3">:dispensed</span> nil
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span>             <span class="YELLOW3">:err-msg</span> nil}
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span> button =&gt; <span class="YELLOW3">:a1</span>
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span> returned =&gt;  true
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">^</span>
+
 </pre>
-                      
+
                       <!-- END sayid instance 2 and descendants -->
 
                       <p>We can see that <code>valid-selection</code>
@@ -570,23 +608,23 @@ Traced functions:
                       <!-- inner trace -->
                           <pre>
 <span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">v</span> <span class="PURPLE-BG"><span class="BLACK">(-&gt;&gt; coins (keep coin-values) (apply +))</span></span><span class="ATTRLIST-5"><span class="PURPLE"> =&gt; (apply + (keep coin-values coins))  contrived-example.inner-workings/calc-coin-value</span></span>  <span class="WHITE">:13491</span>
-<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span> returns =&gt;  <span class="CYAN3">1.4</span> 
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span> returns =&gt;  <span class="CYAN3">1.4</span>
 <span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">v</span> <span class="RED3-BG"><span class="BLACK">(apply + (keep coin-values coins))</span></span><span class="ATTRLIST-5"><span class="RED3">  contrived-example.inner-workings/calc-coin-value</span></span>  <span class="WHITE">:13492</span>
-<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span> #function[clojure.core/+] 
-<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span> (<span class="CYAN3">0.25</span> <span class="CYAN3">0.1</span> <span class="CYAN3">0.05</span> <span class="CYAN3">1</span>) 
-<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span> returns =&gt;  <span class="CYAN3">1.4</span> 
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span> #function[clojure.core/+]
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span> (<span class="CYAN3">0.25</span> <span class="CYAN3">0.1</span> <span class="CYAN3">0.05</span> <span class="CYAN3">1</span>)
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span> returns =&gt;  <span class="CYAN3">1.4</span>
 <span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">v</span> <span class="YELLOW3-BG"><span class="BLACK">(keep coin-values coins)</span></span><span class="ATTRLIST-5"><span class="YELLOW3">  contrived-example.inner-workings/calc-coin-value</span></span>  <span class="WHITE">:13493</span>
-<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">|</span> {<span class="YELLOW3">:quarter</span> <span class="CYAN3">0.25</span> <span class="YELLOW3">:dime</span> <span class="CYAN3">0.1</span> <span class="YELLOW3">:nickel</span> <span class="CYAN3">0.05</span> <span class="YELLOW3">:penny</span> <span class="CYAN3">1</span>} 
-<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">|</span> [<span class="YELLOW3">:quarter</span> <span class="YELLOW3">:dime</span> <span class="YELLOW3">:nickel</span> <span class="YELLOW3">:penny</span>] 
-<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">|</span> returned =&gt;  (<span class="CYAN3">0.25</span> <span class="CYAN3">0.1</span> <span class="CYAN3">0.05</span> <span class="CYAN3">1</span>) 
-<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">^</span> 
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">|</span> {<span class="YELLOW3">:quarter</span> <span class="CYAN3">0.25</span> <span class="YELLOW3">:dime</span> <span class="CYAN3">0.1</span> <span class="YELLOW3">:nickel</span> <span class="CYAN3">0.05</span> <span class="YELLOW3">:penny</span> <span class="CYAN3">1</span>}
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">|</span> [<span class="YELLOW3">:quarter</span> <span class="YELLOW3">:dime</span> <span class="YELLOW3">:nickel</span> <span class="YELLOW3">:penny</span>]
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">|</span> returned =&gt;  (<span class="CYAN3">0.25</span> <span class="CYAN3">0.1</span> <span class="CYAN3">0.05</span> <span class="CYAN3">1</span>)
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span><span class="YELLOW3">^</span>
 <span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span> <span class="RED3-BG"><span class="BLACK">(apply + (keep coin-values coins))</span></span><span class="ATTRLIST-5"><span class="RED3">  contrived-example.inner-workings/calc-coin-value</span></span>  <span class="WHITE">:13492</span>
-<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span> #function[clojure.core/+] 
-<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span> (<span class="CYAN3">0.25</span> <span class="CYAN3">0.1</span> <span class="CYAN3">0.05</span> <span class="CYAN3">1</span>) 
-<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span> returned =&gt;  <span class="CYAN3">1.4</span> 
-<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">^</span> 
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span> #function[clojure.core/+]
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span> (<span class="CYAN3">0.25</span> <span class="CYAN3">0.1</span> <span class="CYAN3">0.05</span> <span class="CYAN3">1</span>)
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">|</span> returned =&gt;  <span class="CYAN3">1.4</span>
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span><span class="RED3">^</span>
 <span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span> <span class="PURPLE-BG"><span class="BLACK">(-&gt;&gt; coins (keep coin-values) (apply +))</span></span><span class="ATTRLIST-5"><span class="PURPLE"> =&gt; (apply + (keep coin-values coins))  contrived-example.inner-workings/calc-coin-value</span></span>  <span class="WHITE">:13491</span>
-<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span> returned =&gt;  <span class="CYAN3">1.4</span> 
+<span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">|</span> returned =&gt;  <span class="CYAN3">1.4</span>
 <span class="RED3"> |</span><span class="YELLOW3">|</span><span class="GREEN3">|</span><span class="CYAN3">|</span><span class="PURPLE">^</span>
 ...truncated...
 </pre>
@@ -604,13 +642,13 @@ Traced functions:
                       <!-- inner workings -->
                          <pre>
 <span class="rainbow-delimiters-depth-1"> (</span><span class="keyword">ns</span> <span class="type">contrived-example.inner-workings</span><span class="rainbow-delimiters-depth-1">)</span>
- 
+
 <span class="rainbow-delimiters-depth-1"> (</span><span class="keyword">def</span> <span class="variable-name">coin-values</span>
    <span class="rainbow-delimiters-depth-2">{</span><span class="clojure-keyword">:quarter</span> 0.25
     <span class="clojure-keyword">:dime</span> 0.10
     <span class="clojure-keyword">:nickel</span> 0.05
     <span class="clojure-keyword">:penny</span> 1<span class="rainbow-delimiters-depth-2">}</span><span class="rainbow-delimiters-depth-1">)</span>
- 
+
 <span class="rainbow-delimiters-depth-1"> (</span><span class="keyword">defn-</span> <span class="function-name">calc-coin-value</span>
    <span class="rainbow-delimiters-depth-2">[</span>coins<span class="rainbow-delimiters-depth-2">]</span>
    <span class="rainbow-delimiters-depth-2">(</span><span class="keyword">-&gt;&gt;</span> coins
@@ -626,13 +664,13 @@ Traced functions:
                         <!-- fixed -->
                         <pre>
 <span class="RED3"> v</span> <span class="ATTRLIST-4"><span class="RED3">contrived-example.core-test/test1</span></span>  <span class="ATTRLIST-2">:13579</span>
-<span class="RED3"> |</span> returned =&gt;  {<span class="YELLOW3">:inventory</span> {<span class="YELLOW3">:a1</span> {<span class="YELLOW3">:name</span> <span class="YELLOW3">:taco</span> <span class="YELLOW3">:price</span> <span class="CYAN3">0.85</span> <span class="YELLOW3">:qty</span> <span class="CYAN3">10</span>}} 
-<span class="RED3"> |</span>               <span class="YELLOW3">:coins-inserted</span> [<span class="YELLOW3">:quarter</span> <span class="YELLOW3">:dime</span> <span class="YELLOW3">:nickel</span> <span class="YELLOW3">:penny</span>]    
-<span class="RED3"> |</span>               <span class="YELLOW3">:coins-returned</span> []                                 
-<span class="RED3"> |</span>               <span class="YELLOW3">:dispensed</span> nil                                     
-<span class="RED3"> |</span>               <span class="YELLOW3">:err-msg</span> true}                                     
-<span class="RED3"> ^</span> 
- 
+<span class="RED3"> |</span> returned =&gt;  {<span class="YELLOW3">:inventory</span> {<span class="YELLOW3">:a1</span> {<span class="YELLOW3">:name</span> <span class="YELLOW3">:taco</span> <span class="YELLOW3">:price</span> <span class="CYAN3">0.85</span> <span class="YELLOW3">:qty</span> <span class="CYAN3">10</span>}}
+<span class="RED3"> |</span>               <span class="YELLOW3">:coins-inserted</span> [<span class="YELLOW3">:quarter</span> <span class="YELLOW3">:dime</span> <span class="YELLOW3">:nickel</span> <span class="YELLOW3">:penny</span>]
+<span class="RED3"> |</span>               <span class="YELLOW3">:coins-returned</span> []
+<span class="RED3"> |</span>               <span class="YELLOW3">:dispensed</span> nil
+<span class="RED3"> |</span>               <span class="YELLOW3">:err-msg</span> true}
+<span class="RED3"> ^</span>
+
 </pre>
 
                         <!-- END fixed -->
@@ -697,10 +735,10 @@ V -- set view (see register-view)
 l, backspace -- previous buffer state
 L, S-backspace -- forward buffer state
 g -- generate instance expression and put in kill ring
-h -- help                        
+h -- help
                       </pre>
-                        
-                      
+
+
                       <p>In the *sayid-traced* buffer, press <span class="kbd">h</span> to pop up the help buffer.</p>
                       <pre>
 enter -- Drill into ns at point
