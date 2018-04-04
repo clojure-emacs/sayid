@@ -1,4 +1,4 @@
-(defproject com.billpiel/sayid "0.0.15"
+(defproject com.billpiel/sayid "0.0.16"
   :description "Sayid is a library for debugging and profiling clojure code."
   :signing {:gpg-key "<bill@billpiel.com>"}
   :url "http://bpiel.github.io/sayid/"
@@ -7,7 +7,7 @@
   :aot [com.billpiel.sayid.sayid-multifn]
   :dependencies [[org.clojure/clojure "1.7.0"]
                  [tamarin "0.1.2"]
-                 [org.clojure/tools.reader "1.0.0-alpha4"]
+                 [org.clojure/tools.reader "1.3.0-alpha3"]
                  [org.clojure/tools.namespace "0.2.11"]]
   :repl-options {:nrepl-middleware [com.billpiel.sayid.nrepl-middleware/wrap-sayid]}
   :profiles {:dev {:dependencies [[org.clojure/tools.nrepl "0.2.12"]]

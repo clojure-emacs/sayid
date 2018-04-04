@@ -1,5 +1,12 @@
 # Change Log
 
+## [0.0.16] - 2018-04-04
+### Added
+ - Auto inject depencencies at cider-jack-in time. Thanks, Benedek Fazekas!
+
+### Fixed
+ - upgrade to org.clojure/tools.reader "1.3.0-alpha3"
+
 ## [0.0.15] - 2017-05-02
 ### Fixed
  - emacs: disable undo to avoid buffer limit error
