@@ -1,8 +1,5 @@
 (ns com.billpiel.sayid.nrepl-middleware
   (:require [clojure.stacktrace :as st]
-            [clojure.tools.nrepl.middleware :refer [set-descriptor!]]
-            [clojure.tools.nrepl.misc :refer [response-for]]
-            [clojure.tools.nrepl.transport :as t]
             [com.billpiel.sayid.core :as sd]
             [com.billpiel.sayid.query2 :as q]
             [com.billpiel.sayid.string-output2 :as so]
@@ -15,6 +12,18 @@
             [com.billpiel.sayid.util.find-ns :as find-ns]
             [tamarin.core :as tam]))
 
+;; Compatibility with the legacy tools.nrepl and the new nREPL 0.4.x.
+;; The assumption is that if someone is using old lein repl or boot repl
+;; they'll end up using the tools.nrepl, otherwise the modern one.
+(if (find-ns 'clojure.tools.nrepl)
+  (require
+   '[clojure.tools.nrepl.middleware :refer [set-descriptor!]]
+   '[clojure.tools.nrepl.misc :refer [response-for]]
+   '[clojure.tools.nrepl.transport :as t])
+  (require
+   '[nrepl.middleware :refer [set-descriptor!]]
+   '[nrepl.misc :refer [response-for]]
+   '[nrepl.transport :as t]))
 
 (def views (atom {}))
 (def selected-view (atom nil))
@@ -381,7 +390,7 @@
   [n [first-list & rest-lists]]
   (let [cfl (count first-list)]
     (cond (nil? first-list) nil
-          
+
           (or (= n cfl)
               (and (-> first-list reverse rest first (= '&))
                    (>= n (dec cfl))))
