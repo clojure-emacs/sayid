@@ -4,7 +4,7 @@
 
 ;; Author: Bill Piel <bill@billpiel.com>
 ;; Version: 0.0.17
-;; URL: https://github.com/bpiel/sayid
+;; URL: https://github.com/clojure-emacs/sayid
 ;; Package-Requires: ((cider "0.14.0"))
 
 ;; Licensed under the Apache License, Version 2.0 (the "License");
