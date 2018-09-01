@@ -2,6 +2,7 @@
   :description "Sayid is a library for debugging and profiling clojure code."
   :signing {:gpg-key "<bill@billpiel.com>"}
   :url "http://bpiel.github.io/sayid/"
+  :scm {:name "git" :url "https://github.com/clojure-emacs/sayid"}
   :license {:name "Apache License, Version 2.0"
             :url "http://www.apache.org/licenses/LICENSE-2.0"}
   :aot [com.billpiel.sayid.sayid-multifn]
