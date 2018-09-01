@@ -3,7 +3,7 @@
 ;; Copyright (c) 2016-2017 Bill Piel
 
 ;; Author: Bill Piel <bill@billpiel.com>
-;; Version: 0.0.16
+;; Version: 0.0.17
 ;; URL: https://github.com/bpiel/sayid
 ;; Package-Requires: ((cider "0.14.0"))
 
@@ -39,7 +39,7 @@
   :type 'boolean)
 
 (defvar sayid-version-)
-(setq sayid-version- "0.0.16")
+(setq sayid-version- "0.0.17")
 
 (defvar sayid-trace-ns-dir nil)
 (defvar sayid-meta)
@@ -138,7 +138,7 @@ If injecting the dependencies is not preferred set `sayid-inject-dependencies-at
   "Initialize a buffer for sayid."
   (let ((buf-name- (car sayid-selected-buf)))
     (sayid-pop-to-buffer-reuse-visible-sayid buf-name-)
-    
+
     (sayid-update-buf-pos-to-ring)
     (read-only-mode 0)
     (erase-buffer)
@@ -803,13 +803,13 @@ Place expression in kill ring."
 (define-key sayid-clj-mode-keys (kbd "w") 'sayid-get-workspace)
 (define-key sayid-clj-mode-keys (kbd "t y") 'sayid-trace-all-ns-in-dir)
 (define-key sayid-clj-mode-keys (kbd "t p") 'sayid-trace-ns-by-pattern)
-(define-key sayid-clj-mode-keys (kbd "t b") 'sayid-trace-ns-in-file) 
+(define-key sayid-clj-mode-keys (kbd "t b") 'sayid-trace-ns-in-file)
 (define-key sayid-clj-mode-keys (kbd "t e") 'sayid-trace-fn-enable)
 (define-key sayid-clj-mode-keys (kbd "t E") 'sayid-trace-enable-all)
 (define-key sayid-clj-mode-keys (kbd "t d") 'sayid-trace-fn-disable)
 (define-key sayid-clj-mode-keys (kbd "t D") 'sayid-trace-disable-all)
-(define-key sayid-clj-mode-keys (kbd "t n") 'sayid-inner-trace-fn) 
-(define-key sayid-clj-mode-keys (kbd "t o") 'sayid-outer-trace-fn) 
+(define-key sayid-clj-mode-keys (kbd "t n") 'sayid-inner-trace-fn)
+(define-key sayid-clj-mode-keys (kbd "t o") 'sayid-outer-trace-fn)
 (define-key sayid-clj-mode-keys (kbd "t r") 'sayid-remove-trace-fn)
 (define-key sayid-clj-mode-keys (kbd "t K") 'sayid-kill-all-traces)
 (define-key sayid-clj-mode-keys (kbd "c") 'sayid-clear-log)
