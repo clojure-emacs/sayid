@@ -2,7 +2,7 @@
 
 Sayid *(siy EED)* is an omniscient debugger and profiler for Clojure. It extracts secrets from code at run-time.
 
-[site](http://bpiel.github.io/sayid)
+[site](http://clojure-emacs.github.io/sayid)
 
 ## License
 
