@@ -40,7 +40,7 @@
 
 (defconst sayid-version "0.0.17")
 
-(defvar sayid-trace-ns-dir nil)
+(defvar sayid-trace-ns-dir)
 (defvar sayid-meta)
 
 (defvar sayid-buf-spec '("*sayid*" . sayid-mode))
@@ -49,8 +49,6 @@
 (defvar sayid-selected-buf sayid-buf-spec)
 
 (defvar sayid-ring)
-(setq sayid-ring '())
-
 
 ;;;###autoload
 (defun sayid--inject-jack-in-dependencies ()
