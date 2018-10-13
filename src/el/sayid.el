@@ -38,8 +38,7 @@
   :group 'sayid
   :type 'boolean)
 
-(defvar sayid-version-)
-(setq sayid-version- "0.0.17")
+(defconst sayid-version "0.0.17")
 
 (defvar sayid-trace-ns-dir nil)
 (defvar sayid-meta)
@@ -60,7 +59,7 @@ If injecting the dependencies is not preferred set `sayid-inject-dependencies-at
   (when (and sayid-inject-dependencies-at-jack-in
              (boundp 'cider-jack-in-lein-plugins)
              (boundp 'cider-jack-in-nrepl-middlewares))
-    (add-to-list 'cider-jack-in-lein-plugins `("com.billpiel/sayid" ,sayid-version-))
+    (add-to-list 'cider-jack-in-lein-plugins `("com.billpiel/sayid" ,sayid-version))
     (add-to-list 'cider-jack-in-nrepl-middlewares "com.billpiel.sayid.nrepl-middleware/wrap-sayid")))
 
 ;;;###autoload
@@ -71,11 +70,10 @@ If injecting the dependencies is not preferred set `sayid-inject-dependencies-at
 (defun sayid-version ()
   "Show which version of Sayid and the sayid Emacs package are in use."
   (interactive)
-  (message (concat  "clj="
-                    (sayid-req-get-value
-                     (list "op" "sayid-version"))
-                    " el="
-                    (message sayid-version-))))
+  (message "clj=%s el=%s"
+           (sayid-req-get-value
+            (list "op" "sayid-version"))
+           sayid-version))
 
 (defun sayid-select-default-buf ()
   "Select sayid default buffer."
