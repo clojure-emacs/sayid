@@ -33,6 +33,14 @@
 
 (require 'cider)
 
+(defgroup sayid nil
+  "Sayid is an advanced Clojure debugging tool."
+  :prefix "sayid-"
+  :group 'applications
+  :link '(url-link :tag "GitHub" "https://github.com/clojure-emacs/sayid")
+  :link '(url-link :tag "Online Manual" "http://clojure-emacs.github.io/sayid")
+  :link '(emacs-commentary-link :tag "Commentary" "sayid"))
+
 (defcustom sayid-inject-dependencies-at-jack-in t
   "When nil, do not inject repl dependencies (most likely nREPL middlewares) at `cider-jack-in' time."
   :group 'sayid
