@@ -86,7 +86,7 @@ If injecting the dependencies is not preferred set `sayid-inject-dependencies-at
   (setq sayid-selected-buf sayid-traced-buf-spec))
 
 (defun sayid-select-pprint-buf ()
-    "Select sayid pretty-prrint buffer."
+  "Select sayid pretty-prrint buffer."
   (setq sayid-selected-buf sayid-pprint-buf-spec))
 
 (defun sayid-buf-point ()
@@ -195,8 +195,8 @@ state.  POS is the position to move cursor to."
 (defun sayid-req-get-value (req)
   "Send REQ to nrepl and return response."
   (sayid-read-if-string (nrepl-dict-get (nrepl-send-sync-request req
-                                                           (cider-current-connection))
-                                  "value")))
+                                                                 (cider-current-connection))
+                                        "value")))
 
 (defun sayid-req-insert-content (req)
   "Send REQ to nrepl and populate buffer with response."
@@ -208,8 +208,8 @@ state.  POS is the position to move cursor to."
   "Query sayid for calls made to function defined at point."
   (interactive)
   (sayid-req-insert-content (list "op" "sayid-query-form-at-point"
-                                    "file" (buffer-file-name)
-                                    "line" (line-number-at-pos))))
+                                  "file" (buffer-file-name)
+                                  "line" (line-number-at-pos))))
 
 ;;;###autoload
 (defun sayid-get-meta-at-point ()
@@ -278,7 +278,7 @@ state.  POS is the position to move cursor to."
                                 "column" (+ (current-column) 1)
                                 "source" (buffer-string))
                           "Nothing found. Make sure cursor is on symbol.")
-    (sayid-show-traced))
+  (sayid-show-traced))
 
 ;;;###autoload
 (defun sayid-load-enable-clear ()
@@ -340,9 +340,9 @@ Disable traces, load buffer, enable traces, clear log."
           (let ((l (car p3)))
             (dolist (p4 (cadr p3))
               (sayid-put-text-prop prop
-                             p4
-                             (+ p4 l)
-                             buf))))))))
+                                   p4
+                                   (+ p4 l)
+                                   buf))))))))
 
 (defun sayid-write-resp-val-to-buf (val buf)
   "Write response value VAL to buffer BUF."
