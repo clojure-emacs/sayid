@@ -26,8 +26,8 @@
 
 ;; To enable, use something like this:
 
-;; (eval-after-load 'clojure-mode
-;;   '(sayid-setup-package))
+;; (with-eval-after-load 'clojure-mode
+;;   (sayid-setup-package))
 
 ;;; Code:
 
@@ -69,8 +69,8 @@ If injecting the dependencies is not preferred set `sayid-inject-dependencies-at
     (add-to-list 'cider-jack-in-nrepl-middlewares "com.billpiel.sayid.nrepl-middleware/wrap-sayid")))
 
 ;;;###autoload
-(eval-after-load 'cider
-  '(sayid--inject-jack-in-dependencies))
+(with-eval-after-load 'cider
+  (sayid--inject-jack-in-dependencies))
 
 ;;;###autoload
 (defun sayid-version ()
