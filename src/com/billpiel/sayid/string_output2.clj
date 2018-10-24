@@ -37,7 +37,7 @@
                    (sequential? s) (apply str s)
                    :else (pr-str s))]
       (-> props
-          (dissoc :fg :fg* :bg :bg* :bold)
+          (dissoc :fg :bg :bg* :bold)
           (assoc 
            :string s'
            :length (count s')

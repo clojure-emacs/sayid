@@ -48,6 +48,72 @@
 
 (defconst sayid-version "0.0.17")
 
+(defface sayid-int-face '((t :inherit default)) "Sayid integer face" :group 'sayid)
+(defface sayid-float-face '((t :inherit default)) "Sayid float face" :group 'sayid)
+(defface sayid-symbol-face '((t :inherit default)) "Sayid symbol face" :group 'sayid)
+(defface sayid-string-face '((t :inherit font-lock-string-face)) "Sayid string face" :group 'sayid)
+(defface sayid-keyword-face '((t :inherit font-lock-constant-face)) "Sayid keyword face" :group 'sayid)
+
+(defface sayid-depth-1-face
+  '((((background light)) (:foreground "Springgreen4"))
+    (((background dark)) (:foreground "Palegreen1")))
+  "Sayid nesting, depth 1 - outermost set."
+  :group 'sayid)
+
+(defface sayid-depth-2-face
+  '((((background light)) (:foreground "DodgerBlue"))
+    (((background dark)) (:foreground "Cadetblue1")))
+  "Sayid nesting, depth 2."
+  :group 'sayid)
+
+(defface sayid-depth-3-face
+  '((((background light)) (:foreground "Red1"))
+    (((background dark)) (:foreground "Palevioletred1")))
+  "Sayid nesting, depth 3."
+  :group 'sayid)
+
+(defface sayid-depth-4-face
+  '((((background light)) (:foreground "Orange1"))
+    (((background dark)) (:foreground "Lightsalmon1")))
+  "Sayid nesting, depth 4."
+  :group 'sayid)
+
+(defface sayid-depth-5-face
+  '((((background light)) (:foreground "Gold3"))
+    (((background dark)) (:foreground "PaleGoldenrod")))
+  "Sayid nesting, depth 5."
+  :group 'sayid)
+
+(defface sayid-depth-6-face
+  '((((background light)) (:foreground "DimGray"))
+    (((background dark)) (:foreground "LightGray")))
+  "Sayid nesting, depth 6."
+  :group 'sayid)
+
+(defface sayid-depth-7-face
+  '((((background light)) (:foreground "Mediumpurple3"))
+    (((background dark)) (:foreground "Lightpink1")))
+  "Sayid nesting, depth 7."
+  :group 'sayid)
+
+(defface sayid-depth-8-face
+  '((((background light)) (:foreground "DarkTurquoise"))
+    (((background dark)) (:foreground "Paleturquoise1")))
+  "Sayid nesting, depth 8."
+  :group 'sayid)
+
+(defface sayid-depth-9-face
+  '((((background light)) (:foreground "Peachpuff3"))
+    (((background dark)) (:foreground "Peachpuff1")))
+  "Sayid nesting, depth 9."
+  :group 'sayid)
+
+(defface sayid-depth-10-face
+  '((((background light)) (:foreground "IndianRed"))
+    (((background dark)) (:foreground "MistyRose")))
+  "Sayid nesting, depth 10."
+  :group 'sayid)
+
 (defvar sayid-trace-ns-dir)
 (defvar sayid-meta)
 
@@ -301,26 +367,35 @@ Disable traces, load buffer, enable traces, clear log."
   "Make a symbol from string S.  Make-symbol seems to return symbols that didn't equate when they should."
   (car (read-from-string s)))
 
-(defun sayid-color-str->face (s def)
-  "Translate color-name string S to a face string."
-  (or (cdr (assoc s '(("black" . "black")
-                      ("red" . "red3")
-                      ("green" . "green3")
-                      ("yellow" . "yellow3")
-                      ("blue" . "#6699FF")
-                      ("magenta" . "#DD88FF")
-                      ("cyan" . "cyan3")
-                      ("white" . "white"))))
-      def))
+(defvar sayid-prop->font '(("int" sayid-int-face)
+			   ("float" . sayid-float-face)
+			   ("string" . sayid-string-face)
+			   ("keyword" . sayid-keyword-face)
+			   ("symbol" . sayid-symbol-face)
+			   (0 . sayid-depth-1-face)
+			   (1 . sayid-depth-2-face)
+			   (2 . sayid-depth-3-face)
+			   (3 . sayid-depth-4-face)
+			   (4 . sayid-depth-5-face)
+			   (5 . sayid-depth-6-face)
+			   (6 . sayid-depth-7-face)
+			   (7 . sayid-depth-8-face)
+			   (8 . sayid-depth-9-face)
+			   (9 . sayid-depth-10-face)))
 
 (defun sayid-mk-font-face (p)
   "Make a font face from property pair P."
   (let* ((clr (cadr (assoc "color" (list p))))
-         (fg (car clr))
-         (bg (cadr clr)))
-    (if (or fg bg)
-        (append (if fg (list (list ':foreground (sayid-color-str->face fg "white"))))
-                (if bg (list (list ':background (sayid-color-str->face bg "black"))))))))
+	 (type (car (cadr (assoc "type" (list p)))))
+	 (fg* (cadr (assoc "fg*" (list p)))))
+    ;; if we have a type, pick a font by type,
+    ;; otherwise pick a font by fg* (which is a number indicating nesting depth),
+    ;; or return nil
+    (if type 
+	(cdr (assoc type sayid-prop->font))
+      (when fg* (cdr (assoc
+		      (mod fg* 10) ;; cycle from 0 to 9
+		      sayid-prop->font))))))
 
 (defun sayid-put-text-prop (a start end buf)
   "Put property pair A to text in range START to END in buffer BUF."
