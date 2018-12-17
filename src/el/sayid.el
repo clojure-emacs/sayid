@@ -138,7 +138,7 @@
 (defvar sayid-pprint-buf-spec '("*sayid-pprint*" . sayid-pprint-mode))
 (defvar sayid-selected-buf sayid-buf-spec)
 
-(defvar sayid-ring)
+(defvar sayid-ring '())
 
 ;;;###autoload
 (defun sayid--inject-jack-in-dependencies ()
