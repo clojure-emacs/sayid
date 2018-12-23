@@ -130,8 +130,8 @@
   "Sayid nesting, depth 10."
   :group 'sayid)
 
-(defvar sayid-trace-ns-dir)
-(defvar sayid-meta)
+(defvar sayid-trace-ns-dir nil)
+(defvar sayid-meta nil)
 
 (defvar sayid-buf-spec '("*sayid*" . sayid-mode))
 (defvar sayid-traced-buf-spec '("*sayid-traced*" . sayid-traced-mode))
