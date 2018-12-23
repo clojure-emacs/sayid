@@ -488,7 +488,7 @@ Disable traces, load buffer, enable traces, clear log."
       (let ((current (sayid-peek-first-in-ring)))
         (if current
             (sayid-swap-first-in-ring (list (car current)
-                                      (sayid-buf-point)))))))
+                                            (sayid-buf-point)))))))
 
 (defun sayid-push-buf-state-to-ring (content)
   "Push buffer content CONTENT to ring."
@@ -517,7 +517,7 @@ Disable traces, load buffer, enable traces, clear log."
   (interactive)
   (sayid-select-traced-buf)
   (sayid-req-insert-content (list "op" "sayid-show-traced"
-                                    "ns" ns))
+                                  "ns" ns))
   (sayid-select-default-buf))
 
 ;;;###autoload
@@ -750,8 +750,8 @@ Disable traces, load buffer, enable traces, clear log."
   "Query workspace for id, with optional modifier."
   (interactive)
   (sayid-req-insert-content (list "op" "sayid-buf-query-id-w-mod"
-                                    "trace-id" (get-text-property (point) 'id)
-                                    "mod" (read-string "query modifier: "))))
+                                  "trace-id" (get-text-property (point) 'id)
+                                  "mod" (read-string "query modifier: "))))
 
 ;;;###autoload
 (defun sayid-query-id ()
@@ -766,16 +766,16 @@ Disable traces, load buffer, enable traces, clear log."
   "Query workspace for function, with optional modifier."
   (interactive)
   (sayid-req-insert-content (list "op" "sayid-buf-query-fn-w-mod"
-                               "fn-name" (get-text-property (point) 'fn-name)
-                               "mod" (read-string "query modifier: "))))
+                                  "fn-name" (get-text-property (point) 'fn-name)
+                                  "mod" (read-string "query modifier: "))))
 
 ;;;###autoload
 (defun sayid-query-fn ()
   "Query workspace for function."
   (interactive)
   (sayid-req-insert-content (list "op" "sayid-buf-query-fn-w-mod"
-                               "fn-name" (get-text-property (point) 'fn-name)
-                               "mod" "")))
+                                  "fn-name" (get-text-property (point) 'fn-name)
+                                  "mod" "")))
 
 ;;;###autoload
 (defun sayid-buf-def-at-point ()
@@ -800,8 +800,8 @@ Disable traces, load buffer, enable traces, clear log."
   (interactive)
   (sayid-select-pprint-buf)
   (sayid-req-insert-content (list "op" "sayid-buf-pprint-at-point"
-                                    "trace-id" (get-text-property (point) 'id)
-                                    "path" (get-text-property (point) 'path)))
+                                  "trace-id" (get-text-property (point) 'id)
+                                  "path" (get-text-property (point) 'path)))
   (goto-char 1)
   (sayid-select-default-buf))
 
@@ -891,28 +891,28 @@ Place expression in kill ring."
                      nil
                      (cadr buf-state))))
 
-(defvar sayid-clj-mode-keys (make-sparse-keymap))
-
-(define-key sayid-clj-mode-keys (kbd "f") 'sayid-query-form-at-point)
-(define-key sayid-clj-mode-keys (kbd "!") 'sayid-load-enable-clear)
-(define-key sayid-clj-mode-keys (kbd "w") 'sayid-get-workspace)
-(define-key sayid-clj-mode-keys (kbd "t y") 'sayid-trace-all-ns-in-dir)
-(define-key sayid-clj-mode-keys (kbd "t p") 'sayid-trace-ns-by-pattern)
-(define-key sayid-clj-mode-keys (kbd "t b") 'sayid-trace-ns-in-file)
-(define-key sayid-clj-mode-keys (kbd "t e") 'sayid-trace-fn-enable)
-(define-key sayid-clj-mode-keys (kbd "t E") 'sayid-trace-enable-all)
-(define-key sayid-clj-mode-keys (kbd "t d") 'sayid-trace-fn-disable)
-(define-key sayid-clj-mode-keys (kbd "t D") 'sayid-trace-disable-all)
-(define-key sayid-clj-mode-keys (kbd "t n") 'sayid-inner-trace-fn)
-(define-key sayid-clj-mode-keys (kbd "t o") 'sayid-outer-trace-fn)
-(define-key sayid-clj-mode-keys (kbd "t r") 'sayid-remove-trace-fn)
-(define-key sayid-clj-mode-keys (kbd "t K") 'sayid-kill-all-traces)
-(define-key sayid-clj-mode-keys (kbd "c") 'sayid-clear-log)
-(define-key sayid-clj-mode-keys (kbd "x") 'sayid-reset-workspace)
-(define-key sayid-clj-mode-keys (kbd "s") 'sayid-show-traced)
-(define-key sayid-clj-mode-keys (kbd "S") 'sayid-show-traced-ns)
-(define-key sayid-clj-mode-keys (kbd "V s") 'sayid-set-view)
-(define-key sayid-clj-mode-keys (kbd "h") 'sayid-show-help)
+(defvar sayid-clj-mode-keys
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "f")   'sayid-query-form-at-point)
+    (define-key map (kbd "!")   'sayid-load-enable-clear)
+    (define-key map (kbd "w")   'sayid-get-workspace)
+    (define-key map (kbd "t y") 'sayid-trace-all-ns-in-dir)
+    (define-key map (kbd "t p") 'sayid-trace-ns-by-pattern)
+    (define-key map (kbd "t b") 'sayid-trace-ns-in-file)
+    (define-key map (kbd "t e") 'sayid-trace-fn-enable)
+    (define-key map (kbd "t E") 'sayid-trace-enable-all)
+    (define-key map (kbd "t d") 'sayid-trace-fn-disable)
+    (define-key map (kbd "t D") 'sayid-trace-disable-all)
+    (define-key map (kbd "t n") 'sayid-inner-trace-fn)
+    (define-key map (kbd "t o") 'sayid-outer-trace-fn)
+    (define-key map (kbd "t r") 'sayid-remove-trace-fn)
+    (define-key map (kbd "t K") 'sayid-kill-all-traces)
+    (define-key map (kbd "c")   'sayid-clear-log)
+    (define-key map (kbd "x")   'sayid-reset-workspace)
+    (define-key map (kbd "s")   'sayid-show-traced)
+    (define-key map (kbd "S")   'sayid-show-traced-ns)
+    (define-key map (kbd "V s") 'sayid-set-view)
+    (define-key map (kbd "h")   'sayid-show-help)))
 
 (defun sayid-show-help ()
   "Show sayid help buffer."
@@ -943,34 +943,31 @@ h -- show this help
   "Define 'clojure-mode' keybindings."
   (define-key clojure-mode-map prefix sayid-clj-mode-keys))
 
-
-(defvar sayid-mode-map)
-
-(setq sayid-mode-map
-      (let ((map (make-sparse-keymap)))
-        (define-key map  (kbd "<RET>") 'sayid-buffer-nav-from-point)
-        (define-key map  (kbd "d") 'sayid-buf-def-at-point)
-        (define-key map  (kbd "f") 'sayid-query-fn)
-        (define-key map  (kbd "F") 'sayid-query-fn-w-mod)
-        (define-key map  (kbd "i") 'sayid-query-id)
-        (define-key map  (kbd "I") 'sayid-query-id-w-mod)
-        (define-key map  (kbd "w") 'sayid-get-workspace)
-        (define-key map  (kbd "n") 'sayid-buffer-nav-to-next)
-        (define-key map  (kbd "N") 'sayid-buf-replay-with-inner-trace)
-        (define-key map  (kbd "p") 'sayid-buffer-nav-to-prev)
-        (define-key map  (kbd "P") 'sayid-buf-pprint-at-point)
-        (define-key map  (kbd "v") 'sayid-toggle-view)
-        (define-key map  (kbd "V") 'sayid-set-view)
-        (define-key map  (kbd "<backspace>") 'sayid-buf-back)
-        (define-key map  (kbd "<S-backspace>") 'sayid-buf-forward)
-        (define-key map  (kbd "l") 'sayid-buf-back)
-        (define-key map  (kbd "L") 'sayid-buf-forward)
-        (define-key map  (kbd "c i") 'sayid-buf-inspect-at-point)
-        (define-key map  (kbd "g") 'sayid-gen-instance-expr)
-        (define-key map  (kbd "C") 'sayid-clear-log)
-        (define-key map  (kbd "h") 'sayid-buf-show-help)
-        (define-key map  (kbd "q") 'quit-window)
-        map))
+(defvar sayid-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "<RET>")         'sayid-buffer-nav-from-point)
+    (define-key map (kbd "d")             'sayid-buf-def-at-point)
+    (define-key map (kbd "f")             'sayid-query-fn)
+    (define-key map (kbd "F")             'sayid-query-fn-w-mod)
+    (define-key map (kbd "i")             'sayid-query-id)
+    (define-key map (kbd "I")             'sayid-query-id-w-mod)
+    (define-key map (kbd "w")             'sayid-get-workspace)
+    (define-key map (kbd "n")             'sayid-buffer-nav-to-next)
+    (define-key map (kbd "N")             'sayid-buf-replay-with-inner-trace)
+    (define-key map (kbd "p")             'sayid-buffer-nav-to-prev)
+    (define-key map (kbd "P")             'sayid-buf-pprint-at-point)
+    (define-key map (kbd "v")             'sayid-toggle-view)
+    (define-key map (kbd "V")             'sayid-set-view)
+    (define-key map (kbd "<backspace>")   'sayid-buf-back)
+    (define-key map (kbd "<S-backspace>") 'sayid-buf-forward)
+    (define-key map (kbd "l")             'sayid-buf-back)
+    (define-key map (kbd "L")             'sayid-buf-forward)
+    (define-key map (kbd "c i")           'sayid-buf-inspect-at-point)
+    (define-key map (kbd "g")             'sayid-gen-instance-expr)
+    (define-key map (kbd "C")             'sayid-clear-log)
+    (define-key map (kbd "h")             'sayid-buf-show-help)
+    (define-key map (kbd "q")             'quit-window)
+    map))
 
 (defun sayid-buf-show-help ()
   "Show sayid buffer help buffer."
@@ -1002,25 +999,21 @@ h -- help
   (setq truncate-lines t)
   (buffer-disable-undo))
 
-
-
-(defvar sayid-traced-mode-map)
-
-(setq sayid-traced-mode-map
-      (let ((map (make-sparse-keymap)))
-        (define-key map  (kbd "<RET>") 'sayid-traced-buf-enter)
-        (define-key map  (kbd "e") 'sayid-traced-buf-enable)
-        (define-key map  (kbd "d") 'sayid-traced-buf-disable)
-        (define-key map  (kbd "E") 'sayid-trace-enable-all)
-        (define-key map  (kbd "D") 'sayid-trace-disable-all)
-        (define-key map  (kbd "i") 'sayid-traced-buf-inner-trace-fn)
-        (define-key map  (kbd "o") 'sayid-traced-buf-outer-trace-fn)
-        (define-key map  (kbd "r") 'sayid-traced-buf-remove-trace)
-        (define-key map  (kbd "<backspace>") 'sayid-show-traced)
-        (define-key map  (kbd "l") 'sayid-show-traced)
-        (define-key map  (kbd "h") 'sayid-traced-buf-show-help)
-        (define-key map  (kbd "q") 'quit-window)
-        map))
+(defvar sayid-traced-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "<RET>")       'sayid-traced-buf-enter)
+    (define-key map (kbd "e")           'sayid-traced-buf-enable)
+    (define-key map (kbd "d")           'sayid-traced-buf-disable)
+    (define-key map (kbd "E")           'sayid-trace-enable-all)
+    (define-key map (kbd "D")           'sayid-trace-disable-all)
+    (define-key map (kbd "i")           'sayid-traced-buf-inner-trace-fn)
+    (define-key map (kbd "o")           'sayid-traced-buf-outer-trace-fn)
+    (define-key map (kbd "r")           'sayid-traced-buf-remove-trace)
+    (define-key map (kbd "<backspace>") 'sayid-show-traced)
+    (define-key map (kbd "l")           'sayid-show-traced)
+    (define-key map (kbd "h")           'sayid-traced-buf-show-help)
+    (define-key map (kbd "q")           'quit-window)
+    map))
 
 (defun sayid-traced-buf-show-help ()
   "Show sayid traced buffer help buffer."
@@ -1045,20 +1038,18 @@ q -- quit window
   (setq truncate-lines t))
 
 
-(defvar sayid-pprint-mode-map)
-
-(setq sayid-pprint-mode-map
-      (let ((map (make-sparse-keymap)))
-        (define-key map  (kbd "h") 'sayid-pprint-buf-show-help)
-        (define-key map  (kbd "o") 'sayid-pprint-buf-out)
-        (define-key map  (kbd "i") 'sayid-pprint-buf-in)
-        (define-key map  (kbd "p") 'sayid-pprint-buf-prev)
-        (define-key map  (kbd "n") 'sayid-pprint-buf-next)
-        (define-key map  (kbd "<return>") 'sayid-pprint-buf-show-path)
-        (define-key map  (kbd "<backspace>") 'sayid-pprint-buf-exit)
-        (define-key map  (kbd "l") 'sayid-pprint-buf-exit)
-        (define-key map  (kbd "q") 'quit-window)
-        map))
+(defvar sayid-pprint-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "h")           'sayid-pprint-buf-show-help)
+    (define-key map (kbd "o")           'sayid-pprint-buf-out)
+    (define-key map (kbd "i")           'sayid-pprint-buf-in)
+    (define-key map (kbd "p")           'sayid-pprint-buf-prev)
+    (define-key map (kbd "n")           'sayid-pprint-buf-next)
+    (define-key map (kbd "<return>")    'sayid-pprint-buf-show-path)
+    (define-key map (kbd "<backspace>") 'sayid-pprint-buf-exit)
+    (define-key map (kbd "l")           'sayid-pprint-buf-exit)
+    (define-key map (kbd "q")           'quit-window)
+    map))
 
 (defun sayid-pprint-buf-show-help ()
   "Show sayid pretty-print buffer help buffer."
