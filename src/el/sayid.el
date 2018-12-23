@@ -1083,9 +1083,9 @@ q -- quit window
 
 ;;;###autoload
 (defun sayid-setup-package (&optional clj-mode-prefix)
-  "Setup the sayid package.  Optionally takes CLJ-MODE-PREFIX,
-which is used as the prefix for clojure-mode keybindings.
-Default prefix is 'C-c s'."
+  "Setup the sayid package.
+Optionally takes CLJ-MODE-PREFIX, which is used as the prefix for
+clojure-mode keybindings.  Default prefix is 'C-c s'."
   (interactive)
   (sayid-set-clj-mode-keys (or clj-mode-prefix (kbd "C-c s"))))
 
