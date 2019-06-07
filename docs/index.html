@@ -244,8 +244,9 @@ h3 {
                       <h1><img src='sayid-logo.png'></h1>
 
                       <p>Sayid <i>(siy EED)</i> is a tool for
-                        debugging and profiling clojure code.<br><br>
-                        Sayid works by intercepting and recording the
+                        debugging and profiling clojure code.</p>
+
+                      <p>Sayid works by intercepting and recording the
                         inputs and outputs of functions. It can even
                         record function calls that occur inside of
                         functions. The user can select which functions
@@ -254,7 +255,7 @@ h3 {
                         data can be displayed, queried and
                         profiled.</p>
 
-                      <p>Sayid currently has three components:
+                      <p>Sayid currently has three components:</p>
 
                         <ul>
                           <li><code>core</code> and its supporting namespaces</li>
@@ -291,29 +292,16 @@ h3 {
 
                       <h2 id="installation">Installation & Requirements</h2>
 
-                      <p>Basic usage requires Clojure 1.7. Add this to the dependencies in your project.clj or lein profiles.clj:</p>
+                      <p>Basic usage requires Clojure 1.7.</p>
 
-                      <code>[com.billpiel/sayid "0.0.17"]</code><br><br>
-
-                      <p>For the full Emacs+CIDER experience, you'll
-                      want to include Sayid as a plug-in, as well as
-                      nREPL. I the minimum required cider-nREPL
-                      version is "0.19.0". Here's an example of a
-                      bare-bones profiles.clj that works for me:</p>
-
-                      <!-- profiles.clj -->
-                          <pre>
-<font color="#BB2222"> {</font><font color="#4c83ff">:user</font> <font color="#BB7700">{</font><font color="#4c83ff">:plugins</font> <font color="#BBBB22">[</font><font color="#11BB11">[</font><font color="#D8FA3C">cider</font><font color="#EDEDED">/</font>cider-nrepl <font color="#61CE3C">"0.19.0"</font><font color="#11BB11">]</font>
-                   <font color="#11BB11">[</font><font color="#D8FA3C">com.billpiel</font><font color="#EDEDED">/</font>sayid <font color="#61CE3C">"0.0.17"</font><font color="#11BB11">]</font><font color="#BBBB22">]</font>
-         <font color="#4c83ff">:dependencies</font> <font color="#BBBB22">[</font><font color="#11BB11">[</font><font color="#D8FA3C">nrepl</font><font color="#EDEDED">/</font>nrepl <font color="#61CE3C">"0.5.3"</font><font color="#11BB11">]</font><font color="#BBBB22">]</font><font color="#BB7700">}</font><font color="#BB2222">}</font>
-</pre>
-                  <!-- END profiles.clj -->
-                      <p>The Emacs+CIDER setup also requires that the
+                      <h3>Emacs Integration</h3>
+                      
+                      <p>The Emacs+CIDER setup requires that the
                         Emacs package <code>sayid</code> is installed. It's available
                         on <a href="http://melpa.milkbox.net/#/">MELPA</a>
                         and MELPA Stable. Put this code
                         in <code>init.el</code>, or somewhere, to load
-                        keybindings for clojure-mode buffers.
+                        keybindings for clojure-mode buffers.</p>
 
                       <!-- init.el -->
     <pre>
@@ -321,6 +309,35 @@ h3 {
    '<font color="#BB7700">(</font>sayid-setup-package<font color="#BB7700">)</font><font color="#BB2222">)</font></pre>
                         <!-- END init.el -->
 
+     </p>
+If you use CIDER's jack-in commands, then Sayid automatically adds the Maven dependency when starting a REPL. This means you don't need to manually add the dependency to your <code>project.clj</code> or <code>deps.edn</code> file.</p>
+
+</p>If you don't use CIDER's jack-in commands, you'll need to add a dependency manually. Read on for more details for different tools.</p>
+
+                      
+                      <h3>Leiningen</h3>
+
+                      <p>Add this to the dependencies in your project.clj or lein profiles.clj:</p>
+                      
+                      <code>[com.billpiel/sayid "0.0.17"]</code><br><br>
+
+                      <p>For the full Emacs+CIDER experience, you'll
+                      want to include Sayid as a plug-in. Here's an example of a
+                      bare-bones profiles.clj that works for me:</p>
+
+                      <!-- profiles.clj -->
+                      <pre>{:user {:plugins [[com.billpiel/sayid "0.0.17"]]}}</pre>
+                      <!-- END profiles.clj -->
+
+                      <h3>Clojure CLI - deps.edn</h3>
+
+                      <p>Add a the Sayid dependency to your <code>:deps</code> key.
+                        Depending on your desired setup, you may want to add it to
+                        an optional profile, or your tools.deps config directory (often
+                        <code>$HOME/.clojure</code>).</p>
+                      
+                      <pre>{:deps
+  {com.billpiel/sayid {:mvn/version "0.0.17"}}}</pre>
 
                       <h2 id="conj2016">Conj 2016 Presentation</h2>
 
@@ -385,8 +402,8 @@ h3 {
 
                       <p>Let's press some keys to get Sayid going.</p>
 
-                      <p>eval the namespace - <span class="kbd">C-c C-k</span> (probably) </p>
-                      <p>trace the project namespaces - <span class="kbd">C-c s t p</span>  <code>contrived-example.*</code></p>
+                      <p>eval the namespace <span class="kbd">C-c C-k</span> (probably) (<code>cider-load-buffer</code>)</p>
+                      <p>trace the project namespaces <span class="kbd">C-c s t p</span> (<code>sayid-trace-ns-by-pattern</code>) then <code>contrived-example.*</code></p>
 
                       <p>This should pop up. It shows how many functions have been traced in which namespaces. Execute <code>test1</code>!</p>
                       <!-- sayid traced -->
@@ -403,7 +420,8 @@ Traced functions:
                       <!-- END sayid traced -->
 
                       <p>You can't tell yet, but something magical
-                      happened. Press <span class="kbd">C-c s w</span>
+                        happened. Press <span class="kbd">C-c s w</span>
+                        (<code>sayid-get-workspace</code>)
                       to get an overview of what has been captured in
                       the Sayid workspace. This monster should
                       appear:</p>
@@ -482,7 +500,7 @@ Traced functions:
 
                       <p> Let's explore. Get your cursor to the first
                       line of the output and
-                      press <span class="kbd">i</span>.</p>
+                      press <span class="kbd">i</span> (<code>sayid-query-id</code>).</p>
 
                       <!-- sayid instance test1 -->
     <pre>
@@ -503,7 +521,7 @@ Traced functions:
                       an 85 cent taco, we see that a taco was
                         dispensed, plus change! That's a BUG.</p>
 
-                      <p>Hit <span class="kbd">backspace</span>. We're
+                      <p>Hit <span class="kbd">backspace</span> (<code>sayid-buf-back</code>). We're
                       back at the overview. Scan the list of functions
                       that are called. Let's assume some programmer's
                       intuition and decide
@@ -513,6 +531,7 @@ Traced functions:
                         <span class="kbd">I</span>
                         <span class="kbd">d</span>
                         <span class="kbd">ENTER</span>
+                        (<code>sayid-query-id-w-mode</code>)
                       </p>
 
                       <!-- sayid instance 2 and descendants -->
@@ -560,10 +579,10 @@ Traced functions:
                       receives <code>[:quarter :dime :nickel
                       :penny]</code> but returns $1.40 as the
                       value. Let's dig
-                      deeper. Press <span class="kbd">n</span> a
+                      deeper. Press <span class="kbd">n</span> (<code>sayid-buffer-nav-to-next</code>) a
                       couple times to get the cursor to the call
                       to <code>calc-coin-value</code>. Now
-                      press <span class="kbd">N</span> and hold onto
+                      press <span class="kbd">N</span> (<code>sayid-buf-replay-with-inner-trace</code>) and hold onto
                       your hat.
                       </p>
 
@@ -621,7 +640,7 @@ Traced functions:
 </pre>
                       <!-- END inner workings -->
 
-                      <p>We now find ourselves at the troublesome call to <code>keep</code> causing our bug. The hash map, <code>coin-values</code>, is just above. Change the value of a penny from <code>1</code> to <code>0.01</code>. Let's eval our corrected code the Sayid way -- press <span class="kbd">C-c s !</span>. This will remove the traces, eval the buffer, then re-apply the traces. It also clears the workspace log. This is all helpful. Navigate back to <code>core-test</code> and run <code>test1</code> again. Repeating steps above, you can verify the output is now correct: no taco.
+                      <p>We now find ourselves at the troublesome call to <code>keep</code> causing our bug. The hash map, <code>coin-values</code>, is just above. Change the value of a penny from <code>1</code> to <code>0.01</code>. Let's eval our corrected code the Sayid way -- press <span class="kbd">C-c s !</span> (<code>sayid-load-enable-clear</code>). This will remove the traces, eval the buffer, then re-apply the traces. It also clears the workspace log. This is all helpful. Navigate back to <code>core-test</code> and run <code>test1</code> again. Repeating steps above, you can verify the output is now correct: no taco.
 
                         <!-- fixed -->
                         <pre>
@@ -651,7 +670,7 @@ Traced functions:
 
                       <p>Generated docs are also available for the core namespace <a href="doc">here</a>.
 
-                      <p>In a clojure-mode buffer, press <span class="kbd">C-c s h</span> to pop up the help buffer.</p>
+                      <p>In a clojure-mode buffer, press <span class="kbd">C-c s h</span> (<code>sayid-show-help</code>) to pop up the help buffer.</p>
                       <pre>
 C-c s ! -- Disble traces, eval current buffer, enable traces, clear the workspace log
 C-c s e -- Enables traces, evals the expression at point, disables traces, displays results with terse view
