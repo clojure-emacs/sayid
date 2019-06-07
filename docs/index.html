@@ -259,10 +259,10 @@ h3 {
 
                         <ul>
                           <li><code>core</code> and its supporting namespaces</li>
-                          <li>nREPL middleware</li>
-                          <li>an emacs-cider nREPL client</li>
+                          <li><a href="https://nrepl.org">nREPL</a> middleware</li>
+                          <li>A <a href="https://cider.mx">CIDER</a> plugin</li>
                           <ul>
-                            <li>although a 3rd-party vim plugin also exists.
+                            <li>A 3rd-party vim plugin also exists.
                               See <a href="http://arsenerei.com/blog/posts/2017-02-24-vim-sayid/">this</a>
                               and <a href="https://github.com/arsenerei/vim-sayid">this</a>.</li>
                           </ul>
@@ -270,9 +270,9 @@ h3 {
 
                       <p>The <code>core</code> namespace is designed
                       to be used directly via a repl and does not
-                      require emacs or cider.
+                      require Emacs or CIDER.
                       <b>BUT</b> the
-                      emacs-cider integration offers a far better
+                      CIDER integration offers a far better
                       experience, so it is the current focus of this
                       page and my development efforts.
                       </p>
@@ -292,11 +292,26 @@ h3 {
 
                       <h2 id="installation">Installation & Requirements</h2>
 
-                      <p>Basic usage requires Clojure 1.7.</p>
-
                       <h3>Emacs Integration</h3>
-                      
-                      <p>The Emacs+CIDER setup requires that the
+
+                      <p>Basic usage requires Clojure 1.7 and nREPL 0.4+. Add this to the dependencies in your project.clj or lein profiles.clj:</p>
+
+                      <code>[com.billpiel/sayid "0.0.17"]</code><br><br>
+
+                      <p>For the full CIDER experience, you'll
+                      want to include Sayid as a plug-in, as well as
+                      cider-nrepl. The minimum required cider-nrepl
+                      version is "0.19.0". Here's an example of a
+                      bare-bones profiles.clj that works for me:</p>
+
+                      <!-- profiles.clj -->
+                          <pre>
+<font color="#BB2222"> {</font><font color="#4c83ff">:user</font> <font color="#BB7700">{</font><font color="#4c83ff">:plugins</font> <font color="#BBBB22">[</font><font color="#11BB11">[</font><font color="#D8FA3C">cider</font><font color="#EDEDED">/</font>cider-nrepl <font color="#61CE3C">"0.19.0"</font><font color="#11BB11">]</font>
+                   <font color="#11BB11">[</font><font color="#D8FA3C">com.billpiel</font><font color="#EDEDED">/</font>sayid <font color="#61CE3C">"0.0.17"</font><font color="#11BB11">]</font><font color="#BBBB22">]</font>
+         <font color="#4c83ff">:dependencies</font> <font color="#BBBB22">[</font><font color="#11BB11">[</font><font color="#D8FA3C">nrepl</font><font color="#EDEDED">/</font>nrepl <font color="#61CE3C">"0.5.3"</font><font color="#11BB11">]</font><font color="#BBBB22">]</font><font color="#BB7700">}</font><font color="#BB2222">}</font>
+</pre>
+                  <!-- END profiles.clj -->
+                      <p>CIDER setup also requires that the
                         Emacs package <code>sayid</code> is installed. It's available
                         on <a href="http://melpa.milkbox.net/#/">MELPA</a>
                         and MELPA Stable. Put this code
@@ -314,14 +329,14 @@ If you use CIDER's jack-in commands, then Sayid automatically adds the Maven dep
 
 </p>If you don't use CIDER's jack-in commands, you'll need to add a dependency manually. Read on for more details for different tools.</p>
 
-                      
+
                       <h3>Leiningen</h3>
 
                       <p>Add this to the dependencies in your project.clj or lein profiles.clj:</p>
-                      
+
                       <code>[com.billpiel/sayid "0.0.17"]</code><br><br>
 
-                      <p>For the full Emacs+CIDER experience, you'll
+                      <p>To use the bundled nREPL middleware, you'll
                       want to include Sayid as a plug-in. Here's an example of a
                       bare-bones profiles.clj that works for me:</p>
 
@@ -335,7 +350,7 @@ If you use CIDER's jack-in commands, then Sayid automatically adds the Maven dep
                         Depending on your desired setup, you may want to add it to
                         an optional profile, or your tools.deps config directory (often
                         <code>$HOME/.clojure</code>).</p>
-                      
+
                       <pre>{:deps
   {com.billpiel/sayid {:mvn/version "0.0.17"}}}</pre>
 
