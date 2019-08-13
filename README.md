@@ -1,8 +1,9 @@
+![Sayid logo](./sayid-logo.png)
+
+----------
 [![CircleCI](https://circleci.com/gh/clojure-emacs/sayid/tree/master.svg?style=svg)](https://circleci.com/gh/clojure-emacs/sayid/tree/master)
 [![Clojars Project](https://img.shields.io/clojars/v/com.billpiel/sayid.svg)](https://clojars.org/com.billpiel/sayid)
 [![cljdoc badge](https://cljdoc.org/badge/com/billpiel/sayid)](https://cljdoc.org/d/com.billpiel/sayid/CURRENT)
-
-![Sayid logo](./sayid-logo.png)
 
 **We're looking for more maintainers for the project. If you're interested in helping out please ping @bbatsov.**
 
