@@ -31,8 +31,6 @@ not require Emacs or CIDER. **BUT** the CIDER integration offers a far
 better experience, so it is the current focus of this page and my
 development efforts.
 
-[contents](#contents){#contents-link}
-
 Contents
 --------
 
@@ -50,8 +48,8 @@ Installation & Requirements {#installation}
 Basic usage requires Clojure 1.7 and nREPL 0.4+. Add this to the
 dependencies in your project.clj or lein profiles.clj:
 
-`[com.billpiel/sayid "0.0.17"]`\
-\
+`[com.billpiel/sayid "0.0.17"]`
+
 
 For the full CIDER experience, you\'ll want to include Sayid as a
 plug-in, as well as cider-nrepl. The minimum required cider-nrepl
@@ -81,8 +79,8 @@ dependency manually. Read on for more details for different tools.
 
 Add this to the dependencies in your project.clj or lein profiles.clj:
 
-`[com.billpiel/sayid "0.0.17"]`\
-\
+`[com.billpiel/sayid "0.0.17"]`
+
 
 To use the bundled nREPL middleware, you\'ll want to include Sayid as a
 plug-in. Here\'s an example of a bare-bones profiles.clj that works for
