@@ -56,17 +56,22 @@ plug-in, as well as cider-nrepl. The minimum required cider-nrepl
 version is \"0.19.0\". Here\'s an example of a bare-bones profiles.clj
 that works for me:
 
+
+```clojure
      {:user {:plugins [[cider/cider-nrepl "0.19.0"]
                        [com.billpiel/sayid "0.0.17"]]
              :dependencies [[nrepl/nrepl "0.5.3"]]}}
+```
 
 CIDER setup also requires that the Emacs package `sayid` is installed.
 It\'s available on [MELPA](http://melpa.milkbox.net/#/) and MELPA
 Stable. Put this code in `init.el`, or somewhere, to load keybindings
 for clojure-mode buffers.
 
+```elisp
      (eval-after-load 'clojure-mode
        '(sayid-setup-package))
+```
 
 If you use CIDER\'s jack-in commands, then Sayid automatically adds the
 Maven dependency when starting a REPL. This means you don\'t need to
@@ -86,7 +91,9 @@ To use the bundled nREPL middleware, you\'ll want to include Sayid as a
 plug-in. Here\'s an example of a bare-bones profiles.clj that works for
 me:
 
+```clojure
     {:user {:plugins [[com.billpiel/sayid "0.0.17"]]}}
+```
 
 ### Clojure CLI - deps.edn
 
@@ -94,8 +101,10 @@ Add a the Sayid dependency to your `:deps` key. Depending on your
 desired setup, you may want to add it to an optional profile, or your
 tools.deps config directory (often `$HOME/.clojure`).
 
+```clojure
     {:deps
       {com.billpiel/sayid {:mvn/version "0.0.17"}}}
+```
 
 Conj 2016 Presentation {#conj2016}
 ----------------------
@@ -121,28 +130,30 @@ vending machine that dispenses tacos for 85 cents. We execute the
 `test1` function, which inserts 41 cents worth of change and presses the
 taco button.
 
-     (ns contrived-example.core-test
-       (:require [clojure.test :refer :all]
-                 [contrived-example.core :as ce]))
+```clojure
+(ns contrived-example.core-test
+  (:require [clojure.test :refer :all]
+            [contrived-example.core :as ce]))
 
 
-     (def test-vending-machine {:inventory {:a1 {:name :taco
-                                                 :price 0.85
-                                                 :qty 10}}
-                                :coins-inserted []
-                                :coins-returned []
-                                :dispensed nil
-                                :err-msg nil})
+(def test-vending-machine {:inventory {:a1 {:name :taco
+                                            :price 0.85
+                                            :qty 10}}
+                           :coins-inserted []
+                           :coins-returned []
+                           :dispensed nil
+                           :err-msg nil})
 
-     (defn test1 []
-       (-> test-vending-machine
-           (ce/insert-coin :quarter) ;; 25
-           (ce/insert-coin :dime)    ;; 35
-           (ce/insert-coin :nickel)  ;; 40
-           (ce/insert-coin :penny)   ;; 41 cents
-           (ce/press-button :a1)))   ;; taco costs 85 cents
+(defn test1 []
+  (-> test-vending-machine
+      (ce/insert-coin :quarter) ;; 25
+      (ce/insert-coin :dime)    ;; 35
+      (ce/insert-coin :nickel)  ;; 40
+      (ce/insert-coin :penny)   ;; 41 cents
+      (ce/press-button :a1)))   ;; taco costs 85 cents
 
-     (test1)
+(test1)
+```
 
 Let\'s press some keys to get Sayid going.
 
@@ -329,21 +340,23 @@ It\'s when we pass a hash map to `keep` that defines a penny as being
 worth a dollar. Bug located! Press [n]{.kbd} a couple times to get your
 cursor to that call. Press [ENTER]{.kbd} to jump to that line of code.
 
-     (ns contrived-example.inner-workings)
+```clojure
+ (ns contrived-example.inner-workings)
 
-     (def coin-values
-       {:quarter 0.25
-        :dime 0.10
-        :nickel 0.05
-        :penny 1})
+ (def coin-values
+   {:quarter 0.25
+    :dime 0.10
+    :nickel 0.05
+    :penny 1})
 
-     (defn- calc-coin-value
-       [coins]
-       (->> coins
-            (keep coin-values)
-            (apply +)))
+ (defn- calc-coin-value
+   [coins]
+   (->> coins
+        (keep coin-values)
+        (apply +)))
 
-    ...truncated...
+...truncated...
+```
 
 We now find ourselves at the troublesome call to `keep` causing our bug.
 The hash map, `coin-values`, is just above. Change the value of a penny
