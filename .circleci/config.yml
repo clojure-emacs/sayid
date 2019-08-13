@@ -1,0 +1,20 @@
+version: 2
+
+references:
+  base_config: &base_config
+    working_directory: ~/sayid
+    docker:
+      - image: circleci/clojure:lein-2.9.1
+
+jobs:
+  test:
+    <<: *base_config
+    steps:
+      - checkout
+      - run: lein test-all
+
+workflows:
+  version: 2
+  build:
+    jobs:
+      - test
