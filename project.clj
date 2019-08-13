@@ -9,16 +9,16 @@
                                     :username :env/clojars_username
                                     :password :env/clojars_password
                                     :sign-releases false}]]
-  :dependencies [[org.clojure/clojure "1.7.0"]
+  :dependencies [[org.clojure/clojure "1.8.0"]
                  [tamarin "0.1.2"]
                  [org.clojure/tools.reader "1.3.0-alpha3"]
                  [org.clojure/tools.namespace "0.2.11"]]
   :repl-options {:nrepl-middleware [com.billpiel.sayid.nrepl-middleware/wrap-sayid]}
   :profiles {:dev {:dependencies [[nrepl "0.4.4"]]
                    :plugins [[lein-codox "0.9.4"]]}
-             :1.7 {:dependencies [[org.clojure/clojure "1.7.0"]]}
              :1.8 {:dependencies [[org.clojure/clojure "1.8.0"]]}
-             :1.9 {:dependencies [[org.clojure/clojure "1.9.0"]]}}
+             :1.9 {:dependencies [[org.clojure/clojure "1.9.0"]]}
+             :1.10 {:dependencies [[org.clojure/clojure "1.10.1"]]}}
   :codox {:project {:name "Sayid"}
           :namespaces [com.billpiel.sayid.core]}
-  :aliases {"test-all" ["with-profile" "+1.7:+1.8:+1.9" "test"]})
+  :aliases {"test-all" ["with-profile" "+1.8:+1.9:+1.10" "test"]})
