@@ -41,7 +41,7 @@ Contents
 -   [Demo \#1 - Walkthrough](#demo1wt)
 -   [Documentation](#documentation)
 
-Installation & Requirements {#installation}
+Installation & Requirements
 ---------------------------
 
 ### Emacs Integration
@@ -59,9 +59,9 @@ that works for me:
 
 
 ```clojure
-     {:user {:plugins [[cider/cider-nrepl "0.19.0"]
-                       [com.billpiel/sayid "0.0.17"]]
-             :dependencies [[nrepl/nrepl "0.5.3"]]}}
+{:user {:plugins [[cider/cider-nrepl "0.19.0"]
+                  [com.billpiel/sayid "0.0.17"]]
+        :dependencies [[nrepl/nrepl "0.5.3"]]}}
 ```
 
 CIDER setup also requires that the Emacs package `sayid` is installed.
@@ -93,7 +93,7 @@ plug-in. Here\'s an example of a bare-bones profiles.clj that works for
 me:
 
 ```clojure
-    {:user {:plugins [[com.billpiel/sayid "0.0.17"]]}}
+{:user {:plugins [[com.billpiel/sayid "0.0.17"]]}}
 ```
 
 ### Clojure CLI - deps.edn
@@ -103,23 +103,23 @@ desired setup, you may want to add it to an optional profile, or your
 tools.deps config directory (often `$HOME/.clojure`).
 
 ```clojure
-    {:deps
-      {com.billpiel/sayid {:mvn/version "0.0.17"}}}
+{:deps
+  {com.billpiel/sayid {:mvn/version "0.0.17"}}}
 ```
 
-Conj 2016 Presentation {#conj2016}
+Conj 2016 Presentation
 ----------------------
 
 I presented Sayid at the Clojure Conj conference in Austin in 2016.
 
-Demo \#1 - Video {#demo1vid}
+Demo \#1 - Video
 ----------------
 
 A demo video I recorded after the very first alpha release. You can find
 the [contrived example](http://github.com/bpiel/contrived-example)
 project here.
 
-Demo \#1 - Walkthrough {#demo1wt}
+Demo \#1 - Walkthrough
 ----------------------
 
 This is a written walkthrough of the same steps illustrated in the demo
@@ -158,7 +158,7 @@ taco button.
 
 Let\'s press some keys to get Sayid going.
 
-eval the namespace [C-c C-k]{.kbd} (probably) (`cider-load-buffer`)
+eval the namespace `C-c C-k` (probably) (`cider-load-buffer`)
 
 trace the project namespaces [C-c s t p]{.kbd}
 (`sayid-trace-ns-by-pattern`) then `contrived-example.*`
@@ -174,8 +174,8 @@ which namespaces. Execute `test1`!
 
     Traced functions:
 
-You can\'t tell yet, but something magical happened. Press [C-c s
-w]{.kbd} (`sayid-get-workspace`) to get an overview of what has been
+You can\'t tell yet, but something magical happened. Press `C-c s
+w` (`sayid-get-workspace`) to get an overview of what has been
 captured in the Sayid workspace. This monster should appear:
 
     v contrived-example.core-test/test1  :13446
@@ -246,7 +246,7 @@ What\'s the meaning of this? These are all the function calls that were
 made in the traced namespaced when we execute `test1`.
 
 Let\'s explore. Get your cursor to the first line of the output and
-press [i]{.kbd} (`sayid-query-id`).
+press `i` (`sayid-query-id`).
 
      v contrived-example.core-test/test1  :13446
      | returned =>  {:inventory {:a1 {:name :taco :price 0.85 :qty 9}}
@@ -262,12 +262,12 @@ called. We can see that a hash map was returned. Despite us inserting
 only 41 cents for an 85 cent taco, we see that a taco was dispensed,
 plus change! That\'s a BUG.
 
-Hit [backspace]{.kbd} (`sayid-buf-back`). We\'re back at the overview.
+Hit `backspace` (`sayid-buf-back`). We\'re back at the overview.
 Scan the list of functions that are called. Let\'s assume some
 programmer\'s intuition and decide that `valid-selection` is the first
 place of interest. Get your cursor to that line and press these keys to
-view the ***i**nstance* and all of its ***d**escendants*. [I]{.kbd}
-[d]{.kbd} [ENTER]{.kbd} (`sayid-query-id-w-mode`)
+view the ***i**nstance* and all of its ***d**escendants*. `I`
+`d` `ENTER (`sayid-query-id-w-mode`)
 
      ||v contrived-example.inner-workings/valid-selection  :13452
      ||| machine => {:inventory {:a1 {:name :taco :price 0.85 :qty 10}}
@@ -304,9 +304,9 @@ We can see that `valid-selection` makes calls to `get-selection` and
 `calc-coin-value`. Looking at the return values, we might notice a
 problem: `calc-coin-value` receives
 `[:quarter :dime :nickel                       :penny]` but returns
-\$1.40 as the value. Let\'s dig deeper. Press [n]{.kbd}
+\$1.40 as the value. Let\'s dig deeper. Press `n`
 (`sayid-buffer-nav-to-next`) a couple times to get the cursor to the
-call to `calc-coin-value`. Now press [N]{.kbd}
+call to `calc-coin-value`. Now press `N`
 (`sayid-buf-replay-with-inner-trace`) and hold onto your hat.
 
      ||||v (->> coins (keep coin-values) (apply +)) => (apply + (keep coin-values coins))  contrived-example.inner-workings/calc-coin-value  :13491
@@ -338,8 +338,8 @@ captured originally.
 ***An INNER trace?*** YES! We can see the inputs and output values of
 each expression in the function. Look at it. Where do things go wrong?
 It\'s when we pass a hash map to `keep` that defines a penny as being
-worth a dollar. Bug located! Press [n]{.kbd} a couple times to get your
-cursor to that call. Press [ENTER]{.kbd} to jump to that line of code.
+worth a dollar. Bug located! Press `n` a couple times to get your
+cursor to that call. Press `RET` to jump to that line of code.
 
 ```clojure
  (ns contrived-example.inner-workings)
@@ -362,7 +362,7 @@ cursor to that call. Press [ENTER]{.kbd} to jump to that line of code.
 We now find ourselves at the troublesome call to `keep` causing our bug.
 The hash map, `coin-values`, is just above. Change the value of a penny
 from `1` to `0.01`. Let\'s eval our corrected code the Sayid way \--
-press [C-c s !]{.kbd} (`sayid-load-enable-clear`). This will remove the
+press `C-c s !` (`sayid-load-enable-clear`). This will remove the
 traces, eval the buffer, then re-apply the traces. It also clears the
 workspace log. This is all helpful. Navigate back to `core-test` and run
 `test1` again. Repeating steps above, you can verify the output is now
@@ -388,7 +388,7 @@ instructions on how to pop them up in time of need.
 
 Generated docs are also available for the core namespace [here](doc).
 
-In a clojure-mode buffer, press [C-c s h]{.kbd} (`sayid-show-help`) to
+In a clojure-mode buffer, press `C-c s h` (`sayid-show-help`) to
 pop up the help buffer.
 
     C-c s ! -- Disable traces, eval current buffer, enable traces, clear the workspace log
@@ -416,7 +416,7 @@ pop up the help buffer.
     C-c s h -- show this help
 
 
-In the \*sayid\* buffer, press [h]{.kbd} to pop up the help buffer.
+In the `*sayid*` buffer, press `h` to pop up the help buffer.
 
     ENTER -- pop to function
     d -- def value to $s/*
@@ -438,7 +438,7 @@ In the \*sayid\* buffer, press [h]{.kbd} to pop up the help buffer.
     h -- help
 
 
-In the \*sayid-traced\* buffer, press [h]{.kbd} to pop up the help
+In the `*sayid-traced*` buffer, press `h` to pop up the help
 buffer.
 
     enter -- Drill into ns at point
@@ -452,7 +452,7 @@ buffer.
     l, backspace -- go back to trace overview (if in ns view)
 
 
-In the \*sayid-pprint\* buffer, press [h]{.kbd} to pop up the help
+In the `*sayid-pprint*` buffer, press `h` to pop up the help
 buffer.
 
     ENTER -- show path in mini-buffer
