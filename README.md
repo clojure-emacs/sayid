@@ -70,24 +70,8 @@ tools.deps config directory (often `$HOME/.clojure`).
 
 ### Emacs Integration
 
-Add this to the
-dependencies in your project.clj or lein profiles.clj:
-
-    [com.billpiel/sayid "0.0.17"]
-
-For the full CIDER experience, you'll want to include Sayid as a
-plug-in, as well as cider-nrepl. The minimum required cider-nrepl
-version is \"0.19.0\". Here's an example of a bare-bones profiles.clj
-that works for me:
-
-```clojure
-{:user {:plugins [[cider/cider-nrepl "0.19.0"]
-                  [com.billpiel/sayid "0.0.17"]]
-        :dependencies [[nrepl/nrepl "0.5.3"]]}}
-```
-
 CIDER setup also requires that the Emacs package `sayid` is installed.
-It's available on [MELPA](http://melpa.milkbox.net/#/) and MELPA
+It's available on [MELPA](https://melpa.milkbox.net/#/) and MELPA
 Stable. Put this code in `init.el`, or somewhere, to load keybindings
 for clojure-mode buffers.
 
@@ -101,7 +85,16 @@ Maven dependency when starting a REPL. This means you don't need to
 manually add the dependency to your `project.clj` or `deps.edn` file.
 
 If you don't use CIDER's jack-in commands, you'll need to add a
-dependency manually. Read on for more details for different tools.
+dependency manually. Here's an example of a bare-bones profiles.clj
+that works for me:
+
+```clojure
+{:user {:plugins [[cider/cider-nrepl "0.19.0"]
+                  [com.billpiel/sayid "0.0.17"]]
+        :dependencies [[nrepl/nrepl "0.5.3"]]}}
+```
+
+Usually you'll want to use the latest versions of `cider-nrepl` and nREPL here.
 
 ### Other Editors
 
