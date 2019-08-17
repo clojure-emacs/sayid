@@ -7,7 +7,7 @@
 
   :dependencies [[tamarin "0.1.2"]
                  [org.clojure/tools.reader "1.3.2"]
-                 [org.clojure/tools.namespace "0.2.11"]]
+                 [org.clojure/tools.namespace "0.3.1"]]
   :exclusions [org.clojure/clojure] ; see versions matrix below
 
   :aot [com.billpiel.sayid.sayid-multifn]
