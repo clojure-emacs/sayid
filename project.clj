@@ -6,7 +6,7 @@
             :url "http://www.apache.org/licenses/LICENSE-2.0"}
 
   :dependencies [[tamarin "0.1.2"]
-                 [org.clojure/tools.reader "1.3.0-alpha3"]
+                 [org.clojure/tools.reader "1.3.2"]
                  [org.clojure/tools.namespace "0.2.11"]]
   :exclusions [org.clojure/clojure] ; see versions matrix below
 
