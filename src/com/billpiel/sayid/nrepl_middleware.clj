@@ -1,19 +1,20 @@
 (ns com.billpiel.sayid.nrepl-middleware
-  (:require [clojure.stacktrace :as st]
-            [com.billpiel.sayid.core :as sd]
-            [com.billpiel.sayid.query2 :as q]
-            [com.billpiel.sayid.string-output2 :as so]
-            [com.billpiel.sayid.view :as v]
-            [com.billpiel.sayid.trace :as tr]
-            [clojure.tools.reader :as r]
-            [clojure.tools.reader.reader-types :as rts]
-            [com.billpiel.sayid.util.other :as util]
-            [clojure.tools.namespace.find :as ns-find]
-            [com.billpiel.sayid.util.find-ns :as find-ns]
-            [tamarin.core :as tam]
-            [nrepl.middleware :refer [set-descriptor!]]
-            [nrepl.misc :refer [response-for]]
-            [nrepl.transport :as t]))
+  (:require
+   [clojure.stacktrace :as st]
+   [clojure.tools.namespace.find :as ns-find]
+   [clojure.tools.reader :as r]
+   [clojure.tools.reader.reader-types :as rts]
+   [com.billpiel.sayid.core :as sd]
+   [com.billpiel.sayid.query2 :as q]
+   [com.billpiel.sayid.string-output2 :as so]
+   [com.billpiel.sayid.trace :as tr]
+   [com.billpiel.sayid.util.find-ns :as find-ns]
+   [com.billpiel.sayid.util.other :as util]
+   [com.billpiel.sayid.view :as v]
+   [nrepl.middleware :refer [set-descriptor!]]
+   [nrepl.misc :refer [response-for]]
+   [nrepl.transport :as t]
+   [tamarin.core :as tam]))
 
 (def views (atom {}))
 (def selected-view (atom nil))
