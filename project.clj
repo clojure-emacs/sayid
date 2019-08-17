@@ -29,7 +29,7 @@
              :1.10 {:dependencies [[org.clojure/clojure "1.10.1"]
                                    [org.clojure/clojure "1.10.1" :classifier "sources"]]}
 
-             :dev {:dependencies [[nrepl "0.4.4"]]
+             :dev {:dependencies [[nrepl "0.6.0"]]
                    :plugins [[lein-codox "0.9.4"]]}}
 
   :codox {:project {:name "Sayid"}
