@@ -1,11 +1,11 @@
 ;;; sayid.el --- sayid nREPL middleware client
 
-;; Copyright (c) 2016-2018 Bill Piel
+;; Copyright (c) 2016-2019 Bill Piel, Bozhidar Batsov
 
 ;; Author: Bill Piel <bill@billpiel.com>
-;; Version: 0.0.17
+;; Version: 0.0.18
 ;; URL: https://github.com/clojure-emacs/sayid
-;; Package-Requires: ((cider "0.14.0"))
+;; Package-Requires: ((cider "0.21.0"))
 
 ;; Licensed under the Apache License, Version 2.0 (the "License");
 ;; you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@
   :group 'sayid
   :type 'boolean)
 
-(defconst sayid-version "0.0.17")
+(defconst sayid-version "0.0.18")
 
 (defface sayid-int-face '((t :inherit default))
   "Sayid integer face"

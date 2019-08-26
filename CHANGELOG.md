@@ -1,5 +1,12 @@
 # Change Log
 
+## [0.0.18] - 2019-08-26
+
+### Changed
+
+* Removed support for nREPL 0.2.x.
+* Removed hard dep on Clojure.
+
 ## [0.0.17] - 2018-09-01
 
 ### Added

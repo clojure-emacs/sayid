@@ -1,4 +1,4 @@
-(defproject com.billpiel/sayid "0.0.18-SNAPSHOT"
+(defproject com.billpiel/sayid "0.0.18"
   :description "Sayid is a library for debugging and profiling clojure code."
   :url "https://github.com/clojure-emacs/sayid"
   :scm {:name "git" :url "https://github.com/clojure-emacs/sayid"}
