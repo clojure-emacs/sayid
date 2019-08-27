@@ -28,11 +28,9 @@ development efforts.
 
 ## Table of Contents
 
-- [Installation & Requirements](#installation)
-- [Conj 2016 Presentation](#conj2016)
-- [Demo \#1 - Video](#demo1vid)
-- [Demo \#1 - Walkthrough](#demo1wt)
-- [Documentation](#documentation)
+- [Installation & Requirements](#installation--requirements)
+- [Using Sayid](#using-sayid)
+- [Demos](#demos)
 
 ## Installation & Requirements
 
