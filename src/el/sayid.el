@@ -912,7 +912,8 @@ Place expression in kill ring."
     (define-key map (kbd "s")   'sayid-show-traced)
     (define-key map (kbd "S")   'sayid-show-traced-ns)
     (define-key map (kbd "V s") 'sayid-set-view)
-    (define-key map (kbd "h")   'sayid-show-help)))
+    (define-key map (kbd "h")   'sayid-show-help)
+    map))
 
 (defun sayid-show-help ()
   "Show sayid help buffer."
