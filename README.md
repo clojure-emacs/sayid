@@ -68,10 +68,10 @@ tools.deps config directory (often `$HOME/.clojure`).
 
 ### Emacs Integration
 
-CIDER setup also requires that the Emacs package `sayid` is installed.
-It's available on [MELPA](https://melpa.milkbox.net/#/) and MELPA
-Stable. Put this code in `init.el`, or somewhere, to load keybindings
-for clojure-mode buffers.
+CIDER setup also requires that the Emacs package `sayid` is installed. It's
+available on [MELPA](https://melpa.org/#/sayid) and [MELPA
+Stable](https://stable.melpa.org/#/sayid). Put this code in `init.el`, or
+somewhere, to load keybindings for clojure-mode buffers.
 
 ```elisp
 (eval-after-load 'clojure-mode
@@ -188,13 +188,22 @@ buffer.
 
 ### Conj 2016 Presentation
 
-I presented Sayid at the Clojure Conj conference in Austin in 2016.
+I [presented Sayid](https://www.youtube.com/watch?v=ipDhvd1NsmE) at the Clojure
+Conj conference in Austin in 2016.
+
+[![Becoming Omniscient with Sayid - Bill
+Piel](http://img.youtube.com/vi/ipDhvd1NsmE/0.jpg)](http://www.youtube.com/watch?v=ipDhvd1NsmE
+"Becoming Omniscient with Sayid - Bill Piel")
 
 ### Demo \#1 - Video
 
-A demo video I recorded after the very first alpha release. You can find
-the [contrived example](http://github.com/bpiel/contrived-example)
-project here.
+A [demo video](https://www.youtube.com/watch?v=wkduA4py-qk) I recorded after the
+very first alpha release. You can find the [contrived
+example](http://github.com/bpiel/contrived-example) project here.
+
+[![Sayid v0.0.1 - Demo
+#1](http://img.youtube.com/vi/wkduA4py-qk/0.jpg)](http://www.youtube.com/watch?v=wkduA4py-qk
+"Sayid v0.0.1 - Demo #1")
 
 ### Demo \#1 - Walkthrough
 
