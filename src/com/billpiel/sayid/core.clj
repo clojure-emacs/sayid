@@ -1,5 +1,6 @@
 (ns com.billpiel.sayid.core
-  (:require [com.billpiel.sayid.trace :as trace]
+  (:require [clojure.java.io :as io]
+            [com.billpiel.sayid.trace :as trace]
             [com.billpiel.sayid.inner-trace3 :as itrace]
             [com.billpiel.sayid.workspace :as ws]
             [com.billpiel.sayid.recording :as rec]
@@ -10,7 +11,13 @@
             [com.billpiel.sayid.profiling :as pro]
             [com.billpiel.sayid.util.other :as util]))
 
-(def version "0.0.18")
+(def version
+  "The current version of sayid as a string."
+  (-> (or (io/resource "com/billpiel/sayid/project.clj")
+          "project.clj")
+      slurp
+      read-string
+      (nth 2)))
 
 (def workspace
   "The active workspace. Used by default in any function prefixed `ws-`
