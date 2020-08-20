@@ -29,6 +29,6 @@
              :1.10 {:dependencies [[org.clojure/clojure "1.10.1"]
                                    [org.clojure/clojure "1.10.1" :classifier "sources"]]}
 
-             :dev {:dependencies [[nrepl "0.6.0"]]}}
+             :dev {:dependencies [[nrepl "0.7.0"]]}}
 
   :aliases {"test-all" ["with-profile" "+1.8:+1.9:+1.10" "test"]})
