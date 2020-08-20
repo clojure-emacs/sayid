@@ -19,6 +19,8 @@
 
 (t/use-fixtures :each fixture)
 
+(t/deftest version-test
+  (t/is (string? sd/version)))
 
 (t/deftest add-remove-trace-ns
 
