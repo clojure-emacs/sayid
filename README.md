@@ -45,14 +45,14 @@ provides a very flexible Sayid API.
 
 Add this to the dependencies in your project.clj or lein profiles.clj:
 
-    [com.billpiel/sayid "0.0.18"]
+    [com.billpiel/sayid "0.0.19"]
 
 To use the bundled nREPL middleware, you'll want to include Sayid as a
 plug-in. Here's an example of a bare-bones profiles.clj that works for
 me:
 
 ```clojure
-{:user {:plugins [[com.billpiel/sayid "0.0.18"]]}}
+{:user {:plugins [[com.billpiel/sayid "0.0.19"]]}}
 ```
 
 ### Clojure CLI - deps.edn
@@ -63,7 +63,7 @@ tools.deps config directory (often `$HOME/.clojure`).
 
 ```clojure
 {:deps
-  {com.billpiel/sayid {:mvn/version "0.0.18"}}}
+  {com.billpiel/sayid {:mvn/version "0.0.19"}}}
 ```
 
 ### Emacs Integration
@@ -87,9 +87,9 @@ dependency manually. Here's an example of a bare-bones profiles.clj
 that works for me:
 
 ```clojure
-{:user {:plugins [[cider/cider-nrepl "0.21.0"]
-                  [com.billpiel/sayid "0.0.18"]]
-        :dependencies [[nrepl/nrepl "0.6.0"]]}}
+{:user {:plugins [[cider/cider-nrepl "0.25.3"]
+                  [com.billpiel/sayid "0.0.19"]]
+        :dependencies [[nrepl/nrepl "0.7.0"]]}}
 ```
 
 Usually you'll want to use the latest versions of `cider-nrepl` and nREPL here.

@@ -3,7 +3,7 @@
 ;; Copyright (c) 2016-2019 Bill Piel, Bozhidar Batsov
 
 ;; Author: Bill Piel <bill@billpiel.com>
-;; Version: 0.0.18
+;; Version: 0.0.19
 ;; URL: https://github.com/clojure-emacs/sayid
 ;; Package-Requires: ((cider "0.21.0"))
 
@@ -46,7 +46,7 @@
   :group 'sayid
   :type 'boolean)
 
-(defconst sayid-version "0.0.18")
+(defconst sayid-version "0.0.19")
 
 (defface sayid-int-face '((t :inherit default))
   "Sayid integer face"

@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.0.19] - 2020-08-20
+
+* Fix nREPL middleware and Lein plugin version numbers.
+
 ## [0.0.18] - 2019-08-26
 
 ### Changed
