@@ -13,7 +13,7 @@
 
 (def version
   "The current version of sayid as a string."
-  (-> (or (io/resource "com/billpiel/sayid/project.clj")
+  (-> (or (io/resource "META-INF/leiningen/com.billpiel/sayid/project.clj")
           "project.clj")
       slurp
       read-string
