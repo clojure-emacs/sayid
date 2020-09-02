@@ -3,7 +3,7 @@
 ----------
 [![CircleCI](https://circleci.com/gh/clojure-emacs/sayid/tree/master.svg?style=svg)](https://circleci.com/gh/clojure-emacs/sayid/tree/master)
 [![Clojars Project](https://img.shields.io/clojars/v/com.billpiel/sayid.svg)](https://clojars.org/com.billpiel/sayid)
-[![cljdoc badge](https://cljdoc.org/badge/com/billpiel/sayid)](https://cljdoc.org/d/com.billpiel/sayid/CURRENT)
+[![cljdoc badge](https://cljdoc.org/badge/com.billpiel/sayid)](https://cljdoc.org/d/com.billpiel/sayid/CURRENT)
 
 Sayid *(siy EED)* is an omniscient debugger and profiler for Clojure. It extracts secrets from code at run-time.
 
