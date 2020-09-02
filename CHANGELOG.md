@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.1.0] - 2020-09-02
+
+* [#57](https://github.com/clojure-emacs/sayid/issues/57): Fix version extraction logic.
+
 ## [0.0.19] - 2020-08-20
 
 ### Fixed
