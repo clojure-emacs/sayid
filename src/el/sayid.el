@@ -49,7 +49,8 @@
 
 (defconst sayid-version
   (eval-when-compile
-    (lm-version load-true-file-name))
+    (lm-version (if (boundp 'load-true-file-name)
+                    load-true-file-name load-file-name)))
   "The current version of `sayid-mode'.")
 
 
