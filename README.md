@@ -26,12 +26,6 @@ development efforts.
 
 **We're looking for more maintainers for the project. If you're interested in helping out please ping @bbatsov.**
 
-## Table of Contents
-
-- [Installation & Requirements](#installation--requirements)
-- [Using Sayid](#using-sayid)
-- [Demos](#demos)
-
 ## Installation & Requirements
 
 ### Requirements
