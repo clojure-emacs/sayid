@@ -718,19 +718,30 @@ Disable traces, load buffer, enable traces, clear log."
         (setq paths (cdr paths)))
       (car paths))))
 
+(defun sayid-buffer-file-at-point ()
+  "Return file path for function at point in sayid buffer."
+  (interactive)
+  (let* ((file (get-text-property (point) 'src-file))
+         (xfile (sayid-find-existing-file file)))
+    (if xfile
+        xfile
+      (user-error (concat "File not found: " file)))))
+
+(defun sayid-buffer-line-at-point ()
+  "Return line number for function at point in sayid buffer."
+  (get-text-property (point) 'src-line))
+
 ;;;###autoload
 (defun sayid-buffer-nav-from-point ()
   "Navigate from sayid buffer to function source."
   (interactive)
-  (let* ((file (get-text-property (point) 'src-file))
-         (line (get-text-property (point) 'src-line))
-         (xfile (sayid-find-existing-file file)))
-    (if xfile
-        (progn
-          (pop-to-buffer (find-file-noselect xfile))
-          (goto-char (point-min))
-          (forward-line (- line 1)))
-      (message (concat "File not found: " file)))))
+  (let ((line (sayid-buffer-line-at-point))
+        (file (sayid-buffer-file-at-point)))
+    (when file
+      (progn
+        (pop-to-buffer (find-file-noselect file))
+        (goto-char (point-min))
+        (forward-line (- line 1))))))
 
 ;;;###autoload
 (defun sayid-buffer-nav-to-prev ()
