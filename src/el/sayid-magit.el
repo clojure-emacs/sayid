@@ -27,19 +27,25 @@
   "Trace namespace in FILE-NAMES."
   (mapcar (lambda (file-name)
             (with-current-buffer (find-file-noselect
-                                  (expand-file-name file-name))
+                                  file-name)
               (nrepl-send-sync-request (list "op" "sayid-trace-ns-in-file"
                                              "file" (buffer-file-name))
                                        (cider-current-connection))))
           file-names)
   (sayid-show-traced))
 
+(defun sayid-magit--changed-files ()
+  "docstring"
+  (mapcar
+   (lambda (file)
+     (expand-file-name file (locate-dominating-file (buffer-file-name) ".git")))
+   (magit-changed-files (magit-read-starting-point "Sayid trace" nil "HEAD"))))
+
 ;;;###autoload
 (defun sayid-magit-trace-changed-ns ()
   "Trace the changed namespaces in a git commit."
   (interactive)
-  (sayid--trace-ns-in-files
-   (magit-changed-files (magit-read-starting-point "Sayid trace" nil "HEAD"))))
+  (sayid--trace-ns-in-files (sayid-magit--changed-files)))
 
 (provide 'sayid-magit)
 
