@@ -34,6 +34,7 @@
           file-names)
   (sayid-show-traced))
 
+;;;###autoload
 (defun sayid-magit--changed-files ()
   "docstring"
   (mapcar
