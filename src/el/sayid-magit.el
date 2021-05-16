@@ -4,7 +4,7 @@
 ;; Maintainer: Bill Piel <bill@billpiel.com>
 ;; Version: 0.0.1
 ;; URL: https://github.com/clojure-emacs/sayid
-;; Package-Requires: ((cider "0.21.0"))
+;; Package-Requires: ((cider "0.21.0") (magit "2.90.1"))
 
 ;; Licensed under the Apache License, Version 2.0 (the "License");
 ;; you may not use this file except in compliance with the License.
