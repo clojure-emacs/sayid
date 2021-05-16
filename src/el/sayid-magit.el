@@ -46,7 +46,7 @@
 (defun sayid-magit-trace-changed-ns ()
   "Trace the changed namespaces in a git commit."
   (interactive)
-  (sayid--trace-ns-in-files (sayid-magit--changed-files)))
+  (sayid-magit--trace-ns-in-files (sayid-magit--changed-files)))
 
 (provide 'sayid-magit)
 
