@@ -25,7 +25,7 @@
 ;;;###autoload
 (defun sayid-magit--trace-ns-in-files (file-names)
   "Trace namespace in FILE-NAMES."
-  (mapcar (lambda (file-name)
+  (mapc (lambda (file-name)
             (with-current-buffer (find-file-noselect
                                   file-name)
               (nrepl-send-sync-request (list "op" "sayid-trace-ns-in-file"
