@@ -36,7 +36,7 @@
 
 ;;;###autoload
 (defun sayid-magit--changed-files ()
-  "docstring"
+  "Return the absolute paths to changed files in the current .git directory."
   (mapcar
    (lambda (file)
      (expand-file-name file (locate-dominating-file (buffer-file-name) ".git")))
