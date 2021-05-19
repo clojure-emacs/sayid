@@ -26,11 +26,9 @@
 (defun sayid-magit--trace-ns-in-files (file-names)
   "Trace namespace in FILE-NAMES."
   (mapc (lambda (file-name)
-          (with-current-buffer (find-file-noselect
-                                file-name)
-            (nrepl-send-sync-request (list "op" "sayid-trace-ns-in-file"
-                                           "file" (buffer-file-name))
-                                     (cider-current-connection))))
+          (nrepl-send-sync-request (list "op" "sayid-trace-ns-in-file"
+                                         "file" file-name)
+                                   (cider-current-connection)))
         file-names)
   (sayid-show-traced))
 
