@@ -26,27 +26,31 @@
 (defun sayid-magit--trace-ns-in-files (file-names)
   "Trace namespace in FILE-NAMES."
   (mapc (lambda (file-name)
-            (with-current-buffer (find-file-noselect
-                                  file-name)
-              (nrepl-send-sync-request (list "op" "sayid-trace-ns-in-file"
-                                             "file" (buffer-file-name))
-                                       (cider-current-connection))))
-          file-names)
+          (with-current-buffer (find-file-noselect
+                                file-name)
+            (nrepl-send-sync-request (list "op" "sayid-trace-ns-in-file"
+                                           "file" (buffer-file-name))
+                                     (cider-current-connection))))
+        file-names)
   (sayid-show-traced))
 
 ;;;###autoload
 (defun sayid-magit--changed-files ()
-  "Return the absolute paths to changed files in the current .git directory."
-  (mapcar
-   (lambda (file)
-     (expand-file-name file (locate-dominating-file (buffer-file-name) ".git")))
-   (magit-changed-files (magit-read-starting-point "Sayid trace" nil "HEAD"))))
+  "Return the absolute paths to changed files which have a .clj \
+extension in the current .git directory."
+  (seq-filter
+   (apply-partially #'string-match ".clj$")
+   (mapcar
+    (lambda (file)
+      (expand-file-name file (locate-dominating-file file ".git")))
+    (magit-changed-files (magit-read-starting-point "Sayid trace" nil "HEAD")))))
 
 ;;;###autoload
 (defun sayid-magit-trace-changed-ns ()
   "Trace the changed namespaces in a git commit."
   (interactive)
-  (sayid-magit--trace-ns-in-files (sayid-magit--changed-files)))
+  (sayid-magit--trace-ns-in-files
+   (sayid-magit--changed-files)))
 
 (provide 'sayid-magit)
 
