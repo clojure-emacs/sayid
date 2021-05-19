@@ -882,8 +882,8 @@ Disable traces, load buffer, enable traces, clear log."
   "Try to generate an expression that will reproduce traced call.
 Place expression in kill ring."
   (interactive)
-  (let ((expr (sayid-req-get-value (list "op" "sayid-gen-instance-expr"
-                                         "trace-id" (get-text-property (point) 'id)))))
+  (let ((expr (prin1-to-string (sayid-req-get-value (list "op" "sayid-gen-instance-expr"
+                                         "trace-id" (get-text-property (point) 'id))))))
     (kill-new expr)
     (message (concat "Written to kill ring: " expr))
     (sayid-buffer-nav-from-point)))
