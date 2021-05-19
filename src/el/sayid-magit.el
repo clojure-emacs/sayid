@@ -35,22 +35,22 @@
   (sayid-show-traced))
 
 ;;;###autoload
-(defun sayid-magit--changed-files ()
+(defun sayid-magit--changed-files (git-revision)
   "Return the absolute paths to changed files which have a .clj \
-extension in the current .git directory."
+extension in the current .git directory since GIT-REVISION."
   (seq-filter
    (apply-partially #'string-match ".clj$")
    (mapcar
     (lambda (file)
       (expand-file-name file (locate-dominating-file file ".git")))
-    (magit-changed-files (magit-read-starting-point "Sayid trace" nil "HEAD")))))
+    (magit-changed-files git-revision))))
 
 ;;;###autoload
-(defun sayid-magit-trace-changed-ns ()
-  "Trace the changed namespaces in a git commit."
-  (interactive)
+(defun sayid-magit-trace-changed-ns (git-revision)
+  "Trace the changed namespaces in a git commit since GIT-REVISION."
+  (interactive (list (magit-read-starting-point "Sayid trace" nil "HEAD")))
   (sayid-magit--trace-ns-in-files
-   (sayid-magit--changed-files)))
+   (sayid-magit--changed-files git-revision)))
 
 (provide 'sayid-magit)
 
