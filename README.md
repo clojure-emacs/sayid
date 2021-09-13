@@ -19,7 +19,7 @@ Sayid currently has three components:
 * [nREPL](https://nrepl.org) middleware
 * A [CIDER](https://cider.mx) plugin
 
-The `sayid.core` namespace is designed to be used directly via a repl and does
+The `sayid.core` namespace is designed to be used directly via a REPL and does
 not require Emacs or CIDER. **BUT** the CIDER integration offers a far
 better experience, so it is the current focus of this page and my
 development efforts.
