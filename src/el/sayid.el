@@ -31,7 +31,6 @@
 
 ;;; Code:
 
-(require 'lisp-mnt)
 (require 'cider)
 
 (defgroup sayid nil
@@ -48,9 +47,8 @@
   :type 'boolean)
 
 (defconst sayid-version
-  (eval-when-compile
-    (lm-version (or load-file-name buffer-file-name)))
-  "The current version of `clojure-mode'.")
+  "0.1.0"
+  "The current version of sayid.")
 
 
 (defface sayid-int-face '((t :inherit default))
