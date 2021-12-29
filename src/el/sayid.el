@@ -1,11 +1,13 @@
 ;;; sayid.el --- sayid nREPL middleware client
 
-;; Copyright (c) 2016-2019 Bill Piel, Bozhidar Batsov
+;; Copyright (c) 2016-2021 Bill Piel, Bozhidar Batsov
 
 ;; Author: Bill Piel <bill@billpiel.com>
+;; Maintainer: Bozhidar Batsov <bozhidar@batsov.dev>
 ;; Version: 0.1.0
 ;; URL: https://github.com/clojure-emacs/sayid
 ;; Package-Requires: ((cider "0.21.0"))
+;; Keywords: clojure, cider, debugger
 
 ;; Licensed under the Apache License, Version 2.0 (the "License");
 ;; you may not use this file except in compliance with the License.
