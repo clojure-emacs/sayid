@@ -1,5 +1,10 @@
 # Change Log
 
+## unreleased
+
+* [#61](https://github.com/clojure-emacs/sayid/issues/61): Remove version extraction logic.
+* Decouple the injected `sayid` plugin version from the version of the Emacs client (see `sayid-injected-plugin-version`).
+
 ## [0.1.0] - 2020-09-02
 
 * [#57](https://github.com/clojure-emacs/sayid/issues/57): Fix version extraction logic.

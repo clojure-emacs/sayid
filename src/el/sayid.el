@@ -50,6 +50,9 @@
   "0.1.0"
   "The current version of sayid.")
 
+(defconst sayid-injected-plugin-version
+  "0.1.0"
+  "The version of the sayid Lein plugin to be automatically injected.")
 
 (defface sayid-int-face '((t :inherit default))
   "Sayid integer face"
@@ -150,7 +153,7 @@ If injecting the dependencies is not preferred set `sayid-inject-dependencies-at
   (when (and sayid-inject-dependencies-at-jack-in
              (boundp 'cider-jack-in-lein-plugins)
              (boundp 'cider-jack-in-nrepl-middlewares))
-    (add-to-list 'cider-jack-in-lein-plugins `("com.billpiel/sayid" ,sayid-version))
+    (add-to-list 'cider-jack-in-lein-plugins `("com.billpiel/sayid" ,sayid-injected-plugin-version))
     (add-to-list 'cider-jack-in-nrepl-middlewares "com.billpiel.sayid.nrepl-middleware/wrap-sayid")))
 
 ;;;###autoload
