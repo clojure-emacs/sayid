@@ -45,7 +45,7 @@
 
 (defcustom sayid-inject-dependencies-at-jack-in t
   "When nil, do not inject repl dependencies (most likely nREPL middlewares) at `cider-jack-in' time."
-  :group 'sayid
+  :package-version '(sayid . "0.1.0")
   :type 'boolean)
 
 (defconst sayid-version
@@ -58,85 +58,85 @@
 
 (defface sayid-int-face '((t :inherit default))
   "Sayid integer face"
-  :group 'sayid)
+  :package-version '(sayid . "0.1.0"))
 
 (defface sayid-float-face '((t :inherit default))
   "Sayid float face"
-  :group 'sayid)
+  :package-version '(sayid . "0.1.0"))
 
 (defface sayid-symbol-face '((t :inherit default))
   "Sayid symbol face"
-  :group 'sayid)
+  :package-version '(sayid . "0.1.0"))
 
 (defface sayid-string-face
   '((t :inherit font-lock-string-face))
   "Sayid string face"
-  :group 'sayid)
+  :package-version '(sayid . "0.1.0"))
 
 (defface sayid-keyword-face
   '((t :inherit font-lock-constant-face))
   "Sayid keyword face"
-  :group 'sayid)
+  :package-version '(sayid . "0.1.0"))
 
 (defface sayid-depth-1-face
   '((((background light)) (:foreground "Springgreen4"))
     (((background dark)) (:foreground "Palegreen1")))
   "Sayid nesting, depth 1 - outermost set."
-  :group 'sayid)
+  :package-version '(sayid . "0.1.0"))
 
 (defface sayid-depth-2-face
   '((((background light)) (:foreground "DodgerBlue"))
     (((background dark)) (:foreground "Cadetblue1")))
   "Sayid nesting, depth 2."
-  :group 'sayid)
+  :package-version '(sayid . "0.1.0"))
 
 (defface sayid-depth-3-face
   '((((background light)) (:foreground "Red1"))
     (((background dark)) (:foreground "Palevioletred1")))
   "Sayid nesting, depth 3."
-  :group 'sayid)
+  :package-version '(sayid . "0.1.0"))
 
 (defface sayid-depth-4-face
   '((((background light)) (:foreground "Orange1"))
     (((background dark)) (:foreground "Lightsalmon1")))
   "Sayid nesting, depth 4."
-  :group 'sayid)
+  :package-version '(sayid . "0.1.0"))
 
 (defface sayid-depth-5-face
   '((((background light)) (:foreground "Gold3"))
     (((background dark)) (:foreground "PaleGoldenrod")))
   "Sayid nesting, depth 5."
-  :group 'sayid)
+  :package-version '(sayid . "0.1.0"))
 
 (defface sayid-depth-6-face
   '((((background light)) (:foreground "DimGray"))
     (((background dark)) (:foreground "LightGray")))
   "Sayid nesting, depth 6."
-  :group 'sayid)
+  :package-version '(sayid . "0.1.0"))
 
 (defface sayid-depth-7-face
   '((((background light)) (:foreground "Mediumpurple3"))
     (((background dark)) (:foreground "Lightpink1")))
   "Sayid nesting, depth 7."
-  :group 'sayid)
+  :package-version '(sayid . "0.1.0"))
 
 (defface sayid-depth-8-face
   '((((background light)) (:foreground "DarkTurquoise"))
     (((background dark)) (:foreground "Paleturquoise1")))
   "Sayid nesting, depth 8."
-  :group 'sayid)
+  :package-version '(sayid . "0.1.0"))
 
 (defface sayid-depth-9-face
   '((((background light)) (:foreground "Peachpuff3"))
     (((background dark)) (:foreground "Peachpuff1")))
   "Sayid nesting, depth 9."
-  :group 'sayid)
+  :package-version '(sayid . "0.1.0"))
 
 (defface sayid-depth-10-face
   '((((background light)) (:foreground "IndianRed"))
     (((background dark)) (:foreground "MistyRose")))
   "Sayid nesting, depth 10."
-  :group 'sayid)
+  :package-version '(sayid . "0.1.0"))
 
 (defvar sayid-trace-ns-dir nil)
 (defvar sayid-meta nil)
