@@ -153,9 +153,9 @@
   "Inject the REPL dependencies of sayid at `cider-jack-in'.
 If injecting the dependencies is not preferred set `sayid-inject-dependencies-at-jack-in' to nil."
   (when (and sayid-inject-dependencies-at-jack-in
-             (boundp 'cider-jack-in-lein-plugins)
+             (boundp 'cider-jack-in-dependencies)
              (boundp 'cider-jack-in-nrepl-middlewares))
-    (add-to-list 'cider-jack-in-lein-plugins `("com.billpiel/sayid" ,sayid-injected-plugin-version))
+    (add-to-list 'cider-jack-in-dependencies `("com.billpiel/sayid" ,sayid-injected-plugin-version))
     (add-to-list 'cider-jack-in-nrepl-middlewares "com.billpiel.sayid.nrepl-middleware/wrap-sayid")))
 
 ;;;###autoload
