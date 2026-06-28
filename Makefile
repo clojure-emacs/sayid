@@ -1,4 +1,4 @@
-.PHONY: test test-all repl elisp-compile elisp-lint elisp clean
+.PHONY: test test-all kondo repl elisp-compile elisp-lint elisp clean
 
 # Run the Clojure test suite against the default Clojure version.
 test:
@@ -7,6 +7,10 @@ test:
 # Run the Clojure test suite against the full version matrix.
 test-all:
 	lein test-all
+
+# Lint the Clojure sources with clj-kondo.
+kondo:
+	lein with-profile +clj-kondo clj-kondo --lint src test
 
 # Start a REPL with the nREPL middleware loaded.
 repl:

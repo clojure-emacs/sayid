@@ -55,6 +55,17 @@ commands:
           key: deps-<< parameters.cache_version >>-{{ checksum "/tmp/clojure_cache_seed" }}
 
 jobs:
+  lint:
+    description: Lint the Clojure sources with clj-kondo.
+    executor: jdk21
+    steps:
+      - checkout
+      - with_cache:
+          steps:
+            - run:
+                name: Run clj-kondo
+                command: make kondo
+
   test:
     description: Run the test suite against a given JDK and Clojure version.
     parameters:
@@ -81,6 +92,8 @@ run_always: &run_always
 workflows:
   build:
     jobs:
+      - lint:
+          <<: *run_always
       # Every supported Clojure version on the latest LTS JDK.
       - test:
           name: test-clojure-<< matrix.clojure_version >>-<< matrix.jdk_version >>

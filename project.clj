@@ -30,6 +30,8 @@
              :1.11 {:dependencies [[org.clojure/clojure "1.11.4"]]}
              :1.12 {:dependencies [[org.clojure/clojure "1.12.1"]]}
 
-             :dev {:dependencies [[nrepl "1.3.1"]]}}
+             :dev {:dependencies [[nrepl "1.3.1"]]}
+
+             :clj-kondo {:plugins [[com.github.clj-kondo/lein-clj-kondo "2026.01.19"]]}}
 
   :aliases {"test-all" ["with-profile" "+1.10:+1.11:+1.12" "test"]})
