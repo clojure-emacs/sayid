@@ -154,9 +154,17 @@ The injected dependencies are most likely nREPL middlewares."
   "Inject the REPL dependencies of sayid at `cider-jack-in'.
 To opt out, set `sayid-inject-dependencies-at-jack-in' to nil."
   (when (and sayid-inject-dependencies-at-jack-in
-             (boundp 'cider-jack-in-lein-plugins)
              (boundp 'cider-jack-in-nrepl-middlewares))
-    (add-to-list 'cider-jack-in-lein-plugins `("com.billpiel/sayid" ,sayid-injected-plugin-version))
+    ;; Leiningen reads `cider-jack-in-lein-plugins', but the Clojure CLI and
+    ;; other build tools only read `cider-jack-in-dependencies', so the
+    ;; dependency has to be registered in both.  `cider-add-to-alist' replaces
+    ;; any existing entry for the artifact, so this stays idempotent.
+    (when (boundp 'cider-jack-in-lein-plugins)
+      (cider-add-to-alist 'cider-jack-in-lein-plugins
+                          "com.billpiel/sayid" sayid-injected-plugin-version))
+    (when (boundp 'cider-jack-in-dependencies)
+      (cider-add-to-alist 'cider-jack-in-dependencies
+                          "com.billpiel/sayid" sayid-injected-plugin-version))
     (add-to-list 'cider-jack-in-nrepl-middlewares "com.billpiel.sayid.nrepl-middleware/wrap-sayid")))
 
 ;;;###autoload
