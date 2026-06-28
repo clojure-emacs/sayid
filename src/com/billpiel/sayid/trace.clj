@@ -185,7 +185,7 @@
 (defn trace-ns*
   [ns workspace]
   (when-let [ns (the-ns-safe ns)]
-    (when-not ('#{clojure.core com.billpiel.sayid.core} (.name ns))
+    (when-not ('#{clojure.core com.billpiel.sayid.core} (ns-name ns))
       (let [ns-fns (->> ns ns-interns vals (filter (comp util/fn*? var-get)))]
         (doseq [f ns-fns]
           (trace-var* f

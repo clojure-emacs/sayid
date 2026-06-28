@@ -21,7 +21,7 @@
 
 (defn ->symbol
   [v]
-  (cond (= (type v) clojure.lang.Namespace) (symbol (.getName v))
+  (cond (= (type v) clojure.lang.Namespace) (symbol (.getName ^clojure.lang.Namespace v))
         (keyword? v) (-> v name symbol)
         (string? v) (symbol v)
         :else (-> v str symbol)))

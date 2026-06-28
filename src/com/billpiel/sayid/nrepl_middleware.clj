@@ -501,7 +501,7 @@
 (defn ^:nrepl sayid-trace-all-ns-in-dir
   [{:keys [transport dir] :as msg}]
   (doall (map sd/ws-add-trace-ns!*
-              (ns-find/find-namespaces-in-dir (java.io.File. dir))))
+              (ns-find/find-namespaces-in-dir (java.io.File. ^String dir))))
   (sd/ws-cycle-all-traces!)
   (send-status-done msg))
 

@@ -8,8 +8,8 @@
         slot (slot-kw item')]
     (if (symbol? slot)
       (util/def-ns-var shelf slot item')
-      (throw (Exception. (mk-ex-msg-fn
-                          slot))))
+      (throw (Exception. ^String (mk-ex-msg-fn
+                                  slot))))
     item'))
 
 (defn save-as!
@@ -37,7 +37,7 @@
     (let [source (util/just-get-whatever-you-can shelf
                                                  slot-src)]
       (reset! item source))
-    (throw (Exception. load-over-unsaved-ex-msg))))
+    (throw (Exception. ^String load-over-unsaved-ex-msg))))
 
 #_ (defn load!
      [item shelf slot load-over-unsaved-ex-msg & [force]]
