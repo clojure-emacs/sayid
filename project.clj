@@ -5,10 +5,12 @@
   :license {:name "Apache License, Version 2.0"
             :url "http://www.apache.org/licenses/LICENSE-2.0"}
 
-  :dependencies [[tamarin "0.1.2"]
-                 [org.clojure/tools.reader "1.3.2"]
-                 [org.clojure/tools.namespace "1.0.0"]]
-  :exclusions [org.clojure/clojure] ; see versions matrix below
+  ;; Clojure itself is supplied via the `:provided` profile (and overridden by
+  ;; the version-matrix profiles below), so we exclude the transitive copies
+  ;; pulled in by our dependencies to avoid version conflicts.
+  :dependencies [[tamarin "0.1.2" :exclusions [org.clojure/clojure]]
+                 [org.clojure/tools.reader "1.6.0" :exclusions [org.clojure/clojure]]
+                 [org.clojure/tools.namespace "1.5.1" :exclusions [org.clojure/clojure]]]
 
   :aot [com.billpiel.sayid.sayid-multifn]
 
@@ -19,16 +21,15 @@
 
   :repl-options {:nrepl-middleware [com.billpiel.sayid.nrepl-middleware/wrap-sayid]}
 
-  :profiles {;; Clojure versions matrix
-             :provided {:dependencies [[org.clojure/clojure "1.10.1"]
-                                       [org.clojure/clojure "1.10.1" :classifier "sources"]]}
-             :1.8 {:dependencies [[org.clojure/clojure "1.8.0"]
-                                  [org.clojure/clojure "1.8.0" :classifier "sources"]]}
-             :1.9 {:dependencies [[org.clojure/clojure "1.9.0"]
-                                  [org.clojure/clojure "1.9.0" :classifier "sources"]]}
-             :1.10 {:dependencies [[org.clojure/clojure "1.10.1"]
-                                   [org.clojure/clojure "1.10.1" :classifier "sources"]]}
+  :pedantic? :warn
 
-             :dev {:dependencies [[nrepl "0.7.0"]]}}
+  :profiles {;; Clojure is "provided" so that downstream projects bring their
+             ;; own version. The version-matrix profiles below override it.
+             :provided {:dependencies [[org.clojure/clojure "1.12.1"]]}
+             :1.10 {:dependencies [[org.clojure/clojure "1.10.3"]]}
+             :1.11 {:dependencies [[org.clojure/clojure "1.11.4"]]}
+             :1.12 {:dependencies [[org.clojure/clojure "1.12.1"]]}
 
-  :aliases {"test-all" ["with-profile" "+1.8:+1.9:+1.10" "test"]})
+             :dev {:dependencies [[nrepl "1.3.1"]]}}
+
+  :aliases {"test-all" ["with-profile" "+1.10:+1.11:+1.12" "test"]})
