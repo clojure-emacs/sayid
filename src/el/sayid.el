@@ -1,12 +1,12 @@
-;;; sayid.el --- sayid nREPL middleware client
+;;; sayid.el --- sayid nREPL middleware client  -*- lexical-binding: t; -*-
 
-;; Copyright (c) 2016-2021 Bill Piel, Bozhidar Batsov
+;; Copyright (c) 2016-2026 Bill Piel, Bozhidar Batsov
 
 ;; Author: Bill Piel <bill@billpiel.com>
 ;; Maintainer: Bozhidar Batsov <bozhidar@batsov.dev>
 ;; Version: 0.1.0
 ;; URL: https://github.com/clojure-emacs/sayid
-;; Package-Requires: ((cider "0.21.0"))
+;; Package-Requires: ((emacs "28") (cider "1.0"))
 ;; Keywords: clojure, cider, debugger
 
 ;; Licensed under the Apache License, Version 2.0 (the "License");
@@ -44,7 +44,8 @@
   :link '(emacs-commentary-link :tag "Commentary" "sayid"))
 
 (defcustom sayid-inject-dependencies-at-jack-in t
-  "When nil, do not inject repl dependencies (most likely nREPL middlewares) at `cider-jack-in' time."
+  "When nil, do not inject REPL dependencies at `cider-jack-in' time.
+The injected dependencies are most likely nREPL middlewares."
   :package-version '(sayid . "0.1.0")
   :type 'boolean)
 
@@ -57,25 +58,25 @@
   "The version of the sayid Lein plugin to be automatically injected.")
 
 (defface sayid-int-face '((t :inherit default))
-  "Sayid integer face"
+  "Sayid integer face."
   :package-version '(sayid . "0.1.0"))
 
 (defface sayid-float-face '((t :inherit default))
-  "Sayid float face"
+  "Sayid float face."
   :package-version '(sayid . "0.1.0"))
 
 (defface sayid-symbol-face '((t :inherit default))
-  "Sayid symbol face"
+  "Sayid symbol face."
   :package-version '(sayid . "0.1.0"))
 
 (defface sayid-string-face
   '((t :inherit font-lock-string-face))
-  "Sayid string face"
+  "Sayid string face."
   :package-version '(sayid . "0.1.0"))
 
 (defface sayid-keyword-face
   '((t :inherit font-lock-constant-face))
-  "Sayid keyword face"
+  "Sayid keyword face."
   :package-version '(sayid . "0.1.0"))
 
 (defface sayid-depth-1-face
@@ -151,7 +152,7 @@
 ;;;###autoload
 (defun sayid--inject-jack-in-dependencies ()
   "Inject the REPL dependencies of sayid at `cider-jack-in'.
-If injecting the dependencies is not preferred set `sayid-inject-dependencies-at-jack-in' to nil."
+To opt out, set `sayid-inject-dependencies-at-jack-in' to nil."
   (when (and sayid-inject-dependencies-at-jack-in
              (boundp 'cider-jack-in-lein-plugins)
              (boundp 'cider-jack-in-nrepl-middlewares))
@@ -219,7 +220,8 @@ If injecting the dependencies is not preferred set `sayid-inject-dependencies-at
       (get-buffer-window (car sayid-pprint-buf-spec) 'visible)))
 
 (defun sayid-pop-to-buffer-reuse-visible-sayid (buf-name-)
-  "Try to find a visible sayid buffer and pop to it.  BUF-NAME- is name of new buffer."
+  "Try to find a visible sayid buffer and pop to it.
+BUF-NAME- is the name of the new buffer."
   (let ((w (sayid-find-a-window)))
     (if w
         (progn
@@ -299,7 +301,7 @@ state.  POS is the position to move cursor to."
 
 ;;;###autoload
 (defun sayid-query-form-at-point ()
-  "Query sayid for calls made to function defined at point."
+  "Query sayid for invocations of the function defined at point."
   (interactive)
   (sayid-req-insert-content (list "op" "sayid-query-form-at-point"
                                   "file" (buffer-file-name)
@@ -388,7 +390,8 @@ Disable traces, load buffer, enable traces, clear log."
 
 ;; make-symbol is a liar
 (defun sayid-str-to-sym (s)
-  "Make a symbol from string S.  Make-symbol seems to return symbols that didn't equate when they should."
+  "Make a symbol from string S.
+`make-symbol' seems to return symbols that don't compare equal when they should."
   (car (read-from-string s)))
 
 (defvar sayid-prop->font '(("int"     . sayid-int-face)
@@ -409,8 +412,7 @@ Disable traces, load buffer, enable traces, clear log."
 
 (defun sayid-mk-font-face (p)
   "Make a font face from property pair P."
-  (let* ((clr (cadr (assoc "color" (list p))))
-         (type (car (cadr (assoc "type" (list p)))))
+  (let* ((type (car (cadr (assoc "type" (list p)))))
          (fg* (cadr (assoc "fg*" (list p)))))
     ;; if we have a type, pick a font by type,
     ;; otherwise pick a font by fg* (which is a number indicating nesting depth),
@@ -536,7 +538,8 @@ Disable traces, load buffer, enable traces, clear log."
 
 ;;;###autoload
 (defun sayid-traced-buf-enter ()
-  "Perform 'enter' on trace buffer.  Either navigate to ns view or function source."
+  "Perform \\='enter\\=' on trace buffer.
+Either navigate to ns view or function source."
   (interactive)
   (sayid-select-traced-buf)
   (let ((name (get-text-property (point) 'name ))
@@ -568,7 +571,7 @@ Disable traces, load buffer, enable traces, clear log."
 
 ;;;###autoload
 (defun sayid-trace-ns-by-pattern (ns-pattern)
-  "Trace all namespaces that match specified pattern."
+  "Trace all namespaces that match NS-PATTERN."
   (interactive (list
                 (read-string "Namespace to trace (*=wildcard) "
                              (cider-current-ns))))
@@ -796,7 +799,7 @@ Disable traces, load buffer, enable traces, clear log."
 
 ;;;###autoload
 (defun sayid-buf-inspect-at-point ()
-  "Def value at point and pass to 'cider-inspect'."
+  "Def value at point and pass to `cider-inspect'."
   (interactive)
   (sayid-send-and-message (list "op" "sayid-buf-def-at-point"
                                 "trace-id" (get-text-property (point) 'id)
@@ -950,7 +953,8 @@ h -- show this help
 "))
 
 (defun sayid-set-clj-mode-keys (prefix)
-  "Define 'clojure-mode' keybindings."
+  "Define `clojure-mode' keybindings.
+PREFIX is the key prefix to bind the sayid commands under."
   (define-key clojure-mode-map prefix sayid-clj-mode-keys))
 
 (defvar sayid-mode-map
@@ -1004,7 +1008,7 @@ h -- help
 
 ;;;###autoload
 (define-derived-mode sayid-mode fundamental-mode "SAYID"
-  "A major mode for displaying Sayid output"
+  "A major mode for displaying Sayid output."
   (read-only-mode 1)
   (setq truncate-lines t)
   (buffer-disable-undo))
@@ -1084,9 +1088,9 @@ q -- quit window
 
 ;;;###autoload
 (defun sayid-setup-package (&optional clj-mode-prefix)
-  "Setup the sayid package.
-Optionally takes CLJ-MODE-PREFIX, which is used as the prefix for
-clojure-mode keybindings.  Default prefix is 'C-c s'."
+  "Set up the sayid package.
+CLJ-MODE-PREFIX sets the prefix key for the `clojure-mode' keybindings.
+When omitted, it defaults to the usual sayid prefix."
   (interactive)
   (sayid-set-clj-mode-keys (or clj-mode-prefix (kbd "C-c s"))))
 
