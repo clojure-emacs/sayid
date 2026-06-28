@@ -1,11 +1,30 @@
-VERSION:=0.1.0
-PACKAGE_NAME:=sayid-$(VERSION)
-PACKAGE_DIR:=/tmp/$(PACKAGE_NAME)
+.PHONY: test test-all repl elisp-compile elisp-lint elisp clean
 
-package-el:
-	mkdir $(PACKAGE_DIR)
-	cp -r src/el/* $(PACKAGE_DIR)
-	tar cvf ../$(PACKAGE_NAME).tar --exclude="*#" --exclude="*~" -C $(PACKAGE_DIR)/.. $(PACKAGE_NAME)
-	rm -rf $(PACKAGE_DIR)
+# Run the Clojure test suite against the default Clojure version.
+test:
+	lein test
+
+# Run the Clojure test suite against the full version matrix.
+test-all:
+	lein test-all
+
+# Start a REPL with the nREPL middleware loaded.
+repl:
+	lein repl
+
+# Byte-compile the Emacs Lisp client (requires Eldev).
+elisp-compile:
+	eldev -p -dtT compile --warnings-as-errors
+
+# Check the Emacs Lisp client docstrings (requires Eldev).
+elisp-lint:
+	eldev -dtT lint doc
+
+# Run all the Emacs Lisp checks.
+elisp: elisp-compile elisp-lint
+
+clean:
+	lein clean
+	rm -rf .eldev
 
 # end
