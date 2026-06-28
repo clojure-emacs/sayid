@@ -30,7 +30,12 @@ development efforts.
 
 ### Requirements
 
-Basic usage requires Clojure 1.7 and the optional nREPL middleware requires nREPL 0.4+.
+Basic usage requires Clojure 1.10+ running on Java 8 or newer. The optional
+nREPL middleware requires nREPL 1.0+, and the Emacs client requires CIDER 1.0+
+on Emacs 28+.
+
+(Sayid is tested against Clojure 1.10, 1.11 and 1.12 on a range of JDKs. Older
+Clojure versions may still work, but they're no longer part of the test matrix.)
 
 nREPL-powered editor plugins are encouraged to make use of the bundled middleware that
 provides a very flexible Sayid API.
@@ -68,8 +73,8 @@ Stable](https://stable.melpa.org/#/sayid). Put this code in `init.el`, or
 somewhere, to load keybindings for clojure-mode buffers.
 
 ```elisp
-(eval-after-load 'clojure-mode
-  '(sayid-setup-package))
+(with-eval-after-load 'clojure-mode
+  (sayid-setup-package))
 ```
 
 If you use CIDER's jack-in commands, then Sayid automatically adds the
@@ -81,9 +86,9 @@ dependency manually. Here's an example of a bare-bones profiles.clj
 that works for me:
 
 ```clojure
-{:user {:plugins [[cider/cider-nrepl "0.25.3"]
+{:user {:plugins [[cider/cider-nrepl "0.59.0"]
                   [com.billpiel/sayid "0.1.0"]]
-        :dependencies [[nrepl/nrepl "0.7.0"]]}}
+        :dependencies [[nrepl/nrepl "1.3.1"]]}}
 ```
 
 Usually you'll want to use the latest versions of `cider-nrepl` and nREPL here.
@@ -94,6 +99,58 @@ A 3rd-party vim plugin also exists. See
 [this](http://arsenerei.com/blog/posts/2017-02-24-vim-sayid/) and
 [this](https://github.com/arsenerei/vim-sayid).
 
+## Using Sayid from the REPL
+
+You don't need Emacs or CIDER to use Sayid. The `com.billpiel.sayid.core`
+namespace (conventionally aliased to `sd`) is a complete API on its own. Trace
+a namespace or a function, exercise your code, then print the recorded
+workspace:
+
+```clojure
+(require '[com.billpiel.sayid.core :as sd])
+
+(defn add [a b] (+ a b))
+(defn add-twice [a b] (+ (add a b) (add a b)))
+
+;; Trace every function in the current namespace.
+(sd/ws-add-trace-ns! user)
+
+(add-twice 3 4)
+
+(sd/ws-print)
+```
+
+That prints the full call tree, including the nested calls to `add`, with the
+arguments and return value of each invocation:
+
+```
+v user/add-twice  :2887
+| a => 3
+| b => 4
+| returns =>  14
+|v user/add  :2888
+|| a => 3
+|| b => 4
+|| returned =>  7
+|^
+|v user/add  :2889
+|| a => 3
+|| b => 4
+|| returned =>  7
+|^
+| user/add-twice  :2887
+| returned =>  14
+^
+```
+
+Some other useful entry points:
+
+* `(sd/ws-add-trace-fn! my-ns/my-fn)` traces a single function.
+* `(sd/ws-add-inner-trace-fn! my-ns/my-fn)` adds an *inner* trace that also
+  captures every expression evaluated inside the function.
+* `(sd/ws-clear-log!)` clears the recorded calls without removing the traces.
+* `(sd/ws-reset!)` removes all traces and clears the log.
+
 ## Using Sayid
 
 **Note: This assumes you're using the official CIDER plugin.**.
@@ -103,7 +160,8 @@ keybindings. Helpfully, they are easily accessible from within emacs.
 Below are the contents of the various help buffers, as well as
 instructions on how to pop them up in time of need.
 
-Generated docs are also available for the core namespace [here](doc).
+API docs for the core namespaces are available on
+[cljdoc](https://cljdoc.org/d/com.billpiel/sayid/CURRENT).
 
 In a clojure-mode buffer, press `C-c s h` (`sayid-show-help`) to
 pop up the help buffer.

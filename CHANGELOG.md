@@ -2,6 +2,12 @@
 
 ## unreleased
 
+* Bump the minimum requirements to Clojure 1.10, nREPL 1.0, CIDER 1.0 and Emacs 28.
+* Bump the bundled `tools.reader` and `tools.namespace` dependencies.
+* Fix the broken Clojure version matrix that prevented the test suite from running on recent Leiningen.
+* Modernize CI: run against a JDK/Clojure matrix and byte-compile/lint the Emacs Lisp client.
+* Enable lexical binding in the Emacs Lisp client and tidy up its docstrings.
+* Eliminate reflection warnings in the Clojure namespaces.
 * [#61](https://github.com/clojure-emacs/sayid/issues/61): Remove version extraction logic.
 * Decouple the injected `sayid` plugin version from the version of the Emacs client (see `sayid-injected-plugin-version`).
 * `sayid-trace-ns-by-pattern` accepts interactive argument.
