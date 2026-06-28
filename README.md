@@ -201,7 +201,6 @@ In the `*sayid*` buffer, press `h` to pop up the help buffer.
     I -- query for this instance with modifier
     w -- show full workspace trace
     n -- jump to next call node
-    N -- apply inner trace and reply workspace
     p -- jump to prev call node
     P -- pretty print value
     C -- clear workspace trace log
