@@ -4,6 +4,7 @@
             [com.billpiel.sayid.util.other :as util]
             [tamarin.core :as tam]
             [clojure.zip :as z]
+            clojure.set
             clojure.string))
 
 (def ^:dynamic *view* (fn [x] {:args true

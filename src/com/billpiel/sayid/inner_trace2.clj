@@ -3,7 +3,8 @@
             [com.billpiel.sayid.trace :as trace]
             clojure.pprint
             clojure.set
-            clojure.string))
+            clojure.string
+            clojure.walk))
 
 (defn prs
   [v]

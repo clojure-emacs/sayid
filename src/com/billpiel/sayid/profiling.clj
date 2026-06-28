@@ -2,6 +2,7 @@
   (:require [com.billpiel.sayid.trace :as tr]
             [com.billpiel.sayid.recording :as rec]
             [com.billpiel.sayid.util.other :as util]
+            clojure.set
             [clojure.walk :as w]))
 
 (defn merge-profile-values

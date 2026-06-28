@@ -2,6 +2,7 @@
   (:require
    [clojure.stacktrace :as st]
    clojure.string
+   clojure.walk
    [clojure.tools.namespace.find :as ns-find]
    [clojure.tools.reader :as r]
    [clojure.tools.reader.reader-types :as rts]
