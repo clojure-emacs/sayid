@@ -14,6 +14,9 @@ jobs:
     continue-on-error: ${{ matrix.emacs_version == 'snapshot' }}
     strategy:
       fail-fast: false
+      # Install one Emacs at a time so the concurrent nix installs don't burst
+      # the (unauthenticated) GitHub API rate limit and 429.
+      max-parallel: 1
       matrix:
         emacs_version:
           - '28.2'
