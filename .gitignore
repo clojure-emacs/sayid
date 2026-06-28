@@ -12,3 +12,4 @@ pom.xml.asc
 *.elc
 /.eldev/
 /Eldev-local
+/.clj-kondo/.cache/

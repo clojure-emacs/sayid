@@ -1,0 +1,46 @@
+;; Pragmatic clj-kondo baseline for an older, macro-heavy codebase.
+;;
+;; The high-signal linters (unresolved namespaces/vars, syntax, etc.) are kept
+;; on - they already caught a batch of genuinely missing requires. A handful of
+;; stylistic linters and the linters that can't see through Sayid's custom
+;; threading macros are dialed down so the lint is actionable rather than noisy.
+{:linters
+ {;; `$` is the placeholder in Sayid's own `$-` threading macro and `<>` is the
+  ;; swiss-arrows diamond placeholder; clj-kondo can't expand either.
+  :unresolved-symbol {:exclude [$ <>]}
+
+  ;; Sayid's `$-` and the swiss-arrows wands thread a value into a `$`/`<>`
+  ;; placeholder, so clj-kondo miscounts arities and types inside those forms.
+  :invalid-arity {:level :off}
+  :type-mismatch {:level :off}
+
+  ;; Lots of `(catch Exception e ...)` clauses ignore the exception, and the
+  ;; nREPL ops destructure keys they don't all use.
+  :unused-binding {:level :off}
+  :unused-import {:level :off}
+
+  ;; Stylistic nits we don't want to gate CI on for now.
+  :unused-namespace {:level :off}
+  :unused-referred-var {:level :off}
+  :redundant-let {:level :off}
+  :redundant-do {:level :off}
+  :inline-def {:level :off}
+  :redefined-var {:level :off}
+  :missing-else-branch {:level :off}
+  :cond-else {:level :off}
+  :unused-value {:level :off}
+  :loop-without-recur {:level :off}
+  :uninitialized-var {:level :off}
+  :single-logical-operand {:level :off}}
+
+ ;; `defalias`/`defalias-macro` define a var, so treat them like `def` and the
+ ;; generated aliases resolve.
+ :lint-as {com.billpiel.sayid.util.other/defalias clojure.core/def
+           com.billpiel.sayid.util.other/defalias-macro clojure.core/def
+           ;; The trace macros take an unevaluated ns/fn symbol, which they
+           ;; quote internally - treat them like `quote` so the symbol isn't
+           ;; flagged as unresolved.
+           com.billpiel.sayid.core/ws-add-trace-ns! clojure.core/quote
+           com.billpiel.sayid.core/ws-remove-trace-ns! clojure.core/quote
+           com.billpiel.sayid.core/ws-add-trace-fn! clojure.core/quote
+           com.billpiel.sayid.core/ws-add-inner-trace-fn! clojure.core/quote}}
