@@ -432,6 +432,34 @@
                                   binds
                                   (path->sym path))})))
 
+(defn xpand-letfn-form
+  [binds xbody path-sym]
+  `(tr-let-ret ~path-sym
+     ~'$$
+     (letfn* ~binds
+       ~@xbody)))
+
+(defn xpand-letfn
+  [[_ binds & body :as form] src-map fn-meta path path-parent]
+  ;; `letfn*' requires its bindings to be literal fn forms, so - unlike `let' -
+  ;; we can't wrap them with tracing.  Leave the bindings untouched and trace
+  ;; only the body forms (their indices in the form start at 2).
+  (let [xmap (merge-xpansion-maps
+              (doall (map-indexed
+                      (fn [i bform]
+                        (xpand-form bform src-map fn-meta
+                                    (conj path (+ i 2)) path))
+                      body)))]
+    (layer-xpansion-maps xmap
+                         {:path-parents {path path-parent}
+                          :templates {path (mk-tree-template src-map
+                                                             (get-form-meta-somehow form)
+                                                             fn-meta
+                                                             path)}
+                          :form (xpand-letfn-form binds
+                                                  (:form xmap)
+                                                  (path->sym path))})))
+
 (defn tr-macro
   [template tree-atom mcro v]
   (let [tree @(produce-recent-tree-atom! (:inner-path template)
@@ -682,6 +710,7 @@
         (cond
           (= 'fn* head) {:form form}
           (= 'let head) (apply xpand-let args)
+          (= 'letfn* head) (apply xpand-letfn args)
           (= 'loop head) (apply xpand-loop args)
           (= 'recur head) (apply xpand-recur args)
           (= 'if head) (apply xpand-if args)
