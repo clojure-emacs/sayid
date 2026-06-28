@@ -4,15 +4,7 @@ on:
   push:
     branches:
       - master
-    paths:
-      - 'src/el/**'
-      - 'Eldev'
-      - '.github/workflows/elisp.yml'
   pull_request:
-    paths:
-      - 'src/el/**'
-      - 'Eldev'
-      - '.github/workflows/elisp.yml'
 
 jobs:
   compile:
