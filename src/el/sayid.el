@@ -880,14 +880,27 @@ Either navigate to ns view or function source."
 
 ;;;###autoload
 (defun sayid-gen-instance-expr ()
-  "Try to generate an expression that will reproduce traced call.
-Place expression in kill ring."
+  "Try to generate an expression that will reproduce the traced call.
+Place the expression in the kill ring and, when the function's source
+file can be found, jump to it."
   (interactive)
-  (let ((expr (sayid-req-get-value (list "op" "sayid-gen-instance-expr"
-                                         "trace-id" (get-text-property (point) 'id)))))
-    (kill-new expr)
-    (message (concat "Written to kill ring: " expr))
-    (sayid-buffer-nav-from-point)))
+  (let* ((expr (sayid-req-get-value (list "op" "sayid-gen-instance-expr"
+                                          "trace-id" (get-text-property (point) 'id))))
+         (file (get-text-property (point) 'src-file))
+         (xfile (and file (sayid-find-existing-file file))))
+    (cond
+     ((or (null expr) (string= "" expr))
+      (message "Sayid couldn't generate a reproduction expression here"))
+     ;; The reproduction expression is the main payload, so confirm it last -
+     ;; otherwise a failed source jump would clobber the kill-ring message.
+     (xfile
+      (kill-new expr)
+      (sayid-buffer-nav-from-point)
+      (message "Written to kill ring: %s" expr))
+     (t
+      (kill-new expr)
+      (message "Written to kill ring: %s (source file not found; eval the file to jump to it)"
+               expr)))))
 
 ;;;###autoload
 (defun sayid-buf-back ()
