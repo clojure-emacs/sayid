@@ -1,0 +1,41 @@
+name: Emacs Lisp CI
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'src/el/**'
+      - 'Eldev'
+      - '.github/workflows/elisp.yml'
+  pull_request:
+    paths:
+      - 'src/el/**'
+      - 'Eldev'
+      - '.github/workflows/elisp.yml'
+
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        emacs_version:
+          - '28.2'
+          - '29.4'
+          - '30.2'
+          - 'snapshot'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: jcs090218/setup-emacs@master
+        with:
+          version: ${{ matrix.emacs_version }}
+
+      - uses: emacs-eldev/setup-eldev@v1
+
+      - name: Byte-compile the client
+        run: eldev -dtT -p compile --warnings-as-errors
+
+      - name: Check the docstrings
+        run: eldev -dtT lint doc

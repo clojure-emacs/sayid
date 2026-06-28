@@ -1,0 +1,13 @@
+; -*- mode: emacs-lisp; lexical-binding: t -*-
+
+;; The Emacs client lives under src/el rather than at the project root.
+(setf eldev-project-main-file "src/el/sayid.el")
+(setf eldev-main-fileset "src/el/*.el")
+(eldev-add-loading-roots 'main "src/el")
+
+(eldev-use-package-archive 'gnu-elpa)
+(eldev-use-package-archive 'nongnu-elpa)
+(eldev-use-package-archive 'melpa-stable)
+
+;; Test with a recent stable CIDER from MELPA Stable.
+(eldev-use-package-archive 'melpa-unstable)
