@@ -17,6 +17,11 @@ jobs:
           - '29.4'
           - '30.2'
           - 'snapshot'
+    env:
+      # setup-emacs fetches nix-emacs-ci from GitHub; without a token nix uses
+      # unauthenticated API calls that get rate-limited (HTTP 429). Hand it the
+      # workflow token so the requests are authenticated.
+      NIX_CONFIG: "access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}"
     steps:
       - uses: actions/checkout@v4
 
