@@ -9,6 +9,9 @@ on:
 jobs:
   compile:
     runs-on: ubuntu-latest
+    # `snapshot` is Emacs built from git master; treat it as informational so an
+    # unreleased-Emacs hiccup (or a flaky install) can't block a merge.
+    continue-on-error: ${{ matrix.emacs_version == 'snapshot' }}
     strategy:
       fail-fast: false
       matrix:
