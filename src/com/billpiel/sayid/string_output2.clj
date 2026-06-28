@@ -513,8 +513,8 @@
 (defn ansi-color-code
   ([] (ansi-color-code {}))
   ([{:keys [fg-color bg-color]}]
-   (let [fg (.indexOf colors-kw (or fg-color :white))
-         bg (.indexOf colors-kw (or bg-color :black))]
+   (let [fg (.indexOf ^java.util.List colors-kw (or fg-color :white))
+         bg (.indexOf ^java.util.List colors-kw (or bg-color :black))]
      (->> [(if (= fg -1) nil (+ 30 fg))
            (if (= bg -1) nil (+ 40 bg))]
           (remove nil?)
