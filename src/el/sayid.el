@@ -1062,7 +1062,8 @@ q -- quit window
 (define-derived-mode sayid-traced-mode fundamental-mode "SAYID-TRACED"
   "A major mode for displaying Sayid trace output."
   (read-only-mode 1)
-  (setq truncate-lines t))
+  (setq truncate-lines t)
+  (buffer-disable-undo))
 
 
 (defvar sayid-pprint-mode-map
