@@ -1,4 +1,5 @@
-(ns com.billpiel.sayid.test-utils)
+(ns com.billpiel.sayid.test-utils
+  (:require clojure.string))
 
 ;; https://github.com/Prismatic/plumbing/blob/6f9f1b6453ed2c978a619dc99bb0317d8c053141/src/plumbing/core.cljx#L356
 (defn swap-pair!

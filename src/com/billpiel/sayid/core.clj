@@ -1,5 +1,6 @@
 (ns com.billpiel.sayid.core
   (:require [clojure.java.io :as io]
+            clojure.pprint
             [com.billpiel.sayid.trace :as trace]
             [com.billpiel.sayid.inner-trace3 :as itrace]
             [com.billpiel.sayid.workspace :as ws]
