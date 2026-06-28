@@ -2,6 +2,7 @@
 
 ## unreleased
 
+* [#14](https://github.com/clojure-emacs/sayid/issues/14): Fix inner tracing of functions that use `letfn`.
 * [#68](https://github.com/clojure-emacs/sayid/issues/68): Fix automatic dependency injection at `cider-jack-in` time for non-Leiningen projects.
 * Bump the minimum requirements to Clojure 1.10, nREPL 1.0, CIDER 1.0 and Emacs 28.
 * Bump the bundled `tools.reader` and `tools.namespace` dependencies.

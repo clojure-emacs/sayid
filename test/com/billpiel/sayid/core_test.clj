@@ -279,3 +279,14 @@
                          :fn #{}
                          :ns #{'com.billpiel.sayid.test-ns1}}
                 :ws-slot nil}))))))
+
+(t/deftest inner-trace-letfn
+  ;; Regression test for #14: inner-tracing a function that uses `letfn` used
+  ;; to throw "Syntax error compiling fn*", because the fn bindings of the
+  ;; expanded `letfn*' form were wrapped with tracing forms.
+  (t/testing "inner-tracing a letfn-using fn"
+    (sd/ws-add-inner-trace-fn! com.billpiel.sayid.test-ns1/func-letfn)
+    (t/testing "; doesn't throw and returns the right value"
+      (t/is (= 8 (com.billpiel.sayid.test-ns1/func-letfn 3))))
+    (t/testing "; records the call"
+      (t/is (= 1 (-> (sd/ws-deref!) :children count))))))

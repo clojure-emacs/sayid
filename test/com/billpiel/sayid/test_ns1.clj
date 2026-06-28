@@ -81,3 +81,8 @@
     (inc b)
     (+ b a)))
 
+(defn func-letfn
+  [a]
+  (letfn [(double-it [n] (* 2 n))]
+    (double-it (inc a))))
+
