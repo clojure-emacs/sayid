@@ -2,7 +2,8 @@
   (:require [clojure.walk :as walk]
             [clojure.tools.reader :as r]
             [clojure.tools.reader.reader-types :as rts]
-            clojure.repl))
+            clojure.repl
+            clojure.string))
 
 (defn ->int
   [v]

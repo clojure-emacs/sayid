@@ -1,6 +1,7 @@
 (ns com.billpiel.sayid.nrepl-middleware
   (:require
    [clojure.stacktrace :as st]
+   clojure.string
    [clojure.tools.namespace.find :as ns-find]
    [clojure.tools.reader :as r]
    [clojure.tools.reader.reader-types :as rts]
@@ -583,6 +584,6 @@
 
 (set-descriptor! #'wrap-sayid
                  {:handles (zipmap (keys sayid-nrepl-ops)
-                                   (repeat {:doc "docs?"
+                                   (repeat {:doc "A Sayid debugger/profiler operation. See https://github.com/clojure-emacs/sayid for details."
                                             :returns {}
                                             :requires {}}))})

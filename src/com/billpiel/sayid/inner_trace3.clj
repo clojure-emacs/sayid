@@ -2,7 +2,8 @@
   (:require [com.billpiel.sayid.util.other :as util :refer [$-]]
             [com.billpiel.sayid.trace :as trace]
             clojure.pprint
-            clojure.set))
+            clojure.set
+            clojure.string))
 
 (defn form->xform-map*
   [ns-sym form]
