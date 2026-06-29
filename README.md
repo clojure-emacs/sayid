@@ -262,262 +262,106 @@ example](http://github.com/bpiel/contrived-example) project here.
 
 ### Demo \#1 - Walkthrough
 
-This is a written walkthrough of the same steps illustrated in the demo
-video above, but with Sayid v0.0.8. You can find the [contrived
-example](http://github.com/bpiel/contrived-example) project here.
-
-Below is the code to the test namespace. You can see that we have a
-vending machine that dispenses tacos for 85 cents. We execute the
-`test1` function, which inserts 41 cents worth of change and presses the
-taco button.
+Let's hunt a bug with Sayid. Drop this namespace into a file and open it in
+Emacs:
 
 ```clojure
-(ns contrived-example.core-test
-  (:require [clojure.test :refer :all]
-            [contrived-example.core :as ce]))
+(ns demo.coins)
 
+(def coin-values
+  {:quarter 25
+   :dime 10
+   :nickel 5
+   :penny 5})
 
-(def test-vending-machine {:inventory {:a1 {:name :taco
-                                            :price 0.85
-                                            :qty 10}}
-                           :coins-inserted []
-                           :coins-returned []
-                           :dispensed nil
-                           :err-msg nil})
+(defn total-cents
+  [coins]
+  (->> coins
+       (map coin-values)
+       (apply +)))
 
-(defn test1 []
-  (-> test-vending-machine
-      (ce/insert-coin :quarter) ;; 25
-      (ce/insert-coin :dime)    ;; 35
-      (ce/insert-coin :nickel)  ;; 40
-      (ce/insert-coin :penny)   ;; 41 cents
-      (ce/press-button :a1)))   ;; taco costs 85 cents
-
-(test1)
+(defn can-afford?
+  [coins price]
+  (>= (total-cents coins) price))
 ```
 
-Let's press some keys to get Sayid going.
+It adds up a handful of coins and checks whether they cover a price. There's a
+bug in here; see if you can spot it before Sayid does.
 
-eval the namespace `C-c C-k` (probably) (`cider-load-buffer`)
+Load the buffer with `C-c C-k` (`cider-load-buffer`), then trace its namespace
+with `C-c s t b` (`sayid-trace-ns-in-file`).
 
-trace the project namespaces [C-c s t p]{.kbd}
-(`sayid-trace-ns-by-pattern`) then `contrived-example.*`
-
-This should pop up. It shows how many functions have been traced in
-which namespaces. Execute `test1`!
-
-    Traced namespaces:
-      5 / 5  contrived-example.core
-      1 / 1  contrived-example.core-test
-      8 / 8  contrived-example.inner-workings
-
-
-    Traced functions:
-
-You can't tell yet, but something magical happened. Press `C-c s
-w` (`sayid-get-workspace`) to get an overview of what has been
-captured in the Sayid workspace. This monster should appear:
-
-    v contrived-example.core-test/test1  :13446
-    |v contrived-example.core/insert-coin  :13447
-    |^
-    |v contrived-example.core/insert-coin  :13448
-    |^
-    |v contrived-example.core/insert-coin  :13449
-    |^
-    |v contrived-example.core/insert-coin  :13450
-    |^
-    |v contrived-example.core/press-button  :13451
-    ||v contrived-example.inner-workings/valid-selection  :13452
-    |||v contrived-example.inner-workings/get-selection  :13453
-    |||^
-    |||v contrived-example.inner-workings/calc-coin-value  :13454
-    |||^
-    ||| contrived-example.inner-workings/valid-selection  :13452
-    ||^
-    ||v contrived-example.inner-workings/process-transaction  :13455
-    |||v contrived-example.inner-workings/get-selection  :13456
-    |||^
-    |||v contrived-example.inner-workings/calc-change-to-return  :13457
-    ||||v contrived-example.inner-workings/calc-coin-value  :13458
-    ||||^
-    ||||v contrived-example.inner-workings/round-to-pennies  :13459
-    ||||^
-    ||||v contrived-example.inner-workings/calc-change-to-return*  :13460
-    |||||v contrived-example.inner-workings/calc-coin-value  :13461
-    |||||^
-    |||||v contrived-example.inner-workings/calc-change-to-return*  :13462
-    ||||||v contrived-example.inner-workings/calc-coin-value  :13463
-    ||||||^
-    ||||||v contrived-example.inner-workings/calc-change-to-return*  :13464
-    |||||||v contrived-example.inner-workings/calc-coin-value  :13465
-    |||||||^
-    |||||||v contrived-example.inner-workings/calc-change-to-return*  :13466
-    ||||||||v contrived-example.inner-workings/calc-coin-value  :13467
-    ||||||||^
-    |||||||| contrived-example.inner-workings/calc-change-to-return*  :13466
-    |||||||^
-    |||||||v contrived-example.inner-workings/calc-change-to-return*  :13468
-    ||||||||v contrived-example.inner-workings/calc-coin-value  :13469
-    ||||||||^
-    |||||||| contrived-example.inner-workings/calc-change-to-return*  :13468
-    |||||||^
-    |||||||v contrived-example.inner-workings/calc-change-to-return*  :13470
-    ||||||||v contrived-example.inner-workings/calc-coin-value  :13471
-    ||||||||^
-    |||||||| contrived-example.inner-workings/calc-change-to-return*  :13470
-    |||||||^
-    ||||||| contrived-example.inner-workings/calc-change-to-return*  :13464
-    ||||||^
-    |||||| contrived-example.inner-workings/calc-change-to-return*  :13462
-    |||||^
-    ||||| contrived-example.inner-workings/calc-change-to-return*  :13460
-    ||||^
-    |||| contrived-example.inner-workings/calc-change-to-return  :13457
-    |||^
-    ||| contrived-example.inner-workings/process-transaction  :13455
-    ||^
-    || contrived-example.core/press-button  :13451
-    |^
-    | contrived-example.core-test/test1  :13446
-    ^
-
-What's the meaning of this? These are all the function calls that were
-made in the traced namespaced when we execute `test1`.
-
-Let's explore. Get your cursor to the first line of the output and
-press `i` (`sayid-query-id`).
-
-     v contrived-example.core-test/test1  :13446
-     | returned =>  {:inventory {:a1 {:name :taco :price 0.85 :qty 9}}
-     |               :coins-inserted []
-     |               :coins-returned [:quarter :quarter :nickel]
-     |               :dispensed {:name :taco :price 0.85 :qty 10}
-     |               :err-msg nil}
-     ^
-
-
-This shows us the details of that ***i**nstance* of `test1` being
-called. We can see that a hash map was returned. Despite us inserting
-only 41 cents for an 85 cent taco, we see that a taco was dispensed,
-plus change! That's a BUG.
-
-Hit `backspace` (`sayid-buf-back`). We're back at the overview.
-Scan the list of functions that are called. Let's assume some
-programmer's intuition and decide that `valid-selection` is the first
-place of interest. Get your cursor to that line and press these keys to
-view the ***i**nstance* and all of its ***d**escendants*. `I`
-`d` `ENTER (`sayid-query-id-w-mode`)
-
-     ||v contrived-example.inner-workings/valid-selection  :13452
-     ||| machine => {:inventory {:a1 {:name :taco :price 0.85 :qty 10}}
-     |||             :coins-inserted [:quarter :dime :nickel :penny]
-     |||             :coins-returned []
-     |||             :dispensed nil
-     |||             :err-msg nil}
-     ||| button => :a1
-     ||| returns =>  true
-     |||v contrived-example.inner-workings/get-selection  :13453
-     |||| machine => {:inventory {:a1 {:name :taco :price 0.85 :qty 10}}
-     ||||             :coins-inserted [:quarter :dime :nickel :penny]
-     ||||             :coins-returned []
-     ||||             :dispensed nil
-     ||||             :err-msg nil}
-     |||| button => :a1
-     |||| returned =>  {:name :taco :price 0.85 :qty 10}
-     |||^
-     |||v contrived-example.inner-workings/calc-coin-value  :13454
-     |||| coins => [:quarter :dime :nickel :penny]
-     |||| returned =>  1.4
-     |||^
-     ||| contrived-example.inner-workings/valid-selection  :13452
-     ||| machine => {:inventory {:a1 {:name :taco :price 0.85 :qty 10}}
-     |||             :coins-inserted [:quarter :dime :nickel :penny]
-     |||             :coins-returned []
-     |||             :dispensed nil
-     |||             :err-msg nil}
-     ||| button => :a1
-     ||| returned =>  true
-     ||^
-
-We can see that `valid-selection` makes calls to `get-selection` and
-`calc-coin-value`. Looking at the return values, we might notice a
-problem: `calc-coin-value` receives
-`[:quarter :dime :nickel                       :penny]` but returns
-\$1.40 as the value. Let's dig deeper. Press `n`
-(`sayid-buffer-nav-to-next`) a couple times to get the cursor to the
-call to `calc-coin-value`. Now press `N`
-(`sayid-buf-replay-with-inner-trace`) and hold onto your hat.
-
-     ||||v (->> coins (keep coin-values) (apply +)) => (apply + (keep coin-values coins))  contrived-example.inner-workings/calc-coin-value  :13491
-     ||||| returns =>  1.4
-     |||||v (apply + (keep coin-values coins))  contrived-example.inner-workings/calc-coin-value  :13492
-     |||||| #function[clojure.core/+]
-     |||||| (0.25 0.1 0.05 1)
-     |||||| returns =>  1.4
-     ||||||v (keep coin-values coins)  contrived-example.inner-workings/calc-coin-value  :13493
-     ||||||| {:quarter 0.25 :dime 0.1 :nickel 0.05 :penny 1}
-     ||||||| [:quarter :dime :nickel :penny]
-     ||||||| returned =>  (0.25 0.1 0.05 1)
-     ||||||^
-     |||||| (apply + (keep coin-values coins))  contrived-example.inner-workings/calc-coin-value  :13492
-     |||||| #function[clojure.core/+]
-     |||||| (0.25 0.1 0.05 1)
-     |||||| returned =>  1.4
-     |||||^
-     ||||| (->> coins (keep coin-values) (apply +)) => (apply + (keep coin-values coins))  contrived-example.inner-workings/calc-coin-value  :13491
-     ||||| returned =>  1.4
-     ||||^
-    ...truncated...
-
-*(jump to the top of the buffer)*
-
-What did we do? We applied an *inner trace* to the function
-`calc-coin-value` and then replayed the call to `test1` that we had
-captured originally.
-
-**An INNER trace?** YES! We can see the inputs and output values of
-each expression in the function. Look at it. Where do things go wrong?
-It's when we pass a hash map to `keep` that defines a penny as being
-worth a dollar. Bug located! Press `n` a couple times to get your
-cursor to that call. Press `RET` to jump to that line of code.
+Now exercise the code from the REPL. A quarter, a dime, a nickel and a penny add
+up to 41 cents, so this should be `false`:
 
 ```clojure
- (ns contrived-example.inner-workings)
-
- (def coin-values
-   {:quarter 0.25
-    :dime 0.10
-    :nickel 0.05
-    :penny 1})
-
- (defn- calc-coin-value
-   [coins]
-   (->> coins
-        (keep coin-values)
-        (apply +)))
-
-...truncated...
+demo.coins=> (can-afford? [:quarter :dime :nickel :penny] 45)
+true
 ```
 
-We now find ourselves at the troublesome call to `keep` causing our bug.
-The hash map, `coin-values`, is just above. Change the value of a penny
-from `1` to `0.01`. Let's eval our corrected code the Sayid way \--
-press `C-c s !` (`sayid-load-enable-clear`). This will remove the
-traces, eval the buffer, then re-apply the traces. It also clears the
-workspace log. This is all helpful. Navigate back to `core-test` and run
-`test1` again. Repeating steps above, you can verify the output is now
-correct: no taco.
+It says `true`. Something's off. Pop open the Sayid workspace with `C-c s w`
+(`sayid-get-workspace`):
 
-     v contrived-example.core-test/test1  :13579
-     | returned =>  {:inventory {:a1 {:name :taco :price 0.85 :qty 10}}
-     |               :coins-inserted [:quarter :dime :nickel :penny]
-     |               :coins-returned []
-     |               :dispensed nil
-     |               :err-msg true}
-     ^
+```
+v demo.coins/can-afford?  :6303
+| coins => [:quarter :dime :nickel :penny]
+| price => 45
+| returns =>  true
+|v demo.coins/total-cents  :6304
+|| coins => [:quarter :dime :nickel :penny]
+|| returned =>  45
+|^
+| demo.coins/can-afford?  :6303
+| returned =>  true
+^
+```
 
-Great work!
+Every traced call is here, with its arguments and return value. `total-cents`
+got our four coins and returned `45`, but four coins worth 41 cents can't total
+45. The bug lives inside `total-cents`.
+
+This is where Sayid earns its keep. Put your cursor on `total-cents` and add an
+*inner* trace with `C-c s t n` (`sayid-inner-trace-fn`). Clear the log with
+`C-c s c` (`sayid-clear-log`) so we start fresh, run the call again, and reopen
+the workspace:
+
+```
+v demo.coins/can-afford?  :6346
+| coins => [:quarter :dime :nickel :penny]
+| price => 45
+| returns =>  true
+|v demo.coins/total-cents  :6347
+|| coins => [:quarter :dime :nickel :penny]
+|| returns =>  45
+||v (->> coins (map coin-values) (apply +)) => (apply + (map coin-values coins))  demo.coins/total-cents  :6348
+||| returns =>  45
+|||v (apply + (map coin-values coins))  demo.coins/total-cents  :6349
+|||| (25 10 5 5)
+|||| returns =>  45
+||||v (map coin-values coins)  demo.coins/total-cents  :6350
+||||| {:quarter 25 :dime 10 :nickel 5 :penny 5}
+||||| [:quarter :dime :nickel :penny]
+||||| returned =>  (25 10 5 5)
+||||^
+...
+```
+
+An inner trace records the inputs and output of *every expression* inside the
+function. Follow it down to `(map coin-values coins)`: it turns our coins into
+`(25 10 5 5)`. There it is. The last value should be `1`, not `5` - a penny is
+worth five cents in our map.
+
+Press `RET` on that line to jump straight to the source. Fix `coin-values` so
+`:penny` maps to `1`, then reload the Sayid way with `C-c s !`
+(`sayid-load-enable-clear`): it removes the traces, reloads the buffer,
+re-applies the traces and clears the log in one go. Run the call once more:
+
+```clojure
+demo.coins=> (can-afford? [:quarter :dime :nickel :penny] 45)
+false
+```
+
+Bug fixed, and we never reached for a single `println`. That's Sayid.
 
 ## License
 
