@@ -142,7 +142,7 @@ form). Replies with the same `[text properties query-args]` triple as
 Query the workspace for the calls that best match the cursor context. Params:
 `file`, `line`. Replies with a `[text properties]` pair.
 
-### `sayid-buf-query-id-w-mod`
+### `sayid-query-by-id`
 
 Query for a recorded call by id, optionally with a modifier.
 
@@ -153,7 +153,7 @@ Query for a recorded call by id, optionally with a modifier.
 
 Replies with a `[text properties query-args]` triple.
 
-### `sayid-buf-query-fn-w-mod`
+### `sayid-query-by-fn`
 
 Like the above, but selects by function name. Params: `fn-name`, `mod`. Replies
 with a `[text properties query-args]` triple.
@@ -169,12 +169,12 @@ Generate an expression that reproduces a recorded call, def-ing its arguments to
 `$s/*` vars along the way. Param: `trace-id`. Replies with the expression string
 (e.g. `"(my.ns/my-fn $s/a $s/b)"`).
 
-### `sayid-buf-def-at-point`
+### `sayid-def-value`
 
 Def the value at `path` within the call `trace-id` to `$s/*`. Params: `trace-id`,
 `path`. Replies with a confirmation value.
 
-### `sayid-buf-pprint-at-point`
+### `sayid-pprint-value`
 
 Pretty-print the value at `path` within the call `trace-id`. Params: `trace-id`,
 `path`. Replies with the pretty-printed text.

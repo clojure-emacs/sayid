@@ -765,7 +765,7 @@ Either navigate to ns view or function source."
 (defun sayid-query-id-w-mod ()
   "Query workspace for id, with optional modifier."
   (interactive)
-  (sayid-req-insert-content (list "op" "sayid-buf-query-id-w-mod"
+  (sayid-req-insert-content (list "op" "sayid-query-by-id"
                                   "trace-id" (get-text-property (point) 'id)
                                   "mod" (read-string "query modifier: "))))
 
@@ -773,7 +773,7 @@ Either navigate to ns view or function source."
 (defun sayid-query-id ()
   "Query workspace for id."
   (interactive)
-  (sayid-req-insert-content (list "op" "sayid-buf-query-id-w-mod"
+  (sayid-req-insert-content (list "op" "sayid-query-by-id"
                                   "trace-id" (get-text-property (point) 'id)
                                   "mod" "")))
 
@@ -781,7 +781,7 @@ Either navigate to ns view or function source."
 (defun sayid-query-fn-w-mod ()
   "Query workspace for function, with optional modifier."
   (interactive)
-  (sayid-req-insert-content (list "op" "sayid-buf-query-fn-w-mod"
+  (sayid-req-insert-content (list "op" "sayid-query-by-fn"
                                   "fn-name" (get-text-property (point) 'fn-name)
                                   "mod" (read-string "query modifier: "))))
 
@@ -789,7 +789,7 @@ Either navigate to ns view or function source."
 (defun sayid-query-fn ()
   "Query workspace for function."
   (interactive)
-  (sayid-req-insert-content (list "op" "sayid-buf-query-fn-w-mod"
+  (sayid-req-insert-content (list "op" "sayid-query-by-fn"
                                   "fn-name" (get-text-property (point) 'fn-name)
                                   "mod" "")))
 
@@ -797,7 +797,7 @@ Either navigate to ns view or function source."
 (defun sayid-buf-def-at-point ()
   "Def value at point to a var."
   (interactive)
-  (sayid-send-and-message (list "op" "sayid-buf-def-at-point"
+  (sayid-send-and-message (list "op" "sayid-def-value"
                                 "trace-id" (get-text-property (point) 'id)
                                 "path" (get-text-property (point) 'path))))
 
@@ -805,7 +805,7 @@ Either navigate to ns view or function source."
 (defun sayid-buf-inspect-at-point ()
   "Def value at point and pass to `cider-inspect'."
   (interactive)
-  (sayid-send-and-message (list "op" "sayid-buf-def-at-point"
+  (sayid-send-and-message (list "op" "sayid-def-value"
                                 "trace-id" (get-text-property (point) 'id)
                                 "path" (get-text-property (point) 'path)))
   (cider-inspect "$s/*"))
@@ -815,7 +815,7 @@ Either navigate to ns view or function source."
   "Open pretty-print buffer for value at point in sayid buffer."
   (interactive)
   (sayid-select-pprint-buf)
-  (sayid-req-insert-content (list "op" "sayid-buf-pprint-at-point"
+  (sayid-req-insert-content (list "op" "sayid-pprint-value"
                                   "trace-id" (get-text-property (point) 'id)
                                   "path" (get-text-property (point) 'path)))
   (goto-char 1)
