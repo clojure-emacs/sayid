@@ -2,7 +2,7 @@
   (:require [clojure.test :as t]
             [com.billpiel.sayid.core :as sd]
             [com.billpiel.sayid.trace :as sdt]
-            [com.billpiel.sayid.query2 :as sdq]
+            [com.billpiel.sayid.query :as sdq]
             [com.billpiel.sayid.test-utils :as t-utils]
             [com.billpiel.sayid.test-ns1 :as ns1]
             [com.billpiel.sayid.string-output2 :as sds]))

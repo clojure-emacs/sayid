@@ -4,7 +4,7 @@
             [com.billpiel.sayid.inner-trace3 :as itrace]
             [com.billpiel.sayid.workspace :as ws]
             [com.billpiel.sayid.recording :as rec]
-            [com.billpiel.sayid.query2 :as q]
+            [com.billpiel.sayid.query :as q]
             [com.billpiel.sayid.view :as v]
             [com.billpiel.sayid.util.find-ns :as find-ns]
             [com.billpiel.sayid.string-output2 :as so]
