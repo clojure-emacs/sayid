@@ -1,4 +1,4 @@
-(ns com.billpiel.sayid.query2
+(ns com.billpiel.sayid.query
   (:require [clojure.zip :as z]
             clojure.set
             clojure.string

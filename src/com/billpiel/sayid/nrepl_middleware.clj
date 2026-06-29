@@ -7,7 +7,7 @@
    [clojure.tools.reader :as r]
    [clojure.tools.reader.reader-types :as rts]
    [com.billpiel.sayid.core :as sd]
-   [com.billpiel.sayid.query2 :as q]
+   [com.billpiel.sayid.query :as q]
    [com.billpiel.sayid.string-output2 :as so]
    [com.billpiel.sayid.trace :as tr]
    [com.billpiel.sayid.util.find-ns :as find-ns]
