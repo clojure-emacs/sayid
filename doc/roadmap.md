@@ -27,19 +27,20 @@ that's the tie-breaker.
 
 | namespace | LOC | role |
 |-----------|-----|------|
-| `inner_trace3` | 857 | inner tracing by re-reading and rewriting source - fragile |
-| `string_output2` | 662 | rendering to text + text-property spans |
+| `inner-trace` | 857 | inner tracing by re-reading and rewriting source - fragile |
+| `string-output` | 662 | rendering to text + text-property spans |
 | `core` | 600 | public REPL API / engine hub |
 | `nrepl_middleware` | 549 | wire protocol, but also owns rendering |
-| `query2` | 471 | the query DSL |
+| `query` | 471 | the query DSL |
 | `util/other` | 402 | grab-bag utilities |
 | `trace` | 289 | outer tracing |
 | `workspace` / `recording` / `shelf` | 178 / 87 / 46 | the in-memory capture store |
 | `view` / `profiling` / `sayid_multifn` | 107 / 114 / 56 | views, profiling, AOT multimethod support |
 
-The `2`/`3` suffixes are a tell: these subsystems have been rewritten in place
-with the older strata left visible. The engine, the wire protocol, and the
-renderer are entangled, which is why there is exactly one client.
+The version-suffixed names (`query2`, `string_output2`, `inner_trace3`) have been
+de-versioned - that was the easy part. The deeper issue remains: the engine, the
+wire protocol, and the renderer are entangled, which is why there is exactly one
+client.
 
 ## Initiatives
 
@@ -56,14 +57,14 @@ gave the Emacs client this treatment recently; the Clojure core deserves the sam
 pass.
 
 **Approach:**
-- Inventory the public surface of `core` (what the README and middleware actually
-  call) and lock it with a `clojure.test` characterization suite before touching
-  anything. This is the safety net for all the moves below.
-- Rename `query2` -> `query`, `string_output2` -> `render` (or `output`),
-  `inner_trace3` -> `inner-trace`, with deprecated aliases for one release.
+- *Done.* Locked `core`'s public surface with a `clojure.test` characterization
+  suite before touching anything - the safety net for the moves below.
+- *Done.* Dropped the version suffixes: `query2` -> `query`, `string_output2` ->
+  `string-output`, `inner_trace3` -> `inner-trace`. No aliases; Sayid has no
+  external clients.
 - Draw a hard line between three layers and stop letting them reach across it:
   - **engine** - `trace`, `inner-trace`, `workspace`, `recording`, `shelf`
-  - **query/render** - `query`, `render`, `view`
+  - **query/render** - `query`, `string-output`, `view`
   - **protocol** - `nrepl_middleware` (which should call the engine and *return
     data*, see initiative 3).
 - Break up `util/other` (402 lines of grab-bag) into focused namespaces, deleting
@@ -132,9 +133,10 @@ navigate a workspace without any Sayid-specific rendering.
 **Goal:** inner tracing that doesn't detonate on missing source, reader
 conditionals, or the next macro nobody tested.
 
-**Why:** `inner_trace3` (the "3" says it all) re-reads the `.clj` from disk and
-rewrites raw forms, which is why it throws on `NO_SOURCE_FILE` and needed a fix
-just for `letfn`. It's the least trustworthy part of an otherwise solid tool.
+**Why:** `inner-trace` re-reads the `.clj` from disk and rewrites raw forms,
+which is why it throws on `NO_SOURCE_FILE` and needed a fix just for `letfn`. It's
+the least trustworthy part of an otherwise solid tool (and the `inner_trace3` it
+grew out of had been rewritten twice already).
 
 **Approach:**
 - Rebuild instrumentation on
