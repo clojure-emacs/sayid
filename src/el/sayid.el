@@ -325,70 +325,47 @@ state.  POS is the position to move cursor to."
                                 "file" (buffer-file-name)
                                 "line" (line-number-at-pos))))
 
-;;;###autoload
-(defun sayid-trace-fn-enable ()
-  "Enable tracing for symbol at point.  Symbol should point to a fn var."
-  (interactive)
+(defun sayid--trace-fn-at-point (action fail-msg)
+  "Apply trace ACTION to the fn at point, reporting FAIL-MSG when none resolves.
+Refreshes the traced-functions view afterwards."
   (sayid-send-and-message (list "op" "sayid-trace-fn-at-point"
-                                "action" "enable"
+                                "action" action
                                 "file" (buffer-file-name)
                                 "line" (line-number-at-pos)
                                 "column" (+ (current-column) 1)
                                 "source" (buffer-string))
-                          "Nothing traced. Make sure cursor is on symbol.")
+                          fail-msg)
   (sayid-show-traced))
+
+;;;###autoload
+(defun sayid-trace-fn-enable ()
+  "Enable tracing for symbol at point.  Symbol should point to a fn var."
+  (interactive)
+  (sayid--trace-fn-at-point "enable" "Nothing traced. Make sure cursor is on symbol."))
 
 ;;;###autoload
 (defun sayid-trace-fn-disable ()
   "Disable tracing for symbol at point.  Symbol should point to a fn var."
   (interactive)
-  (sayid-send-and-message (list "op" "sayid-trace-fn-at-point"
-                                "action" "disable"
-                                "file" (buffer-file-name)
-                                "line" (line-number-at-pos)
-                                "column" (+ (current-column) 1)
-                                "source" (buffer-string))
-                          "Nothing found. Make sure cursor is on symbol.")
-  (sayid-show-traced))
+  (sayid--trace-fn-at-point "disable" "Nothing found. Make sure cursor is on symbol."))
 
 ;;;###autoload
 (defun sayid-outer-trace-fn ()
   "Add outer tracing for symbol at point.  Symbol should point to a fn var."
   (interactive)
-  (sayid-send-and-message (list "op" "sayid-trace-fn-at-point"
-                                "action" "add-outer"
-                                "file" (buffer-file-name)
-                                "line" (line-number-at-pos)
-                                "column" (+ (current-column) 1)
-                                "source" (buffer-string))
-                          "Nothing traced. Make sure cursor is on symbol.")
-  (sayid-show-traced))
+  (sayid--trace-fn-at-point "add-outer" "Nothing traced. Make sure cursor is on symbol."))
 
 ;;;###autoload
 (defun sayid-inner-trace-fn ()
   "Add inner tracing for symbol at point.  Symbol should point to a fn var."
   (interactive)
-  (sayid-send-and-message (list "op" "sayid-trace-fn-at-point"
-                                "action" "add-inner"
-                                "file" (buffer-file-name)
-                                "line" (line-number-at-pos)
-                                "column" (+ (current-column) 1)
-                                "source" (buffer-string))
-                          "Nothing traced. Make sure cursor is on symbol.")
-  (sayid-show-traced))
+  (sayid--trace-fn-at-point "add-inner" "Nothing traced. Make sure cursor is on symbol."))
 
 ;;;###autoload
 (defun sayid-remove-trace-fn ()
   "Remove tracing for symbol at point.  Symbol should point to a fn var."
   (interactive)
-  (sayid-send-and-message (list "op" "sayid-trace-fn-at-point"
-                                "action" "remove"
-                                "file" (buffer-file-name)
-                                "line" (line-number-at-pos)
-                                "column" (+ (current-column) 1)
-                                "source" (buffer-string))
-                          "Nothing found. Make sure cursor is on symbol.")
-  (sayid-show-traced))
+  (sayid--trace-fn-at-point "remove" "Nothing found. Make sure cursor is on symbol."))
 
 ;;;###autoload
 (defun sayid-load-enable-clear ()
@@ -403,11 +380,6 @@ Disable traces, load buffer, enable traces, clear log."
   (sayid-clear-log))
 
 ;; make-symbol is a liar
-(defun sayid-str-to-sym (s)
-  "Make a symbol from string S.
-`make-symbol' seems to return symbols that don't compare equal when they should."
-  (car (read-from-string s)))
-
 (defvar sayid-prop->font '(("int"     . sayid-int-face)
                            ("float"   . sayid-float-face)
                            ("string"  . sayid-string-face)
@@ -425,30 +397,23 @@ Disable traces, load buffer, enable traces, clear log."
                            (9 . sayid-depth-10-face)))
 
 (defun sayid-mk-font-face (p)
-  "Make a font face from property pair P."
-  (let* ((type (car (cadr (assoc "type" (list p)))))
-         (fg* (cadr (assoc "fg*" (list p)))))
-    ;; if we have a type, pick a font by type,
-    ;; otherwise pick a font by fg* (which is a number indicating nesting depth),
-    ;; or return nil
-    (if type
-        (cdr (assoc type sayid-prop->font))
-      (when fg* (cdr (assoc
-                      (mod fg* 10) ;; cycle from 0 to 9
-                      sayid-prop->font))))))
+  "Return the font-lock face for property pair P, or nil.
+A (\"type\" (TYPE)) pair selects a face by value TYPE; a (\"fg*\" DEPTH) pair
+selects one by nesting DEPTH, cycled from 0 to 9."
+  (pcase (car p)
+    ("type" (cdr (assoc (car (cadr p)) sayid-prop->font)))
+    ("fg*"  (cdr (assoc (mod (cadr p) 10) sayid-prop->font)))))
 
 (defun sayid-put-text-prop (a start end buf)
   "Put property pair A to text in range START to END in buffer BUF."
   (put-text-property (+ 1  start)
                      (+ 1 end)
-                     (sayid-str-to-sym (car a))
+                     (intern (car a))
                      (cadr a)
                      buf)
   (let ((ff (sayid-mk-font-face a)))
-    (if ff (put-text-property (+ 1  start)
-                              (+ 1 end)
-                              'font-lock-face
-                              ff))))
+    (when ff
+      (put-text-property (+ 1 start) (+ 1 end) 'font-lock-face ff))))
 
 (defun sayid-put-text-props (props buf)
   "Apply sayid property struct PROPS to buffer BUF."
@@ -469,13 +434,9 @@ Disable traces, load buffer, enable traces, clear log."
   (insert (car val))
   (sayid-put-text-props (cadr val) buf))
 
-(defun sayid-list-take (n l)
-  "Take N items from end of list L."
-  (butlast l (- (length l) n)))
-
 (defun sayid-push-to-ring (v)
-  "Push buffer state V to ring."
-  (setq sayid-ring (sayid-list-take 5 (cons v sayid-ring))))
+  "Push buffer state V to ring, keeping at most the five most recent."
+  (setq sayid-ring (seq-take (cons v sayid-ring) 5)))
 
 (defun sayid-peek-first-in-ring ()
   "Peek at first in ring."
@@ -598,91 +559,57 @@ source is tracked in https://github.com/clojure-emacs/sayid/issues/87."
   (sayid--send-sync-request (list "op" "sayid-all-traces" "action" "disable"))
   (sayid-show-traced))
 
+(defun sayid--traced-buf-apply (action &optional ns-fallback)
+  "Apply trace ACTION to the entry at point in the traced-functions buffer.
+When NS-FALLBACK is non-nil and the entry is a bare namespace (it carries no
+function name), apply the namespace-level op instead of the per-function one.
+Restores point and reselects the default buffer afterwards."
+  (let ((pos (point))
+        (buf-ns (get-text-property 1 'ns))
+        (fn-name (get-text-property (point) 'name))
+        (fn-ns (get-text-property (point) 'ns)))
+    (sayid-select-traced-buf)
+    (if (and ns-fallback (not fn-name))
+        (sayid--send-sync-request (list "op" "sayid-trace-ns"
+                                        "action" action
+                                        "ns" fn-ns))
+      (sayid--send-sync-request (list "op" "sayid-trace-fn"
+                                      "action" action
+                                      "fn-name" fn-name
+                                      "fn-ns" fn-ns)))
+    (sayid-show-traced buf-ns)
+    (goto-char pos)
+    (sayid-select-default-buf)))
+
 ;;;###autoload
 (defun sayid-traced-buf-inner-trace-fn ()
   "Apply inner trace from trace buffer."
   (interactive)
-  (let ((pos (point))
-        (ns (get-text-property 1 'ns)))
-    (sayid-select-traced-buf)
-    (sayid--send-sync-request (list "op" "sayid-trace-fn"
-                                    "fn-name" (get-text-property (point) 'name)
-                                    "fn-ns" (get-text-property (point) 'ns)
-                                    "action" "add-inner"))
-    (sayid-show-traced ns)
-    (goto-char pos)
-    (sayid-select-default-buf)))
+  (sayid--traced-buf-apply "add-inner"))
 
 ;;;###autoload
 (defun sayid-traced-buf-outer-trace-fn ()
   "Apply outer trace from trace buffer."
   (interactive)
-  (let ((pos (point))
-        (ns (get-text-property 1 'ns)))
-    (sayid-select-traced-buf)
-    (sayid--send-sync-request (list "op" "sayid-trace-fn"
-                                    "fn-name" (get-text-property (point) 'name)
-                                    "fn-ns" (get-text-property (point) 'ns)
-                                    "action" "add-outer"))
-    (sayid-show-traced ns)
-    (goto-char pos)
-    (sayid-select-default-buf)))
+  (sayid--traced-buf-apply "add-outer"))
 
 ;;;###autoload
 (defun sayid-traced-buf-enable ()
   "Enable trace from trace buffer."
   (interactive)
-  (let ((pos (point))
-        (buf-ns (get-text-property 1 'ns))
-        (fn-name (get-text-property (point) 'name))
-        (fn-ns (get-text-property (point) 'ns)))
-    (sayid-select-traced-buf)
-    (if fn-name
-        (sayid--send-sync-request (list "op" "sayid-trace-fn" "action" "enable"
-					"fn-name" fn-name
-					"fn-ns" fn-ns))
-      (sayid--send-sync-request (list "op" "sayid-trace-ns" "action" "enable"
-                                      "ns" fn-ns)))
-    (sayid-show-traced buf-ns)
-    (goto-char pos)
-    (sayid-select-default-buf)))
+  (sayid--traced-buf-apply "enable" t))
 
 ;;;###autoload
 (defun sayid-traced-buf-disable ()
   "Disable trace from trace buffer."
   (interactive)
-  (let ((pos (point))
-        (buf-ns (get-text-property 1 'ns))
-        (fn-name (get-text-property (point) 'name))
-        (fn-ns (get-text-property (point) 'ns)))
-    (sayid-select-traced-buf)
-    (if fn-name
-        (sayid--send-sync-request (list "op" "sayid-trace-fn" "action" "disable"
-					"fn-name" (get-text-property (point) 'name)
-					"fn-ns" (get-text-property (point) 'ns)))
-      (sayid--send-sync-request (list "op" "sayid-trace-ns" "action" "disable"
-                                      "ns" fn-ns)))
-    (sayid-show-traced buf-ns)
-    (goto-char pos)
-    (sayid-select-default-buf)))
+  (sayid--traced-buf-apply "disable" t))
 
 ;;;###autoload
 (defun sayid-traced-buf-remove-trace ()
   "Remove trace from trace buffer."
   (interactive)
-  (let ((pos (point))
-        (ns (get-text-property 1 'ns))
-        (fn-name (get-text-property (point) 'name)))
-    (sayid-select-traced-buf)
-    (if fn-name
-        (sayid--send-sync-request (list "op" "sayid-trace-fn" "action" "remove"
-					"fn-name" fn-name
-					"fn-ns" (get-text-property (point) 'ns)))
-      (sayid--send-sync-request (list "op" "sayid-trace-ns" "action" "remove"
-                                      "ns" (get-text-property (point) 'ns))))
-    (sayid-show-traced ns)
-    (goto-char pos)
-    (sayid-select-default-buf)))
+  (sayid--traced-buf-apply "remove" t))
 
 ;;;###autoload
 (defun sayid-kill-all-traces ()
@@ -706,15 +633,13 @@ source is tracked in https://github.com/clojure-emacs/sayid/issues/87."
   (message "Removed traces. Cleared log."))
 
 (defun sayid-find-existing-file (path)
-  "Try to find a file at PATH, which may be absolute or relative."
+  "Try to find a file at PATH, which may be absolute or relative.
+A relative PATH is resolved against the project's namespace source roots."
   (if (file-exists-p path)
       path
-    (let ((paths (mapcar (lambda (a) (concat a "/" path))
-                         (sayid-req-get-value (list "op" "sayid-find-all-ns-roots")))))
-      (while (and (car paths)
-                  (not (file-exists-p (car paths))))
-        (setq paths (cdr paths)))
-      (car paths))))
+    (seq-find #'file-exists-p
+              (mapcar (lambda (root) (file-name-concat root path))
+                      (sayid-req-get-value (list "op" "sayid-find-all-ns-roots"))))))
 
 ;;;###autoload
 (defun sayid-buffer-nav-from-point ()
@@ -886,25 +811,23 @@ file can be found, jump to it."
       (message "Written to kill ring: %s (source file not found; eval the file to jump to it)"
                expr)))))
 
+(defun sayid--buf-cycle (cycle-fn)
+  "Move to another saved buffer state, choosing it with CYCLE-FN."
+  (sayid-update-buf-pos-to-ring)
+  (let ((buf-state (funcall cycle-fn)))
+    (sayid-setup-buf (car buf-state) nil (cadr buf-state))))
+
 ;;;###autoload
 (defun sayid-buf-back ()
   "Move to previous sayid buffer state."
   (interactive)
-  (sayid-update-buf-pos-to-ring)
-  (let ((buf-state (sayid-cycle-ring)))
-    (sayid-setup-buf (car buf-state)
-                     nil
-                     (cadr buf-state))))
+  (sayid--buf-cycle #'sayid-cycle-ring))
 
 ;;;###autoload
 (defun sayid-buf-forward ()
   "Move to next sayid buffer state."
   (interactive)
-  (sayid-update-buf-pos-to-ring)
-  (let ((buf-state (sayid-cycle-ring-back)))
-    (sayid-setup-buf (car buf-state)
-                     nil
-                     (cadr buf-state))))
+  (sayid--buf-cycle #'sayid-cycle-ring-back))
 
 (defvar sayid-clj-mode-keys
   (let ((map (make-sparse-keymap)))
