@@ -369,17 +369,20 @@ Refreshes the traced-functions view afterwards."
 
 ;;;###autoload
 (defun sayid-load-enable-clear ()
-  "Workflow helper function.
-Disable traces, load buffer, enable traces, clear log."
+  "Reload the current buffer with a clean slate of traces.
+Disable all traces, reload the buffer, and once the reload finishes re-enable
+the traces and clear the log.  The work after the reload is chained on its
+completion callback, so Emacs is never blocked waiting."
   (interactive)
   (sayid-trace-disable-all)
-  (sleep-for 0.5)
-  (cider-load-buffer)
-  (sleep-for 0.5)
-  (sayid-trace-enable-all)
-  (sayid-clear-log))
+  (cider-load-buffer
+   (current-buffer)
+   (cider-load-file-handler
+    (current-buffer)
+    (lambda (_buffer)
+      (sayid-trace-enable-all)
+      (sayid-clear-log)))))
 
-;; make-symbol is a liar
 (defvar sayid-prop->font '(("int"     . sayid-int-face)
                            ("float"   . sayid-float-face)
                            ("string"  . sayid-string-face)
