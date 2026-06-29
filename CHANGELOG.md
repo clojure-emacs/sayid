@@ -2,6 +2,7 @@
 
 ## unreleased
 
+* [#29](https://github.com/clojure-emacs/sayid/issues/29): Fix the `wrong-type-argument` error when pressing `g` (and similar commands) by no longer re-reading nREPL response values, which already arrive decoded on nREPL 1.0+.
 * [#14](https://github.com/clojure-emacs/sayid/issues/14): Fix inner tracing of functions that use `letfn`.
 * [#31](https://github.com/clojure-emacs/sayid/issues/31): Keep the generated reproduction expression in the kill ring and report clearly when the source file can't be located (`sayid-gen-instance-expr`, bound to `g`).
 * [#68](https://github.com/clojure-emacs/sayid/issues/68): Fix automatic dependency injection at `cider-jack-in` time for non-Leiningen projects.
