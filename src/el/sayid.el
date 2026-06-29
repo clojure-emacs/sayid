@@ -4,7 +4,7 @@
 
 ;; Author: Bill Piel <bill@billpiel.com>
 ;; Maintainer: Bozhidar Batsov <bozhidar@batsov.dev>
-;; Version: 0.1.0
+;; Version: 0.2.0
 ;; URL: https://github.com/clojure-emacs/sayid
 ;; Package-Requires: ((emacs "28") (cider "1.0"))
 ;; Keywords: clojure, cider, debugger
@@ -46,98 +46,98 @@
 (defcustom sayid-inject-dependencies-at-jack-in t
   "When nil, do not inject REPL dependencies at `cider-jack-in' time.
 The injected dependencies are most likely nREPL middlewares."
-  :package-version '(sayid . "0.1.0")
+  :package-version '(sayid . "0.2.0")
   :type 'boolean)
 
 (defconst sayid-version
-  "0.1.0"
+  "0.2.0"
   "The current version of sayid.")
 
 (defconst sayid-injected-plugin-version
-  "0.1.0"
+  "0.2.0"
   "The version of the sayid Lein plugin to be automatically injected.")
 
 (defface sayid-int-face '((t :inherit default))
   "Sayid integer face."
-  :package-version '(sayid . "0.1.0"))
+  :package-version '(sayid . "0.2.0"))
 
 (defface sayid-float-face '((t :inherit default))
   "Sayid float face."
-  :package-version '(sayid . "0.1.0"))
+  :package-version '(sayid . "0.2.0"))
 
 (defface sayid-symbol-face '((t :inherit default))
   "Sayid symbol face."
-  :package-version '(sayid . "0.1.0"))
+  :package-version '(sayid . "0.2.0"))
 
 (defface sayid-string-face
   '((t :inherit font-lock-string-face))
   "Sayid string face."
-  :package-version '(sayid . "0.1.0"))
+  :package-version '(sayid . "0.2.0"))
 
 (defface sayid-keyword-face
   '((t :inherit font-lock-constant-face))
   "Sayid keyword face."
-  :package-version '(sayid . "0.1.0"))
+  :package-version '(sayid . "0.2.0"))
 
 (defface sayid-depth-1-face
   '((((background light)) (:foreground "Springgreen4"))
     (((background dark)) (:foreground "Palegreen1")))
   "Sayid nesting, depth 1 - outermost set."
-  :package-version '(sayid . "0.1.0"))
+  :package-version '(sayid . "0.2.0"))
 
 (defface sayid-depth-2-face
   '((((background light)) (:foreground "DodgerBlue"))
     (((background dark)) (:foreground "Cadetblue1")))
   "Sayid nesting, depth 2."
-  :package-version '(sayid . "0.1.0"))
+  :package-version '(sayid . "0.2.0"))
 
 (defface sayid-depth-3-face
   '((((background light)) (:foreground "Red1"))
     (((background dark)) (:foreground "Palevioletred1")))
   "Sayid nesting, depth 3."
-  :package-version '(sayid . "0.1.0"))
+  :package-version '(sayid . "0.2.0"))
 
 (defface sayid-depth-4-face
   '((((background light)) (:foreground "Orange1"))
     (((background dark)) (:foreground "Lightsalmon1")))
   "Sayid nesting, depth 4."
-  :package-version '(sayid . "0.1.0"))
+  :package-version '(sayid . "0.2.0"))
 
 (defface sayid-depth-5-face
   '((((background light)) (:foreground "Gold3"))
     (((background dark)) (:foreground "PaleGoldenrod")))
   "Sayid nesting, depth 5."
-  :package-version '(sayid . "0.1.0"))
+  :package-version '(sayid . "0.2.0"))
 
 (defface sayid-depth-6-face
   '((((background light)) (:foreground "DimGray"))
     (((background dark)) (:foreground "LightGray")))
   "Sayid nesting, depth 6."
-  :package-version '(sayid . "0.1.0"))
+  :package-version '(sayid . "0.2.0"))
 
 (defface sayid-depth-7-face
   '((((background light)) (:foreground "Mediumpurple3"))
     (((background dark)) (:foreground "Lightpink1")))
   "Sayid nesting, depth 7."
-  :package-version '(sayid . "0.1.0"))
+  :package-version '(sayid . "0.2.0"))
 
 (defface sayid-depth-8-face
   '((((background light)) (:foreground "DarkTurquoise"))
     (((background dark)) (:foreground "Paleturquoise1")))
   "Sayid nesting, depth 8."
-  :package-version '(sayid . "0.1.0"))
+  :package-version '(sayid . "0.2.0"))
 
 (defface sayid-depth-9-face
   '((((background light)) (:foreground "Peachpuff3"))
     (((background dark)) (:foreground "Peachpuff1")))
   "Sayid nesting, depth 9."
-  :package-version '(sayid . "0.1.0"))
+  :package-version '(sayid . "0.2.0"))
 
 (defface sayid-depth-10-face
   '((((background light)) (:foreground "IndianRed"))
     (((background dark)) (:foreground "MistyRose")))
   "Sayid nesting, depth 10."
-  :package-version '(sayid . "0.1.0"))
+  :package-version '(sayid . "0.2.0"))
 
 (defvar sayid-trace-ns-dir nil)
 (defvar sayid-meta nil)
@@ -161,10 +161,10 @@ To opt out, set `sayid-inject-dependencies-at-jack-in' to nil."
     ;; any existing entry for the artifact, so this stays idempotent.
     (when (boundp 'cider-jack-in-lein-plugins)
       (cider-add-to-alist 'cider-jack-in-lein-plugins
-                          "com.billpiel/sayid" sayid-injected-plugin-version))
+                          "mx.cider/sayid" sayid-injected-plugin-version))
     (when (boundp 'cider-jack-in-dependencies)
       (cider-add-to-alist 'cider-jack-in-dependencies
-                          "com.billpiel/sayid" sayid-injected-plugin-version))
+                          "mx.cider/sayid" sayid-injected-plugin-version))
     (add-to-list 'cider-jack-in-nrepl-middlewares "com.billpiel.sayid.nrepl-middleware/wrap-sayid")))
 
 ;;;###autoload
@@ -254,7 +254,7 @@ Signal a `user-error' with actionable guidance otherwise."
   (unless (cider-connected-p)
     (user-error "Sayid: no active nREPL connection; start a REPL with `cider-jack-in'"))
   (unless (cider-nrepl-op-supported-p "sayid-get-workspace")
-    (user-error "Sayid: nREPL middleware not loaded; add `com.billpiel/sayid' to your plugins and restart the REPL")))
+    (user-error "Sayid: nREPL middleware not loaded; add `mx.cider/sayid' to your plugins and restart the REPL")))
 
 (defun sayid--send-sync-request (request)
   "Send REQUEST to the Sayid nREPL middleware and return the response.

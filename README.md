@@ -2,8 +2,8 @@
 
 ----------
 [![Clojure CI](https://github.com/clojure-emacs/sayid/actions/workflows/clojure.yml/badge.svg)](https://github.com/clojure-emacs/sayid/actions/workflows/clojure.yml)
-[![Clojars Project](https://img.shields.io/clojars/v/com.billpiel/sayid.svg)](https://clojars.org/com.billpiel/sayid)
-[![cljdoc badge](https://cljdoc.org/badge/com.billpiel/sayid)](https://cljdoc.org/d/com.billpiel/sayid/CURRENT)
+[![Clojars Project](https://img.shields.io/clojars/v/mx.cider/sayid.svg)](https://clojars.org/mx.cider/sayid)
+[![cljdoc badge](https://cljdoc.org/badge/mx.cider/sayid)](https://cljdoc.org/d/mx.cider/sayid/CURRENT)
 
 Sayid *(siy EED)* is an omniscient debugger and profiler for Clojure. It extracts secrets from code at run-time.
 
@@ -28,6 +28,12 @@ development efforts.
 
 ## Installation & Requirements
 
+> [!NOTE]
+> Starting with 0.2.0 Sayid is published under the `mx.cider/sayid` coordinates.
+> The old `com.billpiel/sayid` coordinates are deprecated but still receive the
+> same releases for now, so existing dependencies keep working. Please switch to
+> `mx.cider/sayid` when you get a chance.
+
 ### Requirements
 
 Basic usage requires Clojure 1.10+ running on Java 8 or newer. The optional
@@ -45,14 +51,14 @@ provides a very flexible Sayid API. Its ops are documented in
 
 Add this to the dependencies in your project.clj or lein profiles.clj:
 
-    [com.billpiel/sayid "0.1.0"]
+    [mx.cider/sayid "0.2.0"]
 
 To use the bundled nREPL middleware, you'll want to include Sayid as a
 plug-in. Here's an example of a bare-bones profiles.clj that works for
 me:
 
 ```clojure
-{:user {:plugins [[com.billpiel/sayid "0.1.0"]]}}
+{:user {:plugins [[mx.cider/sayid "0.2.0"]]}}
 ```
 
 ### Clojure CLI - deps.edn
@@ -63,7 +69,7 @@ tools.deps config directory (often `$HOME/.clojure`).
 
 ```clojure
 {:deps
-  {com.billpiel/sayid {:mvn/version "0.1.0"}}}
+  {mx.cider/sayid {:mvn/version "0.2.0"}}}
 ```
 
 ### Emacs Integration
@@ -88,7 +94,7 @@ that works for me:
 
 ```clojure
 {:user {:plugins [[cider/cider-nrepl "0.59.0"]
-                  [com.billpiel/sayid "0.1.0"]]
+                  [mx.cider/sayid "0.2.0"]]
         :dependencies [[nrepl/nrepl "1.3.1"]]}}
 ```
 
@@ -161,7 +167,7 @@ from within Emacs: press `h` in any Sayid buffer (or `C-c s h` in a Clojure
 buffer) to pop up the matching help buffer.
 
 API docs for the core namespaces are available on
-[cljdoc](https://cljdoc.org/d/com.billpiel/sayid/CURRENT).
+[cljdoc](https://cljdoc.org/d/mx.cider/sayid/CURRENT).
 
 In a clojure-mode buffer, press `C-c s h` (`sayid-show-help`) to
 pop up the help buffer.
