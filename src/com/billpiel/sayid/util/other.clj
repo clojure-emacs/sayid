@@ -88,8 +88,6 @@
 
 (defn arg-match
   [arglists args]
-  (def arglists' arglists)
-  (def args' args)
   (if (not-empty arglists)
     (let [args-v (vec args)
           matcher-fn (->> arglists
@@ -143,19 +141,6 @@
     @maybe-atom
     maybe-atom))
 
-(defn atom?-fn
-  [maybe-atom]
-  (if (atom? maybe-atom)
-    [@maybe-atom
-     (fn [newval]
-       (reset! maybe-atom newval)
-       maybe-atom)
-     (fn [f]
-       (swap! maybe-atom f)
-       maybe-atom)]
-    [maybe-atom identity identity]))
-
-
 (defn derefable?
   [v]
   (instance? clojure.lang.IDeref v))
@@ -182,8 +167,6 @@
                   (and t-fn (not f)) (constantly obj)
                   :else (constantly f))]
         (fn' obj)))))
-
-(def opae obj-pred-action-else)
 
 (defn just-get-whatever-you-can
   [ns-sym clue]
@@ -256,25 +239,6 @@
   [alias source]
   (defalias-macro* alias source))
 
-(defn ns-unmap-all
-  [ns']
-  (->> ns'
-       ns-map
-       keys
-       (map (partial ns-unmap ns'))
-       dorun))
-
-(defn source-fn-var
-  [fn-var]
-  (->> fn-var
-       meta
-       ((juxt :ns
-              (constantly "/")
-              :name))
-       (apply str)
-       symbol
-       clojure.repl/source-fn))
-
 (defn mk-dummy-whitespace
   [lines cols]
   (apply str
@@ -321,12 +285,6 @@
    (into (or (empty orig)
              [])
          noob)))
-
-(defn deep-zipmap-no-colls
-       [a b]
-       (zipmap (filter (comp not coll?) (tree-seq coll? seq a))
-               (filter (comp not coll?) (tree-seq coll? seq b))))
-
 
 (defn deep-zipmap
        [a b]
@@ -379,14 +337,6 @@
   (if (symbol? v)
     `'~v
     v))
-
-(defn first-match
-  [pred coll]
-  (let [[head & tail] coll]
-    (cond (nil? coll) nil
-          (empty? coll) nil
-          (pred head) head
-          :else (recur pred tail))))
 
 (defn get-src-file-path
   [s]
