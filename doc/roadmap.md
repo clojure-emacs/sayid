@@ -62,13 +62,20 @@ pass.
 - *Done.* Dropped the version suffixes: `query2` -> `query`, `string_output2` ->
   `string-output`, `inner_trace3` -> `inner-trace`. No aliases; Sayid has no
   external clients.
+- *Done.* Broke up `util/other`: deleted the dead code and split the
+  symbol/namespace and source-reading helpers into `util.sym` and `util.source`.
 - Draw a hard line between three layers and stop letting them reach across it:
   - **engine** - `trace`, `inner-trace`, `workspace`, `recording`, `shelf`
   - **query/render** - `query`, `string-output`, `view`
   - **protocol** - `nrepl_middleware` (which should call the engine and *return
     data*, see initiative 3).
-- Break up `util/other` (402 lines of grab-bag) into focused namespaces, deleting
-  what's dead.
+
+  Mostly there already: the engine has no upward deps, and once the stray unused
+  require and a dead scratch block were removed, `query`/`view`/`string-output`
+  stopped reaching into the engine too. The one real breach left is the protocol
+  owning rendering - the middleware calls `string-output` to build text-property
+  pairs for Emacs. Closing that *is* initiative 3 (return data, not strings), so
+  the hard line gets finished there.
 
 **Risks:** `sayid_multifn` is AOT-compiled and the namespace names are part of the
 deployed contract; renames need deprecated forwarders. Inner-trace rewriting reads
