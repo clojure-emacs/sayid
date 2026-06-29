@@ -84,6 +84,18 @@
          (println e)))
   (send-status-done msg))
 
+(defn reply:error
+  "Reply to MSG with a CIDER-renderable error response for EX and end the op.
+Mirrors the `:err'/`:ex' plus `:error'/`:done' status convention used by
+cider-nrepl, so the client surfaces the failure instead of silently getting
+no value."
+  [msg ex]
+  (t/send (:transport msg)
+          (response-for msg
+                        :status #{:error :done}
+                        :ex (str (class ex))
+                        :err (with-out-str (st/print-cause-trace ex)))))
+
 (defn find-ns-sym
   [file]
   (some->> file
@@ -575,12 +587,15 @@
 (defn wrap-sayid
   [handler]
   (fn [{:keys [op] :as msg}]
-    (try
-      ((get sayid-nrepl-ops op handler) msg)
-      (catch Throwable e
-          (println (.getMessage e))
-          (st/print-stack-trace e)
-          (reply:clj->nrepl msg (.getMessage e))))))
+    (if-let [sayid-op (get sayid-nrepl-ops op)]
+      ;; Catch `Throwable' so an error can't leave the op without a terminal
+      ;; `:done' and hang the client.  Only Sayid's own ops are guarded here -
+      ;; errors from downstream middleware belong to them, not to us.
+      (try
+        (sayid-op msg)
+        (catch Throwable e
+          (reply:error msg e)))
+      (handler msg))))
 
 
 (set-descriptor! #'wrap-sayid

@@ -11,6 +11,7 @@
 * Enable lexical binding in the Emacs Lisp client and tidy up its docstrings.
 * Modernize the Emacs client's nREPL usage: route all requests through CIDER's sender and drop the obsolete `cider-current-connection`.
 * Eliminate reflection warnings in the Clojure namespaces.
+* Report nREPL op failures with a CIDER-renderable error status instead of printing to the server console, and stop intercepting errors raised by other middleware.
 * [#61](https://github.com/clojure-emacs/sayid/issues/61): Remove version extraction logic.
 * Decouple the injected `sayid` plugin version from the version of the Emacs client (see `sayid-injected-plugin-version`).
 * `sayid-trace-ns-by-pattern` accepts interactive argument.
