@@ -1,4 +1,4 @@
-(ns com.billpiel.sayid.inner-trace3
+(ns com.billpiel.sayid.inner-trace
   (:require [com.billpiel.sayid.util.other :as util :refer [$-]]
             [com.billpiel.sayid.trace :as trace]
             clojure.pprint
@@ -834,24 +834,24 @@
     (inc a)
     (inc a)))
 
-#_ (inner-tracer {:qual-sym 'com.billpiel.sayid.inner-trace3/f1
-                  :meta' {:ns 'com.billpiel.sayid.inner-trace3
-                          :name 'com.billpiel.sayid.inner-trace3/f1}
-                 :ns' 'com.billpiel.sayid.inner-trace3})
+#_ (inner-tracer {:qual-sym 'com.billpiel.sayid.inner-trace/f1
+                  :meta' {:ns 'com.billpiel.sayid.inner-trace
+                          :name 'com.billpiel.sayid.inner-trace/f1}
+                 :ns' 'com.billpiel.sayid.inner-trace})
 
 #_ (binding [trace/*trace-log-parent* {:id :root1 :children (atom [])}]
-     (let [f1 (inner-tracer {:qual-sym 'com.billpiel.sayid.inner-trace3/f1
-                            :meta' {:ns 'com.billpiel.sayid.inner-trace3
-                          :name 'com.billpiel.sayid.inner-trace3/f1}
-                            :ns' 'com.billpiel.sayid.inner-trace3})]
+     (let [f1 (inner-tracer {:qual-sym 'com.billpiel.sayid.inner-trace/f1
+                            :meta' {:ns 'com.billpiel.sayid.inner-trace
+                          :name 'com.billpiel.sayid.inner-trace/f1}
+                            :ns' 'com.billpiel.sayid.inner-trace})]
        (f1 2)
        (clojure.pprint/pprint trace/*trace-log-parent*)))
 
 #_ (binding [trace/*trace-log-parent* @com.billpiel.sayid.core/workspace]
-     (let [f1 (inner-tracer {:qual-sym 'com.billpiel.sayid.inner-trace3/f1
-                             :meta' {:ns 'com.billpiel.sayid.inner-trace3
-                                     :name 'com.billpiel.sayid.inner-trace3/f1}
-                             :ns' 'com.billpiel.sayid.inner-trace3})]
+     (let [f1 (inner-tracer {:qual-sym 'com.billpiel.sayid.inner-trace/f1
+                             :meta' {:ns 'com.billpiel.sayid.inner-trace
+                                     :name 'com.billpiel.sayid.inner-trace/f1}
+                             :ns' 'com.billpiel.sayid.inner-trace})]
        (f1 0)
 #_       (clojure.pprint/pprint trace/*trace-log-parent*)))
 

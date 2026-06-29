@@ -1,7 +1,7 @@
 (ns com.billpiel.sayid.core
   (:require clojure.pprint
             [com.billpiel.sayid.trace :as trace]
-            [com.billpiel.sayid.inner-trace3 :as itrace]
+            [com.billpiel.sayid.inner-trace :as itrace]
             [com.billpiel.sayid.workspace :as ws]
             [com.billpiel.sayid.recording :as rec]
             [com.billpiel.sayid.query :as q]
