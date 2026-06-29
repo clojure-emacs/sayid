@@ -313,9 +313,8 @@ state.  POS is the position to move cursor to."
     (message "Sayid didn't respond. Is it loaded?")))
 
 (defun sayid-req-get-value (req)
-  "Send REQ to nrepl and return response."
-  (sayid-read-if-string (nrepl-dict-get (sayid--send-sync-request req)
-                                        "value")))
+  "Send REQ to nREPL and return the \"value\" slot of the response."
+  (nrepl-dict-get (sayid--send-sync-request req) "value"))
 
 (defun sayid-req-insert-content (req)
   "Send REQ to nrepl and populate buffer with response."
@@ -477,13 +476,6 @@ Disable traces, load buffer, enable traces, clear log."
   (set-buffer buf)
   (insert (car val))
   (sayid-put-text-props (cadr val) buf))
-
-;; I have no idea why I seem to need this
-(defun sayid-read-if-string (v)
-  "Sometimes V is a string? Seems to depend on versions of cider or something."
-  (if (stringp v)
-      (read v)
-    v))
 
 (defun sayid-list-take (n l)
   "Take N items from end of list L."
