@@ -1,4 +1,4 @@
-(ns com.billpiel.sayid.string-output2
+(ns com.billpiel.sayid.string-output
   (:require [com.billpiel.sayid.workspace :as ws]
             [com.billpiel.sayid.view :as v]
             [com.billpiel.sayid.util.other :as util]

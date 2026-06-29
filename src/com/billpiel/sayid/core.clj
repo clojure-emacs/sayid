@@ -7,7 +7,7 @@
             [com.billpiel.sayid.query :as q]
             [com.billpiel.sayid.view :as v]
             [com.billpiel.sayid.util.find-ns :as find-ns]
-            [com.billpiel.sayid.string-output2 :as so]
+            [com.billpiel.sayid.string-output :as so]
             [com.billpiel.sayid.profiling :as pro]
             [com.billpiel.sayid.util.other :as util]))
 

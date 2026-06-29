@@ -8,7 +8,7 @@
    [clojure.tools.reader.reader-types :as rts]
    [com.billpiel.sayid.core :as sd]
    [com.billpiel.sayid.query :as q]
-   [com.billpiel.sayid.string-output2 :as so]
+   [com.billpiel.sayid.string-output :as so]
    [com.billpiel.sayid.trace :as tr]
    [com.billpiel.sayid.util.find-ns :as find-ns]
    [com.billpiel.sayid.util.other :as util]
