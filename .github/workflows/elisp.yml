@@ -42,3 +42,6 @@ jobs:
 
       - name: Check the docstrings
         run: eldev -dtT lint doc
+
+      - name: Run the test suite
+        run: eldev -dtT test
