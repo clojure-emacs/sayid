@@ -38,7 +38,8 @@ on Emacs 28+.
 Clojure versions may still work, but they're no longer part of the test matrix.)
 
 nREPL-powered editor plugins are encouraged to make use of the bundled middleware that
-provides a very flexible Sayid API.
+provides a very flexible Sayid API. Its ops are documented in
+[doc/nrepl-api.md](doc/nrepl-api.md).
 
 ### Leiningen
 
