@@ -194,14 +194,14 @@ pop up the help buffer.
     C-c s h -- show this help
 
 
-In the `*sayid*` buffer, press `h` to pop up the help buffer.
+In the `*sayid*` buffer, press `h` to pop up a help buffer listing the current
+keybindings (it's generated from the keymap, so it's always accurate):
 
     ENTER -- pop to function
     d -- def value to $s/*
-    f -- query for calls to function
-    F -- query for calls to function with modifier
-    i -- show only this instance
-    I -- query for this instance with modifier
+    f -- query for calls to function (with a prefix arg, prompt for a modifier)
+    i -- show only this instance (with a prefix arg, prompt for a modifier)
+    r -- refresh the view (rerun the last query)
     w -- show full workspace trace
     n -- jump to next call node
     p -- jump to prev call node
