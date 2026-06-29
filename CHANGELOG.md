@@ -2,6 +2,8 @@
 
 ## unreleased
 
+* [#91](https://github.com/clojure-emacs/sayid/pull/91): Collapse the `query-*-with-modifier` commands into prefix-aware `f`/`i` in the sayid buffer (use a prefix arg to prompt for a modifier; the `F`/`I` keys are gone), and bind `r` to refresh the view.
+* [#91](https://github.com/clojure-emacs/sayid/pull/91): Generate the in-Emacs help buffers from the keymaps so they can't drift, and base the output buffers on `special-mode`.
 * [#86](https://github.com/clojure-emacs/sayid/pull/86): Fix a state leak in the traced-buffer outer-trace command, a crash when navigating to a numeric trace id, and a couple of messages that broke on a literal `%` in a path.
 
 ## [0.2.0] - 2026-06-29

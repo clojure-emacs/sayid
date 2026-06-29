@@ -77,5 +77,18 @@
       (sayid-try-goto-prop 'id 99)
       (expect (point) :to-equal 4))))
 
+(describe "the generated keybinding help"
+  ;; The help buffers are rendered straight from the keymaps, so this also
+  ;; guards the keymaps against drift.
+  (it "lists the live commands bound in the sayid buffer map"
+    (let ((help (substitute-command-keys "\\{sayid-mode-map}")))
+      (expect help :to-match "sayid-query-id")
+      (expect help :to-match "sayid-query-fn")
+      (expect help :to-match "sayid-refresh-view")))
+
+  (it "no longer references the collapsed -w-mod commands"
+    (expect (substitute-command-keys "\\{sayid-mode-map}")
+            :not :to-match "sayid-query-id-w-mod")))
+
 (provide 'sayid-test)
 ;;; sayid-test.el ends here

@@ -188,7 +188,7 @@ To opt out, set `sayid-inject-dependencies-at-jack-in' to nil."
   (setq sayid-selected-buf sayid-traced-buf-spec))
 
 (defun sayid-select-pprint-buf ()
-  "Select sayid pretty-prrint buffer."
+  "Select sayid pretty-print buffer."
   (setq sayid-selected-buf sayid-pprint-buf-spec))
 
 (defun sayid-buf-point ()
@@ -202,7 +202,7 @@ To opt out, set `sayid-inject-dependencies-at-jack-in' to nil."
   (interactive)
   (let* ((default-dir (file-name-directory (buffer-file-name)))
          (input (expand-file-name
-                 (read-directory-name "Scan dir for namespaces : "
+                 (read-directory-name "Scan dir for namespaces: "
                                       (or sayid-trace-ns-dir
                                           default-dir)))))
     (setq sayid-trace-ns-dir input)
@@ -297,7 +297,7 @@ state.  POS is the position to move cursor to."
             (goto-char 1)))
         (when orig-buf
           (pop-to-buffer orig-buf (cons nil (list (cons 'reusable-frames 'visible))))))
-    (message "Sayid didn't respond. Is it loaded?")))
+    (user-error "Sayid didn't respond.  Is it loaded?")))
 
 (defun sayid-req-get-value (req)
   "Send REQ to nREPL and return the \"value\" slot of the response."
@@ -538,7 +538,7 @@ source is tracked in https://github.com/clojure-emacs/sayid/issues/87."
 (defun sayid-trace-ns-by-pattern (ns-pattern)
   "Trace all namespaces that match NS-PATTERN."
   (interactive (list
-                (read-string "Namespace to trace (*=wildcard) "
+                (read-string "Namespace to trace (*=wildcard): "
                              (cider-current-ns))))
   (sayid--send-sync-request (list "op" "sayid-trace-ns-by-pattern"
                                   "ns-pattern" ns-pattern
@@ -673,37 +673,28 @@ A relative PATH is resolved against the project's namespace source roots."
               (not (eq 1 (get-text-property (point) 'header))))
     (forward-line)))
 
+(defun sayid--read-query-mod (arg)
+  "Read a query modifier when ARG is non-nil, otherwise return the empty string.
+ARG is the raw prefix argument."
+  (if arg (read-string "Query modifier: ") ""))
+
 ;;;###autoload
-(defun sayid-query-id-w-mod ()
-  "Query workspace for id, with optional modifier."
-  (interactive)
+(defun sayid-query-id (&optional arg)
+  "Query the workspace for the call id at point.
+With a prefix ARG, also prompt for a query modifier."
+  (interactive "P")
   (sayid-req-insert-content (list "op" "sayid-query-by-id"
                                   "trace-id" (get-text-property (point) 'id)
-                                  "mod" (read-string "query modifier: "))))
+                                  "mod" (sayid--read-query-mod arg))))
 
 ;;;###autoload
-(defun sayid-query-id ()
-  "Query workspace for id."
-  (interactive)
-  (sayid-req-insert-content (list "op" "sayid-query-by-id"
-                                  "trace-id" (get-text-property (point) 'id)
-                                  "mod" "")))
-
-;;;###autoload
-(defun sayid-query-fn-w-mod ()
-  "Query workspace for function, with optional modifier."
-  (interactive)
+(defun sayid-query-fn (&optional arg)
+  "Query the workspace for the function at point.
+With a prefix ARG, also prompt for a query modifier."
+  (interactive "P")
   (sayid-req-insert-content (list "op" "sayid-query-by-fn"
                                   "fn-name" (get-text-property (point) 'fn-name)
-                                  "mod" (read-string "query modifier: "))))
-
-;;;###autoload
-(defun sayid-query-fn ()
-  "Query workspace for function."
-  (interactive)
-  (sayid-req-insert-content (list "op" "sayid-query-by-fn"
-                                  "fn-name" (get-text-property (point) 'fn-name)
-                                  "mod" "")))
+                                  "mod" (sayid--read-query-mod arg))))
 
 ;;;###autoload
 (defun sayid-buf-def-at-point ()
@@ -769,11 +760,11 @@ A relative PATH is resolved against the project's namespace source roots."
 
 ;;;###autoload
 (defun sayid-set-view ()
-  "Set view."
+  "Set the active view, prompting for one of the registered views."
   (interactive)
   (sayid--send-sync-request (list "op" "sayid-set-view"
-                                  "view-name" (concat (completing-read "view: "
-                                                                       (sayid-get-views)))))
+                                  "view-name" (completing-read "View: " (sayid-get-views)
+                                                               nil t)))
   (message "View set.")
   (sayid-refresh-view))
 
@@ -853,31 +844,17 @@ file can be found, jump to it."
     (define-key map (kbd "h")   'sayid-show-help)
     map))
 
+(defun sayid--describe-bindings (keymap-symbol)
+  "Pop up a help buffer describing the bindings in KEYMAP-SYMBOL.
+The listing is generated from the keymap itself, so it never drifts out of
+sync.  Run `describe-key' (\\[describe-key]) on a key for the full docstring."
+  (with-help-window (help-buffer)
+    (princ (substitute-command-keys (format "\\{%s}" keymap-symbol)))))
+
 (defun sayid-show-help ()
-  "Show sayid help buffer."
+  "Show the Sayid keybindings available in `clojure-mode'."
   (interactive)
-  (display-message-or-buffer "
-f -- Queries the active workspace for entries that most closely match the context of the cursor position
-! -- Disable traces, load the current buffer, enable traces, and clear the workspace log
-w -- Shows workspace, using the current view
-t y -- Prompts for a dir, recursively traces all ns's in that dir and subdirs
-t p -- Prompts for a pattern (* = wildcard), and applies a trace to all *loaded* ns's whose name matches the pattern
-t b -- Trace the ns in the current buffer
-t e -- Enable the *existing* (if any) trace of the function at point
-t E -- Enable all traces
-t d -- Disable the *existing* (if any) trace of the function at point
-t D -- Disable all traces
-t n -- Apply an inner trace to the symbol at point
-t o -- Apply an outer trace to the symbol at point
-t r -- Remove existing trace from the symbol at point
-t K -- Remove all traces
-c -- Clear the workspace trace log
-x -- Blow away workspace -- traces and logs
-s -- Popup buffer showing what it currently traced
-S -- Popup buffer showing what it currently traced in buffer's ns
-V s -- Set the view
-h -- show this help
-"))
+  (sayid--describe-bindings 'sayid-clj-mode-keys))
 
 (defun sayid-set-clj-mode-keys (prefix)
   "Define `clojure-mode' keybindings.
@@ -889,9 +866,8 @@ PREFIX is the key prefix to bind the sayid commands under."
     (define-key map (kbd "<RET>")         'sayid-buffer-nav-from-point)
     (define-key map (kbd "d")             'sayid-buf-def-at-point)
     (define-key map (kbd "f")             'sayid-query-fn)
-    (define-key map (kbd "F")             'sayid-query-fn-w-mod)
     (define-key map (kbd "i")             'sayid-query-id)
-    (define-key map (kbd "I")             'sayid-query-id-w-mod)
+    (define-key map (kbd "r")             'sayid-refresh-view)
     (define-key map (kbd "w")             'sayid-get-workspace)
     (define-key map (kbd "n")             'sayid-buffer-nav-to-next)
     (define-key map (kbd "p")             'sayid-buffer-nav-to-prev)
@@ -906,38 +882,16 @@ PREFIX is the key prefix to bind the sayid commands under."
     (define-key map (kbd "g")             'sayid-gen-instance-expr)
     (define-key map (kbd "C")             'sayid-clear-log)
     (define-key map (kbd "h")             'sayid-buf-show-help)
-    (define-key map (kbd "q")             'quit-window)
     map))
 
 (defun sayid-buf-show-help ()
-  "Show sayid buffer help buffer."
+  "Show the Sayid buffer keybindings."
   (interactive)
-  (display-message-or-buffer "
-<RET> -- pop to function
-d -- def value to $s/*
-f -- query for calls to function
-F -- query for calls to function with modifier
-i -- show only this instance
-I -- query for this instance with modifier
-w -- show full workspace trace
-n -- jump to next call node
-p -- jump to prev call node
-P -- pretty print value
-C -- clear workspace trace log
-v -- toggle view
-V -- set view (see register-view)
-l, <backspace> -- previous buffer state
-L, <S-backspace> -- forward buffer state
-c i -- inspect value at point
-g -- generate instance expression and put in kill ring
-h -- help
-q -- quit window
-"))
+  (sayid--describe-bindings 'sayid-mode-map))
 
 ;;;###autoload
-(define-derived-mode sayid-mode fundamental-mode "SAYID"
+(define-derived-mode sayid-mode special-mode "SAYID"
   "A major mode for displaying Sayid output."
-  (read-only-mode 1)
   (setq truncate-lines t)
   (buffer-disable-undo))
 
@@ -954,30 +908,16 @@ q -- quit window
     (define-key map (kbd "<backspace>") 'sayid-show-traced)
     (define-key map (kbd "l")           'sayid-show-traced)
     (define-key map (kbd "h")           'sayid-traced-buf-show-help)
-    (define-key map (kbd "q")           'quit-window)
     map))
 
 (defun sayid-traced-buf-show-help ()
-  "Show sayid traced buffer help buffer."
+  "Show the Sayid traced-buffer keybindings."
   (interactive)
-  (display-message-or-buffer "
-<RET> -- Drill into ns at point
-e -- Enable trace
-d -- Disable trace
-E -- Enable ALL traces
-D -- Disable ALL traces
-i -- Apply inner trace to func at point
-o -- Apply outer trace to func at point
-r -- Remove trace from func at point
-l, <backspace> -- go back to trace overview (if in ns view)
-h -- help
-q -- quit window
-"))
+  (sayid--describe-bindings 'sayid-traced-mode-map))
 
 ;;;###autoload
-(define-derived-mode sayid-traced-mode fundamental-mode "SAYID-TRACED"
+(define-derived-mode sayid-traced-mode special-mode "SAYID-TRACED"
   "A major mode for displaying Sayid trace output."
-  (read-only-mode 1)
   (setq truncate-lines t)
   (buffer-disable-undo))
 
@@ -992,27 +932,16 @@ q -- quit window
     (define-key map (kbd "<return>")    'sayid-pprint-buf-show-path)
     (define-key map (kbd "<backspace>") 'sayid-pprint-buf-exit)
     (define-key map (kbd "l")           'sayid-pprint-buf-exit)
-    (define-key map (kbd "q")           'quit-window)
     map))
 
 (defun sayid-pprint-buf-show-help ()
-  "Show sayid pretty-print buffer help buffer."
+  "Show the Sayid pretty-print buffer keybindings."
   (interactive)
-  (display-message-or-buffer "
-ENTER -- show path in mini-buffer
-i -- jump into child node
-o -- jump out to parent node
-n -- jump to next sibling node
-p -- jump to previous sibling node
-l -- back to trace buffer
-h -- help
-q -- quit window
-"))
+  (sayid--describe-bindings 'sayid-pprint-mode-map))
 
 ;;;###autoload
-(define-derived-mode sayid-pprint-mode fundamental-mode "SAYID-PPRINT"
+(define-derived-mode sayid-pprint-mode special-mode "SAYID-PPRINT"
   "A major mode for displaying Sayid pretty print output."
-  (read-only-mode 1)
   (setq truncate-lines t)
   (buffer-disable-undo))
 
