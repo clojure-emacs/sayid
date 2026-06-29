@@ -5,7 +5,7 @@
             [com.billpiel.sayid.query :as sdq]
             [com.billpiel.sayid.test-utils :as t-utils]
             [com.billpiel.sayid.test-ns1 :as ns1]
-            [com.billpiel.sayid.string-output2 :as sds]))
+            [com.billpiel.sayid.string-output :as sds]))
 
 
 (defn- fixture

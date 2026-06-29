@@ -6,7 +6,7 @@
   and `workspace-test`.  This namespace adds the pieces that refactor needs
   most and that were missing: a guard on the public API surface itself, and
   characterizations of rendering and profiling - two public paths the refactor
-  touches (`string-output2`, `profiling`) that had no coverage."
+  touches (`string-output`, `profiling`) that had no coverage."
   (:require [clojure.test :as t]
             [clojure.string :as str]
             [com.billpiel.sayid.core :as sd]
@@ -51,7 +51,7 @@
       (t/is (some? (ns-resolve 'com.billpiel.sayid.core sym))
             (str sym " must remain part of core's public API")))))
 
-;;; --- Rendering (string-output2) ---------------------------------------------
+;;; --- Rendering (string-output) ---------------------------------------------
 
 (defn- strip-ansi
   [s]
