@@ -1,6 +1,6 @@
 # Change Log
 
-## unreleased
+## [0.3.0] - 2026-06-29
 
 * [#92](https://github.com/clojure-emacs/sayid/pull/92): Stop freezing Emacs during the `!` reload workflow; the re-enable/clear now runs on the reload's completion callback instead of fixed `sleep-for` delays.
 * [#91](https://github.com/clojure-emacs/sayid/pull/91): Collapse the `query-*-with-modifier` commands into prefix-aware `f`/`i` in the sayid buffer (use a prefix arg to prompt for a modifier; the `F`/`I` keys are gone), and bind `r` to refresh the view.
