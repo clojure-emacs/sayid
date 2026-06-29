@@ -1,6 +1,5 @@
 (ns com.billpiel.sayid.string-output
-  (:require [com.billpiel.sayid.workspace :as ws]
-            [com.billpiel.sayid.view :as v]
+  (:require [com.billpiel.sayid.view :as v]
             [com.billpiel.sayid.util.other :as util]
             [com.billpiel.sayid.util.source :as src]
             [tamarin.core :as tam]
