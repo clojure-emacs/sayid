@@ -277,7 +277,7 @@ resolved automatically."
   (let ((p 1))
     (while (and p
                 (<= p (point-max)))
-      (if (string= val (get-text-property p prop))
+      (if (equal val (get-text-property p prop))
           (progn
             (goto-char p)
             (setq p (+ 1 (point-max))))
@@ -639,7 +639,8 @@ Either navigate to ns view or function source."
                                     "fn-ns" (get-text-property (point) 'ns)
                                     "action" "add-outer"))
     (sayid-show-traced ns)
-    (goto-char pos)))
+    (goto-char pos)
+    (sayid-select-default-buf)))
 
 ;;;###autoload
 (defun sayid-traced-buf-enable ()
@@ -741,7 +742,7 @@ Either navigate to ns view or function source."
           (pop-to-buffer (find-file-noselect xfile))
           (goto-char (point-min))
           (forward-line (- line 1)))
-      (message (concat "File not found: " file)))))
+      (user-error "File not found: %s" file))))
 
 ;;;###autoload
 (defun sayid-buffer-nav-to-prev ()
@@ -849,7 +850,7 @@ Either navigate to ns view or function source."
 (defun sayid-pprint-buf-show-path ()
   "Show path to value at point in pretty-print buffer."
   (interactive)
-  (message (get-text-property (point) 'path)))
+  (message "%s" (get-text-property (point) 'path)))
 
 (defun sayid-get-views ()
   "List of installed views."

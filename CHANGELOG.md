@@ -1,5 +1,9 @@
 # Change Log
 
+## unreleased
+
+* [#86](https://github.com/clojure-emacs/sayid/pull/86): Fix a state leak in the traced-buffer outer-trace command, a crash when navigating to a numeric trace id, and a couple of messages that broke on a literal `%` in a path.
+
 ## [0.2.0] - 2026-06-29
 
 * Publish under the `mx.cider/sayid` coordinates. The old `com.billpiel/sayid` coordinates are deprecated but still receive the same releases for now, so existing dependencies keep working.
