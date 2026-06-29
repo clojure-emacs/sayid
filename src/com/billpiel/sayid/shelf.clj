@@ -1,5 +1,6 @@
 (ns com.billpiel.sayid.shelf
-  (:require [com.billpiel.sayid.util.other :as util]))
+  (:require [com.billpiel.sayid.util.other :as util]
+            [com.billpiel.sayid.util.sym :as sym]))
 
 
 (defn save!
@@ -7,7 +8,7 @@
   (let [item' @item
         slot (slot-kw item')]
     (if (symbol? slot)
-      (util/def-ns-var shelf slot item')
+      (sym/def-ns-var shelf slot item')
       (throw (Exception. ^String (mk-ex-msg-fn
                                   slot))))
     item'))
@@ -16,7 +17,7 @@
   [item shelf slot-kw slot mk-ex-msg-fn]
   (doto item
     (swap! assoc slot-kw
-           (util/qualify-sym shelf slot))
+           (sym/qualify-sym shelf slot))
     (save! shelf slot-kw mk-ex-msg-fn)))
 
 (defn safe-to-load?

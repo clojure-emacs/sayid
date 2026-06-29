@@ -1,5 +1,6 @@
 (ns com.billpiel.sayid.trace
-  (:require [com.billpiel.sayid.util.other :as util])
+  (:require [com.billpiel.sayid.util.other :as util]
+            [com.billpiel.sayid.util.sym :as sym])
   (:import com.billpiel.sayid.SayidMultiFn))
 
 (def ^:dynamic *trace-log-parent* nil)
@@ -137,7 +138,7 @@
         s  (.sym v)
         m (meta v)
         f @v
-        vname (util/qualify-sym ns s )]
+        vname (sym/qualify-sym ns s )]
     (doto v
       (alter-var-root (partial tracer-fn
                                {:workspace workspace

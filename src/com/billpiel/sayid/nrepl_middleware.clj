@@ -12,6 +12,7 @@
    [com.billpiel.sayid.trace :as tr]
    [com.billpiel.sayid.util.find-ns :as find-ns]
    [com.billpiel.sayid.util.other :as util]
+   [com.billpiel.sayid.util.sym :as sym]
    [com.billpiel.sayid.view :as v]
    [nrepl.middleware :refer [set-descriptor!]]
    [nrepl.misc :refer [response-for]]
@@ -171,7 +172,7 @@ or nil when nothing resolves there."
   [{:keys [action file line column source] :as msg}]
   (let [sym (get-sym-at-pos-in-source file line column source)
         ns-sym (symbol (parse-ns-name-from-source source))
-        qual-sym (util/resolve-to-qual-sym ns-sym sym)]
+        qual-sym (sym/resolve-to-qual-sym ns-sym sym)]
     (when qual-sym
       ((fn-trace-actions action) qual-sym))
     (reply:clj->nrepl msg qual-sym)))
@@ -286,7 +287,7 @@ or nil when nothing resolves there."
 (defn ^:nrepl sayid-trace-fn
   "Apply trace ACTION to the function named by MSG's fn-ns/fn-name."
   [{:keys [action fn-name fn-ns] :as msg}]
-  ((fn-trace-actions action) (util/qualify-sym fn-ns fn-name))
+  ((fn-trace-actions action) (sym/qualify-sym fn-ns fn-name))
   (send-status-done msg))
 
 ;; `ws-remove-trace-ns!' is a macro that captures its argument's literal form,
@@ -406,7 +407,7 @@ or nil when nothing resolves there."
     (doseq [pair (map vector
                       arglist-template-seq
                       (:args tree))]
-      (apply util/def-ns-var
+      (apply sym/def-ns-var
              '$s
              pair))
     (format "(%s%s)"
@@ -430,7 +431,7 @@ or nil when nothing resolves there."
 (defn ^:nrepl sayid-def-value
   [{:keys [transport trace-id path] :as msg}]
   (let [path' (str-vec->arg-path path)]
-    (util/def-ns-var '$s '* (-> [:id (keyword trace-id)]
+    (sym/def-ns-var '$s '* (-> [:id (keyword trace-id)]
                                 sd/ws-query*
                                 :children
                                 first

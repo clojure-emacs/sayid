@@ -1,10 +1,8 @@
 (ns com.billpiel.sayid.util.other
+  "General-purpose helpers that don't have a more specific home.  Symbol and
+  namespace helpers live in `util.sym`, source-reading in `util.source`."
   (:require [clojure.walk :as walk]
-            clojure.java.io
-            [clojure.tools.reader :as r]
-            [clojure.tools.reader.reader-types :as rts]
-            clojure.repl
-            clojure.string))
+            [com.billpiel.sayid.util.sym :as sym]))
 
 (defn ->int
   [v]
@@ -27,33 +25,6 @@
         (keyword? v) (-> v name symbol)
         (string? v) (symbol v)
         :else (-> v str symbol)))
-
-(defn def-ns-var
-  [ws-ns-sym sym v]
-  (binding [*ns* (create-ns ws-ns-sym)]
-    (eval `(def ~sym '~v))))
-
-(defn eval-in-ns
-  [ns-sym form]
-  (binding [*ns* (create-ns ns-sym)]
-    (use 'clojure.core)
-    (eval form)))
-
-(defn macroexpand-in-ns
-  [ns-sym form]
-  (eval-in-ns ns-sym `(macroexpand '~form)))
-
-(defn macroexpand-all-in-ns
-  [ns-sym form]
-  (eval-in-ns ns-sym `(walk/macroexpand-all '~form)))
-
-(defn macro?
-  [ns-sym m-sym]
-  (try (some->> m-sym
-                (ns-resolve ns-sym)
-                meta
-                :macro)
-       (catch Exception e false)))
 
 (defmacro get-env
   []
@@ -102,34 +73,6 @@
     (arg-match arglists args)
     (catch Exception e
       nil)))
-
-(defn qualify-sym
-  [ns sym]
-  (symbol (str ns)
-          (str sym)))
-
-(defn disqualify-sym
-  [fn-sym]
-  (->> fn-sym
-       str
-       (re-find #"(.*?)/(.*)")
-       rest
-       (mapv symbol)))
-
-(defmacro fully-qualify-sym
-  [sym]
-  `(let [m# (-> ~sym
-                resolve
-                meta)
-         ns# (-> m# :ns str)
-         name# (-> m# :name)]
-     (qualify-sym ns# name#)))
-
-(defn resolve-to-qual-sym [ns-sym sym]
-  (try (when-let [{:keys [name ns]} (meta (ns-resolve ns-sym sym))]
-         (qualify-sym ns name))
-       (catch Exception e
-         nil)))
 
 (defn atom?
   [v]
@@ -204,7 +147,7 @@
 (defn defalias-macro*
   [alias source]
   (let [body-sym (gensym "body")
-        qualified-source (qualify-sym *ns* source)
+        qualified-source (sym/qualify-sym *ns* source)
         source-meta (->> source
                          (ns-resolve *ns*)
                          meta)
@@ -238,39 +181,6 @@
 (defmacro defalias-macro
   [alias source]
   (defalias-macro* alias source))
-
-(defn mk-dummy-whitespace
-  [lines cols]
-  (apply str
-         (concat (repeat lines "\n")
-                 (repeat cols " "))))
-
-(defn mk-positionalble-src-logging-push-back-rdr
-  [s file line col]
-  (rts/source-logging-push-back-reader (str (mk-dummy-whitespace (dec line) ;;this seem unfortunate
-                                                                 (dec col))
-                                            s)
-                                       (+ (count s) line col 1)
-                                       file))
-
-(defn hunt-down-source
-  [fn-sym]
-  (let [{:keys [source file line column]} (-> fn-sym
-                                              resolve
-                                              meta)]
-    (or source
-        (r/read (mk-positionalble-src-logging-push-back-rdr
-                 (or
-                  (clojure.repl/source-fn fn-sym)
-                  (->> file
-                       slurp
-                       clojure.string/split-lines
-                       (drop (dec line))
-                       (clojure.string/join "\n"))
-                  "nil")
-                 file
-                 line
-                 column)))))
 
 (defmacro src-in-meta
   [& body]
@@ -337,14 +247,6 @@
   (if (symbol? v)
     `'~v
     v))
-
-(defn get-src-file-path
-  [s]
-  (let [s' (clojure.string/replace s #"^file:" "")]
-    (if (.exists (java.io.File. s'))
-      s'
-      (when-let [r (clojure.java.io/resource s')]
-        (.getPath r)))))
 
 (defn fn*?
   [maybe]
