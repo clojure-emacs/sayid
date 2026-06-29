@@ -9,6 +9,7 @@
 * Fix the broken Clojure version matrix that prevented the test suite from running on recent Leiningen.
 * Modernize CI: run against a JDK/Clojure matrix, lint the Clojure sources with clj-kondo, and byte-compile/lint the Emacs Lisp client.
 * Enable lexical binding in the Emacs Lisp client and tidy up its docstrings.
+* Modernize the Emacs client's nREPL usage: route all requests through CIDER's sender and drop the obsolete `cider-current-connection`.
 * Eliminate reflection warnings in the Clojure namespaces.
 * [#61](https://github.com/clojure-emacs/sayid/issues/61): Remove version extraction logic.
 * Decouple the injected `sayid` plugin version from the version of the Emacs client (see `sayid-injected-plugin-version`).
