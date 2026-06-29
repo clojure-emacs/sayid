@@ -316,7 +316,7 @@ or nil when nothing resolves there."
                        (apply query*)
                        query-tree->trio))))
 
-(defn ^:nrepl sayid-buf-query-id-w-mod
+(defn ^:nrepl sayid-query-by-id
   [{:keys [trace-id mod] :as msg}]
   (reply:clj->nrepl msg
                     (sayid-buf-query [:id (keyword trace-id)]
@@ -324,7 +324,7 @@ or nil when nothing resolves there."
 
 (def parent-name-or-name (some-fn :parent-name :name))
 
-(defn ^:nrepl sayid-buf-query-fn-w-mod
+(defn ^:nrepl sayid-query-by-fn
   [{:keys [fn-name mod] :as msg}]
   (reply:clj->nrepl msg (sayid-buf-query [#'parent-name-or-name
                                           (symbol fn-name)]
@@ -427,7 +427,7 @@ or nil when nothing resolves there."
             (reply:clj->nrepl msg))
       (send-status-done msg)))
 
-(defn ^:nrepl sayid-buf-def-at-point
+(defn ^:nrepl sayid-def-value
   [{:keys [transport trace-id path] :as msg}]
   (let [path' (str-vec->arg-path path)]
     (util/def-ns-var '$s '* (-> [:id (keyword trace-id)]
@@ -438,7 +438,7 @@ or nil when nothing resolves there."
   (t/send transport (response-for msg :value "Def'd as $s/*"))
   (send-status-done msg))
 
-(defn ^:nrepl sayid-buf-pprint-at-point
+(defn ^:nrepl sayid-pprint-value
   [{:keys [transport trace-id path] :as msg}]
   (let [path' (str-vec->arg-path path)
         value (-> [:id (keyword trace-id)]

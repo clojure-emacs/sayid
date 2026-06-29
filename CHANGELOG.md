@@ -5,6 +5,7 @@
 * [#13](https://github.com/clojure-emacs/sayid/issues/13): Document the nREPL middleware API (see [doc/nrepl-api.md](doc/nrepl-api.md)).
 * Rewrite the README's demo walkthrough around a small, self-contained example with current keybindings.
 * Consolidate the trace-management nREPL ops into four `action`-parametrized ops (`sayid-trace-fn`, `sayid-trace-fn-at-point`, `sayid-trace-ns`, `sayid-all-traces`), trimming the middleware from 37 ops to 26. (Breaking for any third-party nREPL client; the bundled Emacs client is updated in lockstep.)
+* Rename the buffer-oriented nREPL ops to client-agnostic names: `sayid-buf-query-id-w-mod` -> `sayid-query-by-id`, `sayid-buf-query-fn-w-mod` -> `sayid-query-by-fn`, `sayid-buf-def-at-point` -> `sayid-def-value`, `sayid-buf-pprint-at-point` -> `sayid-pprint-value`.
 * [#29](https://github.com/clojure-emacs/sayid/issues/29): Fix the `wrong-type-argument` error when pressing `g` (and similar commands) by no longer re-reading nREPL response values, which already arrive decoded on nREPL 1.0+.
 * [#14](https://github.com/clojure-emacs/sayid/issues/14): Fix inner tracing of functions that use `letfn`.
 * [#31](https://github.com/clojure-emacs/sayid/issues/31): Keep the generated reproduction expression in the kill ring and report clearly when the source file can't be located (`sayid-gen-instance-expr`, bound to `g`).
