@@ -140,7 +140,6 @@ The injected dependencies are most likely nREPL middlewares."
   :package-version '(sayid . "0.2.0"))
 
 (defvar sayid-trace-ns-dir nil)
-(defvar sayid-meta nil)
 
 (defvar sayid-buf-spec '("*sayid*" . sayid-mode))
 (defvar sayid-traced-buf-spec '("*sayid-traced*" . sayid-traced-mode))
@@ -196,18 +195,6 @@ To opt out, set `sayid-inject-dependencies-at-jack-in' to nil."
   "Get point of selected sayid buffer."
   (set-buffer (car sayid-selected-buf))
   (point))
-
-;;;###autoload
-(defun sayid-get-trace-ns-dir ()
-  "Return current trace ns dir, or prompt for it if not set."
-  (interactive)
-  (or sayid-trace-ns-dir
-      (let* ((default-dir (file-name-directory (buffer-file-name)))
-             (input (expand-file-name
-                     (read-directory-name "Scan dir for namespaces : "
-                                          default-dir))))
-        (setq sayid-trace-ns-dir input)
-        input)))
 
 ;;;###autoload
 (defun sayid-set-trace-ns-dir ()
@@ -558,17 +545,16 @@ Disable traces, load buffer, enable traces, clear log."
 
 ;;;###autoload
 (defun sayid-traced-buf-enter ()
-  "Perform \\='enter\\=' on trace buffer.
-Either navigate to ns view or function source."
+  "Show the trace view for the namespace at point.
+On a function node this does nothing for now; jumping to the function's
+source is tracked in https://github.com/clojure-emacs/sayid/issues/87."
   (interactive)
   (sayid-select-traced-buf)
-  (let ((name (get-text-property (point) 'name ))
+  (let ((name (get-text-property (point) 'name))
         (ns (get-text-property (point) 'ns)))
-    (cond
-     ((stringp name) 1) ;; goto func
-     ((stringp ns) (sayid-req-insert-content (list "op" "sayid-show-traced"
-                                                   "ns" ns)))
-     (t 0)))
+    ;; Function nodes carry both `name' and `ns'; only act on bare ns nodes.
+    (when (and (not (stringp name)) (stringp ns))
+      (sayid-req-insert-content (list "op" "sayid-show-traced" "ns" ns))))
   (sayid-select-default-buf))
 
 ;;;###autoload
