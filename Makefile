@@ -1,4 +1,4 @@
-.PHONY: test test-all kondo repl elisp-compile elisp-lint elisp clean
+.PHONY: test test-all kondo repl elisp-compile elisp-lint elisp-test elisp clean
 
 # Run the Clojure test suite against the default Clojure version.
 test:
@@ -24,8 +24,12 @@ elisp-compile:
 elisp-lint:
 	eldev -dtT lint doc
 
+# Run the Emacs Lisp test suite with Buttercup (requires Eldev).
+elisp-test:
+	eldev -dtT test
+
 # Run all the Emacs Lisp checks.
-elisp: elisp-compile elisp-lint
+elisp: elisp-compile elisp-lint elisp-test
 
 clean:
 	lein clean

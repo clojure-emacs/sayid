@@ -11,3 +11,9 @@
 
 ;; Test with a recent stable CIDER from MELPA Stable.
 (eldev-use-package-archive 'melpa-unstable)
+
+;; The Emacs Lisp test suite uses Buttercup, like CIDER's.  Its tests live under
+;; test/el rather than alongside the Clojure tests in test/.
+(eldev-add-extra-dependencies 'test 'buttercup)
+(eldev-add-loading-roots 'test "src/el" "test/el")
+(setf eldev-test-fileset "test/el/*.el")
