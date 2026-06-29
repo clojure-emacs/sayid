@@ -342,7 +342,8 @@ state.  POS is the position to move cursor to."
 (defun sayid-trace-fn-enable ()
   "Enable tracing for symbol at point.  Symbol should point to a fn var."
   (interactive)
-  (sayid-send-and-message (list "op" "sayid-trace-fn-enable-at-point"
+  (sayid-send-and-message (list "op" "sayid-trace-fn-at-point"
+                                "action" "enable"
                                 "file" (buffer-file-name)
                                 "line" (line-number-at-pos)
                                 "column" (+ (current-column) 1)
@@ -354,7 +355,8 @@ state.  POS is the position to move cursor to."
 (defun sayid-trace-fn-disable ()
   "Disable tracing for symbol at point.  Symbol should point to a fn var."
   (interactive)
-  (sayid-send-and-message (list "op" "sayid-trace-fn-disable-at-point"
+  (sayid-send-and-message (list "op" "sayid-trace-fn-at-point"
+                                "action" "disable"
                                 "file" (buffer-file-name)
                                 "line" (line-number-at-pos)
                                 "column" (+ (current-column) 1)
@@ -366,7 +368,8 @@ state.  POS is the position to move cursor to."
 (defun sayid-outer-trace-fn ()
   "Add outer tracing for symbol at point.  Symbol should point to a fn var."
   (interactive)
-  (sayid-send-and-message (list "op" "sayid-trace-fn-outer-trace-at-point"
+  (sayid-send-and-message (list "op" "sayid-trace-fn-at-point"
+                                "action" "add-outer"
                                 "file" (buffer-file-name)
                                 "line" (line-number-at-pos)
                                 "column" (+ (current-column) 1)
@@ -378,7 +381,8 @@ state.  POS is the position to move cursor to."
 (defun sayid-inner-trace-fn ()
   "Add inner tracing for symbol at point.  Symbol should point to a fn var."
   (interactive)
-  (sayid-send-and-message (list "op" "sayid-trace-fn-inner-trace-at-point"
+  (sayid-send-and-message (list "op" "sayid-trace-fn-at-point"
+                                "action" "add-inner"
                                 "file" (buffer-file-name)
                                 "line" (line-number-at-pos)
                                 "column" (+ (current-column) 1)
@@ -390,7 +394,8 @@ state.  POS is the position to move cursor to."
 (defun sayid-remove-trace-fn ()
   "Remove tracing for symbol at point.  Symbol should point to a fn var."
   (interactive)
-  (sayid-send-and-message (list "op" "sayid-remove-trace-fn-at-point"
+  (sayid-send-and-message (list "op" "sayid-trace-fn-at-point"
+                                "action" "remove"
                                 "file" (buffer-file-name)
                                 "line" (line-number-at-pos)
                                 "column" (+ (current-column) 1)
@@ -597,14 +602,14 @@ Either navigate to ns view or function source."
 (defun sayid-trace-enable-all ()
   "Enable all traces."
   (interactive)
-  (sayid--send-sync-request (list "op" "sayid-enable-all-traces"))
+  (sayid--send-sync-request (list "op" "sayid-all-traces" "action" "enable"))
   (sayid-show-traced))
 
 ;;;###autoload
 (defun sayid-trace-disable-all ()
   "Disable all traces."
   (interactive)
-  (sayid--send-sync-request (list "op" "sayid-disable-all-traces"))
+  (sayid--send-sync-request (list "op" "sayid-all-traces" "action" "disable"))
   (sayid-show-traced))
 
 ;;;###autoload
@@ -617,7 +622,7 @@ Either navigate to ns view or function source."
     (sayid--send-sync-request (list "op" "sayid-trace-fn"
                                     "fn-name" (get-text-property (point) 'name)
                                     "fn-ns" (get-text-property (point) 'ns)
-                                    "type" "inner"))
+                                    "action" "add-inner"))
     (sayid-show-traced ns)
     (goto-char pos)
     (sayid-select-default-buf)))
@@ -632,7 +637,7 @@ Either navigate to ns view or function source."
     (sayid--send-sync-request (list "op" "sayid-trace-fn"
                                     "fn-name" (get-text-property (point) 'name)
                                     "fn-ns" (get-text-property (point) 'ns)
-                                    "type" "outer"))
+                                    "action" "add-outer"))
     (sayid-show-traced ns)
     (goto-char pos)))
 
@@ -646,11 +651,11 @@ Either navigate to ns view or function source."
         (fn-ns (get-text-property (point) 'ns)))
     (sayid-select-traced-buf)
     (if fn-name
-        (sayid--send-sync-request (list "op" "sayid-trace-fn-enable"
+        (sayid--send-sync-request (list "op" "sayid-trace-fn" "action" "enable"
 					"fn-name" fn-name
 					"fn-ns" fn-ns))
-      (sayid--send-sync-request (list "op" "sayid-trace-ns-enable"
-                                      "fn-ns" fn-ns)))
+      (sayid--send-sync-request (list "op" "sayid-trace-ns" "action" "enable"
+                                      "ns" fn-ns)))
     (sayid-show-traced buf-ns)
     (goto-char pos)
     (sayid-select-default-buf)))
@@ -665,11 +670,11 @@ Either navigate to ns view or function source."
         (fn-ns (get-text-property (point) 'ns)))
     (sayid-select-traced-buf)
     (if fn-name
-        (sayid--send-sync-request (list "op" "sayid-trace-fn-disable"
+        (sayid--send-sync-request (list "op" "sayid-trace-fn" "action" "disable"
 					"fn-name" (get-text-property (point) 'name)
 					"fn-ns" (get-text-property (point) 'ns)))
-      (sayid--send-sync-request (list "op" "sayid-trace-ns-disable"
-                                      "fn-ns" fn-ns)))
+      (sayid--send-sync-request (list "op" "sayid-trace-ns" "action" "disable"
+                                      "ns" fn-ns)))
     (sayid-show-traced buf-ns)
     (goto-char pos)
     (sayid-select-default-buf)))
@@ -683,11 +688,11 @@ Either navigate to ns view or function source."
         (fn-name (get-text-property (point) 'name)))
     (sayid-select-traced-buf)
     (if fn-name
-        (sayid--send-sync-request (list "op" "sayid-trace-fn-remove"
+        (sayid--send-sync-request (list "op" "sayid-trace-fn" "action" "remove"
 					"fn-name" fn-name
 					"fn-ns" (get-text-property (point) 'ns)))
-      (sayid--send-sync-request (list "op" "sayid-trace-ns-remove"
-                                      "fn-ns" (get-text-property (point) 'ns))))
+      (sayid--send-sync-request (list "op" "sayid-trace-ns" "action" "remove"
+                                      "ns" (get-text-property (point) 'ns))))
     (sayid-show-traced ns)
     (goto-char pos)
     (sayid-select-default-buf)))
@@ -696,7 +701,7 @@ Either navigate to ns view or function source."
 (defun sayid-kill-all-traces ()
   "Kill all traces."
   (interactive)
-  (sayid--send-sync-request (list "op" "sayid-remove-all-traces"))
+  (sayid--send-sync-request (list "op" "sayid-all-traces" "action" "remove"))
   (message "Killed all traces."))
 
 ;;;###autoload
