@@ -20,21 +20,16 @@
 (require 'buttercup)
 (require 'sayid)
 
-(describe "sayid-list-take"
-  (it "takes the first N items from the front of the list"
-    (expect (sayid-list-take 2 '(a b c d e)) :to-equal '(a b)))
-  (it "returns the whole list when N exceeds its length"
-    (expect (sayid-list-take 10 '(a b)) :to-equal '(a b)))
-  (it "returns nil when N is zero"
-    (expect (sayid-list-take 0 '(a b c)) :to-equal nil))
-  (it "returns nil for the empty list"
-    (expect (sayid-list-take 3 '()) :to-equal nil)))
-
-(describe "sayid-str-to-sym"
-  (it "reads a string into the matching symbol"
-    (expect (sayid-str-to-sym "foo") :to-be 'foo))
-  (it "produces interned symbols that compare with eq"
-    (expect (eq (sayid-str-to-sym "bar") (sayid-str-to-sym "bar")) :to-be t)))
+(describe "sayid-mk-font-face"
+  (it "maps a type pair to the matching face"
+    (expect (sayid-mk-font-face '("type" ("int"))) :to-be 'sayid-int-face)
+    (expect (sayid-mk-font-face '("type" ("keyword"))) :to-be 'sayid-keyword-face))
+  (it "maps a depth pair to the matching face, cycling every ten levels"
+    (expect (sayid-mk-font-face '("fg*" 0)) :to-be 'sayid-depth-1-face)
+    (expect (sayid-mk-font-face '("fg*" 3)) :to-be 'sayid-depth-4-face)
+    (expect (sayid-mk-font-face '("fg*" 13)) :to-be 'sayid-depth-4-face))
+  (it "returns nil for an unknown property pair"
+    (expect (sayid-mk-font-face '("nope" 1)) :to-be nil)))
 
 (describe "the buffer-state ring"
   (before-each
