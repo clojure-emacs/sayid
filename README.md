@@ -26,6 +26,31 @@ development efforts.
 
 **We're looking for more maintainers for the project. If you're interested in helping out please ping @bbatsov.**
 
+## Why Sayid?
+
+Sayid is an *omniscient* debugger: you run your code first, at full speed, and
+explore what happened afterwards. That's a fundamentally different model from the
+two tools people usually reach for.
+
+**Versus `clojure.tools.trace`.** tools.trace prints call/return lines as a side
+effect - a wall of text that scrolls past and is gone. Sayid records the same
+calls (and, with inner tracing, every intermediate value *inside* a function)
+into a navigable, queryable data structure. You can slice it by function or by
+call id, walk into a call's children, or jump to its ancestors. One is
+scrollback; the other is a record you can interrogate.
+
+**Versus a stepping debugger.** A breakpoint debugger asks you to predict where
+the bug is *before* you run, stops the world when it hits a breakpoint (rough on
+concurrency, timing-sensitive code, hot loops, and async callbacks), shows you
+one stack frame at a time, and forgets everything the moment you continue. Sayid
+inverts all of that: run first, explore after. The whole execution is already
+captured, you see the entire call tree at once, and you can revisit any part of
+it as many times as you like, because it's data, not a paused process.
+
+In short: tools.trace tells you what happened in the order it happened; a
+debugger lets you watch it happen *if* you knew where to stand; Sayid hands you
+the whole execution as data, after the fact, to query however you want.
+
 ## Installation & Requirements
 
 > [!NOTE]
