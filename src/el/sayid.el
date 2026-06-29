@@ -951,9 +951,10 @@ file can be found, jump to it."
   (interactive)
   (display-message-or-buffer "
 f -- Queries the active workspace for entries that most closely match the context of the cursor position
+! -- Disable traces, load the current buffer, enable traces, and clear the workspace log
 w -- Shows workspace, using the current view
 t y -- Prompts for a dir, recursively traces all ns's in that dir and subdirs
-t p -- Prompts for a pattern (* = wildcare), and applies a trace to all *loaded* ns's whose name matches the patten
+t p -- Prompts for a pattern (* = wildcard), and applies a trace to all *loaded* ns's whose name matches the pattern
 t b -- Trace the ns in the current buffer
 t e -- Enable the *existing* (if any) trace of the function at point
 t E -- Enable all traces
@@ -1020,8 +1021,10 @@ v -- toggle view
 V -- set view (see register-view)
 l, <backspace> -- previous buffer state
 L, <S-backspace> -- forward buffer state
+c i -- inspect value at point
 g -- generate instance expression and put in kill ring
 h -- help
+q -- quit window
 "))
 
 ;;;###autoload
@@ -1060,6 +1063,7 @@ i -- Apply inner trace to func at point
 o -- Apply outer trace to func at point
 r -- Remove trace from func at point
 l, <backspace> -- go back to trace overview (if in ns view)
+h -- help
 q -- quit window
 "))
 
@@ -1094,6 +1098,7 @@ o -- jump out to parent node
 n -- jump to next sibling node
 p -- jump to previous sibling node
 l -- back to trace buffer
+h -- help
 q -- quit window
 "))
 

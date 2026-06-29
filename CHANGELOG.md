@@ -11,6 +11,7 @@
 * Modernize CI: run against a JDK/Clojure matrix, lint the Clojure sources with clj-kondo, and byte-compile/lint the Emacs Lisp client.
 * Enable lexical binding in the Emacs Lisp client and tidy up its docstrings.
 * Modernize the Emacs client's nREPL usage: route all requests through CIDER's sender and drop the obsolete `cider-current-connection`.
+* Sync the in-Emacs help buffers and the README keybinding tables with the actual keybindings (drop entries for commands that no longer exist, add the missing ones).
 * Eliminate reflection warnings in the Clojure namespaces.
 * Report nREPL op failures with a CIDER-renderable error status instead of printing to the server console, and stop intercepting errors raised by other middleware.
 * [#61](https://github.com/clojure-emacs/sayid/issues/61): Remove version extraction logic.
