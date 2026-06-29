@@ -25,6 +25,22 @@
   (t/is (every? var? (vals mw/sayid-nrepl-ops))
         "ops resolve to vars"))
 
+(t/deftest consolidated-trace-ops-registered
+  (t/is (every? (set (keys mw/sayid-nrepl-ops))
+                ["sayid-trace-fn" "sayid-trace-fn-at-point"
+                 "sayid-trace-ns" "sayid-all-traces"])
+        "the action-parametrized trace ops are registered"))
+
+(t/deftest unknown-action-is-an-error-not-a-hang
+  (t/testing "an unrecognized action yields an error status, still terminated"
+    (let [sent (atom [])
+          handler (mw/wrap-sayid (fn [_] :unhandled))]
+      (handler {:op "sayid-trace-ns" :action "bogus" :ns "whatever"
+                :transport (recording-transport sent)})
+      (let [statuses (->> @sent (keep :status) (apply concat) set)]
+        (t/is (contains? statuses :error))
+        (t/is (contains? statuses :done))))))
+
 (t/deftest wrap-sayid-is-a-middleware
   (t/is (fn? mw/wrap-sayid))
   (t/testing "unknown ops are passed through to the wrapped handler"
