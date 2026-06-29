@@ -1,6 +1,7 @@
 (ns com.billpiel.sayid.workspace
   (:require [com.billpiel.sayid.trace :as trace]
             [com.billpiel.sayid.util.other :as util]
+            [com.billpiel.sayid.util.sym :as sym]
             [com.billpiel.sayid.shelf :as shelf]))
 
 (def default-traced {:ns #{}
@@ -28,7 +29,7 @@
 
 (defn lookup-traces-by-fn
   [ws fn-sym]
-  (let [[ns-sym] (util/disqualify-sym fn-sym)]
+  (let [[ns-sym] (sym/disqualify-sym fn-sym)]
     (->> ws
          :traced
          (filter #(some (or (-> % second)

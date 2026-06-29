@@ -2,6 +2,7 @@
   (:require [com.billpiel.sayid.workspace :as ws]
             [com.billpiel.sayid.view :as v]
             [com.billpiel.sayid.util.other :as util]
+            [com.billpiel.sayid.util.source :as src]
             [tamarin.core :as tam]
             [clojure.zip :as z]
             clojure.set
@@ -137,7 +138,7 @@
                   :path path
                   :header header?)
            (update-in [:file] #(if (string? %)
-                                 (util/get-src-file-path %)
+                                 (src/get-src-file-path %)
                                  %))
            (assoc $
                   :line-meta? true)))

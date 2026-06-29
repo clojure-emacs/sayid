@@ -9,7 +9,8 @@
             [com.billpiel.sayid.util.find-ns :as find-ns]
             [com.billpiel.sayid.string-output :as so]
             [com.billpiel.sayid.profiling :as pro]
-            [com.billpiel.sayid.util.other :as util]))
+            [com.billpiel.sayid.util.other :as util]
+            [com.billpiel.sayid.util.sym :as sym]))
 
 (def version
   "The current version of sayid as a string."
@@ -124,7 +125,7 @@ user> (-> #'f1 meta :source)
   enabled trace to said functions. Adds the traces to the active
   workspace trace set."
   [fn-sym]
-  `(ws-add-trace-fn!* (util/fully-qualify-sym '~fn-sym)))
+  `(ws-add-trace-fn!* (sym/fully-qualify-sym '~fn-sym)))
 (util/defalias-macro w-atf! ws-add-trace-fn!)
 
 (defn ^:no-doc ws-add-inner-trace-fn!*
@@ -140,7 +141,7 @@ user> (-> #'f1 meta :source)
   workspace trace set. Deep traces capture all functions calls that
   occurr within the traced function."
   [fn-sym]
-  `(ws-add-inner-trace-fn!* (util/fully-qualify-sym ~(util/quote-if-sym fn-sym))))
+  `(ws-add-inner-trace-fn!* (sym/fully-qualify-sym ~(util/quote-if-sym fn-sym))))
 
 (util/defalias-macro w-aitf! ws-add-inner-trace-fn!)
 
@@ -197,7 +198,7 @@ user> (-> #'f1 meta :source)
   [ns-sym] (#'ws/disable-all-traces! workspace
                                      #(or (= % ns-sym)
                                           (-> %
-                                              util/disqualify-sym
+                                              sym/disqualify-sym
                                               first
                                               (= ns-sym)))))
 
@@ -483,7 +484,7 @@ user> (-> #'f1 meta :source)
   "Produces a vector like [:name 'func] for `s` equal to 'func. Just a
   little shortcut for when querying by a function name."
   [s]
-  `[:name '~(util/fully-qualify-sym s)])
+  `[:name '~(sym/fully-qualify-sym s)])
 (util/defalias-macro qbn query-by-name)
 
 (defn- syms->qbn
