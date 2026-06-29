@@ -153,12 +153,11 @@ Some other useful entry points:
 
 ## Using Sayid
 
-**Note: This assumes you're using the official CIDER plugin.**.
+**Note: this assumes you're using the official CIDER plugin.**
 
-Documentation is a little light at the moment. There are lists of
-keybindings. Helpfully, they are easily accessible from within emacs.
-Below are the contents of the various help buffers, as well as
-instructions on how to pop them up in time of need.
+The keybindings are grouped by buffer below. Every list is also available
+from within Emacs: press `h` in any Sayid buffer (or `C-c s h` in a Clojure
+buffer) to pop up the matching help buffer.
 
 API docs for the core namespaces are available on
 [cljdoc](https://cljdoc.org/d/com.billpiel/sayid/CURRENT).
@@ -166,14 +165,11 @@ API docs for the core namespaces are available on
 In a clojure-mode buffer, press `C-c s h` (`sayid-show-help`) to
 pop up the help buffer.
 
-    C-c s ! -- Disable traces, eval current buffer, enable traces, clear the workspace log
-    C-c s e -- Enables traces, evals the expression at point, disables traces, displays results with terse view
     C-c s f -- Queries the active workspace for entries that most closely match the context of the cursor position
-    C-c s n -- Applies an inner trace to the function at point, replays workspace, displays results
-    C-c s r -- Replays workspace, queries results by context of cursor
+    C-c s ! -- Disable traces, load the current buffer, enable traces, and clear the workspace log
     C-c s w -- Shows workspace, using the current view
     C-c s t y -- Prompts for a dir, recursively traces all ns's in that dir and subdirs
-    C-c s t p -- Prompts for a pattern (* = wildcare), and applies a trace to all *loaded* ns's whose name matches the patten
+    C-c s t p -- Prompts for a pattern (* = wildcard), and applies a trace to all *loaded* ns's whose name matches the pattern
     C-c s t b -- Trace the ns in the current buffer
     C-c s t e -- Enable the *existing* (if any) trace of the function at point
     C-c s t E -- Enable all traces
@@ -208,8 +204,10 @@ In the `*sayid*` buffer, press `h` to pop up the help buffer.
     V -- set view (see register-view)
     l, backspace -- previous buffer state
     L, S-backspace -- forward buffer state
+    c i -- inspect value at point
     g -- generate instance expression and put in kill ring
     h -- help
+    q -- quit window
 
 
 In the `*sayid-traced*` buffer, press `h` to pop up the help
@@ -222,8 +220,10 @@ buffer.
     D -- Disable ALL traces
     i -- Apply inner trace to func at point
     o -- Apply outer trace to func at point
-    r -- Remove trace from fun at point
+    r -- Remove trace from func at point
     l, backspace -- go back to trace overview (if in ns view)
+    h -- help
+    q -- quit window
 
 
 In the `*sayid-pprint*` buffer, press `h` to pop up the help
@@ -234,6 +234,9 @@ buffer.
     o -- jump out to parent node
     n -- jump to next sibling node
     p -- jump to previous sibling node
+    l -- back to trace buffer
+    h -- help
+    q -- quit window
 
 ## Demos
 
