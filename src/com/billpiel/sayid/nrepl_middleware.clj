@@ -155,56 +155,31 @@ no value."
   [msg]
   (reply:clj->nrepl msg sd/version))
 
-(defn ^:nrepl sayid-trace-fn-enable-at-point
-  [{:keys [transport file line column source] :as msg}]
+(defn reply-trace-fn-at-point
+  "Resolve the qualified symbol at the cursor position described by MSG, apply
+ACTION to it when it resolves, and reply with the symbol."
+  [{:keys [file line column source] :as msg} action]
   (let [sym (get-sym-at-pos-in-source file line column source)
         ns-sym (symbol (parse-ns-name-from-source source))
-        qual-sym
-        (util/resolve-to-qual-sym ns-sym sym)]
+        qual-sym (util/resolve-to-qual-sym ns-sym sym)]
     (when qual-sym
-      (sd/ws-enable-trace-fn! qual-sym))
+      (action qual-sym))
     (reply:clj->nrepl msg qual-sym)))
 
+(defn ^:nrepl sayid-trace-fn-enable-at-point [msg]
+  (reply-trace-fn-at-point msg sd/ws-enable-trace-fn!))
 
-(defn ^:nrepl sayid-trace-fn-disable-at-point
-  [{:keys [transport file line column source] :as msg}]
-  (let [sym (get-sym-at-pos-in-source file line column source)
-        ns-sym (symbol (parse-ns-name-from-source source))
-        qual-sym
-        (util/resolve-to-qual-sym ns-sym sym)]
-    (when qual-sym
-      (sd/ws-disable-trace-fn! qual-sym))
-    (reply:clj->nrepl msg qual-sym)))
+(defn ^:nrepl sayid-trace-fn-disable-at-point [msg]
+  (reply-trace-fn-at-point msg sd/ws-disable-trace-fn!))
 
-(defn ^:nrepl sayid-trace-fn-outer-trace-at-point
-  [{:keys [transport file line column source] :as msg}]
-  (let [sym (get-sym-at-pos-in-source file line column source)
-        ns-sym (symbol (parse-ns-name-from-source source))
-        qual-sym
-        (util/resolve-to-qual-sym ns-sym sym)]
-    (when qual-sym
-      (sd/ws-add-trace-fn!* qual-sym))
-    (reply:clj->nrepl msg qual-sym)))
+(defn ^:nrepl sayid-trace-fn-outer-trace-at-point [msg]
+  (reply-trace-fn-at-point msg sd/ws-add-trace-fn!*))
 
-(defn ^:nrepl sayid-trace-fn-inner-trace-at-point
-  [{:keys [transport file line column source] :as msg}]
-  (let [sym (get-sym-at-pos-in-source file line column source)
-        ns-sym (symbol (parse-ns-name-from-source source))
-        qual-sym
-        (util/resolve-to-qual-sym ns-sym sym)]
-    (when qual-sym
-      (sd/ws-add-inner-trace-fn!* qual-sym))
-    (reply:clj->nrepl msg qual-sym)))
+(defn ^:nrepl sayid-trace-fn-inner-trace-at-point [msg]
+  (reply-trace-fn-at-point msg sd/ws-add-inner-trace-fn!*))
 
-(defn ^:nrepl sayid-remove-trace-fn-at-point
-  [{:keys [transport file line column source] :as msg}]
-  (let [sym (get-sym-at-pos-in-source file line column source)
-        ns-sym (symbol (parse-ns-name-from-source source))
-        qual-sym
-        (util/resolve-to-qual-sym ns-sym sym)]
-    (when qual-sym
-      (sd/ws-remove-trace-fn! qual-sym))
-    (reply:clj->nrepl msg qual-sym)))
+(defn ^:nrepl sayid-remove-trace-fn-at-point [msg]
+  (reply-trace-fn-at-point msg sd/ws-remove-trace-fn!))
 
 (defn tree-contains-inner-trace?
   [tree]
@@ -320,33 +295,36 @@ no value."
         "inner" (sd/ws-add-inner-trace-fn!* (util/qualify-sym fn-ns fn-name)))
   (send-status-done msg))
 
-(defn ^:nrepl sayid-trace-fn-enable
-  [{:keys [transport fn-name fn-ns] :as msg}]
-  (sd/ws-enable-trace-fn! (util/qualify-sym fn-ns fn-name))
+(defn reply-trace-fn
+  "Apply ACTION to the function named by MSG's fn-ns/fn-name, then end the op."
+  [{:keys [fn-name fn-ns] :as msg} action]
+  (action (util/qualify-sym fn-ns fn-name))
   (send-status-done msg))
 
-(defn ^:nrepl sayid-trace-fn-disable
-  [{:keys [transport fn-name fn-ns] :as msg}]
-  (sd/ws-disable-trace-fn! (util/qualify-sym fn-ns fn-name))
-  (send-status-done msg))
+(defn ^:nrepl sayid-trace-fn-enable [msg]
+  (reply-trace-fn msg sd/ws-enable-trace-fn!))
 
-(defn ^:nrepl sayid-trace-fn-remove
-  [{:keys [transport fn-name fn-ns] :as msg}]
-  (sd/ws-remove-trace-fn! (util/qualify-sym fn-ns fn-name))
-  (send-status-done msg))
+(defn ^:nrepl sayid-trace-fn-disable [msg]
+  (reply-trace-fn msg sd/ws-disable-trace-fn!))
 
+(defn ^:nrepl sayid-trace-fn-remove [msg]
+  (reply-trace-fn msg sd/ws-remove-trace-fn!))
+
+;; NOTE: these aren't folded into a shared helper like the trace-fn ops above
+;; because `ws-remove-trace-ns!' is a macro that captures its argument's literal
+;; form, so it can't be passed as a value.
 (defn ^:nrepl sayid-trace-ns-enable
-  [{:keys [transport fn-ns] :as msg}]
+  [{:keys [fn-ns] :as msg}]
   (sd/ws-enable-trace-ns! (symbol fn-ns))
   (send-status-done msg))
 
 (defn ^:nrepl sayid-trace-ns-disable
-  [{:keys [transport fn-ns] :as msg}]
+  [{:keys [fn-ns] :as msg}]
   (sd/ws-disable-trace-ns! (symbol fn-ns))
   (send-status-done msg))
 
 (defn ^:nrepl sayid-trace-ns-remove
-  [{:keys [transport fn-ns] :as msg}]
+  [{:keys [fn-ns] :as msg}]
   (sd/ws-remove-trace-ns! (symbol fn-ns))
   (send-status-done msg))
 
