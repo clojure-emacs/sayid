@@ -64,5 +64,23 @@
     (expect (sayid-cycle-ring-back) :to-be :a)
     (expect sayid-ring :to-equal '(:a :b :c))))
 
+(describe "sayid-try-goto-prop"
+  (it "moves point to the first span whose property equals VAL, even for numeric values"
+    ;; Regression: `id' values arrive as numbers, so comparing them with
+    ;; `string=' used to crash with a wrong-type error.
+    (with-temp-buffer
+      (insert "abcdef")
+      (put-text-property 3 5 'id 42)
+      (goto-char (point-min))
+      (sayid-try-goto-prop 'id 42)
+      (expect (point) :to-equal 3)))
+
+  (it "leaves point untouched when no span matches"
+    (with-temp-buffer
+      (insert "abcdef")
+      (goto-char 4)
+      (sayid-try-goto-prop 'id 99)
+      (expect (point) :to-equal 4))))
+
 (provide 'sayid-test)
 ;;; sayid-test.el ends here
