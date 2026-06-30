@@ -143,5 +143,13 @@
       (expect (cdr (assoc "throw" targets)) :to-equal '("throw"))
       (expect (cdr (assoc "arg x" targets)) :to-equal '("arg-map" "x")))))
 
+(describe "sayid-tree--query-title"
+  (it "names the query kind and selector"
+    (expect (sayid-tree--query-title "fn" "my.ns/foo" "")
+            :to-equal "Query: fn my.ns/foo"))
+  (it "appends the modifier when one is given"
+    (expect (sayid-tree--query-title "id" "42" "d3")
+            :to-equal "Query: id 42 [d3]")))
+
 (provide 'sayid-test)
 ;;; sayid-test.el ends here

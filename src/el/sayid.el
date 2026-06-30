@@ -554,15 +554,31 @@ the thrown error, or a named argument."
                  (cons (format "arg %s" name) (list "arg-map" name)))
                (nrepl-dict-keys arg-map))))))
 
+(defun sayid-tree--call-at-point ()
+  "Return the recorded call dict for the tree node at point, or signal an error."
+  (let ((node (or (cider-tree-view-node-at-point)
+                  (user-error "No call at point"))))
+    (cider-tree-view-node-value node)))
+
+(defun sayid-tree--render (roots title)
+  "Render ROOTS, a list of `sayid-get-workspace-data' nodes, as a tree.
+TITLE is shown in the header line."
+  (with-current-buffer (cider-popup-buffer "*sayid-tree*" 'select
+                                           'sayid-tree-mode 'ancillary)
+    (cider-tree-view-render (mapcar #'sayid-tree--make-node roots) title)))
+
+(defun sayid-tree--query-title (kind selector mod)
+  "Build a tree title for a query of KIND on SELECTOR with modifier MOD."
+  (format "Query: %s %s%s" kind selector
+          (if (string-empty-p mod) "" (format " [%s]" mod))))
+
 (defun sayid-tree-inspect (&optional arg)
   "Inspect a captured value of the call at point with `cider-inspect'.
 Defs the value to `$s/*' server-side and hands the live object to CIDER's
 inspector.  By default inspects the return value (or the thrown error); with a
 prefix ARG, prompt for which value - the return, the throw, or a named argument."
   (interactive "P")
-  (let* ((node (or (cider-tree-view-node-at-point)
-                   (user-error "No call at point")))
-         (call (cider-tree-view-node-value node))
+  (let* ((call (sayid-tree--call-at-point))
          (targets (sayid-tree--value-targets call))
          (path (if arg
                    (cdr (assoc (completing-read "Inspect value: " targets nil t)
@@ -575,32 +591,59 @@ prefix ARG, prompt for which value - the return, the throw, or a named argument.
                                   "path" path))
     (cider-inspect "$s/*")))
 
+(defun sayid-tree-query-fn (&optional arg)
+  "Re-render the tree with every recorded call of the function at point.
+With a prefix ARG, also prompt for a query modifier."
+  (interactive "P")
+  (let* ((fn-name (nrepl-dict-get (sayid-tree--call-at-point) "name"))
+         (mod (sayid--read-query-mod arg))
+         (roots (sayid-req-get-value (list "op" "sayid-query-by-fn-data"
+                                           "fn-name" fn-name
+                                           "mod" mod))))
+    (if roots
+        (sayid-tree--render roots (sayid-tree--query-title "fn" fn-name mod))
+      (user-error "No recorded calls of %s" fn-name))))
+
+(defun sayid-tree-query-id (&optional arg)
+  "Re-render the tree focused on the call at point.
+With a prefix ARG, also prompt for a query modifier (e.g. \"a\" for ancestors,
+\"d\" for descendants, optionally with a depth)."
+  (interactive "P")
+  (let* ((id (nrepl-dict-get (sayid-tree--call-at-point) "id"))
+         (mod (sayid--read-query-mod arg))
+         (roots (sayid-req-get-value (list "op" "sayid-query-by-id-data"
+                                           "trace-id" id
+                                           "mod" mod))))
+    (if roots
+        (sayid-tree--render roots (sayid-tree--query-title "id" id mod))
+      (user-error "Call %s not found" id))))
+
+;;;###autoload
+(defun sayid-tree-view-workspace ()
+  "Show the recorded workspace as a navigable, foldable tree.
+Built from the `sayid-get-workspace-data' op, rendered with `cider-tree-view'.
+See `sayid-tree-mode' for the keys available in the tree buffer."
+  (interactive)
+  (let ((roots (sayid-req-get-value (list "op" "sayid-get-workspace-data"))))
+    (if roots
+        (sayid-tree--render roots "Sayid workspace")
+      (user-error "The Sayid workspace is empty, or Sayid isn't loaded"))))
+
 (defvar sayid-tree-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "i") #'sayid-tree-inspect)
+    (define-key map (kbd "f")   #'sayid-tree-query-fn)
+    (define-key map (kbd "i")   #'sayid-tree-query-id)
+    (define-key map (kbd "w")   #'sayid-tree-view-workspace)
+    (define-key map (kbd "c i") #'sayid-tree-inspect)
     map)
   "Keymap for `sayid-tree-mode', layered over `cider-tree-view-mode-map'.")
 
 (define-derived-mode sayid-tree-mode cider-tree-view-mode "Sayid-Tree"
   "Major mode for the Sayid workspace tree.
-Inherits navigation and folding from `cider-tree-view-mode' and adds
-Sayid-specific actions: \\<sayid-tree-mode-map>\\[sayid-tree-inspect] inspects a
-captured value.")
-
-;;;###autoload
-(defun sayid-tree-view-workspace ()
-  "Show the recorded workspace as a navigable, foldable tree.
-Fetches the workspace via the `sayid-get-workspace-data' op and renders it with
-`cider-tree-view': TAB folds a call, RET jumps to its source, n/p move, and
-\\<sayid-tree-mode-map>\\[sayid-tree-inspect] inspects a captured value."
-  (interactive)
-  (let ((roots (sayid-req-get-value (list "op" "sayid-get-workspace-data"))))
-    (if roots
-        (with-current-buffer (cider-popup-buffer "*sayid-tree*" 'select
-                                                 'sayid-tree-mode 'ancillary)
-          (cider-tree-view-render (mapcar #'sayid-tree--make-node roots)
-                                  "Sayid workspace"))
-      (user-error "The Sayid workspace is empty, or Sayid isn't loaded"))))
+Inherits navigation and folding from `cider-tree-view-mode' and adds Sayid
+actions: \\<sayid-tree-mode-map>\\[sayid-tree-query-fn] query the function at
+point, \\[sayid-tree-query-id] focus the call at point, \\[sayid-tree-inspect]
+inspect a value, \\[sayid-tree-view-workspace] back to the full workspace.")
 
 ;;;###autoload
 (defun sayid-show-traced (&optional ns)
