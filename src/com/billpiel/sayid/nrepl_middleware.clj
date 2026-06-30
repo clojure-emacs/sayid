@@ -85,6 +85,14 @@
          (println e)))
   (send-status-done msg))
 
+(defn reply:data
+  "Reply with OUT sent as-is - no `clj->nrepl` flattening - and end the op.  For
+  the data ops, whose shapes are already built to round-trip over bencode."
+  [msg out]
+  (t/send (:transport msg)
+          (response-for msg :value out))
+  (send-status-done msg))
+
 (defn reply:error
   "Reply to MSG with a CIDER-renderable error response for EX and end the op.
 Mirrors the `:err'/`:ex' plus `:error'/`:done' status convention used by
@@ -503,6 +511,52 @@ or nil when nothing resolves there."
                     (sd/with-this-view (or @sd/view
                                       (v/mk-simple-view {}))
                       (query-tree->trio (sd/ws-view!)))))
+
+(defn throw->data
+  "Trim a captured `:throw` (a `Throwable->map`) to the bencode-friendly bits a
+  client needs: the message, the exception class, and any ex-data.  The full
+  stack trace stays out of the wire shape."
+  [thrown]
+  (->> {"cause" (:cause thrown)
+        "class" (some-> thrown :via first :type str)
+        "data"  (some-> thrown :data pr-str)}
+       (filter (comp some? val))
+       (into {})))
+
+(defn node->data
+  "Serialize one recorded call-tree NODE into a bencode-friendly map.  Structural
+  fields stay native (strings, ints, nested maps and lists) so a client can
+  navigate them directly; the arbitrary captured values - args, arg-map and the
+  return (or throw) - are `pr-str`'d, since they can't round-trip as data.  See
+  doc/nrepl-api.md for the documented shape."
+  [node]
+  (let [m (:meta node)
+        base {"id"         (some-> (:id node) name)
+              "name"       (some-> (:name node) str)
+              "depth"      (:depth node)
+              "started-at" (:started-at node)
+              "ended-at"   (:ended-at node)
+              "args"       (mapv pr-str (:args node))
+              "arg-map"    (reduce-kv (fn [acc k v]
+                                        (assoc acc (str k) (pr-str v)))
+                                      {} (:arg-map node))
+              "file"       (:file m)
+              "line"       (:line m)
+              "children"   (mapv node->data (:children node))}
+        outcome (if (contains? node :throw)
+                  {"throw" (throw->data (:throw node))}
+                  {"return" (pr-str (:return node))})]
+    (->> (merge base outcome)
+         (filter (comp some? val))
+         (into {}))))
+
+(defn ^:nrepl sayid-get-workspace-data
+  "Return the recorded call tree as data - a list of root call nodes, each a map
+  whose `children` are more such nodes - for clients that render it themselves.
+  The rendered counterpart is `sayid-get-workspace`; see doc/nrepl-api.md for the
+  shape."
+  [msg]
+  (reply:data msg (mapv node->data (:children (sd/ws-deref!)))))
 
 (defn magic-recusive-eval
   "Lets us send vars to nrepl client and back. Madness."
