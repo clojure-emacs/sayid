@@ -1,5 +1,9 @@
 # Change Log
 
+## Unreleased
+
+* [#100](https://github.com/clojure-emacs/sayid/pull/100): Add the `sayid-get-workspace-data` nREPL op, which returns the recorded call tree as data (see [doc/nrepl-api.md](doc/nrepl-api.md)) for editor-agnostic clients.
+
 ## [0.3.0] - 2026-06-29
 
 * [#92](https://github.com/clojure-emacs/sayid/pull/92): Stop freezing Emacs during the `!` reload workflow; the re-enable/clear now runs on the reload's completion callback instead of fixed `sleep-for` delays.
