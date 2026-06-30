@@ -1,12 +1,21 @@
 (ns com.billpiel.sayid.nrepl-middleware-test
-  "Smoke tests for the nREPL middleware wiring.
+  "Tests for the nREPL middleware.
 
-  These don't exercise the ops end to end (that needs a live nREPL session),
-  but they guard against the middleware namespace failing to load or the
-  descriptor drifting out of sync with the registered ops - the kinds of
-  breakage that are easy to introduce and annoying to debug."
+  Two parts: the wiring (ops registered, descriptor in sync, errors terminated
+  instead of hanging), and a characterization of the current wire format - the
+  response shapes and the `clj->nrepl` bencode encoding.  That second part is
+  the safety net for initiative 3 (return data, not pre-rendered strings), which
+  will change these shapes deliberately; see doc/roadmap.md.
+
+  Ops are driven through `wrap-sayid` with a recording transport and a populated
+  workspace, so no live nREPL session is needed."
   (:require [clojure.test :as t]
+            [clojure.string :as str]
             [com.billpiel.sayid.nrepl-middleware :as mw]
+            [com.billpiel.sayid.core :as sd]
+            [com.billpiel.sayid.trace :as sdt]
+            [com.billpiel.sayid.test-utils :as t-utils]
+            [com.billpiel.sayid.test-ns1 :as ns1]
             [nrepl.transport :as transport]))
 
 (defn- recording-transport
@@ -16,6 +25,18 @@
     (recv [this] this)
     (recv [this _timeout] this)
     (send [this msg] (swap! sent conj msg) this)))
+
+(defn- fixture
+  [f]
+  (sdt/untrace-ns* 'com.billpiel.sayid.test-ns1)
+  (with-out-str (sd/ws-reset!))
+  ;; Deterministic clock and ids, exactly like core-test and public-api-test.
+  (with-redefs [sdt/now (t-utils/mock-now-fn)
+                gensym (t-utils/mock-gensym-fn)]
+    (f)
+    (sdt/untrace-ns* 'com.billpiel.sayid.test-ns1)))
+
+(t/use-fixtures :each fixture)
 
 (t/deftest ops-are-registered
   (t/is (seq mw/sayid-nrepl-ops)
@@ -72,3 +93,49 @@
     (t/is (= (set (keys mw/sayid-nrepl-ops))
              (set (keys (:handles descriptor))))
           "every registered op is advertised in the descriptor")))
+
+;;; --- Wire-format characterization -------------------------------------------
+;;; Pin the shapes initiative 3 will change, so the change is deliberate and the
+;;; Emacs client keeps working until it migrates.
+
+(defn- captured-value
+  "Drive OP through `wrap-sayid` with MSG and return the `:value` of the first
+  response that carries one."
+  [op msg]
+  (let [sent (atom [])
+        handler (mw/wrap-sayid (fn [_] :unhandled))]
+    (handler (assoc msg :op op :transport (recording-transport sent)))
+    (some :value @sent)))
+
+(t/deftest clj->nrepl-prepares-values-for-bencode
+  (t/testing "scalars"
+    (t/is (= "kw" (mw/clj->nrepl :kw)) "keywords become their bare name")
+    (t/is (= 1 (mw/clj->nrepl true)) "true becomes 1")
+    (t/is (= nil (mw/clj->nrepl false)) "false becomes nil")
+    (t/is (= 42 (mw/clj->nrepl 42)) "numbers pass through")
+    (t/is (= "s" (mw/clj->nrepl "s")) "strings pass through"))
+  (t/testing "collections become seqs, recursively"
+    (t/is (= '(1 2 3) (mw/clj->nrepl [1 2 3])) "vectors become seqs")
+    (t/is (= '(("a" 1) ("b" (1 "c")))
+             (mw/clj->nrepl {:a 1 :b [true :c]}))
+          "maps become seqs of [k v] seqs, with keys and vals encoded too")))
+
+(t/deftest get-workspace-returns-the-rendered-trio
+  (t/testing "sayid-get-workspace ships [text properties query-args], not data"
+    (sd/ws-add-trace-ns! ns1)
+    (ns1/func1 :a)
+    (let [value (captured-value "sayid-get-workspace" {})
+          [text props query-args] value]
+      (t/is (= 3 (count value))
+            "the value is the three-element trio")
+      (t/testing "; element 0 is the server-rendered text"
+        (t/is (string? text))
+        (t/is (str/includes? text "func1"))
+        (t/is (str/includes? text "func2")))
+      (t/testing "; element 1 is the text-property spans"
+        (t/is (coll? props)))
+      (t/testing "; element 2 is the pr-str'd query args (nil here)"
+        (t/is (= "nil" query-args))))))
+
+(t/deftest version-op-returns-the-version-string
+  (t/is (= sd/version (captured-value "sayid-version" {}))))
