@@ -229,3 +229,13 @@
     (let [value (captured-value "sayid-query-data" {:query "()"})]
       (t/is (seq value))
       (t/is (str/includes? (get (first value) "name") "func1")))))
+
+(t/deftest show-traced-renders-the-audit
+  (t/testing "sayid-show-traced returns a rendered [text properties] pair"
+    (sd/ws-add-trace-ns! ns1)
+    (let [value (captured-value "sayid-show-traced" {})
+          [text props] value]
+      (t/is (= 2 (count value)) "the rendered text/properties pair")
+      (t/is (string? text))
+      (t/is (str/includes? text "test-ns1") "names the traced namespace")
+      (t/is (coll? props)))))

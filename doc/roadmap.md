@@ -72,10 +72,10 @@ pass.
 
   Mostly there already: the engine has no upward deps, and once the stray unused
   require and a dead scratch block were removed, `query`/`view`/`string-output`
-  stopped reaching into the engine too. The one real breach left is the protocol
-  owning rendering - the middleware calls `string-output` to build text-property
-  pairs for Emacs. Closing that *is* initiative 3 (return data, not strings), so
-  the hard line gets finished there.
+  stopped reaching into the engine too. The last knot - the protocol owning
+  rendering - was untied in initiative 3: the middleware now returns data, or
+  calls a small `*->text-prop-pair` render API in `string-output`, instead of
+  composing rendering steps itself.
 
 **Risks:** `sayid_multifn` is AOT-compiled and the namespace names are part of the
 deployed contract; renames need deprecated forwarders. Inner-trace rewriting reads
@@ -119,11 +119,13 @@ That single decision is why there's one client and why the data can't flow into
 the modern Clojure inspection ecosystem.
 
 **Approach:**
-- Define a stable, documented data shape for a recorded call tree (ids, fn,
-  args, return, children, inner values, timings).
-- Add data-returning ops alongside the existing rendered ones; move rendering
-  into a `render` namespace the *client* can call, keeping the Emacs experience
-  identical.
+- *Done.* Documented a stable data shape for a recorded call tree (ids, fn, args,
+  arg-map, return or throw, children, timings) - see doc/nrepl-api.md.
+- *Done.* Added data ops alongside the rendered ones (`sayid-get-workspace-data`,
+  `sayid-query-data` and friends), and moved rendering composition into a small
+  `*->text-prop-pair` API in `string-output`, so the middleware no longer owns
+  it. The Emacs experience is unchanged; it can adopt the data ops where it helps.
+  Still open: exposing inner-trace captured values in the data shape.
 - Once data ops exist, the payoffs are nearly free: tap a workspace into
   [Portal](https://github.com/djblue/portal) / Reveal / Morse, or `(->> (ws-deref)
   (filter ...))` with plain Clojure and the existing query DSL.

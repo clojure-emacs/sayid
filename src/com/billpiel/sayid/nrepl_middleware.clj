@@ -247,14 +247,10 @@ or nil when nothing resolves there."
   (send-status-done msg))
 
 (defn ^:nrepl sayid-show-traced
-  [{:keys [transport ns] :as msg}]
-  (let [audit (-> @sd/workspace :traced tr/audit-traces)
-        audit-view (if (not (or (nil? ns) (empty? ns)))
-                     (so/audit->ns-view audit (symbol ns))
-                     (so/audit->top-view audit))]
-    (->> audit-view
-         so/tokens->text-prop-pair
-         (reply:clj->nrepl msg))))
+  [{:keys [ns] :as msg}]
+  (reply:clj->nrepl msg
+                    (so/audit->text-prop-pair (-> @sd/workspace :traced tr/audit-traces)
+                                              ns)))
 
 (defn count-traces
   [trace-audit]

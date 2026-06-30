@@ -660,3 +660,14 @@
        flatten
        (remove nil?)
        split-text-tag-coll))
+
+(defn audit->text-prop-pair
+  "Render a traced-fns AUDIT (from `trace/audit-traces`) to a `[text properties]`
+  pair.  When NS is a non-empty string, render that namespace's view; otherwise
+  the top summary.  Keeps the view-selection inside the render namespace so the
+  nREPL layer just asks for \"the rendered audit\"."
+  [audit ns]
+  (-> (if (not (or (nil? ns) (empty? ns)))
+        (audit->ns-view audit (symbol ns))
+        (audit->top-view audit))
+      tokens->text-prop-pair))
