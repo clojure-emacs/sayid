@@ -195,3 +195,37 @@
         (t/is (= "boom" (get thrown "cause")))
         (t/is (= "clojure.lang.ExceptionInfo" (get thrown "class")))
         (t/is (= "{:x 7}" (get thrown "data")) "ex-data is pr-str'd")))))
+
+(t/deftest rendered-query-by-fn-still-returns-the-trio
+  (t/testing "splitting query-building out of sayid-query-by-fn keeps it rendering"
+    (sd/ws-add-trace-ns! ns1)
+    (ns1/func1 :a)
+    (let [value (captured-value "sayid-query-by-fn"
+                                {:fn-name "com.billpiel.sayid.test-ns1/func2"
+                                 :mod ""})
+          [text props query-args] value]
+      (t/is (= 3 (count value)) "still the three-element trio")
+      (t/is (string? text))
+      (t/is (str/includes? text "func2"))
+      (t/is (coll? props))
+      (t/is (string? query-args)))))
+
+(t/deftest query-data-ops-return-node-data
+  (sd/ws-add-trace-ns! ns1)
+  (ns1/func1 :a)
+  (t/testing "sayid-query-by-fn-data returns the matched calls as data"
+    (let [value (captured-value "sayid-query-by-fn-data"
+                                {:fn-name "com.billpiel.sayid.test-ns1/func2"
+                                 :mod ""})]
+      (t/is (= 1 (count value)))
+      (t/is (str/includes? (get (first value) "name") "func2"))
+      (t/is (= ":a" (get (first value) "return")))
+      (t/is (bencode-roundtrips? value) "the data bencodes cleanly")))
+  (t/testing "sayid-query-by-id-data returns the call subtree for an id"
+    (let [root-id (-> (sd/ws-deref!) :children first :id name)
+          value (captured-value "sayid-query-by-id-data" {:trace-id root-id :mod ""})]
+      (t/is (str/includes? (get (first value) "name") "func1"))))
+  (t/testing "sayid-query-data runs a query and returns data"
+    (let [value (captured-value "sayid-query-data" {:query "()"})]
+      (t/is (seq value))
+      (t/is (str/includes? (get (first value) "name") "func1")))))
