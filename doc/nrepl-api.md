@@ -131,6 +131,35 @@ the rendered tree as a `[text text-properties query-args]` triple, where `text`
 is the printable output, `text-properties` describes per-span coloring/metadata,
 and `query-args` is the printed query that produced it.
 
+### `sayid-get-workspace-data`
+
+Return the recorded call tree *as data* instead of pre-rendered text, for clients
+that want to render or analyze it themselves: an editor that isn't Emacs, a
+[Portal](https://github.com/djblue/portal) tap, a REPL one-liner. Takes no
+params. Replies with a `:value` that is a list of root call nodes, sent as native
+bencode data (real nested maps and lists, not a printed string), so you navigate
+it by key without reading anything back.
+
+Each node is a map with these string keys:
+
+| key | meaning |
+|-----|---------|
+| `id` | the call's id |
+| `name` | the fully qualified function name |
+| `depth` | nesting depth (1 for a root call) |
+| `started-at`, `ended-at` | capture timestamps, in milliseconds |
+| `args` | the arguments, each `pr-str`'d |
+| `arg-map` | arg name to `pr-str`'d value |
+| `return` | the return value, `pr-str`'d; absent if the call threw |
+| `throw` | present instead of `return` when the call threw: `{cause, class, data}` |
+| `file`, `line` | source location, for jumping to the definition |
+| `children` | the calls made within this one, same shape |
+
+The structural fields are native data; the captured values (`args`, `arg-map`,
+`return`, the `throw` parts) are printed strings, because an arbitrary Clojure
+value can't always round-trip over the wire. The rendered counterpart is
+`sayid-get-workspace`.
+
 ### `sayid-query`
 
 Run a query against the workspace. Param: `query` (a printed Clojure query

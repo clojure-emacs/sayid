@@ -16,7 +16,8 @@
             [com.billpiel.sayid.trace :as sdt]
             [com.billpiel.sayid.test-utils :as t-utils]
             [com.billpiel.sayid.test-ns1 :as ns1]
-            [nrepl.transport :as transport]))
+            [nrepl.transport :as transport]
+            [nrepl.bencode :as bencode]))
 
 (defn- recording-transport
   "An nREPL transport that records every sent message into ATOM."
@@ -139,3 +140,58 @@
 
 (t/deftest version-op-returns-the-version-string
   (t/is (= sd/version (captured-value "sayid-version" {}))))
+
+;;; --- Data ops (initiative 3) ------------------------------------------------
+
+(defn- bencode-roundtrips?
+  "True if V survives a real bencode write then read - the encodability check the
+  recording transport can't do, since it never serializes."
+  [v]
+  (let [out (java.io.ByteArrayOutputStream.)]
+    (bencode/write-bencode out v)
+    (-> (java.io.ByteArrayInputStream. (.toByteArray out))
+        java.io.PushbackInputStream.
+        bencode/read-bencode
+        some?)))
+
+(t/deftest get-workspace-data-returns-a-native-tree
+  (t/testing "sayid-get-workspace-data ships the call tree as data, not a trio"
+    (sd/ws-add-trace-ns! ns1)
+    (ns1/func1 :a)
+    (let [value (captured-value "sayid-get-workspace-data" {})
+          root (first value)]
+      (t/is (= 1 (count value)) "one root call was recorded")
+      (t/testing "; structural fields are native and navigable"
+        (t/is (map? root))
+        (t/is (str/includes? (get root "name") "func1"))
+        (t/is (int? (get root "depth")))
+        (t/is (vector? (get root "children"))))
+      (t/testing "; captured values are pr-str'd"
+        (t/is (= ":a" (get root "return")))
+        (t/is (= [":a"] (get root "args")))
+        (t/is (= {"arg1" ":a"} (get root "arg-map"))))
+      (t/testing "; children are nested data nodes"
+        (t/is (str/includes? (get (first (get root "children")) "name")
+                             "func2"))))))
+
+(t/deftest get-workspace-data-is-wire-encodable
+  (t/testing "the value bencodes cleanly - no nils or unencodable values"
+    (sd/ws-add-trace-ns! ns1)
+    (ns1/func1 :a)
+    (t/is (bencode-roundtrips? (captured-value "sayid-get-workspace-data" {})))))
+
+(t/deftest node->data-captures-throws
+  (t/testing "a node that threw carries a trimmed throw and no return"
+    (let [data (mw/node->data
+                {:id :7 :name 'ns/boom :depth 1 :args [7] :arg-map '{x 7}
+                 :children []
+                 :throw {:cause "boom"
+                         :via [{:type 'clojure.lang.ExceptionInfo
+                                :message "boom"}]
+                         :data {:x 7}}})]
+      (t/is (not (contains? data "return"))
+            "a thrown call has no return value")
+      (let [thrown (get data "throw")]
+        (t/is (= "boom" (get thrown "cause")))
+        (t/is (= "clojure.lang.ExceptionInfo" (get thrown "class")))
+        (t/is (= "{:x 7}" (get thrown "data")) "ex-data is pr-str'd")))))
