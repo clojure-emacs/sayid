@@ -164,7 +164,7 @@ To opt out, set `sayid-inject-dependencies-at-jack-in' to nil."
     (when (boundp 'cider-jack-in-dependencies)
       (cider-add-to-alist 'cider-jack-in-dependencies
                           "mx.cider/sayid" sayid-injected-plugin-version))
-    (add-to-list 'cider-jack-in-nrepl-middlewares "com.billpiel.sayid.nrepl-middleware/wrap-sayid")))
+    (add-to-list 'cider-jack-in-nrepl-middlewares "sayid.nrepl-middleware/wrap-sayid")))
 
 ;;;###autoload
 (with-eval-after-load 'cider

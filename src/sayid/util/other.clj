@@ -1,8 +1,8 @@
-(ns com.billpiel.sayid.util.other
+(ns sayid.util.other
   "General-purpose helpers that don't have a more specific home.  Symbol and
   namespace helpers live in `util.sym`, source-reading in `util.source`."
   (:require [clojure.walk :as walk]
-            [com.billpiel.sayid.util.sym :as sym]))
+            [sayid.util.sym :as sym]))
 
 (defn ->int
   [v]
@@ -50,7 +50,7 @@
 (defn arg-matcher-fn
   [arglists]
   (when (not-empty arglists)
-    (let [arities (map #(list % '(com.billpiel.sayid.util.other/get-env)) ;; NOTE!  NS/get-env must match this ns
+    (let [arities (map #(list % '(sayid.util.other/get-env)) ;; NOTE!  NS/get-env must match this ns
                        arglists)
           fn1  `(fn ~@arities)]
       (eval fn1))))

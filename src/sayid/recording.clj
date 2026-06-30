@@ -1,8 +1,8 @@
-(ns com.billpiel.sayid.recording
-  (:require [com.billpiel.sayid.workspace :as ws]
-            [com.billpiel.sayid.trace :as trace]
-            [com.billpiel.sayid.util.other :as util]
-            [com.billpiel.sayid.shelf :as shelf]))
+(ns sayid.recording
+  (:require [sayid.workspace :as ws]
+            [sayid.trace :as trace]
+            [sayid.util.other :as util]
+            [sayid.shelf :as shelf]))
 
 (def bad-slot-msg "Recording must have a symbol value in :rec-slot. Value was `%s`. Try `save-as!` instead.")
 (def unknown-type-msg "Unknown type. `rec` must be a recording, workspace or trace tree. Received a %s.")

@@ -1,7 +1,7 @@
-(ns com.billpiel.sayid.string-output
-  (:require [com.billpiel.sayid.view :as v]
-            [com.billpiel.sayid.util.other :as util]
-            [com.billpiel.sayid.util.source :as src]
+(ns sayid.string-output
+  (:require [sayid.view :as v]
+            [sayid.util.other :as util]
+            [sayid.util.source :as src]
             [tamarin.core :as tam]
             [clojure.zip :as z]
             clojure.set

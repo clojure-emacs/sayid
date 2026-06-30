@@ -1,8 +1,8 @@
-(ns com.billpiel.sayid.recording-test
+(ns sayid.recording-test
   (:require [clojure.test :as t]
-            [com.billpiel.sayid.recording :as r]
-            [com.billpiel.sayid.workspace :as w]
-            [com.billpiel.sayid.test-utils :as t-utils]))
+            [sayid.recording :as r]
+            [sayid.workspace :as w]
+            [sayid.test-utils :as t-utils]))
 
 (t/deftest recording
   (with-redefs [gensym (t-utils/mock-gensym-fn)]

@@ -1,6 +1,6 @@
-(ns com.billpiel.sayid.shelf
-  (:require [com.billpiel.sayid.util.other :as util]
-            [com.billpiel.sayid.util.sym :as sym]))
+(ns sayid.shelf
+  (:require [sayid.util.other :as util]
+            [sayid.util.sym :as sym]))
 
 
 (defn save!

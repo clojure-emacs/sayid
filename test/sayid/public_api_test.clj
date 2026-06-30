@@ -1,4 +1,4 @@
-(ns com.billpiel.sayid.public-api-test
+(ns sayid.public-api-test
   "Characterization tests that pin `core`'s public surface ahead of the
   core decouple/cleanup on the roadmap (see doc/roadmap.md, initiative 1).
 
@@ -9,21 +9,21 @@
   touches (`string-output`, `profiling`) that had no coverage."
   (:require [clojure.test :as t]
             [clojure.string :as str]
-            [com.billpiel.sayid.core :as sd]
-            [com.billpiel.sayid.trace :as sdt]
-            [com.billpiel.sayid.test-utils :as t-utils]
-            [com.billpiel.sayid.test-ns1 :as ns1]))
+            [sayid.core :as sd]
+            [sayid.trace :as sdt]
+            [sayid.test-utils :as t-utils]
+            [sayid.test-ns1 :as ns1]))
 
 (defn- fixture
   [f]
-  (sdt/untrace-ns* 'com.billpiel.sayid.test-ns1)
+  (sdt/untrace-ns* 'sayid.test-ns1)
   (with-out-str (sd/ws-reset!))
   ;; Mock the clock and gensym so timestamps and ids are deterministic, exactly
   ;; like `core-test` does.
   (with-redefs [sdt/now (t-utils/mock-now-fn)
                 gensym (t-utils/mock-gensym-fn)]
     (f)
-    (sdt/untrace-ns* 'com.billpiel.sayid.test-ns1)))
+    (sdt/untrace-ns* 'sayid.test-ns1)))
 
 (t/use-fixtures :each fixture)
 
@@ -48,7 +48,7 @@
 (t/deftest public-entry-points-resolve
   (t/testing "every documented public entry point still resolves in core"
     (doseq [sym public-entry-points]
-      (t/is (some? (ns-resolve 'com.billpiel.sayid.core sym))
+      (t/is (some? (ns-resolve 'sayid.core sym))
             (str sym " must remain part of core's public API")))))
 
 ;;; --- Rendering (string-output) ---------------------------------------------
@@ -84,12 +84,12 @@
     (ns1/func3-1 3 8)
     (let [profile (:profile (sd/pro-analyze (sd/ws-deref!)))]
       (t/testing "; covers the entry fn and a callee (keyed by namespaced keyword)"
-        (t/is (contains? profile :com.billpiel.sayid.test-ns1/func3-1))
-        (t/is (contains? profile :com.billpiel.sayid.test-ns1/func3-2)))
+        (t/is (contains? profile :sayid.test-ns1/func3-1))
+        (t/is (contains? profile :sayid.test-ns1/func3-2)))
       (t/testing "; the entry fn ran exactly once"
-        (t/is (= 1 (:count (get profile :com.billpiel.sayid.test-ns1/func3-1)))))
+        (t/is (= 1 (:count (get profile :sayid.test-ns1/func3-1)))))
       (t/testing "; records call counts and timing metrics"
-        (let [entry (get profile :com.billpiel.sayid.test-ns1/func3-2)]
+        (let [entry (get profile :sayid.test-ns1/func3-2)]
           (t/is (pos-int? (:count entry)))
           (t/is (number? (:net-time-sum entry)))
           (t/is (number? (:gross-time-sum entry))))))))

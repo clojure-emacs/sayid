@@ -1,6 +1,6 @@
 # Sayid nREPL API
 
-Sayid ships an nREPL middleware (`com.billpiel.sayid.nrepl-middleware/wrap-sayid`)
+Sayid ships an nREPL middleware (`sayid.nrepl-middleware/wrap-sayid`)
 that exposes its tracing engine over the wire. The bundled Emacs client talks to
 Sayid exclusively through these ops, and any other editor or tool can do the same.
 
@@ -19,7 +19,7 @@ Clojure CLI / `nrepl.server`:
 
 ```clojure
 (nrepl.server/start-server
- :handler (nrepl.server/default-handler #'com.billpiel.sayid.nrepl-middleware/wrap-sayid))
+ :handler (nrepl.server/default-handler #'sayid.nrepl-middleware/wrap-sayid))
 ```
 
 ## Conventions

@@ -1,4 +1,4 @@
-(ns com.billpiel.sayid.util.sym
+(ns sayid.util.sym
   "Helpers for working with symbols and namespaces: qualifying and resolving
   symbols, and evaluating or macroexpanding forms in a given namespace."
   (:require [clojure.walk :as walk]))

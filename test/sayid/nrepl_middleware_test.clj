@@ -1,4 +1,4 @@
-(ns com.billpiel.sayid.nrepl-middleware-test
+(ns sayid.nrepl-middleware-test
   "Tests for the nREPL middleware.
 
   Two parts: the wiring (ops registered, descriptor in sync, errors terminated
@@ -11,11 +11,11 @@
   workspace, so no live nREPL session is needed."
   (:require [clojure.test :as t]
             [clojure.string :as str]
-            [com.billpiel.sayid.nrepl-middleware :as mw]
-            [com.billpiel.sayid.core :as sd]
-            [com.billpiel.sayid.trace :as sdt]
-            [com.billpiel.sayid.test-utils :as t-utils]
-            [com.billpiel.sayid.test-ns1 :as ns1]
+            [sayid.nrepl-middleware :as mw]
+            [sayid.core :as sd]
+            [sayid.trace :as sdt]
+            [sayid.test-utils :as t-utils]
+            [sayid.test-ns1 :as ns1]
             [nrepl.transport :as transport]
             [nrepl.bencode :as bencode]))
 
@@ -29,13 +29,13 @@
 
 (defn- fixture
   [f]
-  (sdt/untrace-ns* 'com.billpiel.sayid.test-ns1)
+  (sdt/untrace-ns* 'sayid.test-ns1)
   (with-out-str (sd/ws-reset!))
   ;; Deterministic clock and ids, exactly like core-test and public-api-test.
   (with-redefs [sdt/now (t-utils/mock-now-fn)
                 gensym (t-utils/mock-gensym-fn)]
     (f)
-    (sdt/untrace-ns* 'com.billpiel.sayid.test-ns1)))
+    (sdt/untrace-ns* 'sayid.test-ns1)))
 
 (t/use-fixtures :each fixture)
 
@@ -201,7 +201,7 @@
     (sd/ws-add-trace-ns! ns1)
     (ns1/func1 :a)
     (let [value (captured-value "sayid-query-by-fn"
-                                {:fn-name "com.billpiel.sayid.test-ns1/func2"
+                                {:fn-name "sayid.test-ns1/func2"
                                  :mod ""})
           [text props query-args] value]
       (t/is (= 3 (count value)) "still the three-element trio")
@@ -215,7 +215,7 @@
   (ns1/func1 :a)
   (t/testing "sayid-query-by-fn-data returns the matched calls as data"
     (let [value (captured-value "sayid-query-by-fn-data"
-                                {:fn-name "com.billpiel.sayid.test-ns1/func2"
+                                {:fn-name "sayid.test-ns1/func2"
                                  :mod ""})]
       (t/is (= 1 (count value)))
       (t/is (str/includes? (get (first value) "name") "func2"))

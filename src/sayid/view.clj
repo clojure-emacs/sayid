@@ -1,5 +1,5 @@
-(ns com.billpiel.sayid.view
-  (:require [com.billpiel.sayid.util.other :as util]))
+(ns sayid.view
+  (:require [sayid.util.other :as util]))
 
 
 ;; ==================================================================

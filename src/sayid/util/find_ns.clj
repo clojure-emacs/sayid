@@ -1,5 +1,5 @@
-(ns com.billpiel.sayid.util.find-ns
-  (:require [com.billpiel.sayid.util.other :as util]))
+(ns sayid.util.find-ns
+  (:require [sayid.util.other :as util]))
 
 (defn unnest-symbol
   [s]
