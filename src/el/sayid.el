@@ -541,16 +541,63 @@ can read its id, arguments and source location back."
      :children-fn (when children
                     (lambda () (mapcar #'sayid-tree--make-node children))))))
 
+(defun sayid-tree--value-targets (call)
+  "Return an alist of (LABEL . PATH) naming the inspectable values of CALL.
+Each PATH is a `sayid-def-value' path into the recorded call: the return value,
+the thrown error, or a named argument."
+  (append
+   (when (nrepl-dict-get call "return") (list (cons "return" (list "return"))))
+   (when (nrepl-dict-get call "throw") (list (cons "throw" (list "throw"))))
+   (let ((arg-map (nrepl-dict-get call "arg-map")))
+     (when arg-map
+       (mapcar (lambda (name)
+                 (cons (format "arg %s" name) (list "arg-map" name)))
+               (nrepl-dict-keys arg-map))))))
+
+(defun sayid-tree-inspect (&optional arg)
+  "Inspect a captured value of the call at point with `cider-inspect'.
+Defs the value to `$s/*' server-side and hands the live object to CIDER's
+inspector.  By default inspects the return value (or the thrown error); with a
+prefix ARG, prompt for which value - the return, the throw, or a named argument."
+  (interactive "P")
+  (let* ((node (or (cider-tree-view-node-at-point)
+                   (user-error "No call at point")))
+         (call (cider-tree-view-node-value node))
+         (targets (sayid-tree--value-targets call))
+         (path (if arg
+                   (cdr (assoc (completing-read "Inspect value: " targets nil t)
+                               targets))
+                 (or (cdr (assoc "return" targets))
+                     (cdr (assoc "throw" targets))
+                     (user-error "This call has no return value to inspect")))))
+    (sayid-send-and-message (list "op" "sayid-def-value"
+                                  "trace-id" (nrepl-dict-get call "id")
+                                  "path" path))
+    (cider-inspect "$s/*")))
+
+(defvar sayid-tree-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "i") #'sayid-tree-inspect)
+    map)
+  "Keymap for `sayid-tree-mode', layered over `cider-tree-view-mode-map'.")
+
+(define-derived-mode sayid-tree-mode cider-tree-view-mode "Sayid-Tree"
+  "Major mode for the Sayid workspace tree.
+Inherits navigation and folding from `cider-tree-view-mode' and adds
+Sayid-specific actions: \\<sayid-tree-mode-map>\\[sayid-tree-inspect] inspects a
+captured value.")
+
 ;;;###autoload
 (defun sayid-tree-view-workspace ()
   "Show the recorded workspace as a navigable, foldable tree.
 Fetches the workspace via the `sayid-get-workspace-data' op and renders it with
-`cider-tree-view': TAB folds a call, RET jumps to its source, n/p move."
+`cider-tree-view': TAB folds a call, RET jumps to its source, n/p move, and
+\\<sayid-tree-mode-map>\\[sayid-tree-inspect] inspects a captured value."
   (interactive)
   (let ((roots (sayid-req-get-value (list "op" "sayid-get-workspace-data"))))
     (if roots
         (with-current-buffer (cider-popup-buffer "*sayid-tree*" 'select
-                                                 'cider-tree-view-mode 'ancillary)
+                                                 'sayid-tree-mode 'ancillary)
           (cider-tree-view-render (mapcar #'sayid-tree--make-node roots)
                                   "Sayid workspace"))
       (user-error "The Sayid workspace is empty, or Sayid isn't loaded"))))
