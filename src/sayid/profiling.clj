@@ -1,7 +1,7 @@
-(ns com.billpiel.sayid.profiling
-  (:require [com.billpiel.sayid.trace :as tr]
-            [com.billpiel.sayid.recording :as rec]
-            [com.billpiel.sayid.util.other :as util]
+(ns sayid.profiling
+  (:require [sayid.trace :as tr]
+            [sayid.recording :as rec]
+            [sayid.util.other :as util]
             clojure.set
             [clojure.walk :as w]))
 

@@ -1,5 +1,5 @@
-(ns com.billpiel.sayid.sayid-multifn
-  (:gen-class :name com.billpiel.sayid.SayidMultiFn
+(ns sayid.sayid-multifn
+  (:gen-class :name sayid.SayidMultiFn
               :init init
               :constructors {[clojure.lang.IPersistentMap]
                              [String

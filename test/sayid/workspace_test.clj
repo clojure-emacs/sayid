@@ -1,7 +1,7 @@
-(ns com.billpiel.sayid.workspace-test
+(ns sayid.workspace-test
   (:require [clojure.test :as t]
-            [com.billpiel.sayid.workspace :as ws]
-            [com.billpiel.sayid.test-utils :as t-utils]))
+            [sayid.workspace :as ws]
+            [sayid.test-utils :as t-utils]))
 
 (def ^:dynamic *shelf*)
 (def ^:dynamic *ws*)

@@ -1,8 +1,8 @@
-(ns com.billpiel.sayid.inner-trace
-  (:require [com.billpiel.sayid.util.other :as util :refer [$-]]
-            [com.billpiel.sayid.util.sym :as sym]
-            [com.billpiel.sayid.util.source :as src]
-            [com.billpiel.sayid.trace :as trace]
+(ns sayid.inner-trace
+  (:require [sayid.util.other :as util :refer [$-]]
+            [sayid.util.sym :as sym]
+            [sayid.util.source :as src]
+            [sayid.trace :as trace]
             clojure.pprint
             clojure.set
             clojure.string

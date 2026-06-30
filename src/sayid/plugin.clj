@@ -12,4 +12,4 @@
                  [['mx.cider/sayid version]])
       (update-in [:repl-options :nrepl-middleware]
                  (fnil into [])
-                 ['com.billpiel.sayid.nrepl-middleware/wrap-sayid])))
+                 ['sayid.nrepl-middleware/wrap-sayid])))

@@ -1,4 +1,4 @@
-(ns com.billpiel.sayid.util.source
+(ns sayid.util.source
   "Helpers for locating and reading the source of a function, used by inner
   tracing to recover the form it needs to instrument."
   (:require [clojure.tools.reader :as r]

@@ -12,14 +12,14 @@
                  [org.clojure/tools.reader "1.6.0" :exclusions [org.clojure/clojure]]
                  [org.clojure/tools.namespace "1.5.1" :exclusions [org.clojure/clojure]]]
 
-  :aot [com.billpiel.sayid.sayid-multifn]
+  :aot [sayid.sayid-multifn]
 
   :deploy-repositories [["clojars" {:url "https://clojars.org/repo"
                                     :username :env/clojars_username
                                     :password :env/clojars_password
                                     :sign-releases false}]]
 
-  :repl-options {:nrepl-middleware [com.billpiel.sayid.nrepl-middleware/wrap-sayid]}
+  :repl-options {:nrepl-middleware [sayid.nrepl-middleware/wrap-sayid]}
 
   :pedantic? :warn
 

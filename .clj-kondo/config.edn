@@ -35,12 +35,12 @@
 
  ;; `defalias`/`defalias-macro` define a var, so treat them like `def` and the
  ;; generated aliases resolve.
- :lint-as {com.billpiel.sayid.util.other/defalias clojure.core/def
-           com.billpiel.sayid.util.other/defalias-macro clojure.core/def
+ :lint-as {sayid.util.other/defalias clojure.core/def
+           sayid.util.other/defalias-macro clojure.core/def
            ;; The trace macros take an unevaluated ns/fn symbol, which they
            ;; quote internally - treat them like `quote` so the symbol isn't
            ;; flagged as unresolved.
-           com.billpiel.sayid.core/ws-add-trace-ns! clojure.core/quote
-           com.billpiel.sayid.core/ws-remove-trace-ns! clojure.core/quote
-           com.billpiel.sayid.core/ws-add-trace-fn! clojure.core/quote
-           com.billpiel.sayid.core/ws-add-inner-trace-fn! clojure.core/quote}}
+           sayid.core/ws-add-trace-ns! clojure.core/quote
+           sayid.core/ws-remove-trace-ns! clojure.core/quote
+           sayid.core/ws-add-trace-fn! clojure.core/quote
+           sayid.core/ws-add-inner-trace-fn! clojure.core/quote}}

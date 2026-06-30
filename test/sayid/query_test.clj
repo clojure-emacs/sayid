@@ -1,8 +1,8 @@
-(ns com.billpiel.sayid.query-test
+(ns sayid.query-test
   (:require [clojure.test :as t]
-            [com.billpiel.sayid.core :as sd]
-            [com.billpiel.sayid.query :as q]
-            [com.billpiel.sayid.test-utils :as t-utils]))
+            [sayid.core :as sd]
+            [sayid.query :as q]
+            [sayid.test-utils :as t-utils]))
 
 (comment "
 

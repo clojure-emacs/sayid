@@ -1,21 +1,21 @@
-(ns com.billpiel.sayid.core-test
+(ns sayid.core-test
   (:require [clojure.test :as t]
-            [com.billpiel.sayid.core :as sd]
-            [com.billpiel.sayid.trace :as sdt]
-            [com.billpiel.sayid.query :as sdq]
-            [com.billpiel.sayid.test-utils :as t-utils]
-            [com.billpiel.sayid.test-ns1 :as ns1]
-            [com.billpiel.sayid.string-output :as sds]))
+            [sayid.core :as sd]
+            [sayid.trace :as sdt]
+            [sayid.query :as sdq]
+            [sayid.test-utils :as t-utils]
+            [sayid.test-ns1 :as ns1]
+            [sayid.string-output :as sds]))
 
 
 (defn- fixture
   [f]
-  (sdt/untrace-ns* 'com.billpiel.sayid.test-ns1)
+  (sdt/untrace-ns* 'sayid.test-ns1)
   (with-out-str (sd/ws-reset!))
   (with-redefs [sdt/now (t-utils/mock-now-fn)
                 gensym (t-utils/mock-gensym-fn)]
     (f)
-    (sdt/untrace-ns* 'com.billpiel.sayid.test-ns1)))
+    (sdt/untrace-ns* 'sayid.test-ns1)))
 
 (t/use-fixtures :each fixture)
 
@@ -42,10 +42,10 @@
                                :file "FILE",
                                :line 4,
                                :name 'func2,
-                               :ns (the-ns 'com.billpiel.sayid.test-ns1)},
+                               :ns (the-ns 'sayid.test-ns1)},
                               :return :a,
                               :started-at 1
-                              :name 'com.billpiel.sayid.test-ns1/func2,
+                              :name 'sayid.test-ns1/func2,
                               :arg-map {'arg1 :a},
                               :id :12,
                               :ended-at 2
@@ -56,10 +56,10 @@
                              :file "FILE",
                              :line 8,
                              :name 'func1,
-                             :ns (the-ns 'com.billpiel.sayid.test-ns1)},
+                             :ns (the-ns 'sayid.test-ns1)},
                             :return :a,
                             :started-at 0
-                            :name 'com.billpiel.sayid.test-ns1/func1,
+                            :name 'sayid.test-ns1/func1,
                             :arg-map {'arg1 :a},
                             :id :11,
                             :ended-at 3
@@ -68,7 +68,7 @@
                           :id :root10,
                           :path [:root10],
                           :traced
-                          {:inner-fn #{}, :fn #{}, :ns #{'com.billpiel.sayid.test-ns1}},
+                          {:inner-fn #{}, :fn #{}, :ns #{'sayid.test-ns1}},
                           :ws-slot nil}]
       (t/is (= (-> trace
                    ((t-utils/redact-file-fn [:children 0 :meta :file]
@@ -87,23 +87,23 @@
 
 (t/deftest ed-all-traces
 
-  (sd/ws-add-trace-ns! com.billpiel.sayid.test-ns1)
+  (sd/ws-add-trace-ns! sayid.test-ns1)
 
   (t/testing "ws-disable-all-traces!"
     (sd/ws-disable-all-traces!)
-    (com.billpiel.sayid.test-ns1/func1 :a)
+    (sayid.test-ns1/func1 :a)
     (t/is (= (sd/ws-deref!)
              {:children []
               :depth 0
               :id :root10
               :path [:root10]
-              :traced {:inner-fn #{}, :fn #{}, :ns #{'com.billpiel.sayid.test-ns1}}
+              :traced {:inner-fn #{}, :fn #{}, :ns #{'sayid.test-ns1}}
               :ws-slot nil
               :arg-map nil})))
 
   (t/testing "ws-enable-all-traces!"
     (sd/ws-enable-all-traces!)
-    (com.billpiel.sayid.test-ns1/func1 :a)
+    (sayid.test-ns1/func1 :a)
 
     (t/is (= (-> (sd/ws-deref!)
                  ((t-utils/redact-file-fn [:children 0 :meta :file]
@@ -122,8 +122,8 @@
                                              :file "FILE"
                                              :line 4
                                              :name 'func2
-                                             :ns (the-ns 'com.billpiel.sayid.test-ns1)}
-                                      :name 'com.billpiel.sayid.test-ns1/func2
+                                             :ns (the-ns 'sayid.test-ns1)}
+                                      :name 'sayid.test-ns1/func2
                                       :path [:root10 :11 :12]
                                       :return :a
                                       :started-at 1}]
@@ -135,8 +135,8 @@
                                  :file "FILE"
                                  :line 8
                                  :name 'func1
-                                 :ns (the-ns 'com.billpiel.sayid.test-ns1)}
-                          :name 'com.billpiel.sayid.test-ns1/func1
+                                 :ns (the-ns 'sayid.test-ns1)}
+                          :name 'sayid.test-ns1/func1
                           :path [:root10 :11]
                           :return :a
                           :started-at 0}]
@@ -145,7 +145,7 @@
               :path [:root10]
               :traced {:inner-fn #{}
                        :fn #{}
-                       :ns #{'com.billpiel.sayid.test-ns1}}
+                       :ns #{'sayid.test-ns1}}
               :ws-slot nil}))))
 
 (t/deftest remove-all-traces
@@ -166,9 +166,9 @@
 
 (t/deftest exception-thrown
   (t/testing "exception thrown"
-    (let [trace-root (sd/ws-add-trace-ns! com.billpiel.sayid.test-ns1)
+    (let [trace-root (sd/ws-add-trace-ns! sayid.test-ns1)
           _ (try
-              (com.billpiel.sayid.test-ns1/func-throws :a)
+              (sayid.test-ns1/func-throws :a)
               (catch Throwable t))
           trace (sd/ws-deref!)]
 
@@ -177,7 +177,7 @@
                  {:depth 0
                   :id :root10
                   :path [:root10]
-                  :traced {:fn #{}, :ns #{'com.billpiel.sayid.test-ns1}, :inner-fn #{}}
+                  :traced {:fn #{}, :ns #{'sayid.test-ns1}, :inner-fn #{}}
                   :ws-slot nil
                   :arg-map nil})))
 
@@ -200,7 +200,7 @@
                   :depth 1
                   :ended-at 1
                   :id :11
-                  :name 'com.billpiel.sayid.test-ns1/func-throws
+                  :name 'sayid.test-ns1/func-throws
                   :path [:root10 :11]
                   :started-at 0
                   :meta {:arglists '([arg1])
@@ -208,13 +208,13 @@
                          :file "FILE"
                          :line 12
                          :name 'func-throws
-                         :ns (the-ns 'com.billpiel.sayid.test-ns1)}
+                         :ns (the-ns 'sayid.test-ns1)}
                   :arg-map {'arg1 :a}}))))))
 
 (t/deftest querying
   (t/testing "q macro"
-    (let [trace-root (sd/ws-add-trace-ns! com.billpiel.sayid.test-ns1)
-          _ (com.billpiel.sayid.test-ns1/func3-1 3 8)
+    (let [trace-root (sd/ws-add-trace-ns! sayid.test-ns1)
+          _ (sayid.test-ns1/func3-1 3 8)
           trace (sd/ws-deref!)]
 
       (t/testing "; find node by name and all parents"
@@ -241,8 +241,8 @@
                                                            :file "FILE"
                                                            :line 16
                                                            :name 'func3-4
-                                                           :ns (the-ns 'com.billpiel.sayid.test-ns1)}
-                                                    :name 'com.billpiel.sayid.test-ns1/func3-4
+                                                           :ns (the-ns 'sayid.test-ns1)}
+                                                    :name 'sayid.test-ns1/func3-4
                                                     :path [:root10 :11 :13 :15]
                                                     :return 8
                                                     :started-at 6}]
@@ -254,8 +254,8 @@
                                                :file "FILE"
                                                :line 28
                                                :name 'func3-3
-                                               :ns (the-ns 'com.billpiel.sayid.test-ns1)}
-                                        :name 'com.billpiel.sayid.test-ns1/func3-3
+                                               :ns (the-ns 'sayid.test-ns1)}
+                                        :name 'sayid.test-ns1/func3-3
                                         :path [:root10 :11 :13]
                                         :return 8
                                         :started-at 3}]
@@ -267,8 +267,8 @@
                                    :file "FILE"
                                    :line 33
                                    :name 'func3-1
-                                   :ns (the-ns 'com.billpiel.sayid.test-ns1)}
-                            :name 'com.billpiel.sayid.test-ns1/func3-1
+                                   :ns (the-ns 'sayid.test-ns1)}
+                            :name 'sayid.test-ns1/func3-1
                             :path [:root10 :11]
                             :return 13
                             :started-at 0}]
@@ -277,7 +277,7 @@
                 :path [:root10]
                 :traced {:inner-fn #{}
                          :fn #{}
-                         :ns #{'com.billpiel.sayid.test-ns1}}
+                         :ns #{'sayid.test-ns1}}
                 :ws-slot nil}))))))
 
 (t/deftest inner-trace-letfn
@@ -285,8 +285,8 @@
   ;; to throw "Syntax error compiling fn*", because the fn bindings of the
   ;; expanded `letfn*' form were wrapped with tracing forms.
   (t/testing "inner-tracing a letfn-using fn"
-    (sd/ws-add-inner-trace-fn! com.billpiel.sayid.test-ns1/func-letfn)
+    (sd/ws-add-inner-trace-fn! sayid.test-ns1/func-letfn)
     (t/testing "; doesn't throw and returns the right value"
-      (t/is (= 8 (com.billpiel.sayid.test-ns1/func-letfn 3))))
+      (t/is (= 8 (sayid.test-ns1/func-letfn 3))))
     (t/testing "; records the call"
       (t/is (= 1 (-> (sd/ws-deref!) :children count))))))

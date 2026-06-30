@@ -1,8 +1,8 @@
-(ns com.billpiel.sayid.workspace
-  (:require [com.billpiel.sayid.trace :as trace]
-            [com.billpiel.sayid.util.other :as util]
-            [com.billpiel.sayid.util.sym :as sym]
-            [com.billpiel.sayid.shelf :as shelf]))
+(ns sayid.workspace
+  (:require [sayid.trace :as trace]
+            [sayid.util.other :as util]
+            [sayid.util.sym :as sym]
+            [sayid.shelf :as shelf]))
 
 (def default-traced {:ns #{}
                        :fn #{}

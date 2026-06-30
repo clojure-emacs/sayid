@@ -1,8 +1,8 @@
-(ns com.billpiel.sayid.query
+(ns sayid.query
   (:require [clojure.zip :as z]
             clojure.set
             clojure.string
-            [com.billpiel.sayid.util.other :as util]))
+            [sayid.util.other :as util]))
 
 ;; === zipper iterators
 

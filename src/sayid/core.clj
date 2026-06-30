@@ -1,16 +1,16 @@
-(ns com.billpiel.sayid.core
+(ns sayid.core
   (:require clojure.pprint
-            [com.billpiel.sayid.trace :as trace]
-            [com.billpiel.sayid.inner-trace :as itrace]
-            [com.billpiel.sayid.workspace :as ws]
-            [com.billpiel.sayid.recording :as rec]
-            [com.billpiel.sayid.query :as q]
-            [com.billpiel.sayid.view :as v]
-            [com.billpiel.sayid.util.find-ns :as find-ns]
-            [com.billpiel.sayid.string-output :as so]
-            [com.billpiel.sayid.profiling :as pro]
-            [com.billpiel.sayid.util.other :as util]
-            [com.billpiel.sayid.util.sym :as sym]))
+            [sayid.trace :as trace]
+            [sayid.inner-trace :as itrace]
+            [sayid.workspace :as ws]
+            [sayid.recording :as rec]
+            [sayid.query :as q]
+            [sayid.view :as v]
+            [sayid.util.find-ns :as find-ns]
+            [sayid.string-output :as so]
+            [sayid.profiling :as pro]
+            [sayid.util.other :as util]
+            [sayid.util.sym :as sym]))
 
 (def version
   "The current version of sayid as a string."

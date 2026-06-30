@@ -1,4 +1,4 @@
-(ns com.billpiel.sayid.nrepl-middleware
+(ns sayid.nrepl-middleware
   (:require
    [clojure.stacktrace :as st]
    clojure.string
@@ -6,14 +6,14 @@
    [clojure.tools.namespace.find :as ns-find]
    [clojure.tools.reader :as r]
    [clojure.tools.reader.reader-types :as rts]
-   [com.billpiel.sayid.core :as sd]
-   [com.billpiel.sayid.query :as q]
-   [com.billpiel.sayid.string-output :as so]
-   [com.billpiel.sayid.trace :as tr]
-   [com.billpiel.sayid.util.find-ns :as find-ns]
-   [com.billpiel.sayid.util.other :as util]
-   [com.billpiel.sayid.util.sym :as sym]
-   [com.billpiel.sayid.view :as v]
+   [sayid.core :as sd]
+   [sayid.query :as q]
+   [sayid.string-output :as so]
+   [sayid.trace :as tr]
+   [sayid.util.find-ns :as find-ns]
+   [sayid.util.other :as util]
+   [sayid.util.sym :as sym]
+   [sayid.view :as v]
    [nrepl.middleware :refer [set-descriptor!]]
    [nrepl.misc :refer [response-for]]
    [nrepl.transport :as t]

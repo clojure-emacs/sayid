@@ -133,13 +133,13 @@ A 3rd-party vim plugin also exists. See
 
 ## Using Sayid from the REPL
 
-You don't need Emacs or CIDER to use Sayid. The `com.billpiel.sayid.core`
+You don't need Emacs or CIDER to use Sayid. The `sayid.core`
 namespace (conventionally aliased to `sd`) is a complete API on its own. Trace
 a namespace or a function, exercise your code, then print the recorded
 workspace:
 
 ```clojure
-(require '[com.billpiel.sayid.core :as sd])
+(require '[sayid.core :as sd])
 
 (defn add [a b] (+ a b))
 (defn add-twice [a b] (+ (add a b) (add a b)))

@@ -10,7 +10,7 @@ a release starts with bumping all of them.
 Set the new version in:
 
 - `project.clj` - the `defproject` coordinate
-- `src/com/billpiel/sayid/core.clj` - `version`
+- `src/sayid/core.clj` - `version`
 - `src/sayid/plugin.clj` - `version`
 - `src/el/sayid.el` - the `Version:` header, `sayid-version`, and `sayid-injected-plugin-version`
 - `README.md` and `doc/nrepl-api.md` - the dependency snippets

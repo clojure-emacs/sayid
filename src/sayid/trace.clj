@@ -1,7 +1,7 @@
-(ns com.billpiel.sayid.trace
-  (:require [com.billpiel.sayid.util.other :as util]
-            [com.billpiel.sayid.util.sym :as sym])
-  (:import com.billpiel.sayid.SayidMultiFn))
+(ns sayid.trace
+  (:require [sayid.util.other :as util]
+            [sayid.util.sym :as sym])
+  (:import sayid.SayidMultiFn))
 
 (def ^:dynamic *trace-log-parent* nil)
 
@@ -107,7 +107,7 @@
 
 (defn shallow-tracer-multifn
   [{:keys [workspace qual-sym meta']} original-fn]
-  (com.billpiel.sayid.SayidMultiFn. {:original original-fn
+  (sayid.SayidMultiFn. {:original original-fn
                                      :trace-dispatch-fn (fn [f args]
                                                           (trace-fn-call workspace
                                                                          (symbol (str qual-sym "--DISPATCHER"))
@@ -186,7 +186,7 @@
 (defn trace-ns*
   [ns workspace]
   (when-let [ns (the-ns-safe ns)]
-    (when-not ('#{clojure.core com.billpiel.sayid.core} (ns-name ns))
+    (when-not ('#{clojure.core sayid.core} (ns-name ns))
       (let [ns-fns (->> ns ns-interns vals (filter (comp util/fn*? var-get)))]
         (doseq [f ns-fns]
           (trace-var* f
