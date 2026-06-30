@@ -166,6 +166,12 @@ Run a query against the workspace. Param: `query` (a printed Clojure query
 form). Replies with the same `[text properties query-args]` triple as
 `sayid-get-workspace`.
 
+### `sayid-query-data`
+
+Data counterpart of `sayid-query`. Same `query` param, but replies with the
+matched calls as a list of node-data maps (the `sayid-get-workspace-data` shape)
+instead of the rendered triple.
+
 ### `sayid-query-form-at-point`
 
 Query the workspace for the calls that best match the cursor context. Params:
@@ -182,10 +188,20 @@ Query for a recorded call by id, optionally with a modifier.
 
 Replies with a `[text properties query-args]` triple.
 
+### `sayid-query-by-id-data`
+
+Data counterpart of `sayid-query-by-id`. Same `trace-id` and `mod` params,
+replies with node data (the `sayid-get-workspace-data` shape).
+
 ### `sayid-query-by-fn`
 
 Like the above, but selects by function name. Params: `fn-name`, `mod`. Replies
 with a `[text properties query-args]` triple.
+
+### `sayid-query-by-fn-data`
+
+Data counterpart of `sayid-query-by-fn`. Same `fn-name` and `mod` params,
+replies with node data (the `sayid-get-workspace-data` shape).
 
 ## Acting on a recorded call
 

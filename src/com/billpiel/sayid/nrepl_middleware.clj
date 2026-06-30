@@ -315,15 +315,21 @@ or nil when nothing resolves there."
                     (-> (sd/ws-query-by-file-pos file line)
                         so/tree->text-prop-pair)))
 
-(defn sayid-buf-query
+(defn buf-query-tree
+  "Build and run a buffer query.  Q-VEC is the base query; MOD-STR an optional
+  modifier like \"a\" (ancestors) or \"d3\" (descendants, depth 3).  Returns the
+  result tree, which `query-tree->trio` renders or `query-tree->data` turns into
+  data."
   [q-vec mod-str]
-  (let [[_ sk sn] (re-find #"(\w+)\s*(\d+)?" mod-str)
+  (let [[_ sk sn] (re-find #"(\w+)\s*(\d+)?" (or mod-str ""))
         k (keyword sk)
         n (util/->int sn)
         query (remove nil? [k n q-vec])]
-    (sd/with-view (->> query
-                       (apply query*)
-                       query-tree->trio))))
+    (apply query* query)))
+
+(defn sayid-buf-query
+  [q-vec mod-str]
+  (sd/with-view (query-tree->trio (buf-query-tree q-vec mod-str))))
 
 (defn ^:nrepl sayid-query-by-id
   [{:keys [trace-id mod] :as msg}]
@@ -558,6 +564,12 @@ or nil when nothing resolves there."
   [msg]
   (reply:data msg (mapv node->data (:children (sd/ws-deref!)))))
 
+(defn query-tree->data
+  "The data counterpart of `query-tree->trio`: the tree's matched calls as a list
+  of `node->data` maps."
+  [tree]
+  (mapv node->data (:children tree)))
+
 (defn magic-recusive-eval
   "Lets us send vars to nrepl client and back. Madness."
   [frm]
@@ -565,15 +577,37 @@ or nil when nothing resolves there."
         (seq? frm) (eval frm)
         :else frm))
 
+(defn run-query
+  "Parse a printed QUERY form (a string), eval any embedded vars via
+  `magic-recusive-eval`, and run it.  Returns the result tree."
+  [query]
+  (->> query
+       read-string
+       (map magic-recusive-eval)
+       (apply query*)))
+
 (defn ^:nrepl sayid-query
-  [{:keys [transport query] :as msg}]
+  [{:keys [query] :as msg}]
   ;; TODO default to name-only view for empty query?
-  (sd/with-view (->> query
-                     read-string
-                     (map magic-recusive-eval)
-                     (apply query*)
-                     query-tree->trio
-                     (reply:clj->nrepl msg))))
+  (reply:clj->nrepl msg (sd/with-view (query-tree->trio (run-query query)))))
+
+(defn ^:nrepl sayid-query-data
+  "Data counterpart of `sayid-query`: run QUERY and return the matched calls as
+  node data.  See doc/nrepl-api.md."
+  [{:keys [query] :as msg}]
+  (reply:data msg (query-tree->data (run-query query))))
+
+(defn ^:nrepl sayid-query-by-id-data
+  "Data counterpart of `sayid-query-by-id`."
+  [{:keys [trace-id mod] :as msg}]
+  (reply:data msg (query-tree->data
+                   (buf-query-tree [:id (keyword trace-id)] mod))))
+
+(defn ^:nrepl sayid-query-by-fn-data
+  "Data counterpart of `sayid-query-by-fn`."
+  [{:keys [fn-name mod] :as msg}]
+  (reply:data msg (query-tree->data
+                   (buf-query-tree [#'parent-name-or-name (symbol fn-name)] mod))))
 
 (def sayid-nrepl-ops
   (->> *ns*
