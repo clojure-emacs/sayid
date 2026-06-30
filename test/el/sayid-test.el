@@ -127,5 +127,21 @@
       (expect (length children) :to-equal 1)
       (expect (cider-tree-view-node-label (car children)) :to-match "g/child"))))
 
+(describe "sayid-tree--value-targets"
+  (it "offers the return and each named argument, with their def-value paths"
+    (let ((targets (sayid-tree--value-targets
+                    (nrepl-dict "return" "42"
+                                "arg-map" (nrepl-dict "x" "1" "y" "2")))))
+      (expect (cdr (assoc "return" targets)) :to-equal '("return"))
+      (expect (cdr (assoc "arg x" targets)) :to-equal '("arg-map" "x"))
+      (expect (cdr (assoc "arg y" targets)) :to-equal '("arg-map" "y"))))
+  (it "offers the throw instead of a return when the call threw"
+    (let ((targets (sayid-tree--value-targets
+                    (nrepl-dict "throw" (nrepl-dict "cause" "boom")
+                                "arg-map" (nrepl-dict "x" "1")))))
+      (expect (assoc "return" targets) :to-be nil)
+      (expect (cdr (assoc "throw" targets)) :to-equal '("throw"))
+      (expect (cdr (assoc "arg x" targets)) :to-equal '("arg-map" "x")))))
+
 (provide 'sayid-test)
 ;;; sayid-test.el ends here
