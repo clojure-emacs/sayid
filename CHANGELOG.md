@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+* [#103](https://github.com/clojure-emacs/sayid/pull/103): Drop the `com.billpiel` domain prefix from all namespaces (`com.billpiel.sayid.*` -> `sayid.*`), including the injected middleware var (now `sayid.nrepl-middleware/wrap-sayid`). Breaking for code that requires the old namespaces directly; the bundled plugin and Emacs client are updated in lockstep. The Maven coordinates are unchanged.
 * [#101](https://github.com/clojure-emacs/sayid/pull/101): Add data variants of the query ops (`sayid-query-data`, `sayid-query-by-id-data`, `sayid-query-by-fn-data`) that return matched calls as data instead of rendered text.
 * [#100](https://github.com/clojure-emacs/sayid/pull/100): Add the `sayid-get-workspace-data` nREPL op, which returns the recorded call tree as data (see [doc/nrepl-api.md](doc/nrepl-api.md)) for editor-agnostic clients.
 
