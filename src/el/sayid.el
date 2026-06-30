@@ -6,7 +6,7 @@
 ;; Maintainer: Bozhidar Batsov <bozhidar@batsov.dev>
 ;; Version: 0.4.0
 ;; URL: https://github.com/clojure-emacs/sayid
-;; Package-Requires: ((emacs "28") (cider "1.0"))
+;; Package-Requires: ((emacs "28") (cider "1.23"))
 ;; Keywords: clojure, cider, debugger
 
 ;; Licensed under the Apache License, Version 2.0 (the "License");
@@ -34,6 +34,7 @@
 ;;; Code:
 
 (require 'cider)
+(require 'cider-tree-view)
 
 (defgroup sayid nil
   "Sayid is an advanced Clojure debugging tool."
@@ -249,7 +250,7 @@ Ensures a CIDER REPL with the middleware is available first, and routes the
 request through CIDER's sender so the active session and connection are
 resolved automatically."
   (sayid--ensure-available)
-  (cider-nrepl-send-sync-request request))
+  (cider-nrepl-sync-request request))
 
 (defun sayid-send-and-message (req &optional fail-msg)
   "Send REQ to nrepl and show results as message.  Show FAIL-MSG on failure."
@@ -491,6 +492,68 @@ selects one by nesting DEPTH, cycled from 0 to 9."
   (interactive)
   (sayid-req-insert-content (list "op" "sayid-query"
                                   "query" (sayid-peek-query-str))))
+
+
+;;; Tree view of the recorded workspace
+;;
+;; A client-rendered view built on `cider-tree-view': it fetches the call tree
+;; as data (the `sayid-get-workspace-data' op) and turns each recorded call into
+;; a foldable node, instead of replaying a server-rendered string.
+
+(defun sayid-tree--node-label (call)
+  "Build the fontified tree label for CALL, an nrepl-dict call node.
+Shows the call form with its return value, or the thrown cause when it threw."
+  (let* ((name (nrepl-dict-get call "name"))
+         (args (nrepl-dict-get call "args"))
+         (form (cider-font-lock-as-clojure
+                (format "(%s%s)"
+                        name
+                        (if args (concat " " (mapconcat #'identity args " ")) ""))))
+         (throw (nrepl-dict-get call "throw")))
+    (if throw
+        (concat form "  "
+                (propertize (format "!! %s" (nrepl-dict-get throw "cause"))
+                            'face 'error))
+      (concat form "  => "
+              (cider-font-lock-as-clojure (or (nrepl-dict-get call "return") "nil"))))))
+
+(defun sayid-tree--jump-to-source (call)
+  "Jump to the source location recorded in CALL."
+  (let* ((file (nrepl-dict-get call "file"))
+         (line (nrepl-dict-get call "line"))
+         (xfile (and file (sayid-find-existing-file file))))
+    (if xfile
+        (progn
+          (pop-to-buffer (find-file-noselect xfile))
+          (goto-char (point-min))
+          (when line (forward-line (1- line))))
+      (user-error "Source file not found: %s" (or file "<unknown>")))))
+
+(defun sayid-tree--make-node (call)
+  "Make a `cider-tree-view-node' from CALL, a `sayid-get-workspace-data' node.
+The whole CALL dict is stashed as the node value, so commands acting on the node
+can read its id, arguments and source location back."
+  (let ((children (nrepl-dict-get call "children")))
+    (cider-tree-view-node-create
+     :label (sayid-tree--node-label call)
+     :value call
+     :on-visit (lambda () (sayid-tree--jump-to-source call))
+     :children-fn (when children
+                    (lambda () (mapcar #'sayid-tree--make-node children))))))
+
+;;;###autoload
+(defun sayid-tree-view-workspace ()
+  "Show the recorded workspace as a navigable, foldable tree.
+Fetches the workspace via the `sayid-get-workspace-data' op and renders it with
+`cider-tree-view': TAB folds a call, RET jumps to its source, n/p move."
+  (interactive)
+  (let ((roots (sayid-req-get-value (list "op" "sayid-get-workspace-data"))))
+    (if roots
+        (with-current-buffer (cider-popup-buffer "*sayid-tree*" 'select
+                                                 'cider-tree-view-mode 'ancillary)
+          (cider-tree-view-render (mapcar #'sayid-tree--make-node roots)
+                                  "Sayid workspace"))
+      (user-error "The Sayid workspace is empty, or Sayid isn't loaded"))))
 
 ;;;###autoload
 (defun sayid-show-traced (&optional ns)

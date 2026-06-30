@@ -90,5 +90,42 @@
     (expect (substitute-command-keys "\\{sayid-mode-map}")
             :not :to-match "sayid-query-id-w-mod")))
 
+(describe "sayid-tree--node-label"
+  (it "renders the call form and its return value"
+    (let ((label (sayid-tree--node-label
+                  (nrepl-dict "name" "my.ns/foo" "args" '(":a" "1") "return" ":a"))))
+      (expect label :to-match "my.ns/foo")
+      (expect label :to-match "=>")
+      (expect label :to-match ":a")))
+  (it "falls back to nil when there is no recorded return"
+    (expect (sayid-tree--node-label (nrepl-dict "name" "my.ns/foo"))
+            :to-match "nil"))
+  (it "shows the thrown cause instead of a return when the call threw"
+    (let ((label (sayid-tree--node-label
+                  (nrepl-dict "name" "my.ns/boom" "args" '("7")
+                              "throw" (nrepl-dict "cause" "boom")))))
+      (expect label :to-match "boom")
+      (expect label :not :to-match "=>"))))
+
+(describe "sayid-tree--make-node"
+  (it "stashes the whole call dict as the node value"
+    (let* ((call (nrepl-dict "name" "my.ns/foo" "return" "1"))
+           (node (sayid-tree--make-node call)))
+      (expect (cider-tree-view-node-value node) :to-equal call)))
+  (it "is expandable only when the call has children"
+    (let ((leaf (sayid-tree--make-node (nrepl-dict "name" "f")))
+          (parent (sayid-tree--make-node
+                   (nrepl-dict "name" "f" "children"
+                               (list (nrepl-dict "name" "g"))))))
+      (expect (cider-tree-view-node-children-fn leaf) :to-be nil)
+      (expect (cider-tree-view-node-children-fn parent) :not :to-be nil)))
+  (it "builds child nodes from the call's children"
+    (let* ((call (nrepl-dict "name" "f" "children"
+                             (list (nrepl-dict "name" "g/child" "return" "2"))))
+           (node (sayid-tree--make-node call))
+           (children (funcall (cider-tree-view-node-children-fn node))))
+      (expect (length children) :to-equal 1)
+      (expect (cider-tree-view-node-label (car children)) :to-match "g/child"))))
+
 (provide 'sayid-test)
 ;;; sayid-test.el ends here
