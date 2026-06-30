@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+* [#101](https://github.com/clojure-emacs/sayid/pull/101): Add data variants of the query ops (`sayid-query-data`, `sayid-query-by-id-data`, `sayid-query-by-fn-data`) that return matched calls as data instead of rendered text.
 * [#100](https://github.com/clojure-emacs/sayid/pull/100): Add the `sayid-get-workspace-data` nREPL op, which returns the recorded call tree as data (see [doc/nrepl-api.md](doc/nrepl-api.md)) for editor-agnostic clients.
 
 ## [0.3.0] - 2026-06-29
