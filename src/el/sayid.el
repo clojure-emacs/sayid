@@ -540,6 +540,7 @@ can read its id, arguments and source location back."
     (cider-tree-view-node-create
      :label (sayid-tree--node-label call)
      :value call
+     :expanded t
      :on-visit (lambda () (sayid-tree--jump-to-source call))
      :children-fn (when children
                     (lambda () (mapcar #'sayid-tree--make-node children))))))
@@ -983,7 +984,7 @@ file can be found, jump to it."
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "f")   'sayid-query-form-at-point)
     (define-key map (kbd "!")   'sayid-load-enable-clear)
-    (define-key map (kbd "w")   'sayid-get-workspace)
+    (define-key map (kbd "w")   'sayid-tree-view-workspace)
     (define-key map (kbd "t y") 'sayid-trace-all-ns-in-dir)
     (define-key map (kbd "t p") 'sayid-trace-ns-by-pattern)
     (define-key map (kbd "t b") 'sayid-trace-ns-in-file)

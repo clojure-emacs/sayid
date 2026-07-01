@@ -199,7 +199,7 @@ pop up the help buffer.
 
     C-c s f -- Queries the active workspace for entries that most closely match the context of the cursor position
     C-c s ! -- Disable traces, load the current buffer, enable traces, and clear the workspace log
-    C-c s w -- Shows workspace, using the current view
+    C-c s w -- Show the recorded workspace as a navigable, foldable tree
     C-c s t y -- Prompts for a dir, recursively traces all ns's in that dir and subdirs
     C-c s t p -- Prompts for a pattern (* = wildcard), and applies a trace to all *loaded* ns's whose name matches the pattern
     C-c s t b -- Trace the ns in the current buffer
@@ -219,24 +219,22 @@ pop up the help buffer.
     C-c s h -- show this help
 
 
-In the `*sayid*` buffer, press `h` to pop up a help buffer listing the current
-keybindings (it's generated from the keymap, so it's always accurate):
+The workspace opens in the `*sayid-tree*` buffer, a foldable tree built on
+CIDER's `cider-tree-view`. Navigation and folding come from there; Sayid adds a
+few actions on top:
 
-    ENTER -- pop to function
-    d -- def value to $s/*
-    f -- query for calls to function (with a prefix arg, prompt for a modifier)
-    i -- show only this instance (with a prefix arg, prompt for a modifier)
-    r -- refresh the view (rerun the last query)
-    w -- show full workspace trace
-    n -- jump to next call node
-    p -- jump to prev call node
-    P -- pretty print value
-    C -- clear workspace trace log
-    v -- toggle view
-    V -- set view (see register-view)
-    l, backspace -- previous buffer state
-    L, S-backspace -- forward buffer state
-    c i -- inspect value at point
+    TAB -- fold or unfold the call at point
+    RET, . -- jump to the call's source
+    n, p -- move to the next / previous call
+    f -- show every recorded call of the function at point (prefix: a modifier)
+    i -- focus the call at point and its subtree (prefix: ancestors/descendants)
+    c i -- inspect a captured value in CIDER's inspector (prefix: pick which)
+    w -- back to the full workspace
+    q -- quit the window
+
+The older text-rendered view is still available (`M-x sayid-get-workspace`, and
+where the pretty-print and query-at-point commands land); press `h` in it for its
+own keybinding help.
     g -- generate instance expression and put in kill ring
     h -- help
     q -- quit window
@@ -331,25 +329,18 @@ true
 ```
 
 It says `true`. Something's off. Pop open the Sayid workspace with `C-c s w`
-(`sayid-get-workspace`):
+(`sayid-tree-view-workspace`):
 
 ```
-v demo.coins/can-afford?  :6303
-| coins => [:quarter :dime :nickel :penny]
-| price => 45
-| returns =>  true
-|v demo.coins/total-cents  :6304
-|| coins => [:quarter :dime :nickel :penny]
-|| returned =>  45
-|^
-| demo.coins/can-afford?  :6303
-| returned =>  true
-^
+ Sayid workspace   n/p: move   TAB: expand   RET/.: visit   q: quit
+▾ (demo.coins/can-afford? [:quarter :dime :nickel :penny] 45) => true
+    (demo.coins/total-cents [:quarter :dime :nickel :penny]) => 45
 ```
 
-Every traced call is here, with its arguments and return value. `total-cents`
-got our four coins and returned `45`, but four coins worth 41 cents can't total
-45. The bug lives inside `total-cents`.
+Every traced call is a foldable node, with its arguments and return value inline
+(`TAB` folds a subtree, `RET` jumps to source). `total-cents` got our four coins
+and returned `45`, but four coins worth 41 cents can't total 45. The bug lives
+inside `total-cents`.
 
 This is where Sayid earns its keep. Put your cursor on `total-cents` and add an
 *inner* trace with `C-c s t n` (`sayid-inner-trace-fn`). Clear the log with
@@ -357,30 +348,16 @@ This is where Sayid earns its keep. Put your cursor on `total-cents` and add an
 the workspace:
 
 ```
-v demo.coins/can-afford?  :6346
-| coins => [:quarter :dime :nickel :penny]
-| price => 45
-| returns =>  true
-|v demo.coins/total-cents  :6347
-|| coins => [:quarter :dime :nickel :penny]
-|| returns =>  45
-||v (->> coins (map coin-values) (apply +)) => (apply + (map coin-values coins))  demo.coins/total-cents  :6348
-||| returns =>  45
-|||v (apply + (map coin-values coins))  demo.coins/total-cents  :6349
-|||| (25 10 5 5)
-|||| returns =>  45
-||||v (map coin-values coins)  demo.coins/total-cents  :6350
-||||| {:quarter 25 :dime 10 :nickel 5 :penny 5}
-||||| [:quarter :dime :nickel :penny]
-||||| returned =>  (25 10 5 5)
-||||^
-...
+▾ (demo.coins/can-afford? [:quarter :dime :nickel :penny] 45) => true
+  ▾ (demo.coins/total-cents [:quarter :dime :nickel :penny]) => 45
+    ▾ (apply + (map coin-values coins)) => 45
+        (map coin-values coins) => (25 10 5 5)
 ```
 
-An inner trace records the inputs and output of *every expression* inside the
-function. Follow it down to `(map coin-values coins)`: it turns our coins into
-`(25 10 5 5)`. There it is. The last value should be `1`, not `5` - a penny is
-worth five cents in our map.
+An inner trace records the output of *every expression* inside the function, each
+one a node you can fold into. Follow it down to `(map coin-values coins)`: it
+turns our coins into `(25 10 5 5)`. There it is. The last value should be `1`, not
+`5` - a penny is worth five cents in our map.
 
 Press `RET` on that line to jump straight to the source. Fix `coin-values` so
 `:penny` maps to `1`, then reload the Sayid way with `C-c s !`
