@@ -94,17 +94,17 @@ inner expression value) with no cap, sampling, or eviction, and it captures live
 references rather than snapshots. That's why Sayid feels like a toy-example tool.
 
 **Approach:**
-- *Mostly done.* A `*suppress-recording*` flag is the foundation: skipping a call
-  now runs it (and its whole subtree) untraced without the nested calls leaking in
-  as spurious roots, and inner tracing honours it, which also closed a latent
-  nil-parent NPE. On top of it: `trace/*record-limit*` (default 50k) bounds the
-  recorded top-level calls (breadth), `trace/*max-trace-depth*` (default nil)
-  bounds recording depth, `trace/*sample-rate*` (default 1) records one in every N
-  top-level calls for hot entry points, and `trace/*per-fn-limit*` (default nil)
-  caps how many calls of any single function are recorded so a hot function can't
-  crowd out the rest. Still to do: a ring-buffer / eviction policy (needs
-  `end-trace` moved off positional indices to node ids, or a documented
-  single-threaded caveat).
+- *Done.* A `*suppress-recording*` flag is the foundation: skipping a call now
+  runs it (and its whole subtree) untraced without the nested calls leaking in as
+  spurious roots, and inner tracing honours it, which also closed a latent
+  nil-parent NPE. On top of it, a full set of bounds: `trace/*record-limit*`
+  (default 50k) bounds the recorded top-level calls (breadth), `trace/*max-trace-depth*`
+  (default nil) bounds recording depth, `trace/*sample-rate*` (default 1) records
+  one in every N top-level calls for hot entry points, `trace/*per-fn-limit*`
+  (default nil) caps how many calls of any single function are recorded, and
+  `trace/*evict-old-calls*` switches the record limit from keep-first-N to a
+  keep-last-N ring (the root end-trace is looked up by node id, not position, so
+  eviction is safe even with concurrent root calls).
 - Snapshot values at capture time honoring `*print-length*` / `*print-level*`
   (and a configurable size budget), so a fat map, a mutable object, or a lazy/
   infinite seq can't blow the heap or change after the fact. *First cut done at

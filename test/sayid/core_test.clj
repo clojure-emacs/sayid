@@ -332,6 +332,18 @@
       (t/is (= 2 (-> (sd/ws-deref!) :children count))
             "only *per-fn-limit* calls of func1 are recorded, the rest run untraced"))))
 
+(t/deftest evict-old-calls-keeps-the-most-recent
+  (t/testing "*evict-old-calls* keeps the last *record-limit* root calls"
+    (binding [sdt/*record-limit* 3
+              sdt/*evict-old-calls* true]
+      (sd/ws-add-trace-ns! ns1)
+      (doseq [x [:a :b :c :d :e]] (ns1/func1 x))
+      (let [roots (:children (sd/ws-deref!))]
+        (t/testing "; only the last three are kept"
+          (t/is (= 3 (count roots))))
+        (t/testing "; and they're the most recent, in order"
+          (t/is (= [[:c] [:d] [:e]] (map :args roots))))))))
+
 (t/deftest suppressed-root-with-inner-trace-is-skipped-cleanly
   (t/testing "a skipped root that calls an inner-traced fn records nothing, cleanly"
     ;; Regression guard for the suppression fix: without it, the skipped root's
