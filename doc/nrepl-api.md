@@ -146,6 +146,7 @@ Each node is a map with these string keys:
 |-----|---------|
 | `id` | the call's id |
 | `name` | the fully qualified function name |
+| `form` | for an inner-trace node, the recorded source expression (absent for a plain call) |
 | `depth` | nesting depth (1 for a root call) |
 | `started-at`, `ended-at` | capture timestamps, in milliseconds |
 | `args` | the arguments, each `pr-str`'d |
@@ -153,7 +154,7 @@ Each node is a map with these string keys:
 | `return` | the return value, `pr-str`'d; absent if the call threw |
 | `throw` | present instead of `return` when the call threw: `{cause, class, data}` |
 | `file`, `line` | source location, for jumping to the definition |
-| `children` | the calls made within this one, same shape |
+| `children` | the calls (and, under an inner trace, the sub-expressions) made within this one, same shape |
 
 The structural fields are native data; the captured values (`args`, `arg-map`,
 `return`, the `throw` parts) are printed strings, because an arbitrary Clojure

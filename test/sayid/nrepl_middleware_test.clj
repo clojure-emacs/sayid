@@ -196,6 +196,21 @@
         (t/is (= "clojure.lang.ExceptionInfo" (get thrown "class")))
         (t/is (= "{:x 7}" (get thrown "data")) "ex-data is pr-str'd")))))
 
+(t/deftest node->data-handles-inner-trace-nodes
+  (t/testing "an inner node exposes its form and keeps its return"
+    ;; Inner-trace nodes always carry a :throw key, nil unless they actually
+    ;; threw; the return must survive that.
+    (let [data (mw/node->data
+                {:id :9 :name 'apply :depth 2
+                 :form '(apply + (map inc xs))
+                 :throw nil :return 9
+                 :args [] :arg-map {} :children []})]
+      (t/is (= "(apply + (map inc xs))" (get data "form"))
+            "the source expression is exposed as the form")
+      (t/is (= "9" (get data "return")))
+      (t/is (not (contains? data "throw"))
+            "a nil :throw must not be reported as a throw"))))
+
 (t/deftest rendered-query-by-fn-still-returns-the-trio
   (t/testing "splitting query-building out of sayid-query-by-fn keeps it rendering"
     (sd/ws-add-trace-ns! ns1)
