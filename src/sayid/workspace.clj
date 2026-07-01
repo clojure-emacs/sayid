@@ -48,14 +48,17 @@
 
 (defn reset-to-nil!
   [ws]
+  (trace/reset-record-limit!)
   (reset! ws nil))
 
 (defn new-log!
   [ws]
+  (trace/reset-record-limit!)
   (swap! ws assoc :children (atom [])))
 
 (defn clear-log!
   [ws]
+  (trace/reset-record-limit!)
   (reset! (:children @ws)
           []))
 
