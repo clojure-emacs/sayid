@@ -1,6 +1,6 @@
 # Change Log
 
-## Unreleased
+## [0.5.0] - 2026-07-01
 
 * [#119](https://github.com/clojure-emacs/sayid/pull/119): Add `sayid.trace/*evict-old-calls*` (default false), which switches the record limit from keeping the first N top-level calls to a keep-the-last-N ring, evicting the oldest.
 * [#118](https://github.com/clojure-emacs/sayid/pull/118): Add `sayid.trace/*per-fn-limit*` (default unbounded), which caps how many calls of any single function are recorded, so one hot function can't crowd out the rest of the recording.
