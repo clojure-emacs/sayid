@@ -1,6 +1,6 @@
 # Change Log
 
-## [0.4.0] - 2026-06-30
+## [0.4.0] - 2026-07-01
 
 * [#110](https://github.com/clojure-emacs/sayid/pull/110): Render `sayid-show-traced` as a namespaces to functions tree (`cider-tree-view`), and add a `sayid-show-traced-data` op returning the traced audit as data.
 * [#108](https://github.com/clojure-emacs/sayid/pull/108): Fix the data ops misreporting inner-trace nodes: successful inner calls no longer come back as empty throws, and each node now exposes its recorded `form`.
