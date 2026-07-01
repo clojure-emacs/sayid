@@ -535,6 +535,7 @@ or nil when nothing resolves there."
   (let [m (:meta node)
         base {"id"         (some-> (:id node) name)
               "name"       (some-> (:name node) str)
+              "form"       (some-> (:form node) pr-str)
               "depth"      (:depth node)
               "started-at" (:started-at node)
               "ended-at"   (:ended-at node)
@@ -545,7 +546,10 @@ or nil when nothing resolves there."
               "file"       (:file m)
               "line"       (:line m)
               "children"   (mapv node->data (:children node))}
-        outcome (if (contains? node :throw)
+        ;; A node carries a `:throw` key only when it actually threw; on an
+        ;; inner-trace node the key is always present but nil, so test the value,
+        ;; not its presence, or every successful inner call looks like a throw.
+        outcome (if (not-empty (:throw node))
                   {"throw" (throw->data (:throw node))}
                   {"return" (pr-str (:return node))})]
     (->> (merge base outcome)
