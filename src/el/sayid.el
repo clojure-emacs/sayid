@@ -657,20 +657,87 @@ GROUP is a `{ns, fns}' dict from `sayid-show-traced-data'."
   (let ((fns (nrepl-dict-get group "fns")))
     (cider-tree-view-node-create
      :label (propertize (nrepl-dict-get group "ns") 'face 'font-lock-type-face)
+     :value group
      :expanded t
      :children-fn (lambda () (mapcar #'sayid-traced--fn-node fns)))))
+
+(defun sayid-traced--apply (action)
+  "Apply trace ACTION to the entry at point in the traced tree, then refresh.
+On a function it applies the per-function op; on a bare namespace, the
+namespace-level op (only meaningful for enable, disable and remove)."
+  (let* ((node (or (cider-tree-view-node-at-point)
+                   (user-error "No traced entry at point")))
+         (entry (cider-tree-view-node-value node))
+         (fn-name (nrepl-dict-get entry "name")))
+    (cond
+     (fn-name
+      (sayid--send-sync-request (list "op" "sayid-trace-fn"
+                                      "action" action
+                                      "fn-name" fn-name
+                                      "fn-ns" (nrepl-dict-get entry "ns"))))
+     ((member action '("enable" "disable" "remove"))
+      (sayid--send-sync-request (list "op" "sayid-trace-ns"
+                                      "action" action
+                                      "ns" (nrepl-dict-get entry "ns"))))
+     (t (user-error "Point isn't on a function")))
+    (sayid-show-traced)))
+
+(defun sayid-traced-enable ()
+  "Enable the trace at point in the traced tree."
+  (interactive)
+  (sayid-traced--apply "enable"))
+
+(defun sayid-traced-disable ()
+  "Disable the trace at point in the traced tree."
+  (interactive)
+  (sayid-traced--apply "disable"))
+
+(defun sayid-traced-remove ()
+  "Remove the trace at point in the traced tree."
+  (interactive)
+  (sayid-traced--apply "remove"))
+
+(defun sayid-traced-inner-trace ()
+  "Switch the function at point to an inner trace."
+  (interactive)
+  (sayid-traced--apply "add-inner"))
+
+(defun sayid-traced-outer-trace ()
+  "Switch the function at point to an outer trace."
+  (interactive)
+  (sayid-traced--apply "add-outer"))
+
+(defvar sayid-traced-tree-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "e") #'sayid-traced-enable)
+    (define-key map (kbd "d") #'sayid-traced-disable)
+    (define-key map (kbd "r") #'sayid-traced-remove)
+    (define-key map (kbd "i") #'sayid-traced-inner-trace)
+    (define-key map (kbd "o") #'sayid-traced-outer-trace)
+    map)
+  "Keymap for `sayid-traced-tree-mode', layered over `cider-tree-view-mode-map'.")
+
+(define-derived-mode sayid-traced-tree-mode cider-tree-view-mode "Sayid-Traced"
+  "Major mode for the Sayid traced-functions tree.
+Inherits navigation and folding from `cider-tree-view-mode' and adds trace
+management: \\<sayid-traced-tree-mode-map>\\[sayid-traced-enable] enable,
+\\[sayid-traced-disable] disable, \\[sayid-traced-remove] remove,
+\\[sayid-traced-inner-trace] inner-trace, \\[sayid-traced-outer-trace]
+outer-trace the entry at point.")
 
 ;;;###autoload
 (defun sayid-show-traced (&optional ns)
   "Show what Sayid has traced as a namespaces to functions tree.
-With NS, restrict to that namespace.  RET on a function jumps to its source."
+With NS, restrict to that namespace.
+See `sayid-traced-tree-mode' for the keys (RET jumps to source; e/d/r/i/o
+manage traces)."
   (interactive)
   (let ((groups (sayid-req-get-value
                  (append (list "op" "sayid-show-traced-data")
                          (when ns (list "ns" ns))))))
     (if groups
         (with-current-buffer (cider-popup-buffer "*sayid-traced*" 'select
-                                                 'cider-tree-view-mode 'ancillary)
+                                                 'sayid-traced-tree-mode 'ancillary)
           (cider-tree-view-render (mapcar #'sayid-traced--ns-node groups)
                                   "Traced functions"))
       (user-error "Nothing is traced"))))

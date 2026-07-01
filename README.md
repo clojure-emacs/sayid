@@ -242,7 +242,9 @@ own keybinding help.
 
 `C-c s s` (`sayid-show-traced`) shows what's traced as a namespaces to functions
 tree in the `*sayid-traced*` buffer. `RET` on a function jumps to its source;
-`TAB` folds a namespace, `n`/`p` move, `q` quits.
+`TAB` folds a namespace, `n`/`p` move, `q` quits. `e`/`d`/`r` enable, disable and
+remove the trace at point, and `i`/`o` switch a function to an inner or outer
+trace.
 
 
 In the `*sayid-pprint*` buffer, press `h` to pop up the help

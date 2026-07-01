@@ -165,6 +165,8 @@
            (node (sayid-traced--ns-node group))
            (children (funcall (cider-tree-view-node-children-fn node))))
       (expect (cider-tree-view-node-label node) :to-match "my.ns")
+      ;; the group rides along so namespace-level actions can use it
+      (expect (cider-tree-view-node-value node) :to-equal group)
       (expect (length children) :to-equal 1)
       (expect (cider-tree-view-node-label (car children)) :to-match "foo")
       (expect (cider-tree-view-node-value (car children)) :to-equal
