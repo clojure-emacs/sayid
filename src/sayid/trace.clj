@@ -33,6 +33,13 @@
   roots.  This is what lets root-level bounds compose correctly."
   false)
 
+(def ^:dynamic *per-fn-limit*
+  "The maximum number of calls of any single traced function a workspace will
+  record; nil means unbounded.  Counts across the whole call tree, so once a hot
+  function hits its limit, further calls of it (and everything under them) run
+  untraced and it can't crowd out the rest of the recording."
+  nil)
+
 (defn run-suppressed
   "Run `(apply F ARGS)` with recording suppressed for it and everything under it."
   [f args]
@@ -43,17 +50,43 @@
 
 (defonce ^:private root-call-counter (atom 0))
 
+(defonce ^:private per-fn-counts (atom {}))
+
+(defonce ^:private per-fn-warned (atom #{}))
+
 (defn reset-bounds!
-  "Reset the per-workspace bound bookkeeping - the record-limit warning flag and
-  the sampling counter.  Called when the log is cleared or the workspace reset."
+  "Reset the per-workspace bound bookkeeping - the record-limit warning flag, the
+  sampling counter, and the per-fn call counts.  Called when the log is cleared or
+  the workspace reset."
   []
   (reset! record-limit-hit false)
-  (reset! root-call-counter 0))
+  (reset! root-call-counter 0)
+  (reset! per-fn-counts {})
+  (reset! per-fn-warned #{}))
 
 (defn- sample-root?
   "True when the current top-level call should be recorded under `*sample-rate*`."
   []
   (zero? (mod (swap! root-call-counter inc) *sample-rate*)))
+
+(defn- over-per-fn-limit?
+  "True when NAME has already been recorded `*per-fn-limit*` times."
+  [name]
+  (and *per-fn-limit*
+       (>= (get @per-fn-counts name 0) *per-fn-limit*)))
+
+(defn- bump-per-fn-count!
+  "Count another recorded call of NAME when a per-fn limit is in effect."
+  [name]
+  (when *per-fn-limit*
+    (swap! per-fn-counts update name (fnil inc 0))))
+
+(defn- warn-per-fn-limit! [name]
+  (when-not (contains? @per-fn-warned name)
+    (swap! per-fn-warned conj name)
+    (binding [*out* *err*]
+      (println (str "Sayid: hit the " *per-fn-limit* "-call cap on " name
+                    "; further calls of it run untraced.")))))
 
 (defn- warn-record-limit! []
   (when (compare-and-set! record-limit-hit false true)
@@ -138,6 +171,7 @@
 
 (defn record-fn-call
   [parent name f args meta']
+  (bump-per-fn-count! name)
   (let [this  (mk-fn-tree :parent parent
                           :name name
                           :args args
@@ -168,6 +202,11 @@
     (apply f args)
     (let [parent (or *trace-log-parent* workspace)]
       (cond
+        ;; This function has hit its per-fn cap - drop it and its subtree.
+        (over-per-fn-limit? name)
+        (do (warn-per-fn-limit! name)
+            (run-suppressed f args))
+
         ;; Too deep - drop this call and, via the suppression flag, everything
         ;; under it, so a single call can't explode the recording.
         (and *max-trace-depth*

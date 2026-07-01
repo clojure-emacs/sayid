@@ -322,6 +322,16 @@
       (dotimes [_ 4] (ns1/func1 :a))
       (t/is (= 2 (-> (sd/ws-deref!) :children count))))))
 
+(t/deftest per-fn-limit-caps-calls-of-each-function
+  (t/testing "*per-fn-limit* records at most N calls of a given function"
+    ;; Suppress the one-time per-fn cap warning to *err*.
+    (binding [sdt/*per-fn-limit* 2
+              *err* (java.io.StringWriter.)]
+      (sd/ws-add-trace-ns! ns1)
+      (dotimes [_ 5] (ns1/func1 :a))
+      (t/is (= 2 (-> (sd/ws-deref!) :children count))
+            "only *per-fn-limit* calls of func1 are recorded, the rest run untraced"))))
+
 (t/deftest suppressed-root-with-inner-trace-is-skipped-cleanly
   (t/testing "a skipped root that calls an inner-traced fn records nothing, cleanly"
     ;; Regression guard for the suppression fix: without it, the skipped root's
