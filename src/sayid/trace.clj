@@ -13,10 +13,18 @@
   `alter-var-root` it to record more (or fewer)."
   50000)
 
+(def ^:dynamic *max-trace-depth*
+  "The deepest call nesting a workspace will record; nil means unbounded.  Calls
+  below this depth (and everything under them) run untraced, so a deeply
+  recursive function or an inner trace can't explode a single call into an
+  unbounded subtree.  Root calls are depth 1."
+  nil)
+
 (defonce ^:private record-limit-hit (atom false))
 
-(defn reset-record-limit!
-  "Clear the once-per-workspace record-limit warning flag."
+(defn reset-bounds!
+  "Reset the per-workspace bound bookkeeping (the record-limit warning flag).
+  Called when the log is cleared or the workspace reset."
   []
   (reset! record-limit-hit false))
 
@@ -101,38 +109,52 @@
          [idx]
          #(merge % tree)))
 
+(defn record-fn-call
+  [parent name f args meta']
+  (let [this  (mk-fn-tree :parent parent
+                          :name name
+                          :args args
+                          :meta meta')
+        idx  (-> (start-trace (:children parent)
+                              this)
+                 count
+                 dec)]
+    (let [value (binding [*trace-log-parent* this]
+                  (try
+                    (apply f args)
+                    (catch Throwable t
+                      (end-trace (:children parent)
+                                 idx
+                                 {:throw (Throwable->map** t)
+                                  :ended-at (now)})
+                      (throw t))))]
+      (end-trace (:children parent)
+                 idx
+                 {:return value
+                  :ended-at (now)})
+      value)))
+
 (defn trace-fn-call
   [workspace name f args meta']
-  (if (and (nil? *trace-log-parent*)
-           (>= (count @(:children workspace)) *record-limit*))
-    ;; The recording is full.  Run the call untraced so the program still
-    ;; behaves, and warn once that we've stopped capturing.
-    (do (warn-record-limit!)
-        (apply f args))
-    (let [parent (or *trace-log-parent*
-                     workspace)
-          this  (mk-fn-tree :parent parent ;; mk-fn-tree = 200ms
-                            :name name
-                            :args args
-                            :meta meta')
-          idx  (-> (start-trace (:children parent) ;; start-trace = 20ms
-                                this)
-                   count
-                   dec)]
-      (let [value (binding [*trace-log-parent* this] ;; binding = 50ms
-                    (try
-                      (apply f args)
-                      (catch Throwable t
-                        (end-trace (:children parent)
-                                   idx
-                                   {:throw (Throwable->map** t)
-                                    :ended-at (now)})
-                        (throw t))))]
-        (end-trace (:children parent) ;; end-trace = 75ms
-                   idx
-                   {:return value
-                    :ended-at (now)})
-        value))))
+  (let [parent (or *trace-log-parent* workspace)]
+    (cond
+      ;; Too deep - drop this call and everything under it.  Nested calls hit the
+      ;; same check (their parent is still this one), so the whole subtree below
+      ;; the limit is skipped, keeping a single call from exploding the recording.
+      (and *max-trace-depth*
+           (> (inc (:depth parent)) *max-trace-depth*))
+      (apply f args)
+
+      ;; Root-level bound: the global record limit.
+      (nil? *trace-log-parent*)
+      (if (>= (count @(:children workspace)) *record-limit*)
+        (do (warn-record-limit!)
+            (apply f args))
+        (record-fn-call parent name f args meta'))
+
+      ;; A nested call under a recorded root.
+      :else
+      (record-fn-call parent name f args meta'))))
 
 (defn shallow-tracer-multifn
   [{:keys [workspace qual-sym meta']} original-fn]
