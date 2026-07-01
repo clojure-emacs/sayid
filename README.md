@@ -240,20 +240,9 @@ own keybinding help.
     q -- quit window
 
 
-In the `*sayid-traced*` buffer, press `h` to pop up the help
-buffer.
-
-    enter -- Drill into ns at point
-    e -- Enable trace
-    d -- Disable trace
-    E -- Enable ALL traces
-    D -- Disable ALL traces
-    i -- Apply inner trace to func at point
-    o -- Apply outer trace to func at point
-    r -- Remove trace from func at point
-    l, backspace -- go back to trace overview (if in ns view)
-    h -- help
-    q -- quit window
+`C-c s s` (`sayid-show-traced`) shows what's traced as a namespaces to functions
+tree in the `*sayid-traced*` buffer. `RET` on a function jumps to its source;
+`TAB` folds a namespace, `n`/`p` move, `q` quits.
 
 
 In the `*sayid-pprint*` buffer, press `h` to pop up the help

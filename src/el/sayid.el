@@ -143,7 +143,6 @@ The injected dependencies are most likely nREPL middlewares."
 (defvar sayid-trace-ns-dir nil)
 
 (defvar sayid-buf-spec '("*sayid*" . sayid-mode))
-(defvar sayid-traced-buf-spec '("*sayid-traced*" . sayid-traced-mode))
 (defvar sayid-pprint-buf-spec '("*sayid-pprint*" . sayid-pprint-mode))
 (defvar sayid-selected-buf sayid-buf-spec)
 
@@ -184,10 +183,6 @@ To opt out, set `sayid-inject-dependencies-at-jack-in' to nil."
   "Select sayid default buffer."
   (setq sayid-selected-buf sayid-buf-spec))
 
-(defun sayid-select-traced-buf ()
-  "Select sayid trace buffer."
-  (setq sayid-selected-buf sayid-traced-buf-spec))
-
 (defun sayid-select-pprint-buf ()
   "Select sayid pretty-print buffer."
   (setq sayid-selected-buf sayid-pprint-buf-spec))
@@ -212,7 +207,6 @@ To opt out, set `sayid-inject-dependencies-at-jack-in' to nil."
 (defun sayid-find-a-window ()
   "Try to find an existing sayid buffer window."
   (or (get-buffer-window (car sayid-buf-spec) 'visible)
-      (get-buffer-window (car sayid-traced-buf-spec) 'visible)
       (get-buffer-window (car sayid-pprint-buf-spec) 'visible)))
 
 (defun sayid-pop-to-buffer-reuse-visible-sayid (buf-name-)
@@ -688,20 +682,6 @@ With NS, restrict to that namespace.  RET on a function jumps to its source."
   (sayid-show-traced (cider-current-ns)))
 
 ;;;###autoload
-(defun sayid-traced-buf-enter ()
-  "Show the trace view for the namespace at point.
-On a function node this does nothing for now; jumping to the function's
-source is tracked in https://github.com/clojure-emacs/sayid/issues/87."
-  (interactive)
-  (sayid-select-traced-buf)
-  (let ((name (get-text-property (point) 'name))
-        (ns (get-text-property (point) 'ns)))
-    ;; Function nodes carry both `name' and `ns'; only act on bare ns nodes.
-    (when (and (not (stringp name)) (stringp ns))
-      (sayid-req-insert-content (list "op" "sayid-show-traced" "ns" ns))))
-  (sayid-select-default-buf))
-
-;;;###autoload
 (defun sayid-trace-all-ns-in-dir ()
   "Trace all namespaces in specified dir."
   (interactive)
@@ -741,58 +721,6 @@ source is tracked in https://github.com/clojure-emacs/sayid/issues/87."
   (interactive)
   (sayid--send-sync-request (list "op" "sayid-all-traces" "action" "disable"))
   (sayid-show-traced))
-
-(defun sayid--traced-buf-apply (action &optional ns-fallback)
-  "Apply trace ACTION to the entry at point in the traced-functions buffer.
-When NS-FALLBACK is non-nil and the entry is a bare namespace (it carries no
-function name), apply the namespace-level op instead of the per-function one.
-Restores point and reselects the default buffer afterwards."
-  (let ((pos (point))
-        (buf-ns (get-text-property 1 'ns))
-        (fn-name (get-text-property (point) 'name))
-        (fn-ns (get-text-property (point) 'ns)))
-    (sayid-select-traced-buf)
-    (if (and ns-fallback (not fn-name))
-        (sayid--send-sync-request (list "op" "sayid-trace-ns"
-                                        "action" action
-                                        "ns" fn-ns))
-      (sayid--send-sync-request (list "op" "sayid-trace-fn"
-                                      "action" action
-                                      "fn-name" fn-name
-                                      "fn-ns" fn-ns)))
-    (sayid-show-traced buf-ns)
-    (goto-char pos)
-    (sayid-select-default-buf)))
-
-;;;###autoload
-(defun sayid-traced-buf-inner-trace-fn ()
-  "Apply inner trace from trace buffer."
-  (interactive)
-  (sayid--traced-buf-apply "add-inner"))
-
-;;;###autoload
-(defun sayid-traced-buf-outer-trace-fn ()
-  "Apply outer trace from trace buffer."
-  (interactive)
-  (sayid--traced-buf-apply "add-outer"))
-
-;;;###autoload
-(defun sayid-traced-buf-enable ()
-  "Enable trace from trace buffer."
-  (interactive)
-  (sayid--traced-buf-apply "enable" t))
-
-;;;###autoload
-(defun sayid-traced-buf-disable ()
-  "Disable trace from trace buffer."
-  (interactive)
-  (sayid--traced-buf-apply "disable" t))
-
-;;;###autoload
-(defun sayid-traced-buf-remove-trace ()
-  "Remove trace from trace buffer."
-  (interactive)
-  (sayid--traced-buf-apply "remove" t))
 
 ;;;###autoload
 (defun sayid-kill-all-traces ()
@@ -1077,33 +1005,6 @@ PREFIX is the key prefix to bind the sayid commands under."
   "A major mode for displaying Sayid output."
   (setq truncate-lines t)
   (buffer-disable-undo))
-
-(defvar sayid-traced-mode-map
-  (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "<RET>")       'sayid-traced-buf-enter)
-    (define-key map (kbd "e")           'sayid-traced-buf-enable)
-    (define-key map (kbd "d")           'sayid-traced-buf-disable)
-    (define-key map (kbd "E")           'sayid-trace-enable-all)
-    (define-key map (kbd "D")           'sayid-trace-disable-all)
-    (define-key map (kbd "i")           'sayid-traced-buf-inner-trace-fn)
-    (define-key map (kbd "o")           'sayid-traced-buf-outer-trace-fn)
-    (define-key map (kbd "r")           'sayid-traced-buf-remove-trace)
-    (define-key map (kbd "<backspace>") 'sayid-show-traced)
-    (define-key map (kbd "l")           'sayid-show-traced)
-    (define-key map (kbd "h")           'sayid-traced-buf-show-help)
-    map))
-
-(defun sayid-traced-buf-show-help ()
-  "Show the Sayid traced-buffer keybindings."
-  (interactive)
-  (sayid--describe-bindings 'sayid-traced-mode-map))
-
-;;;###autoload
-(define-derived-mode sayid-traced-mode special-mode "SAYID-TRACED"
-  "A major mode for displaying Sayid trace output."
-  (setq truncate-lines t)
-  (buffer-disable-undo))
-
 
 (defvar sayid-pprint-mode-map
   (let ((map (make-sparse-keymap)))
