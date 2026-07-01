@@ -40,6 +40,14 @@
   untraced and it can't crowd out the rest of the recording."
   nil)
 
+(def ^:dynamic *evict-old-calls*
+  "How the workspace behaves at `*record-limit*` top-level calls.  When false (the
+  default) it stops recording and keeps the *first* `*record-limit*` calls.  When
+  true it keeps the *most recent* `*record-limit*` calls instead, evicting the
+  oldest - handy when the interesting thing is what happened just before a
+  failure at the end of a long run."
+  false)
+
 (defn run-suppressed
   "Run `(apply F ARGS)` with recording suppressed for it and everything under it."
   [f args]
@@ -169,6 +177,54 @@
          [idx]
          #(merge % tree)))
 
+(defn- roots-index-by-id
+  "Index of the root with :id ID in ROOTS, or nil when it's been evicted."
+  [roots id]
+  (loop [i 0]
+    (cond (>= i (count roots)) nil
+          (= (:id (nth roots i)) id) i
+          :else (recur (inc i)))))
+
+(defn- end-root-trace
+  "Merge TREE into the root with :id ID.  Looked up by id, not position, so it's
+  correct even when eviction has shifted the vector; a no-op if that root was
+  already evicted."
+  [ws-children id tree]
+  (swap! ws-children
+         (fn [roots]
+           (if-let [i (roots-index-by-id roots id)]
+             (update roots i #(merge % tree))
+             roots))))
+
+(defn record-root-call-evicting
+  "Record a top-level call while keeping only the most recent `*record-limit*`
+  roots: append this call and drop the oldest beyond the limit.  Ends by id, so
+  the index-shifting from eviction can't corrupt an in-flight call."
+  [workspace name f args meta']
+  (bump-per-fn-count! name)
+  (let [this     (mk-fn-tree :parent workspace :name name :args args :meta meta')
+        id       (:id this)
+        children (:children workspace)]
+    (swap! children
+           (fn [roots]
+             (let [roots' (conj roots this)
+                   over   (- (count roots') *record-limit*)]
+               (if (pos? over)
+                 (subvec roots' over)
+                 roots'))))
+    (let [value (binding [*trace-log-parent* this]
+                  (try
+                    (apply f args)
+                    (catch Throwable t
+                      (end-root-trace children id
+                                      {:throw (Throwable->map** t)
+                                       :ended-at (now)})
+                      (throw t))))]
+      (end-root-trace children id
+                      {:return value
+                       :ended-at (now)})
+      value)))
+
 (defn record-fn-call
   [parent name f args meta']
   (bump-per-fn-count! name)
@@ -218,6 +274,9 @@
         (cond
           (not (sample-root?))
           (run-suppressed f args)
+
+          *evict-old-calls*
+          (record-root-call-evicting workspace name f args meta')
 
           (>= (count @(:children workspace)) *record-limit*)
           (do (warn-record-limit!)
