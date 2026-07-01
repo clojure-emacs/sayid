@@ -105,7 +105,13 @@
                   (nrepl-dict "name" "my.ns/boom" "args" '("7")
                               "throw" (nrepl-dict "cause" "boom")))))
       (expect label :to-match "boom")
-      (expect label :not :to-match "=>"))))
+      (expect label :not :to-match "=>")))
+  (it "uses the recorded form for an inner-trace node"
+    (let ((label (sayid-tree--node-label
+                  (nrepl-dict "name" "apply" "form" "(apply + (map inc xs))"
+                              "return" "9"))))
+      (expect label :to-match "map inc xs")
+      (expect label :to-match "9"))))
 
 (describe "sayid-tree--make-node"
   (it "stashes the whole call dict as the node value"
