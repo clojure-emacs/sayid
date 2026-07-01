@@ -94,19 +94,15 @@ inner expression value) with no cap, sampling, or eviction, and it captures live
 references rather than snapshots. That's why Sayid feels like a toy-example tool.
 
 **Approach:**
-- *Done (first cut).* Two global caps, both running over-limit calls untraced:
-  `trace/*record-limit*` (default 50k) bounds the recorded top-level calls
-  (breadth - the test-suite case), and `trace/*max-trace-depth*` (default nil)
-  bounds how deep the call nesting is recorded, so one deeply recursive call can't
-  explode into an unbounded subtree. Still to do: per-fn caps, 1-in-N sampling,
-  and a ring-buffer / eviction policy.
-  - *Finding:* the record-limit and depth caps skip cleanly, but per-fn caps,
-    sampling and eviction all need a **recording-suppression flag** first - when a
-    *root* call is skipped and run untraced, its nested traced calls currently
-    masquerade as roots (the record-limit cap gets away with it only because those
-    calls also fail the limit). Building that suppression (and making inner
-    tracing honour it) is the prerequisite for the rest, and would also close a
-    latent nil-parent NPE when a skipped root calls an inner-traced fn.
+- *Mostly done.* A `*suppress-recording*` flag is the foundation: skipping a call
+  now runs it (and its whole subtree) untraced without the nested calls leaking in
+  as spurious roots, and inner tracing honours it, which also closed a latent
+  nil-parent NPE. On top of it: `trace/*record-limit*` (default 50k) bounds the
+  recorded top-level calls (breadth), `trace/*max-trace-depth*` (default nil)
+  bounds recording depth, and `trace/*sample-rate*` (default 1) records one in
+  every N top-level calls for hot entry points. Still to do: per-fn caps and a
+  ring-buffer / eviction policy (the latter needs `end-trace` moved off positional
+  indices to node ids, or a documented single-threaded caveat).
 - Snapshot values at capture time honoring `*print-length*` / `*print-level*`
   (and a configurable size budget), so a fat map, a mutable object, or a lazy/
   infinite seq can't blow the heap or change after the fact. *First cut done at

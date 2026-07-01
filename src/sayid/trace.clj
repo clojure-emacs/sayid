@@ -20,13 +20,40 @@
   unbounded subtree.  Root calls are depth 1."
   nil)
 
+(def ^:dynamic *sample-rate*
+  "Record one in every N top-level calls; 1 (the default) records them all.  Set
+  higher to trace a hot entry point - say a request handler under load - and keep
+  only a representative sample instead of drowning the recording."
+  1)
+
+(def ^:dynamic *suppress-recording*
+  "When true, calls run untraced and nothing - outer or inner - is recorded.
+  Bound around a call Sayid chose to skip (over a limit, sampled out, too deep),
+  so the whole subtree under it is skipped instead of leaking in as spurious
+  roots.  This is what lets root-level bounds compose correctly."
+  false)
+
+(defn run-suppressed
+  "Run `(apply F ARGS)` with recording suppressed for it and everything under it."
+  [f args]
+  (binding [*suppress-recording* true]
+    (apply f args)))
+
 (defonce ^:private record-limit-hit (atom false))
 
+(defonce ^:private root-call-counter (atom 0))
+
 (defn reset-bounds!
-  "Reset the per-workspace bound bookkeeping (the record-limit warning flag).
-  Called when the log is cleared or the workspace reset."
+  "Reset the per-workspace bound bookkeeping - the record-limit warning flag and
+  the sampling counter.  Called when the log is cleared or the workspace reset."
   []
-  (reset! record-limit-hit false))
+  (reset! record-limit-hit false)
+  (reset! root-call-counter 0))
+
+(defn- sample-root?
+  "True when the current top-level call should be recorded under `*sample-rate*`."
+  []
+  (zero? (mod (swap! root-call-counter inc) *sample-rate*)))
 
 (defn- warn-record-limit! []
   (when (compare-and-set! record-limit-hit false true)
@@ -136,25 +163,33 @@
 
 (defn trace-fn-call
   [workspace name f args meta']
-  (let [parent (or *trace-log-parent* workspace)]
-    (cond
-      ;; Too deep - drop this call and everything under it.  Nested calls hit the
-      ;; same check (their parent is still this one), so the whole subtree below
-      ;; the limit is skipped, keeping a single call from exploding the recording.
-      (and *max-trace-depth*
-           (> (inc (:depth parent)) *max-trace-depth*))
-      (apply f args)
+  (if *suppress-recording*
+    ;; We're inside a call we chose not to record - stay untraced.
+    (apply f args)
+    (let [parent (or *trace-log-parent* workspace)]
+      (cond
+        ;; Too deep - drop this call and, via the suppression flag, everything
+        ;; under it, so a single call can't explode the recording.
+        (and *max-trace-depth*
+             (> (inc (:depth parent)) *max-trace-depth*))
+        (run-suppressed f args)
 
-      ;; Root-level bound: the global record limit.
-      (nil? *trace-log-parent*)
-      (if (>= (count @(:children workspace)) *record-limit*)
-        (do (warn-record-limit!)
-            (apply f args))
-        (record-fn-call parent name f args meta'))
+        ;; Root-level bounds: 1-in-N sampling, then the global record limit.
+        (nil? *trace-log-parent*)
+        (cond
+          (not (sample-root?))
+          (run-suppressed f args)
 
-      ;; A nested call under a recorded root.
-      :else
-      (record-fn-call parent name f args meta'))))
+          (>= (count @(:children workspace)) *record-limit*)
+          (do (warn-record-limit!)
+              (run-suppressed f args))
+
+          :else
+          (record-fn-call parent name f args meta'))
+
+        ;; A nested call under a recorded root.
+        :else
+        (record-fn-call parent name f args meta')))))
 
 (defn shallow-tracer-multifn
   [{:keys [workspace qual-sym meta']} original-fn]

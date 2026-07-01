@@ -172,14 +172,17 @@
 
 (defn record-trace-tree!
   [tree-atom]
-  (let [children (some-> (@tree-atom [])
-                         deref-children
-                         :children
-                         deref)]
-    (doseq [child children]
-      (swap! (:children trace/*trace-log-parent*)
-             conj
-             child))))
+  ;; Honour the recording-suppression flag: inside a skipped call there may be no
+  ;; parent to attach to, and we don't want the inner values leaking in anyway.
+  (when-not trace/*suppress-recording*
+    (let [children (some-> (@tree-atom [])
+                           deref-children
+                           :children
+                           deref)]
+      (doseq [child children]
+        (swap! (:children trace/*trace-log-parent*)
+               conj
+               child)))))
 
 (defn get-temp-root-tree
   [path]

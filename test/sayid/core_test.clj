@@ -314,3 +314,22 @@
           (t/is (= 1 (count roots))))
         (t/testing "; but its nested call (func2) is dropped"
           (t/is (= 0 (-> roots first :children count))))))))
+
+(t/deftest sample-rate-records-one-in-n-root-calls
+  (t/testing "*sample-rate* records only one in every N top-level calls"
+    (binding [sdt/*sample-rate* 2]
+      (sd/ws-add-trace-ns! ns1)
+      (dotimes [_ 4] (ns1/func1 :a))
+      (t/is (= 2 (-> (sd/ws-deref!) :children count))))))
+
+(t/deftest suppressed-root-with-inner-trace-is-skipped-cleanly
+  (t/testing "a skipped root that calls an inner-traced fn records nothing, cleanly"
+    ;; Regression guard for the suppression fix: without it, the skipped root's
+    ;; nested calls leaked in as roots and inner tracing hit a nil parent.
+    (binding [sdt/*sample-rate* 1000]
+      (sd/ws-add-trace-fn! sayid.test-ns1/func1)
+      (sd/ws-add-inner-trace-fn! sayid.test-ns1/func2)
+      (t/testing "; the call still runs and returns normally"
+        (t/is (= :a (ns1/func1 :a))))
+      (t/testing "; and nothing is recorded"
+        (t/is (= 0 (-> (sd/ws-deref!) :children count)))))))
