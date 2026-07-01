@@ -94,13 +94,16 @@ inner expression value) with no cap, sampling, or eviction, and it captures live
 references rather than snapshots. That's why Sayid feels like a toy-example tool.
 
 **Approach:**
+- *Done (first cut).* A global cap on recorded top-level calls
+  (`trace/*record-limit*`, default 50k): once it's hit, further top-level calls
+  run untraced and Sayid warns once, so a `trace-ns` under a test suite can't grow
+  the recording without bound. Still to do here: per-fn caps, a ring-buffer /
+  eviction policy, and 1-in-N sampling.
 - Snapshot values at capture time honoring `*print-length*` / `*print-level*`
   (and a configurable size budget), so a fat map, a mutable object, or a lazy/
   infinite seq can't blow the heap or change after the fact.
-- Add bounds to `workspace`/`recording`: per-fn call caps, a global ring-buffer /
-  eviction policy, and optional sampling (record 1 in N calls).
 - Surface a clear signal when a bound kicks in ("hit the 1000-call cap on `foo`")
-  rather than silently truncating.
+  rather than silently truncating. *(Done for the global cap.)*
 
 **Risks:** snapshotting changes what users see for reference types; it must be
 opt-outable for the cases where you genuinely want the live value. Bounds interact

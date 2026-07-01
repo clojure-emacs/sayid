@@ -290,3 +290,15 @@
       (t/is (= 8 (sayid.test-ns1/func-letfn 3))))
     (t/testing "; records the call"
       (t/is (= 1 (-> (sd/ws-deref!) :children count))))))
+
+(t/deftest record-limit-caps-recorded-root-calls
+  (t/testing "the recording stops growing at *record-limit* roots"
+    ;; Suppress the one-time \"recording is full\" warning to *err*.
+    (binding [sdt/*record-limit* 3
+              *err* (java.io.StringWriter.)]
+      (sd/ws-add-trace-ns! ns1)
+      (dotimes [_ 10] (ns1/func1 :a))
+      (t/testing "; calls past the cap still run and return normally"
+        (t/is (= :b (ns1/func1 :b))))
+      (t/testing "; only *record-limit* root calls are recorded"
+        (t/is (= 3 (-> (sd/ws-deref!) :children count)))))))

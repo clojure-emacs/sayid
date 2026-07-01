@@ -5,6 +5,29 @@
 
 (def ^:dynamic *trace-log-parent* nil)
 
+(def ^:dynamic *record-limit*
+  "The maximum number of top-level (root) calls a single workspace will record.
+  Once the limit is reached, further top-level calls run untraced - the program
+  behaves normally, the calls are just not captured - so tracing a namespace
+  under a full test suite can't grow the recording without bound.  Rebind it or
+  `alter-var-root` it to record more (or fewer)."
+  50000)
+
+(defonce ^:private record-limit-hit (atom false))
+
+(defn reset-record-limit!
+  "Clear the once-per-workspace record-limit warning flag."
+  []
+  (reset! record-limit-hit false))
+
+(defn- warn-record-limit! []
+  (when (compare-and-set! record-limit-hit false true)
+    (binding [*out* *err*]
+      (println (str "Sayid: hit the " *record-limit* "-call recording limit; "
+                    "further top-level calls run untraced.  Clear or reset the "
+                    "workspace, or raise sayid.trace/*record-limit*, to record "
+                    "more.")))))
+
 (defn now [] (System/currentTimeMillis))
 
 (defn mk-tree
@@ -80,30 +103,36 @@
 
 (defn trace-fn-call
   [workspace name f args meta']
-  (let [parent (or *trace-log-parent*
-                   workspace)
-        this  (mk-fn-tree :parent parent ;; mk-fn-tree = 200ms
-                          :name name
-                          :args args
-                          :meta meta')
-        idx  (-> (start-trace (:children parent) ;; start-trace = 20ms
-                              this)
-                 count
-                 dec)]
-    (let [value (binding [*trace-log-parent* this] ;; binding = 50ms
-                  (try
-                    (apply f args)
-                    (catch Throwable t
-                      (end-trace (:children parent)
-                                 idx
-                                 {:throw (Throwable->map** t)
-                                  :ended-at (now)})
-                      (throw t))))]
-      (end-trace (:children parent) ;; end-trace = 75ms
-                 idx
-                 {:return value
-                  :ended-at (now)})
-      value)))
+  (if (and (nil? *trace-log-parent*)
+           (>= (count @(:children workspace)) *record-limit*))
+    ;; The recording is full.  Run the call untraced so the program still
+    ;; behaves, and warn once that we've stopped capturing.
+    (do (warn-record-limit!)
+        (apply f args))
+    (let [parent (or *trace-log-parent*
+                     workspace)
+          this  (mk-fn-tree :parent parent ;; mk-fn-tree = 200ms
+                            :name name
+                            :args args
+                            :meta meta')
+          idx  (-> (start-trace (:children parent) ;; start-trace = 20ms
+                                this)
+                   count
+                   dec)]
+      (let [value (binding [*trace-log-parent* this] ;; binding = 50ms
+                    (try
+                      (apply f args)
+                      (catch Throwable t
+                        (end-trace (:children parent)
+                                   idx
+                                   {:throw (Throwable->map** t)
+                                    :ended-at (now)})
+                        (throw t))))]
+        (end-trace (:children parent) ;; end-trace = 75ms
+                   idx
+                   {:return value
+                    :ended-at (now)})
+        value))))
 
 (defn shallow-tracer-multifn
   [{:keys [workspace qual-sym meta']} original-fn]
