@@ -157,5 +157,18 @@
     (expect (sayid-tree--query-title "id" "42" "d3")
             :to-equal "Query: id 42 [d3]")))
 
+(describe "sayid-traced--ns-node"
+  (it "labels the group with its namespace and lists its functions as children"
+    (let* ((group (nrepl-dict "ns" "my.ns"
+                              "fns" (list (nrepl-dict "name" "foo"
+                                                      "file" "my/ns.clj" "line" 3))))
+           (node (sayid-traced--ns-node group))
+           (children (funcall (cider-tree-view-node-children-fn node))))
+      (expect (cider-tree-view-node-label node) :to-match "my.ns")
+      (expect (length children) :to-equal 1)
+      (expect (cider-tree-view-node-label (car children)) :to-match "foo")
+      (expect (cider-tree-view-node-value (car children)) :to-equal
+              (nrepl-dict "name" "foo" "file" "my/ns.clj" "line" 3)))))
+
 (provide 'sayid-test)
 ;;; sayid-test.el ends here
