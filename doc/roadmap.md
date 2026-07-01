@@ -101,7 +101,12 @@ references rather than snapshots. That's why Sayid feels like a toy-example tool
   eviction policy, and 1-in-N sampling.
 - Snapshot values at capture time honoring `*print-length*` / `*print-level*`
   (and a configurable size budget), so a fat map, a mutable object, or a lazy/
-  infinite seq can't blow the heap or change after the fact.
+  infinite seq can't blow the heap or change after the fact. *First cut done at
+  the serialization boundary: the data ops print captured values under bounded
+  `*print-length*`/`*print-level*` (`*value-print-length*`/`*value-print-level*`),
+  so an infinite seq can't hang the serializer or produce a runaway payload.
+  Capture-time snapshotting (to also cap heap and freeze reference types) is still
+  to do.*
 - Surface a clear signal when a bound kicks in ("hit the 1000-call cap on `foo`")
   rather than silently truncating. *(Done for the global cap.)*
 

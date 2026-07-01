@@ -158,7 +158,9 @@ Each node is a map with these string keys:
 
 The structural fields are native data; the captured values (`args`, `arg-map`,
 `return`, the `throw` parts) are printed strings, because an arbitrary Clojure
-value can't always round-trip over the wire. The rendered counterpart is
+value can't always round-trip over the wire. They're printed under bounded
+`*print-length*`/`*print-level*`, so a fat or infinite value produces a truncated
+string rather than a runaway payload. The rendered counterpart is
 `sayid-get-workspace`.
 
 ### `sayid-query`
