@@ -1,5 +1,9 @@
 # Change Log
 
+## Unreleased
+
+* [#113](https://github.com/clojure-emacs/sayid/pull/113): Bring back trace management in the traced-functions view (`sayid-show-traced`): `e`/`d`/`r` enable, disable and remove the trace at point, `i`/`o` switch a function to an inner or outer trace.
+
 ## [0.4.0] - 2026-07-01
 
 * [#110](https://github.com/clojure-emacs/sayid/pull/110): Render `sayid-show-traced` as a namespaces to functions tree (`cider-tree-view`), and add a `sayid-show-traced-data` op returning the traced audit as data.
