@@ -99,10 +99,12 @@ references rather than snapshots. That's why Sayid feels like a toy-example tool
   as spurious roots, and inner tracing honours it, which also closed a latent
   nil-parent NPE. On top of it: `trace/*record-limit*` (default 50k) bounds the
   recorded top-level calls (breadth), `trace/*max-trace-depth*` (default nil)
-  bounds recording depth, and `trace/*sample-rate*` (default 1) records one in
-  every N top-level calls for hot entry points. Still to do: per-fn caps and a
-  ring-buffer / eviction policy (the latter needs `end-trace` moved off positional
-  indices to node ids, or a documented single-threaded caveat).
+  bounds recording depth, `trace/*sample-rate*` (default 1) records one in every N
+  top-level calls for hot entry points, and `trace/*per-fn-limit*` (default nil)
+  caps how many calls of any single function are recorded so a hot function can't
+  crowd out the rest. Still to do: a ring-buffer / eviction policy (needs
+  `end-trace` moved off positional indices to node ids, or a documented
+  single-threaded caveat).
 - Snapshot values at capture time honoring `*print-length*` / `*print-level*`
   (and a configurable size budget), so a fat map, a mutable object, or a lazy/
   infinite seq can't blow the heap or change after the fact. *First cut done at
