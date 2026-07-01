@@ -2,6 +2,7 @@
 
 ## [0.4.0] - 2026-06-30
 
+* [#110](https://github.com/clojure-emacs/sayid/pull/110): Render `sayid-show-traced` as a namespaces to functions tree (`cider-tree-view`), and add a `sayid-show-traced-data` op returning the traced audit as data.
 * [#108](https://github.com/clojure-emacs/sayid/pull/108): Fix the data ops misreporting inner-trace nodes: successful inner calls no longer come back as empty throws, and each node now exposes its recorded `form`.
 * [#105](https://github.com/clojure-emacs/sayid/pull/105): Add `sayid-tree-view-workspace`, a client-rendered, foldable view of the recorded call tree built on CIDER's `cider-tree-view` and the new data ops. Fold and navigate the tree, jump to a call's source, inspect any captured value (return, throw, or a named argument) in CIDER's inspector, and focus by function or call id. It's the default workspace view (`C-c s w`); the old text-rendered view stays available via `M-x sayid-get-workspace`. Bumps the minimum CIDER to 1.23.
 * [#103](https://github.com/clojure-emacs/sayid/pull/103): Drop the `com.billpiel` domain prefix from all namespaces (`com.billpiel.sayid.*` -> `sayid.*`), including the injected middleware var (now `sayid.nrepl-middleware/wrap-sayid`). Breaking for code that requires the old namespaces directly; the bundled plugin and Emacs client are updated in lockstep. The Maven coordinates are unchanged.
