@@ -545,6 +545,25 @@ or nil when nothing resolves there."
                                       (v/mk-simple-view {}))
                       (query-tree->trio (sd/ws-view!)))))
 
+(def ^:dynamic *value-print-length*
+  "`*print-length*` applied when serializing captured values in the data ops, so
+  a fat or infinite value produces a bounded string instead of hanging the
+  serializer.  nil means unbounded."
+  100)
+
+(def ^:dynamic *value-print-level*
+  "`*print-level*` applied when serializing captured values in the data ops."
+  10)
+
+(defn pr-value
+  "`pr-str` a captured value with the data-op print bounds applied, so an
+  arbitrarily large or lazy/infinite value can't blow up the wire payload or hang
+  the serializer."
+  [v]
+  (binding [*print-length* *value-print-length*
+            *print-level* *value-print-level*]
+    (pr-str v)))
+
 (defn throw->data
   "Trim a captured `:throw` (a `Throwable->map`) to the bencode-friendly bits a
   client needs: the message, the exception class, and any ex-data.  The full
@@ -552,7 +571,7 @@ or nil when nothing resolves there."
   [thrown]
   (->> {"cause" (:cause thrown)
         "class" (some-> thrown :via first :type str)
-        "data"  (some-> thrown :data pr-str)}
+        "data"  (some-> thrown :data pr-value)}
        (filter (comp some? val))
        (into {})))
 
@@ -570,9 +589,9 @@ or nil when nothing resolves there."
               "depth"      (:depth node)
               "started-at" (:started-at node)
               "ended-at"   (:ended-at node)
-              "args"       (mapv pr-str (:args node))
+              "args"       (mapv pr-value (:args node))
               "arg-map"    (reduce-kv (fn [acc k v]
-                                        (assoc acc (str k) (pr-str v)))
+                                        (assoc acc (str k) (pr-value v)))
                                       {} (:arg-map node))
               "file"       (:file m)
               "line"       (:line m)
@@ -582,7 +601,7 @@ or nil when nothing resolves there."
         ;; not its presence, or every successful inner call looks like a throw.
         outcome (if (not-empty (:throw node))
                   {"throw" (throw->data (:throw node))}
-                  {"return" (pr-str (:return node))})]
+                  {"return" (pr-value (:return node))})]
     (->> (merge base outcome)
          (filter (comp some? val))
          (into {}))))

@@ -211,6 +211,14 @@
       (t/is (not (contains? data "throw"))
             "a nil :throw must not be reported as a throw"))))
 
+(t/deftest node->data-bounds-runaway-values
+  (t/testing "an infinite lazy seq is serialized to a bounded string, not a hang"
+    (let [data (mw/node->data {:id :1 :name 'f :return (range) :children []})
+          ret (get data "return")]
+      (t/is (string? ret))
+      (t/is (str/includes? ret "...") "the value is marked as truncated")
+      (t/is (< (count ret) 1000) "and its printed form is bounded"))))
+
 (t/deftest rendered-query-by-fn-still-returns-the-trio
   (t/testing "splitting query-building out of sayid-query-by-fn keeps it rendering"
     (sd/ws-add-trace-ns! ns1)
