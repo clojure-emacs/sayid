@@ -502,19 +502,22 @@ selects one by nesting DEPTH, cycled from 0 to 9."
 
 (defun sayid-tree--node-label (call)
   "Build the fontified tree label for CALL, an nrepl-dict call node.
-Shows the call form with its return value, or the thrown cause when it threw."
-  (let* ((name (nrepl-dict-get call "name"))
-         (args (nrepl-dict-get call "args"))
-         (form (cider-font-lock-as-clojure
-                (format "(%s%s)"
-                        name
-                        (if args (concat " " (mapconcat #'identity args " ")) ""))))
+For an inner-trace node uses the recorded expression form; otherwise the call
+form.  Shows the return value, or the thrown cause when it threw."
+  (let* ((form (nrepl-dict-get call "form"))
+         (expr (cider-font-lock-as-clojure
+                (or form
+                    (let ((name (nrepl-dict-get call "name"))
+                          (args (nrepl-dict-get call "args")))
+                      (format "(%s%s)" name
+                              (if args (concat " " (mapconcat #'identity args " "))
+                                ""))))))
          (throw (nrepl-dict-get call "throw")))
     (if throw
-        (concat form "  "
+        (concat expr "  "
                 (propertize (format "!! %s" (nrepl-dict-get throw "cause"))
                             'face 'error))
-      (concat form "  => "
+      (concat expr "  => "
               (cider-font-lock-as-clojure (or (nrepl-dict-get call "return") "nil"))))))
 
 (defun sayid-tree--jump-to-source (call)
