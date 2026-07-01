@@ -649,14 +649,37 @@ actions: \\<sayid-tree-mode-map>\\[sayid-tree-query-fn] query the function at
 point, \\[sayid-tree-query-id] focus the call at point, \\[sayid-tree-inspect]
 inspect a value, \\[sayid-tree-view-workspace] back to the full workspace.")
 
+(defun sayid-traced--fn-node (fn)
+  "Make a `cider-tree-view-node' for a traced-function dict FN.
+RET jumps to the function's source."
+  (cider-tree-view-node-create
+   :label (cider-font-lock-as-clojure (nrepl-dict-get fn "name"))
+   :value fn
+   :on-visit (lambda () (sayid-tree--jump-to-source fn))))
+
+(defun sayid-traced--ns-node (group)
+  "Make a `cider-tree-view-node' for a traced-namespace GROUP.
+GROUP is a `{ns, fns}' dict from `sayid-show-traced-data'."
+  (let ((fns (nrepl-dict-get group "fns")))
+    (cider-tree-view-node-create
+     :label (propertize (nrepl-dict-get group "ns") 'face 'font-lock-type-face)
+     :expanded t
+     :children-fn (lambda () (mapcar #'sayid-traced--fn-node fns)))))
+
 ;;;###autoload
 (defun sayid-show-traced (&optional ns)
-  "Show what sayid has traced.  Optionally specify namespace NS."
+  "Show what Sayid has traced as a namespaces to functions tree.
+With NS, restrict to that namespace.  RET on a function jumps to its source."
   (interactive)
-  (sayid-select-traced-buf)
-  (sayid-req-insert-content (list "op" "sayid-show-traced"
-                                  "ns" ns))
-  (sayid-select-default-buf))
+  (let ((groups (sayid-req-get-value
+                 (append (list "op" "sayid-show-traced-data")
+                         (when ns (list "ns" ns))))))
+    (if groups
+        (with-current-buffer (cider-popup-buffer "*sayid-traced*" 'select
+                                                 'cider-tree-view-mode 'ancillary)
+          (cider-tree-view-render (mapcar #'sayid-traced--ns-node groups)
+                                  "Traced functions"))
+      (user-error "Nothing is traced"))))
 
 ;;;###autoload
 (defun sayid-show-traced-ns ()
