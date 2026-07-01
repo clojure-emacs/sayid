@@ -252,6 +252,37 @@ or nil when nothing resolves there."
                     (so/audit->text-prop-pair (-> @sd/workspace :traced tr/audit-traces)
                                               ns)))
 
+(defn audit-fn->data
+  "Serialize one fn-info map from the traced audit to bencode data."
+  [fn-info]
+  (->> {"name"       (some-> (:name fn-info) str)
+        "ns"         (:ns fn-info)
+        "file"       (:file fn-info)
+        "line"       (:line fn-info)
+        "trace-type" (some-> (:trace-type fn-info) name)}
+       (filter (comp some? val))
+       (into {})))
+
+(defn audit->data
+  "Serialize a traced-fns AUDIT (from `trace/audit-traces`) to bencode data: a
+  list of namespace groups, each with the traced fns in it.  Merges the fns
+  traced by namespace and the ones traced individually."
+  [audit]
+  (mapv (fn [[ns-sym fns]]
+          {"ns"  (str ns-sym)
+           "fns" (mapv audit-fn->data (vals fns))})
+        (merge-with merge (:ns audit) (:fn audit))))
+
+(defn ^:nrepl sayid-show-traced-data
+  "Return what Sayid has traced as data - a list of namespace groups, each with
+  its traced functions - for clients that render it themselves.  With a non-empty
+  NS, restrict to that namespace.  The rendered counterpart is `sayid-show-traced`."
+  [{:keys [ns] :as msg}]
+  (let [groups (audit->data (-> @sd/workspace :traced tr/audit-traces))]
+    (reply:data msg (if (not-empty ns)
+                      (filterv #(= ns (get % "ns")) groups)
+                      groups))))
+
 (defn count-traces
   [trace-audit]
   (+ (count  (for [v1 (-> trace-audit :ns vals)

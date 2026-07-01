@@ -281,3 +281,10 @@ Replies with the distinct source roots of the loaded namespaces (e.g.
 
 Render the list of what's currently traced. Optional param: `ns` (limit to one
 namespace). Replies with the rendered tree.
+
+### `sayid-show-traced-data`
+
+Data counterpart of `sayid-show-traced`. Optional param: `ns`. Replies with a
+list of namespace groups, each a map of `{ns, fns}` where `fns` is a list of
+`{name, ns, file, line, trace-type}` maps - what's traced, as data for the client
+to render.

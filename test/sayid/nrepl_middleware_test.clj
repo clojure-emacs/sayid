@@ -254,3 +254,29 @@
       (t/is (string? text))
       (t/is (str/includes? text "test-ns1") "names the traced namespace")
       (t/is (coll? props)))))
+
+(t/deftest audit->data-groups-fns-by-namespace
+  (t/testing "audit->data merges ns- and individually-traced fns into ns groups"
+    (let [audit {:ns {'my.ns {'foo {:ns "my.ns" :name 'foo :file "my/ns.clj"
+                                    :line 3 :trace-type :fn}}}
+                 :fn {'my.ns {'bar {:ns "my.ns" :name 'bar :file "my/ns.clj"
+                                    :line 7 :trace-type :inner-fn}}}}
+          data (mw/audit->data audit)]
+      (t/is (= 1 (count data)) "one namespace group")
+      (let [group (first data)]
+        (t/is (= "my.ns" (get group "ns")))
+        (t/is (= #{"foo" "bar"} (set (map #(get % "name") (get group "fns"))))
+              "both the ns- and fn-traced functions appear under the namespace")
+        (let [foo (first (filter #(= "foo" (get % "name")) (get group "fns")))]
+          (t/is (= "my/ns.clj" (get foo "file")))
+          (t/is (= 3 (get foo "line")))
+          (t/is (= "fn" (get foo "trace-type"))))))))
+
+(t/deftest show-traced-data-returns-namespace-groups
+  (t/testing "the data op groups the traced fns by namespace"
+    (sd/ws-add-trace-ns! ns1)
+    (let [value (captured-value "sayid-show-traced-data" {})
+          group (first value)]
+      (t/is (= "sayid.test-ns1" (get group "ns")))
+      (t/is (some #(= "func1" (get % "name")) (get group "fns"))
+            "func1 is listed under its namespace"))))
