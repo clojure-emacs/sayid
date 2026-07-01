@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+* [#118](https://github.com/clojure-emacs/sayid/pull/118): Add `sayid.trace/*per-fn-limit*` (default unbounded), which caps how many calls of any single function are recorded, so one hot function can't crowd out the rest of the recording.
 * [#117](https://github.com/clojure-emacs/sayid/pull/117): Add `sayid.trace/*sample-rate*` (default 1), which records one in every N top-level calls, for tracing a hot entry point without drowning the recording. Backed by a recording-suppression flag that also fixes a latent NPE when a skipped root called an inner-traced function.
 * [#116](https://github.com/clojure-emacs/sayid/pull/116): Add `sayid.trace/*max-trace-depth*` (default unbounded), which caps how deep the call nesting is recorded, so one deeply recursive call can't explode into an unbounded subtree.
 * [#115](https://github.com/clojure-emacs/sayid/pull/115): Serialize captured values in the data ops under bounded `*print-length*`/`*print-level*`, so a fat or infinite value can't hang the serializer or produce a runaway payload.
