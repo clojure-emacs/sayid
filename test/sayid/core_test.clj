@@ -302,3 +302,15 @@
         (t/is (= :b (ns1/func1 :b))))
       (t/testing "; only *record-limit* root calls are recorded"
         (t/is (= 3 (-> (sd/ws-deref!) :children count)))))))
+
+(t/deftest max-trace-depth-drops-nested-calls
+  (t/testing "*max-trace-depth* stops recording below the limit"
+    (binding [sdt/*max-trace-depth* 1]
+      (sd/ws-add-trace-ns! ns1)
+      (t/testing "; the call still runs normally"
+        (t/is (= :a (ns1/func1 :a))))
+      (let [roots (:children (sd/ws-deref!))]
+        (t/testing "; the root call is recorded"
+          (t/is (= 1 (count roots))))
+        (t/testing "; but its nested call (func2) is dropped"
+          (t/is (= 0 (-> roots first :children count))))))))
