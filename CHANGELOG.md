@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+* [#116](https://github.com/clojure-emacs/sayid/pull/116): Add `sayid.trace/*max-trace-depth*` (default unbounded), which caps how deep the call nesting is recorded, so one deeply recursive call can't explode into an unbounded subtree.
 * [#115](https://github.com/clojure-emacs/sayid/pull/115): Serialize captured values in the data ops under bounded `*print-length*`/`*print-level*`, so a fat or infinite value can't hang the serializer or produce a runaway payload.
 * [#114](https://github.com/clojure-emacs/sayid/pull/114): Cap the recording at `sayid.trace/*record-limit*` top-level calls (default 50k), so tracing a namespace under a test suite can't grow the workspace without bound. Calls past the cap run untraced and Sayid warns once.
 * [#113](https://github.com/clojure-emacs/sayid/pull/113): Bring back trace management in the traced-functions view (`sayid-show-traced`): `e`/`d`/`r` enable, disable and remove the trace at point, `i`/`o` switch a function to an inner or outer trace.
