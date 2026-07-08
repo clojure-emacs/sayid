@@ -1,5 +1,9 @@
 # Change Log
 
+## Unreleased
+
+* Add `sayid.golden`, a golden-trace testing helper: capture a run's recorded call tree as a normalized baseline and assert future runs still match it (`gold/matches-golden?`), with an update mode via `SAYID_GOLDEN_UPDATE`. With inner tracing the baseline covers intermediate expression values too.
+
 ## [0.6.0] - 2026-07-08
 
 * Rebuild inner tracing on `tools.analyzer.jvm` (`sayid.inner-ast`), working off the analyzed AST instead of re-reading source and rewriting raw forms. This replaces the legacy rewriter (the `sayid.inner-trace` namespace is gone), fixes inner-traced `try/catch` swallowing exceptions, and drops the per-macro special-casing that made the old instrumenter fragile.

@@ -1,0 +1,8 @@
+[{:args ["1" "2"],
+  :children
+  [{:args ["[2 2 2]"],
+    :name "sayid.inner-corpus/threaded",
+    :return "0"}
+   {:args ["1" "0"], :name "sayid.inner-corpus/arith", :return "1"}],
+  :name "sayid.inner-corpus/nested-calls",
+  :return "1"}]
