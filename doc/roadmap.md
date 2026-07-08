@@ -172,16 +172,16 @@ grew out of had been rewritten twice already).
   tail position so `recur` is left legal. The runtime capture re-raises after
   recording, so it's exception-transparent (an inner-traced `try/catch` now sees
   the exception, which the legacy rewriter swallowed).
-- *Done.* Kept the legacy rewriter behind `sayid.inner-trace/*inner-trace-impl*`
-  and diffed both impls across a corpus (`sayid.inner-ast-test`,
-  `sayid.inner-diff-test`): instrumenting never changes a fn's result, and the
-  AST impl captures a superset of legacy's sub-expression values. The AST impl is
-  now the default; `:legacy` remains a fallback for one release.
-- *Still to do.* Delete the legacy rewriter and its disk-source/path-symbol
-  machinery once the AST impl has real mileage. On-demand tracing still needs the
-  source *form* (you can't analyze a compiled fn), so a genuinely source-less fn
-  still can't be inner-traced - that limit is inherent to the on-demand model, not
-  the rewriter, and would need compile-time instrumentation to lift.
+- *Done.* Grew the AST impl to parity behind a flag, diffing both impls across a
+  corpus (`sayid.inner-ast-test`): instrumenting never changes a fn's result, and
+  the AST impl captures a superset of the old one's sub-expression values. Then
+  made it the default and **deleted the legacy rewriter** outright - the whole
+  `sayid.inner-trace` namespace, with its disk-source reading and path-symbol
+  correlation machinery, is gone.
+- *Known limit (inherent, not a to-do).* On-demand tracing still needs the source
+  *form* (you can't analyze a compiled fn), so a genuinely source-less fn can't be
+  inner-traced. That's a property of the on-demand model, not the instrumenter;
+  lifting it would need compile-time instrumentation.
 
 **Risks:** this is the largest single chunk and the highest-cleverness code in the
 project. It must preserve evaluation semantics exactly (no double-eval of

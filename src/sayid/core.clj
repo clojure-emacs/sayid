@@ -1,7 +1,7 @@
 (ns sayid.core
   (:require clojure.pprint
             [sayid.trace :as trace]
-            [sayid.inner-trace :as itrace]
+            [sayid.inner-ast :as itrace]
             [sayid.workspace :as ws]
             [sayid.recording :as rec]
             [sayid.query :as q]
@@ -273,10 +273,9 @@ user> (-> #'f1 meta :source)
                 :ns
                 str)
         itraced-fn (itrace/inner-tracer {:workspace nil
-                                        :qual-sym qual-sym
-                                        :meta' meta'
-                                        :ns' ns'}
-                                       nil)]
+                                         :qual-sym qual-sym
+                                         :meta' meta'
+                                         :ns' ns'})]
     (binding [trace/*trace-log-parent* workspace]
       (apply itraced-fn args))))
 
