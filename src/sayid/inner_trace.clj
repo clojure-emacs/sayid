@@ -815,12 +815,13 @@
 
 (def ^:dynamic *inner-trace-impl*
   "Which instrumenter builds an inner-traced function:
-   :legacy - the original raw-form rewriter in this namespace (default)
    :ast    - the `tools.analyzer.jvm`-based instrumenter in `sayid.inner-ast`
+             (default): works off the analyzed AST, so no per-macro special-casing
+   :legacy - the original raw-form rewriter in this namespace
 
-  A migration seam: the AST instrumenter is being grown to parity behind this
-  flag before it becomes the default."
-  :legacy)
+  The AST impl is the default; `:legacy` stays available for one release as a
+  fallback while it proves itself in the wild."
+  :ast)
 
 (defn ^{::trace/trace-type :inner-fn} composed-tracer-fn
   [m _]
