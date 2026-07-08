@@ -109,10 +109,21 @@
   [node]
   (boolean (some #(= :recur (:op %)) (ast/nodes node))))
 
+(defn- synthetic-form?
+  "True if FORM references a compiler/macro-generated local, e.g. a destructuring
+  temp like `map__7306`.  Because we emit non-hygienically, user locals keep the
+  names they were written with, so a `__<digits>` symbol only ever comes from
+  expansion - capturing those clutters the trace with internals (the guts of
+  `{:keys [...]}` destructuring, say) the user never wrote."
+  [form]
+  (boolean (some #(and (symbol? %) (re-find #"__\d+" (name %)))
+                 (tree-seq coll? seq (list form)))))
+
 (defn- wrappable?
   [node]
   (and (contains? wrappable-ops (:op node))
-       (not (contains-recur? node))))
+       (not (contains-recur? node))
+       (not (synthetic-form? (surface-form node)))))
 
 (defn- wrap-node
   "Replace a wrappable node with `(capture 'form 'name (fn* [] <node>))`,
