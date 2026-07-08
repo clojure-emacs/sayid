@@ -15,7 +15,8 @@ ways worth leaning into deliberately:
 2. **Programmatic** - tracing is code (`trace a ns, a fn, a dir`), so it composes
    with scripts, fixtures, and CI.
 3. **Data-first** - the recorded execution is a queryable data structure, not a
-   view. This is the crown jewel, and it is currently trapped behind a renderer.
+   view. This is the crown jewel; it used to be trapped behind a renderer, but the
+   data ops (initiative 3) now expose it directly.
 
 Every initiative below should push Sayid further toward *"the execution of your
 program, as data, that you can script."* When a design choice is ambiguous,
@@ -23,30 +24,32 @@ that's the tie-breaker.
 
 ## The codebase today
 
-~4,500 lines of Clojure. The shape tells a story of accreted rewrites:
+~4,000 lines of Clojure. Much of the accreted-rewrite cruft has been cleared out:
 
 | namespace | LOC | role |
 |-----------|-----|------|
-| `inner-trace` | 857 | inner tracing by re-reading and rewriting source - fragile |
-| `string-output` | 662 | rendering to text + text-property spans |
-| `core` | 600 | public REPL API / engine hub |
-| `nrepl_middleware` | 549 | wire protocol, but also owns rendering |
-| `query` | 471 | the query DSL |
-| `util/other` | 402 | grab-bag utilities |
-| `trace` | 289 | outer tracing |
-| `workspace` / `recording` / `shelf` | 178 / 87 / 46 | the in-memory capture store |
-| `view` / `profiling` / `sayid_multifn` | 107 / 114 / 56 | views, profiling, AOT multimethod support |
+| `nrepl_middleware` | 650 | wire protocol / nREPL ops (data + rendered) |
+| `string-output` | 625 | rendering to text + text-property spans (legacy path) |
+| `core` | 620 | public REPL API / engine hub |
+| `trace` | 491 | outer tracing + recording bounds |
+| `query` | 458 | the query DSL |
+| `util/other` | 237 | grab-bag utilities |
+| `inner-ast` | 202 | inner tracing via the analyzed AST |
+| `workspace` / `recording` / `shelf` | 173 / 89 / 47 | the in-memory capture store |
+| `view` / `profiling` / `sayid_multifn` | 109 / 109 / 56 | views, profiling, AOT multimethod support |
 
-The version-suffixed names (`query2`, `string_output2`, `inner_trace3`) have been
-de-versioned - that was the easy part. The deeper issue remains: the engine, the
-wire protocol, and the renderer are entangled, which is why there is exactly one
-client.
+The version-suffixed names (`query2`, `string_output2`, `inner_trace3`) are gone,
+the layers are decoupled (initiative 1), the wire protocol returns data
+(initiative 3), and the fragile source-rewriting inner tracer has been replaced by
+an AST-based one and deleted (initiative 4). The main entanglement that remains is
+the *legacy text renderer* (`string-output` + the rendered ops + the `tamarin`
+dependency), now that the client renders from data - see initiative 6.
 
 ## Initiatives
 
 Sequenced so each one unblocks the next. Start at the foundation.
 
-### 1. Consolidate and decouple the core *(do this first)*
+### 1. Consolidate and decouple the core *(done)*
 
 **Goal:** a core where *engine*, *wire protocol*, and *rendering* are cleanly
 separated, with no version-suffixed namespaces.
@@ -64,18 +67,18 @@ pass.
   external clients.
 - *Done.* Broke up `util/other`: deleted the dead code and split the
   symbol/namespace and source-reading helpers into `util.sym` and `util.source`.
-- Draw a hard line between three layers and stop letting them reach across it:
-  - **engine** - `trace`, `inner-trace`, `workspace`, `recording`, `shelf`
+- *Done.* Drew a hard line between three layers and stopped letting them reach
+  across it:
+  - **engine** - `trace`, `inner-ast`, `workspace`, `recording`, `shelf`
   - **query/render** - `query`, `string-output`, `view`
-  - **protocol** - `nrepl_middleware` (which should call the engine and *return
-    data*, see initiative 3).
+  - **protocol** - `nrepl_middleware`, which calls the engine and *returns data*
+    (see initiative 3).
 
-  Mostly there already: the engine has no upward deps, and once the stray unused
-  require and a dead scratch block were removed, `query`/`view`/`string-output`
-  stopped reaching into the engine too. The last knot - the protocol owning
-  rendering - was untied in initiative 3: the middleware now returns data, or
-  calls a small `*->text-prop-pair` render API in `string-output`, instead of
-  composing rendering steps itself.
+  The engine has no upward deps; removing a stray unused require and a dead scratch
+  block stopped `query`/`view`/`string-output` reaching into it; and the last knot
+  - the protocol owning rendering - was untied in initiative 3, where the
+  middleware moved to returning data or calling a small `*->text-prop-pair` render
+  API in `string-output` instead of composing rendering steps itself.
 
 **Risks:** `sayid_multifn` is AOT-compiled and the namespace names are part of the
 deployed contract; renames need deprecated forwarders. Inner-trace rewriting reads
@@ -84,7 +87,7 @@ namespace/source by name, so any move there must keep symbol resolution intact.
 **Done when:** no `\d`-suffixed namespaces remain, the layers don't have circular
 requires, and the characterization suite is green.
 
-### 2. Bound the recording so it's safe on real workloads
+### 2. Bound the recording so it's safe on real workloads *(done, bar a snapshot refinement)*
 
 **Goal:** tracing a whole namespace and running a test suite should never OOM or
 capture values that mutate out from under you.
@@ -123,7 +126,7 @@ with the query layer (a truncated tree must still be queryable).
 **Done when:** `trace-ns` + a realistic test run completes in bounded memory, and
 capturing an infinite seq doesn't hang.
 
-### 3. Return data, not pre-rendered strings
+### 3. Return data, not pre-rendered strings *(done)*
 
 **Goal:** the middleware returns the trace tree *as data*; clients render.
 
@@ -137,9 +140,12 @@ the modern Clojure inspection ecosystem.
   arg-map, return or throw, children, timings) - see doc/nrepl-api.md.
 - *Done.* Added data ops alongside the rendered ones (`sayid-get-workspace-data`,
   `sayid-query-data` and friends), and moved rendering composition into a small
-  `*->text-prop-pair` API in `string-output`, so the middleware no longer owns
-  it. The Emacs experience is unchanged; it can adopt the data ops where it helps.
-  Still open: exposing inner-trace captured values in the data shape.
+  `*->text-prop-pair` API in `string-output`, so the middleware no longer owns it.
+  The Emacs client now renders the workspace and traced-fn views from these data
+  ops on CIDER's `cider-tree-view`, with value inspection via CIDER's inspector.
+- *Done.* Inner-trace captured values are in the data shape too: each node carries
+  its recorded `form` and value, so the data ops expose the inner-expression
+  tree, not just the outer calls.
 - Once data ops exist, the payoffs are nearly free: tap a workspace into
   [Portal](https://github.com/djblue/portal) / Reveal / Morse, or `(->> (ws-deref)
   (filter ...))` with plain Clojure and the existing query DSL.
@@ -151,7 +157,7 @@ the #29 fix. Keep the rendered ops until clients migrate.
 **Done when:** an editor-agnostic client (or a REPL one-liner) can fetch and
 navigate a workspace without any Sayid-specific rendering.
 
-### 4. Make inner tracing robust via the AST
+### 4. Make inner tracing robust via the AST *(done)*
 
 **Goal:** inner tracing that doesn't detonate on missing source, reader
 conditionals, or the next macro nobody tested.
@@ -189,9 +195,9 @@ side-effecting forms, correct `recur`/`loop`/`letfn` handling).
 
 **Done when:** inner tracing works on a corpus that breaks the current rewriter,
 with no special-case patches per macro. *(Met: the AST impl handles the corpus
-uniformly and is the default; only removing the legacy code remains.)*
+uniformly, is the default, and the legacy rewriter has been deleted.)*
 
-### 5. Position and extend
+### 5. Position and extend *(in progress: golden-trace testing)*
 
 **Goal:** turn the data-first foundation into reach and a clear identity.
 
@@ -199,10 +205,12 @@ uniformly and is the default; only removing the legacy code remains.)*
 clean (1), the strategic moves become possible rather than aspirational.
 
 **Approach (pick based on appetite):**
-- **Golden-trace testing** - because captures are now bounded, comparable data, a
-  test can assert "this run's trace matches the recorded baseline." Genuinely
-  novel regression testing, and a use case neither tools.trace nor a debugger can
-  touch.
+- **Golden-trace testing** *(in progress)* - because captures are now bounded,
+  comparable data, a test can assert "this run's trace matches the recorded
+  baseline." Genuinely novel regression testing, and a use case neither
+  tools.trace nor a debugger can touch. This is the chosen first move: it has the
+  best value-to-effort ratio and it's the clearest thing that's *Sayid's own*
+  rather than a lesser version of what FlowStorm offers.
 - **ClojureScript capture** - wide-open territory; the data-first protocol makes a
   cljs engine a backend swap rather than a rewrite of everything.
 - **Ecosystem integrations** - first-class Portal/Reveal/Morse taps, and a small
@@ -211,16 +219,46 @@ clean (1), the strategic moves become possible rather than aspirational.
 **Done when:** Sayid has at least one capability (golden-trace or cljs) that is
 clearly its own, not a worse version of what FlowStorm or a debugger offers.
 
+### 6. Retire the legacy text renderer *(proposed)*
+
+**Goal:** finish the data-first migration by removing the server-side text
+renderer, so rendering lives entirely in the client.
+
+**Why:** with the Emacs client rendering from the data ops (initiative 3), the
+text-output path - `string-output`, the rendered nREPL ops, and the `tamarin`
+value-pretty-printer dependency - is now largely legacy. It's the last place the
+protocol layer owns presentation, and the biggest chunk of code the data-first
+direction makes redundant.
+
+**Approach:**
+- Audit which rendered ops and Emacs commands are still live (the classic text
+  `sayid-get-workspace` buffer, `sayid-query`, `sayid-pprint-value` / `c p`,
+  `sayid-def-value` / `c d`).
+- Re-home the still-wanted ones onto the data ops plus CIDER's inspector (value
+  inspection is already there via `c i`).
+- Delete `string-output`, the rendered ops, and drop `tamarin`.
+
+**Risks:** it's a user-visible change - some people may rely on the text buffer or
+the pprint/def-value commands; those need a data-op-backed replacement before the
+old path goes.
+
+**Done when:** the middleware returns only data, `tamarin` is gone, and no Emacs
+command depends on a server-rendered op.
+
 ## Sequencing rationale
 
 ```
 (1) decouple the core   ─┬─►  (3) data, not strings  ──►  (5) position & extend
-                         └─►  (4) AST inner tracing
+     [done]              │         [done]                      [in progress]
+                         └─►  (4) AST inner tracing  ──►  (6) retire text renderer
+                                   [done]                      [proposed]
 (2) bound the recording  ────────────────────────────►  (5)
+     [done]
 ```
 
-Initiative 1 is the foundation. Initiatives 2, 3, and 4 are largely independent
-once it lands, so they can be reordered by appetite - 2 is the biggest *adoption*
-win, 3 is the biggest *identity* win, 4 is the biggest *robustness* win.
-Initiative 5 is the payoff and should come last, when there's a safe, data-first,
-clean engine to build it on.
+Initiatives 1-4 are done: the core is decoupled, the recording is bounded, the
+protocol returns data, and inner tracing runs off the AST. What's left is the
+payoff and the last cleanup. Initiative 5 (position & extend) is the point of the
+whole revival - a capability that's clearly Sayid's own - and golden-trace testing
+is the first move. Initiative 6 (retire the legacy text renderer) is the natural
+close of the data-first migration and can happen whenever; it's independent of 5.
