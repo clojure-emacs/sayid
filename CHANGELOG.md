@@ -1,6 +1,6 @@
 # Change Log
 
-## Unreleased
+## [0.6.0] - 2026-07-08
 
 * Rebuild inner tracing on `tools.analyzer.jvm` (`sayid.inner-ast`), working off the analyzed AST instead of re-reading source and rewriting raw forms. This replaces the legacy rewriter (the `sayid.inner-trace` namespace is gone), fixes inner-traced `try/catch` swallowing exceptions, and drops the per-macro special-casing that made the old instrumenter fragile.
 
