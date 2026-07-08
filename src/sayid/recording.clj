@@ -1,4 +1,6 @@
 (ns sayid.recording
+  "Saved recordings: snapshotting a workspace's captured call tree onto a named
+  shelf and loading it back, so a recording survives resetting the workspace."
   (:require [sayid.workspace :as ws]
             [sayid.trace :as trace]
             [sayid.util.other :as util]
@@ -24,7 +26,7 @@
                  ::trace-root
                  true)))
 
-(defn ->recording
+(defn- ->recording
   [v]
   (let [mv (meta v)]
     (cond

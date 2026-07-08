@@ -36,18 +36,18 @@
   (into {} (map (fn [[k v]] [k (f v)])
                 m)))
 
-(defn clear-meta
+(defn- clear-meta
   [v]
   (with-meta v nil))
 
-(defn cleanse-arglist
+(defn- cleanse-arglist
   "Clear out pre-condtions and tags."
   [arglist]
   (->> arglist
        clear-meta
        (mapv clear-meta)))
 
-(defn arg-matcher-fn
+(defn- arg-matcher-fn
   [arglists]
   (when (not-empty arglists)
     (let [arities (map #(list % '(sayid.util.other/get-env)) ;; NOTE!  NS/get-env must match this ns
@@ -55,9 +55,9 @@
           fn1  `(fn ~@arities)]
       (eval fn1))))
 
-(def arg-matcher-fn-memo (memoize arg-matcher-fn))
+(def ^:private arg-matcher-fn-memo (memoize arg-matcher-fn))
 
-(defn arg-match
+(defn- arg-match
   [arglists args]
   (if (not-empty arglists)
     (let [args-v (vec args)
@@ -74,7 +74,7 @@
     (catch Exception e
       nil)))
 
-(defn atom?
+(defn- atom?
   [v]
   (instance? clojure.lang.Atom v))
 
@@ -84,17 +84,17 @@
     @maybe-atom
     maybe-atom))
 
-(defn derefable?
+(defn- derefable?
   [v]
   (instance? clojure.lang.IDeref v))
 
-(defn derefable?->
+(defn- derefable?->
   [maybe-ideref]
   (if (derefable? maybe-ideref)
     @maybe-ideref
     maybe-ideref))
 
-(defn obj-pred-action-else
+(defn- obj-pred-action-else
   [obj pred & {:keys [t t-fn f f-fn]}]
   (let [pred' (or pred identity)]
     (if (pred' obj)
@@ -119,7 +119,7 @@
       (obj-pred-action-else symbol? :t-fn #(ns-resolve ns-sym %))
       derefable?->))
 
-(defn replace$
+(defn- replace$
   [form]
   (let [$sym `$#
         form' (walk/prewalk-replace {'$ $sym}
@@ -144,7 +144,7 @@
                                                    (name '~source)
                                                    %))))))
 
-(defn defalias-macro*
+(defn- defalias-macro*
   [alias source]
   (let [body-sym (gensym "body")
         qualified-source (sym/qualify-sym *ns* source)
@@ -186,21 +186,6 @@
   [& body]
   `(alter-meta! ~body assoc :source '~body))
 
-(defn back-into
-  "Puts the contents of `noob` into a collection of the same type as `orig`."
-  [orig noob]
-  ((if (seq? orig)
-     reverse
-     identity)
-   (into (or (empty orig)
-             [])
-         noob)))
-
-(defn deep-zipmap
-       [a b]
-       (zipmap (tree-seq coll? seq a)
-               (tree-seq coll? seq b)))
-
 (defn flatten-map-kv-pairs
   [m]
   (mapcat (fn [[k v]]
@@ -217,7 +202,6 @@
               (-> #'~fn-sym
                   meta
                   ~meta-key)))
-
 
 (defn get-some*
   [f v]
@@ -240,7 +224,6 @@
       (let [[f & r] coll]
         (when-let [v' (get-some* f v)]
           (recur r v'))))))
-
 
 (defn quote-if-sym
   [v]

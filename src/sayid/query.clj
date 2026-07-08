@@ -1,4 +1,7 @@
 (ns sayid.query
+  "The query DSL: a small zipper-based language for selecting nodes out of a
+  recorded call tree - by function name, call id, tag, source position or
+  ancestry - and returning the matches with their surrounding context."
   (:require [clojure.zip :as z]
             clojure.set
             clojure.string
@@ -6,42 +9,36 @@
 
 ;; === zipper iterators
 
-(defn iter-while-identity
+(defn- iter-while-identity
   [f v]
   (->> v
        (iterate f)
        (take-while identity)))
 
-(defn right-sib-zips
+(defn- right-sib-zips
   [z]
   (->> z
        (iter-while-identity z/right)
        rest))
 
-(defn left-sib-zips
-  [z]
-  (->> z
-       (iter-while-identity z/left)
-       rest))
-
-(defn all-sib-zips [z]
+(defn- all-sib-zips [z]
   (let [lefty (z/leftmost z)
         zips (lazy-cat [lefty] (right-sib-zips lefty))
         not-z #(not (= % z))]
     (filter not-z zips)))
 
-(defn ancestor-zips
+(defn- ancestor-zips
   [z]
   (->> z
        (iter-while-identity z/up)
        rest))
 
-(defn children-zips [zipr]
+(defn- children-zips [zipr]
   (some->> zipr
            z/down
            (iter-while-identity z/right)))
 
-(defn children-zips-by-generation [zipr]
+(defn- children-zips-by-generation [zipr]
   (if (not-empty zipr)
     (let [zipr' (if (some-> zipr
                             meta
@@ -55,16 +52,15 @@
               (children-zips-by-generation kids)))
     nil))
 
-
 ;; === tags
 
-(defn get-tags
+(defn- get-tags
   [node pred-map]
   (vec (for [[kw pred] pred-map
              :when (pred node)]
          kw)))
 
-(defn get-tag-map
+(defn- get-tag-map
   [tree pred-map]
   (reduce (fn [tag-map node]
             (assoc tag-map
@@ -73,7 +69,7 @@
           {}
           (tree-seq map? :children tree)))
 
-(defn mk-get-tag-fn
+(defn- mk-get-tag-fn
   [tag-map]
   (fn [tree]
     (-> tree
@@ -82,14 +78,14 @@
 
 ;; === zippers
 
-(defn tree->zipper
+(defn- tree->zipper
   [tree]
   (z/zipper map?
             #(-> % :children not-empty)
             #(assoc % :children %2)
             tree))
 
-(defn traverse-assoc-zipper
+(defn- traverse-assoc-zipper
   [zipr]
   (if (z/end? zipr)
     (-> zipr z/root)
@@ -97,14 +93,8 @@
                (z/edit assoc :zipper zipr)
                z/next))))
 
-(defn traverse-tree-assoc-zipper
-  [tree]
-  (-> tree
-      tree->zipper
-      traverse-assoc-zipper))
-
 ;; move this to trace or utils?
-(defn traverse-tree
+(defn- traverse-tree
   [tree f]
   (assoc (f tree)
          :children (mapv #(traverse-tree % f)
@@ -116,7 +106,7 @@
 
 ;; === query
 
-(defn query-tree
+(defn- query-tree
   [qry-fn tree]
   (if-not (nil? tree)
     (let [e' (update-in tree [:children]
@@ -128,7 +118,7 @@
         (:children e')))
     []))
 
-(defn query-dos
+(defn- query-dos
   [tree pred-map pred-final-fn] ;; pred-final-fn takes a node (w/ :zipper) and fn to retrieve tags from a node
   (let [tag-map (get-tag-map tree pred-map)
         get-tag-fn (mk-get-tag-fn tag-map)
@@ -138,7 +128,7 @@
          traverse-assoc-zipper
          (query-tree pred-final-fn'))))
 
-(defn query-uno
+(defn- query-uno
   [tree pred-fn]
   (query-tree pred-fn tree))
 
@@ -147,7 +137,6 @@
   ([tree pred-map pred-final-fn] (query-dos tree pred-map pred-final-fn)))
 
 ;; === macro interface
-
 
 (defn get-some*
   [f v]
@@ -211,7 +200,7 @@
        (map mk-query-fn)
        (apply some-fn)))
 
-(defn every-pred-2
+(defn- every-pred-2
   [& preds]
   (fn [node tag-fn]
     (loop [[f & r] preds]
@@ -220,8 +209,7 @@
              (recur r)
              true)))))
 
-
-(defn mk-lazy-descendant-tag-seq
+(defn- mk-lazy-descendant-tag-seq
   [node tag-fn dist]
   (let [generations-seq (->> node
                              :zipper
@@ -234,8 +222,7 @@
          (map z/node)
          (mapcat tag-fn))))
 
-
-(defn mk-lazy-sibling-tag-seq
+(defn- mk-lazy-sibling-tag-seq
   [node tag-fn dist]
   (let [generations-seq (->> node
                              :zipper
@@ -247,7 +234,7 @@
          (map z/node)
          (mapcat tag-fn))))
 
-(defn mk-lazy-ancestor-tag-seq
+(defn- mk-lazy-ancestor-tag-seq
   [node tag-fn dist]
   (let [generations-seq (->> node
                              :zipper
@@ -259,7 +246,7 @@
          (map z/node)
          (mapcat tag-fn))))
 
-(defn mk-relative-final-qry-fn
+(defn- mk-relative-final-qry-fn
   [opts tag-set & [dist]]
   (fn [node tag-fn]
     (or (some tag-set (tag-fn node))
@@ -275,7 +262,7 @@
           (some (partial some tag-set)
                 tag-seq-coll)))))
 
-(defn parse-to-kw-chars
+(defn- parse-to-kw-chars
   [s]
   (->> s
        name
@@ -283,7 +270,7 @@
        (map str)
        (map keyword)))
 
-(defn query-dispatch-decider
+(defn- query-dispatch-decider
   [_ body]
   (let [[f & r] body]
     (if (-> f
@@ -327,7 +314,7 @@
          (every-pred-2 (mk-relative-final-qry-fn [:d] #{:a})
                        (mk-relative-final-qry-fn [:a] #{:d}))))
 
-(defn mk-query-result-root
+(defn- mk-query-result-root
   [tree]
   (vary-meta (if (-> tree
                      meta
@@ -351,25 +338,25 @@
 
 ;; ========================
 
-(defn get-pos
+(defn- get-pos
   [v]
   (-> (or (:src-pos v)
           (:meta v))
       (select-keys [:line :column :file :end-line :end-column])
       (assoc :ids #{(:id v)})))
 
-(defn start-dist
+(defn- start-dist
   [pos-line {:keys [line end-line]}]
   (when (<= (or end-line line) pos-line)
     (- pos-line (or end-line line))))
 
-(defn inside-width
+(defn- inside-width
   [pos-line {:keys [line end-line]}]
   (when (and end-line
              (<= line pos-line end-line))
     (- end-line line)))
 
-(defn compare-metric
+(defn- compare-metric
   [better worse]
   (cond
     (= nil better worse) nil
@@ -377,7 +364,7 @@
     (not worse) true
     :else (< better worse)))
 
-(defn merge-em
+(defn- merge-em
   [a b]
   (assoc a
          :ids (->> [a b]
@@ -388,7 +375,7 @@
                 :line -1
                 :end-line nil})
 
-(defn compare-thing
+(defn- compare-thing
   [line best next]
   (let [best (or best init-best)
         inside-width-best (inside-width line best)
@@ -415,13 +402,13 @@
       start-dist-equal (merge-em best next)
       (false? start-dist-best-better) next)))
 
-(defn file-paths-match?
+(defn- file-paths-match?
   [test path]
   (let [test' (clojure.string/replace test #"^file:" "")
         path' (clojure.string/replace path #"^file:" "")]
     (.endsWith test' path')))
 
-(defn get-best-match-in-tree-seq
+(defn- get-best-match-in-tree-seq
   [ts file line]
   (->> ts
        (map get-pos)
@@ -439,7 +426,7 @@
            (get-best-match-in-tree-seq $ file line)
            :ids))
 
-(defn compare-positions-against-line-range
+(defn- compare-positions-against-line-range
   [start-line line best next]
   (if (<= start-line
           (:line next))
@@ -448,7 +435,7 @@
                    next)
     best))
 
-(defn get-best-match-in-tree-seq-for-line-range
+(defn- get-best-match-in-tree-seq-for-line-range
   [ts file start-line line]
   (->> ts
        (map get-pos)

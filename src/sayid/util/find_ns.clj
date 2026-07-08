@@ -1,7 +1,9 @@
 (ns sayid.util.find-ns
+  "Helpers for discovering loaded namespaces by name or wildcard pattern, used by
+  the trace-by-pattern operations."
   (:require [sayid.util.other :as util]))
 
-(defn unnest-symbol
+(defn- unnest-symbol
   [s]
   (cond
     (symbol? s) s
@@ -12,7 +14,7 @@
 
     :else nil))
 
-(defn alias->ns
+(defn- alias->ns
   [s ref-ns]
   (some-> ref-ns
           ns-aliases
@@ -20,7 +22,7 @@
           str
           symbol))
 
-(defn re-find-nses
+(defn- re-find-nses
   [q]
   (when-let [re (util/$- some->> q
                          name

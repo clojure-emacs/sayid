@@ -1,4 +1,6 @@
 (ns sayid.view
+  "Views: named predicate/selector filters that control which parts of a recorded
+  node the renderers show (e.g. hide args, show only returns)."
   (:require [sayid.util.other :as util]))
 
 
@@ -28,7 +30,7 @@
         (when-let [v' (get-some* f v)]
           (recur r v'))))))
 
-(defn wrap-wildcards
+(defn- wrap-wildcards
   [re]
   (re-pattern (str ".*" re ".*")))
 
@@ -69,7 +71,7 @@
 
 ;; ==================================================================
 
-(defn pred-sel-pairs->view
+(defn- pred-sel-pairs->view
   [pairs]
   (let [pairs' (map (fn [[pred sel]]
                       [(-> pred
@@ -81,7 +83,7 @@
          (map first)
          (apply some-fn))))
 
-(defn pred-sel-pair->pred-fn
+(defn- pred-sel-pair->pred-fn
   [[pred sel]]
   (fn [tree]
     (if ((-> pred

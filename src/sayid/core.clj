@@ -1,4 +1,8 @@
 (ns sayid.core
+  "Sayid's public API and engine hub: the functions you drive tracing with from a
+  REPL - add and remove traces, run your code, then deref, query, profile and view
+  the recorded call tree.  Most fns have short `w-*` aliases.  The other `sayid.*`
+  namespaces are its implementation."
   (:require clojure.pprint
             [sayid.trace :as trace]
             [sayid.inner-ast :as itrace]
@@ -27,7 +31,10 @@
   (atom nil))
 
 (def view (atom nil))
-(def ^:dynamic *view* so/*view*)
+(def ^:dynamic *view*
+  "The view (output filter) applied when rendering the active workspace; mirrors
+  `sayid.string-output/*view*`."
+  so/*view*)
 
 (def config
   "Configuration map. Indicates which namespaces should be used to shelf
@@ -62,7 +69,10 @@ user> (-> #'f1 meta :source)
 
 ;; === Workspace functions
 
-(defn ws-init! [& [quiet]]
+(defn ws-init!
+  "Ensure the active workspace is initialized and return its atom.  QUIET suppresses
+  the status message."
+  [& [quiet]]
   (#'ws/init! workspace quiet))
 
 (defn ws-get-active!
@@ -71,7 +81,7 @@ user> (-> #'f1 meta :source)
   @(ws-init! :quiet))
 (util/defalias w-ga! ws-get-active!)
 
-(defn ws-show-traced*
+(defn ^:no-doc ws-show-traced*
   [& [ws]]
   (-> ws
       (or (ws-get-active!))
@@ -113,7 +123,7 @@ user> (-> #'f1 meta :source)
   [] (#'ws/clear-log! (ws-init! :quiet)))
 (util/defalias w-cl! ws-clear-log!)
 
-(defn ws-add-trace-fn!*
+(defn ^:no-doc ws-add-trace-fn!*
   [fn-sym]
   (#'ws/add-trace-*! (ws-init! :quiet)
                      :fn
@@ -231,6 +241,8 @@ user> (-> #'f1 meta :source)
 (util/defalias w-drf! ws-deref!)
 
 (defn ws-view!
+  "The active workspace (or W) filtered through the current view - i.e. the tree as
+  the renderers see it."
   [& [w]]
   (let [w' (or w
                (ws-deref!))]
@@ -389,6 +401,8 @@ user> (-> #'f1 meta :source)
                                  (meta v)))))))
 
 (defmacro with-this-view
+  "Evaluate BODY with VIEW' (or the current default view) in effect as the active
+  view."
   ([view' & body]
    `(let [v# (or ~view'
                  so/*view*)]
@@ -421,12 +435,15 @@ user> (-> #'f1 meta :source)
 (util/defalias w-pr ws-print)
 
 (defn rec-print
+  "Print the recording REC (or the active recording) as a tree."
   [& [rec]]
   (#'so/print-tree (or rec
                        @recording)))
 (util/defalias r-pr rec-print)
 
 (defn set-view!
+  "Set the active view (output filter) to VIEW', or back to the default when called
+  with no argument."
   [& [view']]
   (reset! view view'))
 
@@ -493,7 +510,7 @@ user> (-> #'f1 meta :source)
           %)
        form))
 
-(defn ws-query*
+(defn ^:no-doc ws-query*
   [& query]
   (apply #'q/q
          (ws-view!)
@@ -579,7 +596,7 @@ user> (-> #'f1 meta :source)
 
 ;; === TEMP
 
-(defn mk-src-pos-query-fn
+(defn- mk-src-pos-query-fn
   [file line]
   (fn [{:keys [src-pos]}]
     (and (= (:file src-pos) file)
@@ -587,6 +604,7 @@ user> (-> #'f1 meta :source)
          (>= (:end-line src-pos) line))))
 
 (defn ws-query-by-file-line
+  "Print the recorded calls whose source spans LINE in FILE."
   [file line]
   (println)
   (trees-print (ws-query* [(mk-src-pos-query-fn file line)]))
@@ -594,6 +612,8 @@ user> (-> #'f1 meta :source)
 
 ;; used only by middleware
 (defn ws-query-by-file-pos
+  "Query the active workspace for the calls at FILE/LINE, matched by source
+  position.  Used by the nREPL middleware."
   [file line]
   (ws-query* [:id (q/get-ids-from-file-pos (ws-view!)
                                            file
