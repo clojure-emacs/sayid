@@ -23,6 +23,12 @@
 
   :pedantic? :warn
 
+  ;; `:pending` marks specs that describe behaviour we intend to deliver but
+  ;; haven't yet (e.g. corpus cases the current impl fails).  They're skipped by
+  ;; default and run explicitly with `lein test :pending`.
+  :test-selectors {:default (complement :pending)
+                   :pending :pending}
+
   :profiles {;; Clojure is "provided" so that downstream projects bring their
              ;; own version. The version-matrix profiles below override it.
              :provided {:dependencies [[org.clojure/clojure "1.12.1"]]}
