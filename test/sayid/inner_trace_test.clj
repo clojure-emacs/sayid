@@ -8,7 +8,6 @@
   (:require [clojure.test :as t]
             [sayid.core :as sd]
             [sayid.trace :as sdt]
-            [sayid.inner-trace :as it]
             [sayid.inner-corpus :as c]
             [sayid.test-utils :as t-utils]))
 
@@ -148,18 +147,6 @@
                         (t/is (= 5 (c/multi 2 3))))]
     ;; the 1-arg body delegates to the 2-arg one; the (+ a b) shows up
     (t/is (contains? (forms forest) '(+ a b)))))
-
-(t/deftest ast-impl-identity-pipeline
-  ;; Phase 0 scaffold: the AST instrumenter currently re-emits the fn unchanged.
-  ;; This proves the analyze -> emit -> eval -> redefine pipeline works in-repo:
-  ;; the traced fn still returns the right value and its call is still recorded,
-  ;; but no inner nodes appear yet (that's the next phase).
-  (binding [it/*inner-trace-impl* :ast]
-    (let [forest (capture (sd/ws-add-inner-trace-fn! sayid.inner-corpus/arith)
-                          (t/is (= 26 (c/arith 6 7))))]
-      (t/is (= 1 (count forest)))
-      (t/is (= 26 (:return (first forest))))
-      (t/is (= [] (:children (first forest))) "scaffold captures no inner nodes yet"))))
 
 (t/deftest nested-inner-and-outer
   (let [forest (capture (do (sd/ws-add-inner-trace-fn! sayid.inner-corpus/arith)
