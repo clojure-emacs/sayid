@@ -185,6 +185,37 @@ Some other useful entry points:
 * `(sd/ws-clear-log!)` clears the recorded calls without removing the traces.
 * `(sd/ws-reset!)` removes all traces and clears the log.
 
+## Golden-trace testing
+
+Because a recorded trace is just data, you can pin it down as a test baseline.
+`sayid.golden` traces some code, runs it, and asserts the recorded call tree - the
+functions called, their arguments and return values, the nesting, and (with inner
+tracing) every intermediate expression value - still matches a stored golden file.
+It's regression testing at the level of *how* your code ran, which a plain
+return-value assertion can't see:
+
+```clojure
+(require '[sayid.core :as sd]
+         '[sayid.golden :as gold]
+         '[clojure.test :refer [deftest is]])
+
+(deftest orders-golden
+  (sd/ws-reset!)
+  (sd/ws-add-trace-ns! my.orders)
+  (my.orders/place-order sample-order)
+  (is (gold/matches-golden? "place-order")))
+```
+
+The first run writes `test/golden/place-order.edn` for you to review and commit;
+later runs compare against it and fail with a diff when the execution changes.
+When a change is intentional, regenerate the goldens by running with
+`SAYID_GOLDEN_UPDATE=1` set (or `(binding [gold/*update* true] ...)`).
+
+With an *inner* trace the golden captures the values *inside* each function too, so
+a baseline for `(fn [a b] (let [s (+ a b)] (if (> s 10) (* s 2) s)))` records
+`(+ a b) => 13`, `(> s 10) => true` and `(* s 2) => 26` - a regression net neither
+`tools.trace` nor a stepping debugger can give you.
+
 ## Using Sayid
 
 **Note: this assumes you're using the official CIDER plugin.**

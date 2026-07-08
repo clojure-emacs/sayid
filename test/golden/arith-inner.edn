@@ -1,0 +1,7 @@
+[{:args ["6" "7"],
+  :children
+  [{:form "(+ a b)", :name "+", :return "13"}
+   {:form "(> s 10)", :name ">", :return "true"}
+   {:form "(* s 2)", :name "*", :return "26"}],
+  :name "sayid.inner-corpus/arith",
+  :return "26"}]
