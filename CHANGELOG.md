@@ -1,5 +1,9 @@
 # Change Log
 
+## Unreleased
+
+* Rebuild inner tracing on `tools.analyzer.jvm` (`sayid.inner-ast`), working off the analyzed AST instead of re-reading source and rewriting raw forms. It's now the default; the legacy rewriter stays available for one release via `sayid.inner-trace/*inner-trace-impl*` (`:ast` / `:legacy`). Fixes inner-traced `try/catch` swallowing exceptions, and drops the per-macro special-casing.
+
 ## [0.5.0] - 2026-07-01
 
 * [#119](https://github.com/clojure-emacs/sayid/pull/119): Add `sayid.trace/*evict-old-calls*` (default false), which switches the record limit from keeping the first N top-level calls to a keep-the-last-N ring, evicting the oldest.

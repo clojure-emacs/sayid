@@ -8,15 +8,21 @@
   (:require [clojure.test :as t]
             [sayid.core :as sd]
             [sayid.trace :as sdt]
+            [sayid.inner-trace :as it]
             [sayid.inner-corpus :as c]
             [sayid.test-utils :as t-utils]))
 
+;; This namespace characterizes the *legacy* rewriter specifically (its special
+;; form/macro tags and loop/recur pseudo-nodes), so it pins the impl to :legacy
+;; even though the default is now :ast.  The AST impl's behaviour lives in
+;; sayid.inner-ast-test.  When the legacy rewriter goes, so does this file.
 (defn- fixture [f]
   (with-out-str (sd/ws-reset!))
-  (with-redefs [sdt/now (t-utils/mock-now-fn)
-                gensym (t-utils/mock-gensym-fn)]
-    (f)
-    (with-out-str (sd/ws-reset!))))
+  (binding [it/*inner-trace-impl* :legacy]
+    (with-redefs [sdt/now (t-utils/mock-now-fn)
+                  gensym (t-utils/mock-gensym-fn)]
+      (f)
+      (with-out-str (sd/ws-reset!)))))
 
 (t/use-fixtures :each fixture)
 

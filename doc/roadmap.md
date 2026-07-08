@@ -162,20 +162,34 @@ the least trustworthy part of an otherwise solid tool (and the `inner_trace3` it
 grew out of had been rewritten twice already).
 
 **Approach:**
-- Rebuild instrumentation on
-  [`tools.analyzer.jvm`](https://github.com/clojure/tools.analyzer.jvm) so it
-  works off the analyzed AST instead of raw forms. Walk the AST, wrap
-  sub-expressions with capture, emit instrumented code.
-- Keep the current rewriter behind a flag during migration and diff their captures
-  on a corpus of real namespaces (this is where initiative 2's snapshots help -
-  captures become comparable data).
+- *Done.* Rebuilt instrumentation on
+  [`tools.analyzer.jvm`](https://github.com/clojure/tools.analyzer.jvm) in
+  `sayid.inner-ast`: it walks the analyzed AST, wraps each call-like
+  sub-expression with a capture call, and emits the result. Macros and special
+  forms are already expanded in the AST, so there's no per-macro special-casing.
+  Two analyzer facts replace machinery the legacy code reinvents by hand -
+  `:raw-forms` recovers the surface syntax for display, and node context marks
+  tail position so `recur` is left legal. The runtime capture re-raises after
+  recording, so it's exception-transparent (an inner-traced `try/catch` now sees
+  the exception, which the legacy rewriter swallowed).
+- *Done.* Kept the legacy rewriter behind `sayid.inner-trace/*inner-trace-impl*`
+  and diffed both impls across a corpus (`sayid.inner-ast-test`,
+  `sayid.inner-diff-test`): instrumenting never changes a fn's result, and the
+  AST impl captures a superset of legacy's sub-expression values. The AST impl is
+  now the default; `:legacy` remains a fallback for one release.
+- *Still to do.* Delete the legacy rewriter and its disk-source/path-symbol
+  machinery once the AST impl has real mileage. On-demand tracing still needs the
+  source *form* (you can't analyze a compiled fn), so a genuinely source-less fn
+  still can't be inner-traced - that limit is inherent to the on-demand model, not
+  the rewriter, and would need compile-time instrumentation to lift.
 
 **Risks:** this is the largest single chunk and the highest-cleverness code in the
 project. It must preserve evaluation semantics exactly (no double-eval of
 side-effecting forms, correct `recur`/`loop`/`letfn` handling).
 
 **Done when:** inner tracing works on a corpus that breaks the current rewriter,
-with no special-case patches per macro.
+with no special-case patches per macro. *(Met: the AST impl handles the corpus
+uniformly and is the default; only removing the legacy code remains.)*
 
 ### 5. Position and extend
 
