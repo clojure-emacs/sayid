@@ -1,4 +1,8 @@
 (ns sayid.nrepl-middleware
+  "The nREPL wire protocol.  `wrap-sayid` registers Sayid's nREPL ops - trace
+  management, queries, and the data ops that hand the recorded call tree to editor
+  clients as plain data (see doc/nrepl-api.md) - by collecting the `^:nrepl`-tagged
+  vars in this namespace."
   (:require
    [clojure.stacktrace :as st]
    clojure.string
@@ -22,25 +26,16 @@
 (def views (atom {}))
 (def selected-view (atom nil))
 
-
-(defn try-find-ns-root
+(defn- try-find-ns-root
   [ns-sym]
   (let [depth (some-> ns-sym str (clojure.string/split #"\.") count)]
     (util/$- some-> ns-sym ns-interns vals first meta :file (clojure.string/split #"/") (drop-last depth $) (clojure.string/join "/" $))))
 
-(defn find-all-ns-roots
+(defn- find-all-ns-roots
   []
   (some->> (all-ns) (map str) (map symbol) (map try-find-ns-root) distinct (remove empty?)))
 
-
-(defn register-view!
-  [name view]
-  (swap! views
-         assoc
-         name
-         view))
-
-(defn query*
+(defn- query*
   [& args]
   (if args
     (assoc (apply sd/ws-query*
@@ -51,12 +46,12 @@
            ::query-args
            nil)))
 
-(defn query-tree->trio
+(defn- query-tree->trio
   [tree]
   (conj (vec (so/tree->text-prop-pair tree))
         (-> tree ::query-args pr-str)))
 
-(defn clj->nrepl*
+(defn- clj->nrepl*
   [v]
   (cond (coll? v) (list* v)
         (number? v) v
@@ -70,12 +65,12 @@
   (clojure.walk/prewalk clj->nrepl*
                         frm))
 
-(defn send-status-done
+(defn- send-status-done
   [msg]
   (t/send (:transport msg)
           (response-for msg :status :done)))
 
-(defn reply:clj->nrepl
+(defn- reply:clj->nrepl
   [msg out]
   (try (t/send (:transport msg)
                (response-for msg
@@ -85,7 +80,7 @@
          (println e)))
   (send-status-done msg))
 
-(defn reply:data
+(defn- reply:data
   "Reply with OUT sent as-is - no `clj->nrepl` flattening - and end the op.  For
   the data ops, whose shapes are already built to round-trip over bencode."
   [msg out]
@@ -93,7 +88,7 @@
           (response-for msg :value out))
   (send-status-done msg))
 
-(defn reply:error
+(defn- reply:error
   "Reply to MSG with a CIDER-renderable error response for EX and end the op.
 Mirrors the `:err'/`:ex' plus `:error'/`:done' status convention used by
 cider-nrepl, so the client surfaces the failure instead of silently getting
@@ -105,7 +100,7 @@ no value."
                         :ex (str (class ex))
                         :err (with-out-str (st/print-cause-trace ex)))))
 
-(defn find-ns-sym
+(defn- find-ns-sym
   [file]
   (some->> file
            slurp
@@ -113,7 +108,7 @@ no value."
            second
            symbol))
 
-(defn get-top-form-at-pos-in-source
+(defn- get-top-form-at-pos-in-source
   [file line source]
   (let [rdr (rts/source-logging-push-back-reader source
                                                  (count source)
@@ -127,11 +122,11 @@ no value."
           (> (:line m) line) nil
           :else (recur rdr-iter))))))
 
-(defn get-meta-at-pos-in-source
+(defn- get-meta-at-pos-in-source
   [file line source]
   (meta (get-top-form-at-pos-in-source file line source)))
 
-(defn pos-inside-line-column?
+(defn- pos-inside-line-column?
   [pos-line pos-column start-line end-line start-col end-col]
   (if (= start-line pos-line end-line)
     (<= start-col pos-column end-col)
@@ -141,7 +136,7 @@ no value."
              (< pos-column end-col))
         (< start-line pos-line end-line))))
 
-(defn get-sym-at-pos-in-source
+(defn- get-sym-at-pos-in-source
   [file pos-line pos-column source]
   (let [tseq (tree-seq coll? seq (get-top-form-at-pos-in-source file pos-line source))
         inside? (fn [sym]
@@ -155,7 +150,7 @@ no value."
                                                end-column))))]
     (last (filter inside? tseq))))
 
-(defn parse-ns-name-from-source ;; TODO don't use this
+(defn- parse-ns-name-from-source ;; TODO don't use this
   [source]
   (second (re-find #"\(\s*ns\s+([\w$.*-]+)"
                    source)))
@@ -184,37 +179,6 @@ or nil when nothing resolves there."
     (when qual-sym
       ((fn-trace-actions action) qual-sym))
     (reply:clj->nrepl msg qual-sym)))
-
-(defn tree-contains-inner-trace?
-  [tree]
-  (->> tree
-       (tree-seq map? :children)
-       (filter #(contains? % :src-pos))
-       first
-       nil?
-       not))
-
-(defn query-ws-by-file-line-range
-  "Find the tree node that: is smallest or starts latest, contains line
-  and starts at or after start-line."
-  [file start-line line]
-  (let [ws (sd/ws-deref!)
-        ids (q/get-ids-from-file-line-range ws
-                                            file
-                                            (or start-line line)
-                                            line)]
-    (if-not (empty? ids)
-      (query* [:id ids])
-      nil)))
-
-(defn process-line-meta
-  [line-meta]
-  (mapv (fn [[n m]]
-          [n
-           (-> m
-               (update-in [:path] str)
-               (update-in [:header] #(when % 1)))])
-        line-meta))
 
 ;; ======================
 
@@ -252,7 +216,7 @@ or nil when nothing resolves there."
                     (so/audit->text-prop-pair (-> @sd/workspace :traced tr/audit-traces)
                                               ns)))
 
-(defn audit-fn->data
+(defn- audit-fn->data
   "Serialize one fn-info map from the traced audit to bencode data."
   [fn-info]
   (->> {"name"       (some-> (:name fn-info) str)
@@ -283,7 +247,7 @@ or nil when nothing resolves there."
                       (filterv #(= ns (get % "ns")) groups)
                       groups))))
 
-(defn count-traces
+(defn- count-traces
   [trace-audit]
   (+ (count  (for [v1 (-> trace-audit :ns vals)
                    v2 (vals v1)]
@@ -292,7 +256,7 @@ or nil when nothing resolves there."
                    v2 (vals v1)]
                v2))))
 
-(defn count-enabled-traces
+(defn- count-enabled-traces
   [trace-audit]
   (+ (count  (for [v1 (-> trace-audit :ns vals)
                    v2 (vals v1)
@@ -342,7 +306,7 @@ or nil when nothing resolves there."
                     (-> (sd/ws-query-by-file-pos file line)
                         so/tree->text-prop-pair)))
 
-(defn buf-query-tree
+(defn- buf-query-tree
   "Build and run a buffer query.  Q-VEC is the base query; MOD-STR an optional
   modifier like \"a\" (ancestors) or \"d3\" (descendants, depth 3).  Returns the
   result tree, which `query-tree->trio` renders or `query-tree->data` turns into
@@ -354,7 +318,7 @@ or nil when nothing resolves there."
         query (remove nil? [k n q-vec])]
     (apply query* query)))
 
-(defn sayid-buf-query
+(defn- sayid-buf-query
   [q-vec mod-str]
   (sd/with-view (query-tree->trio (buf-query-tree q-vec mod-str))))
 
@@ -364,7 +328,7 @@ or nil when nothing resolves there."
                     (sayid-buf-query [:id (keyword trace-id)]
                                      mod)))
 
-(def parent-name-or-name (some-fn :parent-name :name))
+(def ^:private parent-name-or-name (some-fn :parent-name :name))
 
 (defn ^:nrepl sayid-query-by-fn
   [{:keys [fn-name mod] :as msg}]
@@ -373,7 +337,7 @@ or nil when nothing resolves there."
                                          mod)))
 
 ;; this func is unfortunate
-(defn str-vec->arg-path
+(defn- str-vec->arg-path
   [[kw & idx]]
   (let [kw' (keyword kw)
         str->sym (fn [s] (if (string? s)
@@ -383,7 +347,7 @@ or nil when nothing resolves there."
 
 ;; ===== gen-instance-expr helpers
 
-(defn find-arg-list-by-length
+(defn- find-arg-list-by-length
   [n [first-list & rest-lists]]
   (let [cfl (count first-list)]
     (cond (nil? first-list) nil
@@ -395,7 +359,7 @@ or nil when nothing resolves there."
 
           :else (recur n rest-lists))))
 
-(defn get-args-sym-template
+(defn- get-args-sym-template
   [arglist]
   (let [convert-non-syms (fn [v] (if (symbol? v)
                                    v
@@ -405,7 +369,7 @@ or nil when nothing resolves there."
              (map convert-non-syms)
              (concat $ (repeat (last $))))))
 
-(defn find-available-sym
+(defn- find-available-sym
   [ns-sym prefix & [init-taken]]
   (let [taken (set (or init-taken
                        (-> ns-sym
@@ -419,15 +383,14 @@ or nil when nothing resolves there."
           candidate
           (recur (inc n)))))))
 
-(defn lazy-find-available-sym
+(defn- lazy-find-available-sym
   [prefix-seq init-taken]
   (let [next (find-available-sym nil (first prefix-seq) init-taken)]
     (lazy-cat [next]
               (lazy-find-available-sym (rest prefix-seq)
                                        (conj init-taken next)))))
 
-
-(defn mk-avail-sym-lazy-seq
+(defn- mk-avail-sym-lazy-seq
   [n arglists]
   (lazy-find-available-sym (get-args-sym-template (find-arg-list-by-length n
                                                                            arglists))
@@ -439,7 +402,7 @@ or nil when nothing resolves there."
 
 ;; END ===== gen-instance-expr helpers
 
-(defn gen-instance-expr
+(defn- gen-instance-expr
   [tree]
   (let [arg-count (-> tree :args count)
         arglists (-> tree :meta :arglists)
@@ -555,7 +518,7 @@ or nil when nothing resolves there."
   "`*print-level*` applied when serializing captured values in the data ops."
   10)
 
-(defn pr-value
+(defn- pr-value
   "`pr-str` a captured value with the data-op print bounds applied, so an
   arbitrarily large or lazy/infinite value can't blow up the wire payload or hang
   the serializer."
@@ -564,7 +527,7 @@ or nil when nothing resolves there."
             *print-level* *value-print-level*]
     (pr-str v)))
 
-(defn throw->data
+(defn- throw->data
   "Trim a captured `:throw` (a `Throwable->map`) to the bencode-friendly bits a
   client needs: the message, the exception class, and any ex-data.  The full
   stack trace stays out of the wire shape."
@@ -614,20 +577,20 @@ or nil when nothing resolves there."
   [msg]
   (reply:data msg (mapv node->data (:children (sd/ws-deref!)))))
 
-(defn query-tree->data
+(defn- query-tree->data
   "The data counterpart of `query-tree->trio`: the tree's matched calls as a list
   of `node->data` maps."
   [tree]
   (mapv node->data (:children tree)))
 
-(defn magic-recusive-eval
+(defn- magic-recusive-eval
   "Lets us send vars to nrepl client and back. Madness."
   [frm]
   (cond (vector? frm) (mapv magic-recusive-eval frm)
         (seq? frm) (eval frm)
         :else frm))
 
-(defn run-query
+(defn- run-query
   "Parse a printed QUERY form (a string), eval any embedded vars via
   `magic-recusive-eval`, and run it.  Returns the result tree."
   [query]
@@ -679,7 +642,6 @@ or nil when nothing resolves there."
         (catch Throwable e
           (reply:error msg e)))
       (handler msg))))
-
 
 (set-descriptor! #'wrap-sayid
                  {:handles (zipmap (keys sayid-nrepl-ops)

@@ -1,4 +1,7 @@
 (ns sayid.workspace
+  "The in-memory capture store: the active workspace that traces record into, and
+  the operations over it - reset, clear the log, enable/disable/remove traces, and
+  look up what's traced."
   (:require [sayid.trace :as trace]
             [sayid.util.other :as util]
             [sayid.util.sym :as sym]
@@ -20,14 +23,7 @@
                  :trace-root
                  true)))
 
-(defn workspace->tree
-  [ws]
-  (-> ws
-      (dissoc :traced
-              :ws-slot)
-      (vary-meta dissoc ::workspace)))
-
-(defn lookup-traces-by-fn
+(defn- lookup-traces-by-fn
   [ws fn-sym]
   (let [[ns-sym] (sym/disqualify-sym fn-sym)]
     (->> ws
@@ -50,11 +46,6 @@
   [ws]
   (trace/reset-bounds!)
   (reset! ws nil))
-
-(defn new-log!
-  [ws]
-  (trace/reset-bounds!)
-  (swap! ws assoc :children (atom [])))
 
 (defn clear-log!
   [ws]

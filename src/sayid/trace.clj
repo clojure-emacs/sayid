@@ -1,4 +1,9 @@
 (ns sayid.trace
+  "Outer tracing: wrapping a var so each call records its arguments, return or
+  throw and timing into the active workspace's call tree.  Also home to the
+  dynamic vars that bound the recording - `*record-limit*`, `*max-trace-depth*`,
+  `*sample-rate*`, `*per-fn-limit*`, `*evict-old-calls*` - and the trace/untrace
+  multimethods that inner tracing extends."
   (:require [sayid.util.other :as util]
             [sayid.util.sym :as sym])
   (:import sayid.SayidMultiFn))
@@ -48,7 +53,7 @@
   failure at the end of a long run."
   false)
 
-(defn run-suppressed
+(defn- run-suppressed
   "Run `(apply F ARGS)` with recording suppressed for it and everything under it."
   [f args]
   (binding [*suppress-recording* true]
@@ -104,9 +109,14 @@
                     "workspace, or raise sayid.trace/*record-limit*, to record "
                     "more.")))))
 
-(defn now [] (System/currentTimeMillis))
+(defn now
+  "Current wall-clock time in milliseconds; stamps each node's start and end."
+  [] (System/currentTimeMillis))
 
 (defn mk-tree
+  "Build a fresh call-tree node: a map with a unique :id, its :path from the root,
+  :depth, and an empty :children atom.  PARENT supplies the path and depth to
+  extend."
   [& {:keys [id-prefix parent]}]
   (let [id (-> id-prefix
                gensym
@@ -119,7 +129,7 @@
              :depth (or (some-> parent :depth inc) 0)
              :children (atom [])}))
 
-(defn mk-fn-tree
+(defn- mk-fn-tree
   [& {:keys [parent name args meta]}]
   (assoc  (mk-tree :parent parent) ;; 3 sec
           :name name
@@ -131,7 +141,7 @@
                                           args))
           :started-at (now)))
 
-(defn StackTraceElement->map
+(defn- StackTraceElement->map
   [^StackTraceElement o]
   {:class-name (.getClassName o)
    :file-name (.getFileName o)
@@ -163,14 +173,13 @@
       (assoc m :data data)
       m)))
 
-
-(defn start-trace
+(defn- start-trace
   [trace-log tree]
   (swap! trace-log
          conj
          tree))  ;; string!!
 
-(defn end-trace
+(defn- end-trace
   [trace-log idx tree]
   (swap! trace-log
          update-in
@@ -196,7 +205,7 @@
              (update roots i #(merge % tree))
              roots))))
 
-(defn record-root-call-evicting
+(defn- record-root-call-evicting
   "Record a top-level call while keeping only the most recent `*record-limit*`
   roots: append this call and drop the oldest beyond the limit.  Ends by id, so
   the index-shifting from eviction can't corrupt an in-flight call."
@@ -225,7 +234,7 @@
                        :ended-at (now)})
       value)))
 
-(defn record-fn-call
+(defn- record-fn-call
   [parent name f args meta']
   (bump-per-fn-count! name)
   (let [this  (mk-fn-tree :parent parent
@@ -251,7 +260,7 @@
                   :ended-at (now)})
       value)))
 
-(defn trace-fn-call
+(defn- trace-fn-call
   [workspace name f args meta']
   (if *suppress-recording*
     ;; We're inside a call we chose not to record - stay untraced.
@@ -289,7 +298,7 @@
         :else
         (record-fn-call parent name f args meta')))))
 
-(defn shallow-tracer-multifn
+(defn- shallow-tracer-multifn
   [{:keys [workspace qual-sym meta']} original-fn]
   (sayid.SayidMultiFn. {:original original-fn
                                      :trace-dispatch-fn (fn [f args]
@@ -306,6 +315,9 @@
                                                                        meta'))}))
 
 (defn ^{::trace-type :fn} shallow-tracer
+  "The outer tracer: wrap ORIGINAL-FN so each call records its arguments, return or
+  throw and timing into the workspace.  M carries the workspace, the qualified
+  symbol and the var's metadata.  Multimethods are wrapped specially."
   [{:keys [workspace qual-sym meta'] :as m} original-fn]
   (if (= (type original-fn) clojure.lang.MultiFn)
     (shallow-tracer-multifn m original-fn)
@@ -316,7 +328,7 @@
                      args
                      meta'))))
 
-(defn apply-trace-to-var
+(defn- apply-trace-to-var
   [^clojure.lang.Var v tracer-fn workspace]
   (let [ns (.ns v)
         s  (.sym v)
@@ -334,6 +346,8 @@
       (alter-meta! assoc ::trace-type (-> tracer-fn meta ::trace-type)))))
 
 (defn untrace-var*
+  "Restore a traced var to its original function, dropping Sayid's trace metadata.
+  A no-op if the var isn't traced."
   ([ns s]
    (untrace-var* (ns-resolve ns s)))
   ([v]
@@ -349,6 +363,9 @@
                       ::trace-type))))))
 
 (defn trace-var*
+  "Install TRACER-FN on var V for WORKSPACE.  Re-traces if V is already traced by a
+  different workspace or trace type (unless :no-overwrite is set); skips macros and
+  non-functions."
   [v tracer-fn workspace & {:keys [no-overwrite]}]
   (let [^clojure.lang.Var v (if (var? v) v (resolve v))]
     (when (and (ifn? @v) (-> v meta :macro not))
@@ -361,13 +378,13 @@
           (apply-trace-to-var v tracer-fn workspace))
         (apply-trace-to-var v tracer-fn workspace)))))
 
-(defn the-ns-safe
+(defn- the-ns-safe
   [ns]
   (try (the-ns ns)
        (catch Exception e
          nil)))
 
-(defn trace-ns*
+(defn- trace-ns*
   [ns workspace]
   (when-let [ns (the-ns-safe ns)]
     (when-not ('#{clojure.core sayid.core} (ns-name ns))
@@ -380,17 +397,18 @@
                       :no-overwrite true))))))
 
 (defn untrace-ns*
+  "Untrace every traced var in namespace NS*."
   [ns*]
   (when-let [ns' (the-ns-safe ns*)]
     (let [ns-fns (->> ns' ns-interns vals)]
       (doseq [f ns-fns]
         (untrace-var* f)))))
 
-(defn apply->vec
+(defn- apply->vec
   [f]
   (fn [v] [v (f v)]))
 
-(defn audit-fn
+(defn- audit-fn
   [fn-var trace-selection]
   (let [fn-meta (meta fn-var)]
     (-> fn-meta
@@ -400,13 +418,9 @@
         (dissoc ::trace-type
                 ::traced))))
 
-(defn audit-fn-sym
-  [fn-sym trace-selection]
-  (-> fn-sym
-      resolve
-      (audit-fn trace-selection)))
-
 (defn audit-ns
+  "A sorted map of every function in NS-SYM to its trace-audit info (its metadata
+  plus current trace type) - the data behind reporting what's traced."
   [ns-sym]
   (try (let [mk-vec-fn (fn [fn-var]
                          [(-> fn-var meta :name)
@@ -421,6 +435,9 @@
          (sorted-map))))
 
 (defn audit-traces
+  "Summarize a workspace's TRACED selection as data: which namespaces are traced
+  wholesale, and - grouped by namespace - each individually traced function with
+  its trace type.  Backs the show-traced views."
   [traced]
   (let [{outer :fn inner :inner-fn ns' :ns} traced
         f (fn [trace-type]
@@ -439,6 +456,8 @@
      :fn fn-audits}))
 
 (defn check-fn-trace-type
+  "The trace type currently applied to FN-SYM (`:fn`, `:inner-fn`, ...), or nil when
+  it isn't traced."
   [fn-sym]
   (-> fn-sym
       resolve
@@ -450,8 +469,6 @@
 (defmethod trace* :ns
   [_ sym workspace]
   (trace-ns* sym workspace))
-
-
 
 (defmethod trace* :fn
   [_ fn-sym workspace]

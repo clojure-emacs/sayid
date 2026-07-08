@@ -1,4 +1,7 @@
 (ns sayid.string-output
+  "Rendering a recorded call tree to text, with text-property spans (colours and
+  positions) for editor clients to consume - the presentation layer behind the
+  rendered nREPL ops."
   (:require [sayid.view :as v]
             [sayid.util.other :as util]
             [sayid.util.source :as src]
@@ -16,7 +19,7 @@
 
 (def colors-kw [:black :red :green :yellow :blue :magenta :cyan :white])
 
-(defn apply-color-palette
+(defn- apply-color-palette
   [n]
   (when n
     (nth *color-palette*
@@ -24,13 +27,13 @@
 
 (def line-break-token {:string "\n" :length 1 :line-break true})
 
-(defn render-tkns
+(defn- render-tkns
   [v]
   (if (-> v meta ::util/recur)
     (tam/render-tokens (apply list 'recur v))
     (tam/render-tokens v)))
 
-(defn tkn
+(defn- tkn
   [s & {:keys [fg fg* bg bg* bold] :as props}]
   (if (= s "\n")
     line-break-token
@@ -46,14 +49,14 @@
                    (get colors-kw (or bg (apply-color-palette bg*)))]
            :bold bold)))))
 
-(defn mk-lazy-color-fg*-str
+(defn- mk-lazy-color-fg*-str
   ([s] (mk-lazy-color-fg*-str s 0))
   ([s i] (lazy-cat [(tkn s :fg* i)]
                    (mk-lazy-color-fg*-str s (inc i)))))
 
 (def lazy-color-fg*-pipes (mk-lazy-color-fg*-str "|"))
 
-(defn slinky-pipes
+(defn- slinky-pipes
   [len & {:keys [end]}]
   (concat
    (take (- len (count end)) lazy-color-fg*-pipes)
@@ -62,14 +65,14 @@
      [])
    [(tkn " ")]))
 
-(def slinky-pipes-MZ (memoize slinky-pipes))
+(def ^:private slinky-pipes-MZ (memoize slinky-pipes))
 
-(defn indent
+(defn- indent
   [depth & {:keys [end]}]
   (slinky-pipes-MZ depth
                    :end end))
 
-(defn breaker
+(defn- breaker
   [f coll]
   (let [[head [delim & tail]] (split-with (complement f)
                                           coll)]
@@ -77,11 +80,11 @@
                         (breaker f tail)
                         []))))
 
-(defn get-line-length
+(defn- get-line-length
   [line]
   (->> line (map :length) (apply +)))
 
-(defn buffer-lines-to-width
+(defn- buffer-lines-to-width
   [width column]
   (map (fn [line]
          (let [buf-length (->> line (map :length) (apply +) (- width))]
@@ -91,7 +94,7 @@
              line)))
        column))
 
-(defn mk-column-str
+(defn- mk-column-str
   [indent & cols]
   (def i' indent)
   (def c' cols)
@@ -113,15 +116,13 @@
                               lines')
                         (repeat [(tkn "\n")]))))))
 
-(defn multi-line-indent2
+(defn- multi-line-indent2
   [& {:keys [cols indent-base]}]
   (->> cols
        (apply mk-column-str
               (repeat (indent indent-base)))))
 
-(def multi-line-indent2-MZ  (memoize multi-line-indent2))
-
-(defn get-line-meta
+(defn- get-line-meta
   [v & {:keys [path header?]}]
   (util/$- some-> (or (:src-pos v)
                       (:meta v))
@@ -142,7 +143,7 @@
            (assoc $
                   :line-meta? true)))
 
-(defn indent-arg-map
+(defn- indent-arg-map
   [tree m]
   (->> m
        (map (fn [[label value]]
@@ -152,7 +153,7 @@
                                       :indent-base (:depth tree))]))
        vec))
 
-(defn indent-map
+(defn- indent-map
   [tree m]
   (->> m
        (map (fn [[label value]]
@@ -161,7 +162,7 @@
                                     :indent-offset  3)))
        vec))
 
-(defn selects-str
+(defn- selects-str
   [tree selects]
   (let [sel-fn (fn [sel]
                  (util/get-some (if (vector? sel)
@@ -173,7 +174,7 @@
     [(get-line-meta tree)
      (indent-map tree sel-map)]))
 
-(defn throw-str
+(defn- throw-str
   [tree]
   (when-let [thrown (:throw tree)]
     [(get-line-meta tree
@@ -183,7 +184,7 @@
                                    (render-tkns thrown)]
                             :indent-base (:depth tree))]))
 
-(defn return-str
+(defn- return-str
   [tree & {pos :pos}]
   (when (contains? tree :return)
     (let [return (:return tree)]
@@ -196,12 +197,12 @@
                                      (render-tkns return)]
                               :indent-base (:depth tree))])))
 
-(defn args-map-str
+(defn- args-map-str
   [tree]
   (when-let [arg-map (:arg-map tree)]
     (indent-arg-map tree arg-map)))
 
-(defn args-str
+(defn- args-str
   [tree]
   (when-let [args (:args tree)]
     (->> args
@@ -211,7 +212,7 @@
                                                 :indent-base (:depth tree))]))
          vec)))
 
-(defn let-binds-str
+(defn- let-binds-str
   [tree]
   (->> tree
        :let-binds
@@ -225,7 +226,7 @@
                                               :indent-base (:depth tree))]))
        vec))
 
-(defn args*-str
+(defn- args*-str
   [tree]
   (let [test #(-> tree % not-empty)]
     ((cond
@@ -235,7 +236,7 @@
        :else (constantly (tkn "")))
      tree)))
 
-(defn name->string
+(defn- name->string
   [tree start?]
   (let [{:keys [depth name form ns parent-name macro? xpanded-frm]} tree]
     (if (nil? depth)
@@ -264,7 +265,7 @@
   `(when (~kw ~'view)
      [~@body]))
 
-(defn tree->string*
+(defn- tree->string*
   [tree]
   (if (nil? tree)
     []
@@ -296,13 +297,13 @@
                            :end "^")])
        (tkn "\n")])))
 
-(defn increment-position
+(defn- increment-position
   [line-break? line column pos]
   (if line-break?
     [(inc line) 0 pos]
     [line column pos]))
 
-(defn assoc-tokens-pos
+(defn- assoc-tokens-pos
   [tokens]
   (loop [[{:keys [length line-break line-meta?] :as head} & tail] tokens
          line-meta nil
@@ -329,11 +330,11 @@
                                          :end end-pos)
                                   (conj agg $)))))))
 
-(defn remove-nil-vals
+(defn- remove-nil-vals
   [m]
   (for [[k v] m :when (not (nil? v))] [k v]))
 
-(defn tkn->simple-type
+(defn- tkn->simple-type
   [t]
   (-> t :type first))
 
@@ -346,14 +347,14 @@
 
 (def ^:const  type->bg-color {:truncator :white})
 
-(defn apply-type-colors-to-token
+(defn- apply-type-colors-to-token
   [{[fg-color bg-color] :color :as token}]
   (let [st (tkn->simple-type token)]
     (assoc token
            :color [(or (type->color st) fg-color)
                    (or (type->bg-color st) bg-color)])))
 
-(defn mk-text-props
+(defn- mk-text-props
   [{:keys [start end] :as token}]
   (util/$- -> token
            (dissoc :coll?
@@ -373,8 +374,7 @@
            remove-nil-vals
            [start end $]))
 
-
-(defn tkn-prop-grouper4
+(defn- tkn-prop-grouper4
   [pos-pairs start end]
   (if (empty? pos-pairs) {:last-start start :last-end end :pairs []}
       (let [{:keys [last-start last-end pairs]} pos-pairs]
@@ -385,18 +385,18 @@
                  :last-end end
                  :pairs (conj pairs [last-start last-end]))))))
 
-(defn tkn-prop-grouper3
+(defn- tkn-prop-grouper3
   [start end]
   (fn [agg pos-pairs]
     (update-in agg pos-pairs tkn-prop-grouper4 start end)))
 
-(defn tkn-prop-grouper2
+(defn- tkn-prop-grouper2
   [agg [start end props]]
   (reduce (tkn-prop-grouper3 start end)
           agg
           props))
 
-(defn tkn-prop-grouper6
+(defn- tkn-prop-grouper6
   [pairs]
   (reduce (fn [agg [start end]]
             (update-in agg
@@ -405,7 +405,7 @@
           {}
           pairs))
 
-(defn tkn-prop-grouper5
+(defn- tkn-prop-grouper5
   [m]
   (reduce (fn [agg [a b c]]
             (if b
@@ -418,13 +418,13 @@
                 [k2 {:keys [last-end last-start pairs]}] kv]
             [k k2 (conj pairs [last-start last-end]) ])))
 
-(defn tkn-prop-grouper
+(defn- tkn-prop-grouper
   [triples]
   (tkn-prop-grouper5 (reduce tkn-prop-grouper2
                              {}
                              triples)))
 
-(defn split-text-tag-coll
+(defn- split-text-tag-coll
   [tokens]
   [(->> tokens (map :string) (apply str))
    (->> tokens
@@ -440,7 +440,7 @@
        (remove nil?)
        split-text-tag-coll))
 
-(defn audit-ns->summary-view
+(defn- audit-ns->summary-view
   [audit-ns]
   (let [[ns-sym audit-fns] audit-ns
         fn-count (count audit-fns)
@@ -452,7 +452,7 @@
     (tkn (format "  %s / %s  %s\n" traced-count fn-count ns-sym)
          :ns ns-sym)))
 
-(defn audit-fn->view
+(defn- audit-fn->view
   [[ fn-sym {:keys [trace-type trace-selection] :as  fn-meta}]]
   (apply tkn (format "  %s %s %s\n"
                      (case trace-selection
@@ -469,19 +469,19 @@
                      fn-sym)
          (apply concat fn-meta)))
 
-(defn audit-fn-group->view
+(defn- audit-fn-group->view
   [[ns-sym audit-fns]]
   (concat [(tkn (format "- in ns %s\n" ns-sym))]
           (map audit-fn->view audit-fns)))
 
-(defn audit->top-view
+(defn- audit->top-view
   [audit]
   (concat [(tkn "Traced namespaces:\n")]
           (map audit-ns->summary-view (:ns audit))
           [(tkn "\n\nTraced functions:\n")]
           (map audit-fn-group->view (:fn audit))))
 
-(defn audit->ns-view
+(defn- audit->ns-view
   [audit & [ns-sym]]
   (concat [(tkn (format "Namespace %s\n" ns-sym) :ns ns-sym)]
           (map audit-fn->view
@@ -489,9 +489,6 @@
           [(tkn "\n\nTraced functions:\n")]
           (map audit-fn->view
                (-> audit :fn (get ns-sym)))))
-
-
-
 
 (defn tree->string [tree]
   (->> tree
@@ -511,44 +508,7 @@
   (doseq [t trees]
     (print-tree t)))
 
-(defn ansi-color-code
-  ([] (ansi-color-code {}))
-  ([{:keys [fg-color bg-color]}]
-   (let [fg (.indexOf ^java.util.List colors-kw (or fg-color :white))
-         bg (.indexOf ^java.util.List colors-kw (or bg-color :black))]
-     (->> [(if (= fg -1) nil (+ 30 fg))
-           (if (= bg -1) nil (+ 40 bg))]
-          (remove nil?)
-          not-empty
-          (clojure.string/join ";")
-          (format "\33[%sm")))))
-
-(defn print-tree-ansi [tree]
-  (->> tree
-       tree->string*
-       flatten
-       (remove nil?)
-       (map apply-type-colors-to-token)
-       (mapcat (fn [t][(ansi-color-code t)
-                       (:string t)
-                       (ansi-color-code)]))
-       (apply str)
-       print))
-
-(defn print-trees-ansi
-  [trees]
-  (doseq [t trees]
-    (print-tree t)))
-
-(defn value->text-prop-pair
-  [a]
-  (->> a
-       render-tkns
-       flatten
-       (remove nil?)
-       split-text-tag-coll))
-
-(defn adjusted-pos
+(defn- adjusted-pos
   [n]
   (let [n' (or (some-> n :bounds first) n)
         {:keys [start start-line]} n']
@@ -556,57 +516,49 @@
       (-> start
           inc))))
 
-(defn find-up-node
+(defn- find-out-node
   [z]
   (let [up (some-> z z/up z/node)]
     (if (= (tkn->simple-type up) :map-entry)
       (some-> z z/up z/up z/node)
       up)))
 
-(defn find-out-node
-  [z]
-  (let [up (some-> z z/up z/node)]
-    (if (= (tkn->simple-type up) :map-entry)
-      (some-> z z/up z/up z/node)
-      up)))
-
-(defn find-in-node
+(defn- find-in-node
   [z]
   (let [down (some-> z z/down z/node)]
     (if (= (tkn->simple-type down) :map-entry)
       (some-> z z/down z/down z/right z/node)
       down)))
 
-(defn find-prev-node
+(defn- find-prev-node
   [z]
   (let [up (some-> z z/up z/node)]
     (if (= (tkn->simple-type up) :map-entry)
       (some-> z z/up z/left z/down z/right z/node)
       (some-> z z/left z/node))))
 
-(defn find-next-node
+(defn- find-next-node
   [z]
   (let [up (some-> z z/up z/node)]
     (if (= (tkn->simple-type up) :map-entry)
       (some-> z z/up z/right z/down z/right z/node)
       (some-> z z/right z/node))))
 
-
 (declare get-path)
 
-(defn update-last
+(defn- update-last
   [coll f]
   (update-in coll
              [(-> coll count dec)]
              f))
 
-(defn get-path-of-vec-child
+(defn- get-path-of-vec-child
   [z]
   (if-let [left (z/left z)]
     (update-last (get-path left) inc)
     (conj (-> z z/up get-path) 0)))
 
-(defn get-path
+(defn- get-path
   [z]
   (if-let [up (z/up z)]
     (let [parent (z/node up)]
@@ -621,7 +573,7 @@
         :set (get-path-of-vec-child z)))
     []))
 
-(defn decorate-token
+(defn- decorate-token
   [t]
   (let [z (:zipper t)
         out (adjusted-pos (find-out-node z))
@@ -637,7 +589,7 @@
                                 (clojure.string/join " " $))))
       t)))
 
-(defn split-text-tag-coll*
+(defn- split-text-tag-coll*
   [tokens]
   [(->> tokens (map :string) (apply str))
    (->> tokens
@@ -654,7 +606,7 @@
        (map decorate-token)
        split-text-tag-coll*))
 
-(defn tokens->text-prop-pair
+(defn- tokens->text-prop-pair
   [tokens]
   (->> tokens
        flatten

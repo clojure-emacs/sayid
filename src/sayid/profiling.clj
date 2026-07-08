@@ -1,25 +1,27 @@
 (ns sayid.profiling
+  "Profiling: rolling per-function timing up from a recorded call tree - call
+  counts and durations grouped by function - into a report."
   (:require [sayid.trace :as tr]
             [sayid.recording :as rec]
             [sayid.util.other :as util]
             clojure.set
             [clojure.walk :as w]))
 
-(defn merge-profile-values
+(defn- merge-profile-values
   [a b]
   ((cond (number? a) +
          (set? a) clojure.set/union
          :default (throw (Exception. (format "Cant' merge this: '%s'" a))))
    a b))
 
-(def merge-profiles
+(def ^:private merge-profiles
   (memoize
    (fn [& rest]
      (apply merge-with
             #(merge-with merge-profile-values % %2)
             rest))))
 
-(defn finalize-profiles
+(defn- finalize-profiles
   [fn-ms]
   (util/apply-to-map-vals (fn [metrics]
                             (let [arg-cardinality (-> metrics :arg-set count)
@@ -42,7 +44,7 @@
                                                               repeat-arg-pct)))))
                           fn-ms))
 
-(defn get-profile
+(defn- get-profile
   [tree]
   (let [{{:keys [gross-time net-time arg-set]} :profiling
          name :name
@@ -59,7 +61,7 @@
                   children))
       entry)))
 
-(defn hash-safe
+(defn- hash-safe
   [x]
   (hash (w/prewalk (fn [v]
                      (if (seq? v)
@@ -67,15 +69,14 @@
                        v))
                    x)))
 
-(defn mk-arg-hash-set
+(defn- mk-arg-hash-set
   [tree]
   (->> tree
        :args
        (map hash-safe)
        set))
 
-
-(defn add-durations-to-tree
+(defn- add-durations-to-tree
   [tree]
   (let [gross-time (->> tree
                         ((juxt :ended-at :started-at))
@@ -106,9 +107,3 @@
         (apply merge-profiles)
         finalize-profiles
         (assoc tree' :profile))))
-
-(defn get-report
-  [tree])
-
-(defn print-report
-  [tree])
