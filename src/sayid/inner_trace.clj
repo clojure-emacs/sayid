@@ -3,6 +3,7 @@
             [sayid.util.sym :as sym]
             [sayid.util.source :as src]
             [sayid.trace :as trace]
+            [sayid.inner-ast :as inner-ast]
             clojure.pprint
             clojure.set
             clojure.string
@@ -812,10 +813,20 @@
            (throw e)))))
 
 
+(def ^:dynamic *inner-trace-impl*
+  "Which instrumenter builds an inner-traced function:
+   :legacy - the original raw-form rewriter in this namespace (default)
+   :ast    - the `tools.analyzer.jvm`-based instrumenter in `sayid.inner-ast`
+
+  A migration seam: the AST instrumenter is being grown to parity behind this
+  flag before it becomes the default."
+  :legacy)
+
 (defn ^{::trace/trace-type :inner-fn} composed-tracer-fn
   [m _]
-  (->> m
-       inner-tracer
+  (->> (case *inner-trace-impl*
+         :ast (inner-ast/inner-tracer m)
+         (inner-tracer m))
        (trace/shallow-tracer m)))
 
 (defmethod trace/trace* :inner-fn
