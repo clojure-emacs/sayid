@@ -2,7 +2,7 @@
 
 (def version
   "The current version of sayid as a string."
-  "0.5.0")
+  "0.6.0")
 
 (defn middleware
   [project]
