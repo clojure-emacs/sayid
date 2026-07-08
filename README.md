@@ -7,6 +7,8 @@
 
 Sayid *(siy EED)* is an omniscient debugger and profiler for Clojure. It extracts secrets from code at run-time.
 
+The name is a nod to Sayid Jarrah from [*Lost*](https://en.wikipedia.org/wiki/Sayid_Jarrah) - the show's resident interrogator, who was famously good at extracting secrets. Which is exactly what this tool does to your code, hence the tagline. And yes, the *siy EED* pronunciation above is the character's too, so you can say it with confidence.
+
 Sayid works by intercepting and recording the inputs and outputs of
 functions. It can even record function calls that occur inside of
 functions. The user can select which functions to trace. Functions can
