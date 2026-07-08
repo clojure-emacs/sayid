@@ -1,11 +1,11 @@
 (ns sayid.inner-ast
   "Inner-tracing instrumenter built on `tools.analyzer.jvm`.
 
-  Instead of re-reading source and hand-rewriting raw forms (see `sayid.inner-trace`),
-  this analyzes a traced function's source into a typed AST and re-emits it with
-  capturing calls wrapped around its sub-expressions.  Because macros and special
-  forms are already expanded and enumerable in the AST, there's no per-macro
-  special-casing - the thing that made the legacy rewriter fragile.
+  Instead of re-reading source and hand-rewriting raw forms, this analyzes a
+  traced function's source into a typed AST and re-emits it with capturing calls
+  wrapped around its sub-expressions.  Because macros and special forms are
+  already expanded and enumerable in the AST, there's no per-macro special-casing
+  - the thing that made the old rewriter fragile.
 
   Two facts the analyzer hands us for free do the heavy lifting the legacy code
   reinvents by hand:
@@ -177,3 +177,26 @@
         fn-form (defn->fn-form source ns-sym)
         ast     (analyze-in-ns ns-sym fn-form)]
     (sym/eval-in-ns ns-sym (instrument ast))))
+
+;;; ---- trace wiring -------------------------------------------------------
+
+(defn ^{::trace/trace-type :inner-fn} composed-tracer-fn
+  "Build the traced replacement for an inner-traced var: instrument it, then wrap
+  it with the shallow tracer that records the call itself."
+  [m _]
+  (->> (inner-tracer m)
+       (trace/shallow-tracer m)))
+
+(defmethod trace/trace* :inner-fn
+  [_ fn-sym workspace]
+  (-> fn-sym
+      resolve
+      (trace/trace-var* (util/assoc-var-meta-to-fn composed-tracer-fn
+                                                   ::trace/trace-type)
+                        workspace)))
+
+(defmethod trace/untrace* :inner-fn
+  [_ fn-sym]
+  (-> fn-sym
+      resolve
+      trace/untrace-var*))

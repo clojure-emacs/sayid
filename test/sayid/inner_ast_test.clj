@@ -6,17 +6,15 @@
   (:require [clojure.test :as t]
             [sayid.core :as sd]
             [sayid.trace :as sdt]
-            [sayid.inner-trace :as it]
             [sayid.inner-corpus :as c]
             [sayid.test-utils :as t-utils]))
 
 (defn- fixture [f]
   (with-out-str (sd/ws-reset!))
-  (binding [it/*inner-trace-impl* :ast]
-    (with-redefs [sdt/now (t-utils/mock-now-fn)
-                  gensym (t-utils/mock-gensym-fn)]
-      (f)
-      (with-out-str (sd/ws-reset!)))))
+  (with-redefs [sdt/now (t-utils/mock-now-fn)
+                gensym (t-utils/mock-gensym-fn)]
+    (f)
+    (with-out-str (sd/ws-reset!))))
 
 (t/use-fixtures :each fixture)
 
