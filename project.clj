@@ -10,7 +10,9 @@
   ;; pulled in by our dependencies to avoid version conflicts.
   :dependencies [[tamarin "0.1.2" :exclusions [org.clojure/clojure]]
                  [org.clojure/tools.reader "1.6.0" :exclusions [org.clojure/clojure]]
-                 [org.clojure/tools.namespace "1.5.1" :exclusions [org.clojure/clojure]]]
+                 [org.clojure/tools.namespace "1.5.1" :exclusions [org.clojure/clojure]]
+                 [org.clojure/tools.analyzer.jvm "1.3.2" :exclusions [org.clojure/clojure
+                                                                      org.clojure/tools.reader]]]
 
   :aot [sayid.sayid-multifn]
 
