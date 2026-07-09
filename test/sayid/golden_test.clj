@@ -49,3 +49,28 @@
   (sd/ws-add-inner-trace-fn! sayid.inner-corpus/arith)
   (c/arith 6 7)
   (t/is (gold/matches-golden? "arith-inner")))
+
+;;; ---- diffing two traces ------------------------------------------------
+
+(defn- trace-of [& args]
+  (with-out-str (sd/ws-reset!))
+  (sd/ws-add-trace-ns! sayid.inner-corpus)
+  (apply c/nested-calls args)
+  (gold/golden-trace))
+
+(t/deftest diff-traces-identical-is-empty
+  (t/is (= [] (gold/diff-traces (trace-of 1 2) (trace-of 1 2)))))
+
+(t/deftest diff-traces-pinpoints-changes
+  ;; nested-calls 1 2 vs 2 2: threaded [2 2 2] is identical either way, but arith
+  ;; is called with different args and nested-calls returns differently.
+  (let [d (gold/diff-traces (trace-of 1 2) (trace-of 2 2))
+        root (first d)]
+    (t/is (= 1 (count d)))
+    (t/is (= :changed (:status root)))
+    (t/testing "the top call's args and return changed"
+      (t/is (= [["1" "2"] ["2" "2"]] (get-in root [:changes :args])))
+      (t/is (= ["1" "2"] (get-in root [:changes :return]))))
+    (t/testing "only the arith child is reported as changed; threaded is pruned"
+      (t/is (= ["sayid.inner-corpus/arith"] (map :name (:children root))))
+      (t/is (= [["1" "0"] ["2" "0"]] (get-in root [:children 0 :changes :args]))))))

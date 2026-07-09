@@ -142,3 +142,58 @@
                     (println "  only in golden:" (pr-str (first diff)))
                     (println "  only in run:   " (pr-str (second diff)))
                     false))))
+
+;;; ---- comparing two traces ----------------------------------------------
+
+(def ^:private diff-fields [:name :args :form :return :throw :inner-tags])
+
+(defn- field-diffs
+  "Map of each differing field to its [in-a in-b] values."
+  [a b]
+  (reduce (fn [m k]
+            (if (= (get a k) (get b k))
+              m
+              (assoc m k [(get a k) (get b k)])))
+          {}
+          diff-fields))
+
+(defn- diff-node
+  "Diff two aligned nodes (either may be nil when a call is present in only one
+  run).  Returns `{:status :same}` when nothing under it changed, else a node
+  tagged :added / :removed / :changed with the differing fields and changed
+  children."
+  [a b]
+  (cond
+    (nil? a) {:status :added :name (:name b) :node b}
+    (nil? b) {:status :removed :name (:name a) :node a}
+    :else
+    (let [fd (field-diffs a b)
+          ca (:children a) cb (:children b)
+          kids (->> (range (max (count ca) (count cb)))
+                    (map #(diff-node (nth ca % nil) (nth cb % nil)))
+                    (remove (comp #{:same} :status))
+                    vec)]
+      (if (and (empty? fd) (empty? kids))
+        {:status :same}
+        (cond-> {:status :changed :name (:name a)}
+          (seq fd)   (assoc :changes fd)
+          (seq kids) (assoc :children kids))))))
+
+(defn diff-traces
+  "Structurally diff two normalized traces (as returned by `golden-trace`),
+  aligning calls by position.  Returns a pruned tree of just the differences: each
+  changed call with the fields that differ (`[in-a in-b]`) and its changed
+  children, and calls present in only one run tagged :added / :removed.  An empty
+  result means the two executions ran identically - which is a handy thing to
+  assert around a refactor:
+
+      (sd/ws-reset!) (sd/ws-add-trace-ns! my.ns) (my.ns/run)
+      (def before (gold/golden-trace))
+      ;; ... change the code, reload ...
+      (sd/ws-reset!) (sd/ws-add-trace-ns! my.ns) (my.ns/run)
+      (gold/diff-traces before (gold/golden-trace))   ; [] => behaviour unchanged"
+  [a b]
+  (->> (range (max (count a) (count b)))
+       (map #(diff-node (nth a % nil) (nth b % nil)))
+       (remove (comp #{:same} :status))
+       vec))
