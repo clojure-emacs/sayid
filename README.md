@@ -185,6 +185,30 @@ Some other useful entry points:
 * `(sd/ws-clear-log!)` clears the recorded calls without removing the traces.
 * `(sd/ws-reset!)` removes all traces and clears the log.
 
+## The trace is data
+
+The recorded execution isn't just something to look at - it's a plain Clojure data
+structure you can script. `sayid.data/trace-data` hands you the call tree with
+keyword keys and the captured values kept *live*, so ordinary `map`/`filter`/`->>`
+work on it:
+
+```clojure
+(require '[sayid.core :as sd] '[sayid.data :as sd-data])
+
+(sd/ws-add-trace-ns! my.ns)
+(my.ns/run)
+
+;; every recorded call that took longer than 100ms
+(->> (sd-data/trace-data)
+     (tree-seq :children :children)
+     (filter #(some-> (:ms %) (> 100))))
+```
+
+And since it's just data, exploring a trace in
+[Portal](https://github.com/djblue/portal), Reveal or Morse is a one-liner -
+`(sd-data/tap-trace!)` taps the whole tree to your data viewer of choice, no
+Sayid-specific rendering involved.
+
 ## Golden-trace testing
 
 Because a recorded trace is just data, you can pin it down as a test baseline.

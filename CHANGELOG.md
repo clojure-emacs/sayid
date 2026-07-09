@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+* Add `sayid.data`, the programmatic data-first API: `trace-data` returns the recorded call tree as plain keyword-keyed Clojure data with live captured values (and timing/source), and `tap-trace!` `tap>`s it for exploring in Portal/Reveal/Morse.
 * Add `sayid.golden`, a golden-trace testing helper: capture a run's recorded call tree as a normalized baseline and assert future runs still match it (`gold/matches-golden?`), with an update mode via `SAYID_GOLDEN_UPDATE`. With inner tracing the baseline covers intermediate expression values too.
 
 ## [0.6.0] - 2026-07-08
