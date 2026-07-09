@@ -235,6 +235,18 @@ later runs compare against it and fail with a diff when the execution changes.
 When a change is intentional, regenerate the goldens by running with
 `SAYID_GOLDEN_UPDATE=1` set (or `(binding [gold/*update* true] ...)`).
 
+For ad-hoc comparison there's `gold/diff-traces`, which structurally diffs two
+captured traces and reports exactly which calls and values changed - handy for
+confirming a refactor didn't alter behaviour:
+
+```clojure
+(def before (do (sd/ws-reset!) (sd/ws-add-trace-ns! my.ns) (my.ns/run) (gold/golden-trace)))
+;; ... change and reload my.ns ...
+(def after  (do (sd/ws-reset!) (sd/ws-add-trace-ns! my.ns) (my.ns/run) (gold/golden-trace)))
+
+(gold/diff-traces before after)   ; [] means the two runs executed identically
+```
+
 With an *inner* trace the golden captures the values *inside* each function too, so
 a baseline for `(fn [a b] (let [s (+ a b)] (if (> s 10) (* s 2) s)))` records
 `(+ a b) => 13`, `(> s 10) => true` and `(* s 2) => 26` - a regression net neither
