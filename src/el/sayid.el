@@ -810,6 +810,24 @@ manage traces)."
   (sayid--send-sync-request (list "op" "sayid-reset-workspace"))
   (message "Removed traces. Cleared log."))
 
+;;;###autoload
+(defun sayid-tap-trace ()
+  "Tap the recorded workspace to your data tool (Portal, Reveal, Morse)."
+  (interactive)
+  (sayid-send-and-message (list "op" "sayid-tap-trace")))
+
+;;;###autoload
+(defun sayid-capture-baseline ()
+  "Snapshot the current trace as the baseline for `sayid-diff-traces'."
+  (interactive)
+  (sayid-send-and-message (list "op" "sayid-capture-baseline")))
+
+;;;###autoload
+(defun sayid-diff-traces ()
+  "Diff the current trace against the captured baseline and tap the result."
+  (interactive)
+  (sayid-send-and-message (list "op" "sayid-diff-traces")))
+
 (defun sayid-find-existing-file (path)
   "Try to find a file at PATH, which may be absolute or relative.
 A relative PATH is resolved against the project's namespace source roots."
@@ -1014,6 +1032,9 @@ file can be found, jump to it."
     (define-key map (kbd "t o") 'sayid-outer-trace-fn)
     (define-key map (kbd "t r") 'sayid-remove-trace-fn)
     (define-key map (kbd "t K") 'sayid-kill-all-traces)
+    (define-key map (kbd "d t") 'sayid-tap-trace)
+    (define-key map (kbd "d b") 'sayid-capture-baseline)
+    (define-key map (kbd "d d") 'sayid-diff-traces)
     (define-key map (kbd "c")   'sayid-clear-log)
     (define-key map (kbd "x")   'sayid-reset-workspace)
     (define-key map (kbd "s")   'sayid-show-traced)

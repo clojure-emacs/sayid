@@ -197,3 +197,21 @@
        (map #(diff-node (nth a % nil) (nth b % nil)))
        (remove (comp #{:same} :status))
        vec))
+
+;;; ---- interactive baseline (for editor-driven diffing) ------------------
+
+(defonce ^:private baseline (atom nil))
+
+(defn capture-baseline!
+  "Snapshot the active workspace's normalized trace as the baseline that
+  `diff-from-baseline` compares against.  For the \"snapshot, change the code,
+  compare\" workflow.  Returns the number of root calls captured."
+  []
+  (count (reset! baseline (golden-trace))))
+
+(defn diff-from-baseline
+  "Diff the active workspace's trace against the last `capture-baseline!`
+  snapshot, or nil if no baseline has been captured yet."
+  []
+  (when-let [b @baseline]
+    (diff-traces b (golden-trace))))

@@ -11,6 +11,8 @@
    [clojure.tools.reader :as r]
    [clojure.tools.reader.reader-types :as rts]
    [sayid.core :as sd]
+   [sayid.data :as sd-data]
+   [sayid.golden :as gold]
    [sayid.query :as q]
    [sayid.string-output :as so]
    [sayid.trace :as tr]
@@ -466,6 +468,30 @@ or nil when nothing resolves there."
   [{:keys [transport] :as msg}]
   (sd/ws-reset!)
   (send-status-done msg))
+
+(defn ^:nrepl sayid-tap-trace
+  "tap> the recorded workspace as data, for exploring in Portal/Reveal/Morse."
+  [msg]
+  (reply:clj->nrepl msg (str "Tapped " (sd-data/tap-trace!) " call(s).")))
+
+(defn ^:nrepl sayid-capture-baseline
+  "Snapshot the current trace as the baseline for `sayid-diff-traces`."
+  [msg]
+  (reply:clj->nrepl msg (str "Captured baseline: " (gold/capture-baseline!)
+                             " call(s).")))
+
+(defn ^:nrepl sayid-diff-traces
+  "Diff the current trace against the captured baseline; tap the diff for
+  exploration and reply with a short summary."
+  [msg]
+  (let [d (gold/diff-from-baseline)]
+    (reply:clj->nrepl
+     msg
+     (cond
+       (nil? d)   "No baseline captured yet - use sayid-capture-baseline first."
+       (empty? d) "Traces are identical."
+       :else      (do (tap> d)
+                      (str (count d) " root call(s) differ; tapped the diff."))))))
 
 (defn ^:nrepl sayid-trace-all-ns-in-dir
   [{:keys [transport dir] :as msg}]
