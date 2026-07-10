@@ -74,3 +74,19 @@
     (t/testing "only the arith child is reported as changed; threaded is pruned"
       (t/is (= ["sayid.inner-corpus/arith"] (map :name (:children root))))
       (t/is (= [["1" "0"] ["2" "0"]] (get-in root [:children 0 :changes :args]))))))
+
+(t/deftest interactive-baseline-flow
+  (with-out-str (sd/ws-reset!))
+  (sd/ws-add-trace-ns! sayid.inner-corpus)
+  (c/nested-calls 1 2)
+  (t/is (= 1 (gold/capture-baseline!)) "captures the current trace as baseline")
+  (t/testing "an identical re-run diffs empty against the baseline"
+    (with-out-str (sd/ws-clear-log!))
+    (c/nested-calls 1 2)
+    (t/is (= [] (gold/diff-from-baseline))))
+  (t/testing "a changed re-run diffs against the baseline"
+    (with-out-str (sd/ws-clear-log!))
+    (c/nested-calls 2 2)
+    (let [d (gold/diff-from-baseline)]
+      (t/is (= 1 (count d)))
+      (t/is (= :changed (:status (first d)))))))

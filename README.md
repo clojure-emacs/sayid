@@ -207,7 +207,9 @@ work on it:
 And since it's just data, exploring a trace in
 [Portal](https://github.com/djblue/portal), Reveal or Morse is a one-liner -
 `(sd-data/tap-trace!)` taps the whole tree to your data viewer of choice, no
-Sayid-specific rendering involved.
+Sayid-specific rendering involved. From the editor that's `C-c s d t`
+(`sayid-tap-trace`); `C-c s d b` then `C-c s d d` snapshot the current trace and
+diff a later run against it.
 
 ## Golden-trace testing
 
@@ -280,6 +282,9 @@ pop up the help buffer.
     C-c s t o -- Apply an outer trace to the symbol at point
     C-c s t r -- Remove existing trace from the symbol at point
     C-c s t K -- Remove all traces
+    C-c s d t -- Tap the recorded workspace to your data tool (Portal, Reveal, Morse)
+    C-c s d b -- Snapshot the current trace as a baseline for comparison
+    C-c s d d -- Diff the current trace against the baseline and tap the result
     C-c s c -- Clear the workspace trace log
     C-c s x -- Blow away workspace -- traces and logs
     C-c s s -- Popup buffer showing what it currently traced
