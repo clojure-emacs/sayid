@@ -334,6 +334,7 @@ user> (-> #'f1 meta :source)
   (->>  (#'rec/save-as! recording
                         (:rec-ns @config)
                         slot)
+        deref
         ((juxt :id :rec-slot))
         (apply format "Saved recording with id '%s' to slot '%s'.")))
 (util/defalias r-sa! rec-save-as!)
