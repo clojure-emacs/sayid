@@ -185,6 +185,89 @@ Some other useful entry points:
 * `(sd/ws-clear-log!)` clears the recorded calls without removing the traces.
 * `(sd/ws-reset!)` removes all traces and clears the log.
 
+## Querying the workspace
+
+For anything bigger than a toy example, printing the whole tree is too much. The
+query DSL pulls out just the calls you care about. `sd/ws-query-print` (aliased
+`sd/q`) queries the active workspace and prints the matches; `sd/ws-query` returns
+them as data.
+
+```clojure
+;; every recorded call of a particular function, by name
+(sd/q [:name 'my.ns/place-order])
+
+;; a bare symbol is shorthand for [:name ...]
+(sd/q my.ns/place-order)
+
+;; match names with a regex
+(sd/q [:name #"my\.ns/.*"])
+```
+
+A query can also pull in a match's context - `:a` for its ancestors (the calls
+that led to it) and `:d` for its descendants (everything underneath):
+
+```clojure
+(sd/q :a [:name 'my.ns/deep-fn])   ; the matching calls plus their ancestors
+```
+
+The same queries run against a saved recording (`sd/rec-query`) or any trace tree
+you already hold (`sd/tree-query`).
+
+## Profiling
+
+Because every call is timed, the workspace doubles as a profiler. `sd/pro-analyze`
+rolls the per-function timings up from a trace tree, and the report printers sort
+them for you:
+
+```clojure
+(sd/ws-add-trace-ns! my.ns)
+(my.ns/run)
+
+(-> (sd/ws-deref!) sd/pro-analyze sd/pro-net-time)
+```
+
+```
+|          :name | :net-time-sum | :net-time-avg | :count | :gross-time-sum | :gross-time-avg |
+|----------------+---------------+---------------+--------+-----------------+-----------------|
+| :my.ns/collect |            12 |           6.0 |      2 |             820 |           410.0 |
+|    :my.ns/slow |           808 |         404.0 |      2 |             808 |           404.0 |
+```
+
+`sd/pro-net-time` sorts by *net* time - time in the function minus the time spent
+in its children, so high scorers are candidates for optimisation.
+`sd/pro-gross-repeats` instead sorts by time spent on *repeated* arguments,
+flagging functions that might benefit from memoisation.
+
+## Saving & loading recordings
+
+A workspace is transient - the next `ws-reset!` wipes it. To keep a trace around,
+snapshot it into a *recording* and shelve it under a name:
+
+```clojure
+(sd/ws-add-trace-ns! my.ns)
+(my.ns/run)
+
+(sd/rec-load-from-ws!)      ; snapshot the workspace into the active recording
+(sd/rec-save-as! 'before)   ; shelve that recording under the slot `before`
+```
+
+Later - even after resetting the workspace, or tracing something else - load it
+back and print or query it like any other trace:
+
+```clojure
+(sd/rec-load! 'before)
+(sd/rec-print)
+(sd/rec-query [:name 'my.ns/place-order])
+```
+
+## Views
+
+Both the printed and the tree output are filtered through a *view* - a small
+predicate that decides which parts of each node to show (arguments, return value,
+inner-trace selections, and so on). The default view keeps the output readable on
+large traces; `sd/set-view!` swaps it out, and in the editor `C-c s V s` sets a
+view while the workspace buffer's `v` / `V` keys toggle and change it.
+
 ## The trace is data
 
 The recorded execution isn't just something to look at - it's a plain Clojure data
