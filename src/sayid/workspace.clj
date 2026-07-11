@@ -147,12 +147,15 @@
              :children kids
              :arg-map forced-arg-map))))
 
+;; Shelve a fully-dereferenced snapshot (like a recording), so the stored copy is
+;; independent of the live workspace's mutating child atoms.
 (defn save!
   [ws ws-shelf]
   (shelf/save! ws
                ws-shelf
                :ws-slot
-               #(format "Workspace must have a symbol value in :ws-slot. Value was `%s`. Try `save-as!` instead." %)))
+               #(format "Workspace must have a symbol value in :ws-slot. Value was `%s`. Try `save-as!` instead." %)
+               deep-deref!))
 
 (defn save-as!
   [ws ws-shelf slot]
@@ -160,7 +163,8 @@
                   ws-shelf
                   :ws-slot
                   slot
-                  #(format "Workspace must have a symbol value in :ws-slot. Value was `%s`. Try `save-as!` instead." %)))
+                  #(format "Workspace must have a symbol value in :ws-slot. Value was `%s`. Try `save-as!` instead." %)
+                  deep-deref!))
 
 ;; TODO remove traces before unloading a ws???
 (defn load!
@@ -170,4 +174,8 @@
                :ws-slot
                slot
                "Current workspace is not saved. Use :f as last arg to force, or else `save!` first."
-               force))
+               force)
+  ;; The shelved snapshot is fully realized (its children are plain vectors);
+  ;; re-atomize the root so the restored workspace can record new calls again.
+  (swap! ws update :children #(if (instance? clojure.lang.Atom %) % (atom (vec %))))
+  @ws)

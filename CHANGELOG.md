@@ -1,5 +1,12 @@
 # Change Log
 
+## Unreleased
+
+### Bugs fixed
+
+* Fix the workspace shelf (`ws-save!`/`ws-save-as!`/`ws-load!`) storing a live reference instead of a snapshot: mutating the workspace after saving (e.g. clearing the log) corrupted the shelved copy, so a later load restored nothing. It now shelves a fully-dereferenced snapshot, like a recording does.
+* Fix `rec-save-as!` reporting `id 'null' to slot 'null'` - it read the recording atom instead of its value.
+
 ## [0.7.0] - 2026-07-10
 
 * Editor support for the new data functionality: `sayid-tap-trace` (`C-c s d t`) taps the workspace to your data tool, and `sayid-capture-baseline` (`C-c s d b`) / `sayid-diff-traces` (`C-c s d d`) drive the snapshot-then-compare flow. Backed by new `sayid-tap-trace`, `sayid-capture-baseline` and `sayid-diff-traces` nREPL ops.

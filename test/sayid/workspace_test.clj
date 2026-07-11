@@ -58,6 +58,15 @@
               :ws-slot '$ws/test1
               :arg-map nil}))))
 
+(t/deftest save-is-an-independent-snapshot
+  (t/testing "mutating the workspace after saving doesn't corrupt the shelved copy"
+    (ws/save-as! *ws* *shelf* 'test1)
+    ;; append to the live workspace's call log after the save
+    (swap! (:children @*ws*) conj {:id :later :children (atom [])})
+    (ws/load! *ws* *shelf* 'test1 :f)
+    (t/is (= [] (:children (ws/deep-deref! *ws*)))
+          "the reloaded snapshot still has the empty log it was saved with")))
+
 (t/deftest load-with-value
   (t/testing "load with value"
     (ws/save-as! *ws* *shelf* 'test1)

@@ -4,8 +4,11 @@
 
 
 (defn save!
-  [item shelf slot-kw mk-ex-msg-fn]
-  (let [item' @item
+  "Shelve ITEM's value under its SLOT-KW slot in namespace SHELF.  PREP, when
+  given, transforms the value before it's stored - the workspace shelf uses this
+  to store an independent snapshot rather than a live, still-mutating value."
+  [item shelf slot-kw mk-ex-msg-fn & [prep]]
+  (let [item' ((or prep identity) @item)
         slot (slot-kw item')]
     (if (symbol? slot)
       (sym/def-ns-var shelf slot item')
@@ -14,11 +17,10 @@
     item'))
 
 (defn save-as!
-  [item shelf slot-kw slot mk-ex-msg-fn]
-  (doto item
-    (swap! assoc slot-kw
-           (sym/qualify-sym shelf slot))
-    (save! shelf slot-kw mk-ex-msg-fn)))
+  [item shelf slot-kw slot mk-ex-msg-fn & [prep]]
+  (swap! item assoc slot-kw (sym/qualify-sym shelf slot))
+  (save! item shelf slot-kw mk-ex-msg-fn prep)
+  item)
 
 (defn safe-to-load?
   [item shelf slot-kw & [force]]
