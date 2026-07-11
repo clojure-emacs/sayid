@@ -4,7 +4,7 @@
 
 ;; Author: Bill Piel <bill@billpiel.com>
 ;; Maintainer: Bozhidar Batsov <bozhidar@batsov.dev>
-;; Version: 0.7.0
+;; Version: 0.7.1
 ;; URL: https://github.com/clojure-emacs/sayid
 ;; Package-Requires: ((emacs "28") (cider "1.23"))
 ;; Keywords: clojure, cider, debugger
@@ -51,11 +51,11 @@ The injected dependencies are most likely nREPL middlewares."
   :type 'boolean)
 
 (defconst sayid-version
-  "0.7.0"
+  "0.7.1"
   "The current version of sayid.")
 
 (defconst sayid-injected-plugin-version
-  "0.7.0"
+  "0.7.1"
   "The version of the sayid Lein plugin to be automatically injected.")
 
 (defface sayid-int-face '((t :inherit default))
