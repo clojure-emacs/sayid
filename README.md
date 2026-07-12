@@ -7,7 +7,8 @@
 
 Sayid *(siy EED)* is an omniscient debugger and profiler for Clojure. It extracts secrets from code at run-time.
 
-The name is a nod to Sayid Jarrah from [*Lost*](https://en.wikipedia.org/wiki/Sayid_Jarrah) - the show's resident interrogator, who was famously good at extracting secrets. Which is exactly what this tool does to your code, hence the tagline. And yes, the *siy EED* pronunciation above is the character's too, so you can say it with confidence.
+> [!NOTE]
+> The name is a nod to Sayid Jarrah from [*Lost*](https://en.wikipedia.org/wiki/Sayid_Jarrah) - the show's resident interrogator, who was famously good at extracting secrets. Which is exactly what this tool does to your code, hence the tagline. And yes, the *siy EED* pronunciation above is the character's too, so you can say it with confidence.
 
 Sayid works by intercepting and recording the inputs and outputs of
 functions. It can even record function calls that occur inside of
@@ -26,7 +27,8 @@ not require Emacs or CIDER. **BUT** the CIDER integration offers a far
 better experience, so it is the current focus of this page and my
 development efforts.
 
-**We're looking for more maintainers for the project. If you're interested in helping out please ping @bbatsov.**
+> [!IMPORTANT]
+> We're looking for more maintainers for the project. If you're interested in helping out please ping @bbatsov.
 
 ## Why Sayid?
 
@@ -339,7 +341,8 @@ a baseline for `(fn [a b] (let [s (+ a b)] (if (> s 10) (* s 2) s)))` records
 
 ## Using Sayid
 
-**Note: this assumes you're using the official CIDER plugin.**
+> [!NOTE]
+> This section assumes you're using the official CIDER plugin.
 
 The keybindings are grouped by buffer below. Every list is also available
 from within Emacs: press `h` in any Sayid buffer (or `C-c s h` in a Clojure
