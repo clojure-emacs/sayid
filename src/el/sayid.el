@@ -254,6 +254,15 @@ resolved automatically."
         (message fail-msg)
       (message x))))
 
+(defun sayid--inspect-value (trace-id path)
+  "Inspect the value at PATH of the recorded call TRACE-ID.
+Defs the value to `$s/*' server-side, then hands the live object to
+`cider-inspect-expr'."
+  (sayid-send-and-message (list "op" "sayid-def-value"
+                                "trace-id" trace-id
+                                "path" path))
+  (cider-inspect-expr "$s/*" (cider-current-ns)))
+
 (defun sayid-try-goto-prop (prop val)
   "Move cursor to first position where property PROP has value VAL."
   (let ((p 1))
@@ -571,23 +580,23 @@ TITLE is shown in the header line."
           (if (string-empty-p mod) "" (format " [%s]" mod))))
 
 (defun sayid-tree-inspect (&optional arg)
-  "Inspect a captured value of the call at point with `cider-inspect'.
-Defs the value to `$s/*' server-side and hands the live object to CIDER's
-inspector.  By default inspects the return value (or the thrown error); with a
-prefix ARG, prompt for which value - the return, the throw, or a named argument."
+  "Inspect a captured value of the call at point in CIDER's inspector.
+Defs the value to `$s/*' server-side and hands the live object to
+`cider-inspect-expr'.  By default inspects the return value (or the thrown
+error); with a prefix ARG, prompt for which value - the return, the throw, or
+a named argument."
   (interactive "P")
   (let* ((call (sayid-tree--call-at-point))
-         (targets (sayid-tree--value-targets call))
+         (targets (or (sayid-tree--value-targets call)
+                      (user-error "This call has no values to inspect")))
          (path (if arg
-                   (cdr (assoc (completing-read "Inspect value: " targets nil t)
-                               targets))
+                   (or (cdr (assoc (completing-read "Inspect value: " targets nil t)
+                                   targets))
+                       (user-error "No value selected"))
                  (or (cdr (assoc "return" targets))
                      (cdr (assoc "throw" targets))
                      (user-error "This call has no return value to inspect")))))
-    (sayid-send-and-message (list "op" "sayid-def-value"
-                                  "trace-id" (nrepl-dict-get call "id")
-                                  "path" path))
-    (cider-inspect "$s/*")))
+    (sayid--inspect-value (nrepl-dict-get call "id") path)))
 
 (defun sayid-tree-query-fn (&optional arg)
   "Re-render the tree with every recorded call of the function at point.
@@ -902,12 +911,13 @@ With a prefix ARG, also prompt for a query modifier."
 
 ;;;###autoload
 (defun sayid-buf-inspect-at-point ()
-  "Def value at point and pass to `cider-inspect'."
+  "Def value at point and open it in CIDER's inspector."
   (interactive)
-  (sayid-send-and-message (list "op" "sayid-def-value"
-                                "trace-id" (get-text-property (point) 'id)
-                                "path" (get-text-property (point) 'path)))
-  (cider-inspect "$s/*"))
+  (let ((id (get-text-property (point) 'id))
+        (path (get-text-property (point) 'path)))
+    (unless (and id path)
+      (user-error "No inspectable value at point"))
+    (sayid--inspect-value id path)))
 
 ;;;###autoload
 (defun sayid-buf-pprint-at-point ()

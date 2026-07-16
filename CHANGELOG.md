@@ -1,5 +1,12 @@
 # Change Log
 
+## master (unreleased)
+
+### Bugs fixed
+
+* Fix `sayid-tree-inspect` (`c i` in the tree view) and `sayid-buf-inspect-at-point` never opening the inspector: they passed an expression string to `cider-inspect`, an API that CIDER dropped years ago. They now go through `cider-inspect-expr`.
+* The inspect commands now signal a clear error when there's no value to inspect at point, instead of defing and inspecting a garbage value.
+
 ## [0.7.1] - 2026-07-11
 
 ### Bugs fixed
