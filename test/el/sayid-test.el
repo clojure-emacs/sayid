@@ -149,6 +149,65 @@
       (expect (cdr (assoc "throw" targets)) :to-equal '("throw"))
       (expect (cdr (assoc "arg x" targets)) :to-equal '("arg-map" "x")))))
 
+(describe "sayid-tree-inspect"
+  (before-each
+    (spy-on 'sayid-send-and-message)
+    (spy-on 'cider-inspect-expr)
+    (spy-on 'cider-current-ns :and-return-value "user"))
+
+  (it "defs the return value server-side and opens it in the inspector"
+    (spy-on 'sayid-tree--call-at-point :and-return-value
+            (nrepl-dict "id" "7" "return" "42"))
+    (sayid-tree-inspect)
+    (expect 'sayid-send-and-message :to-have-been-called-with
+            '("op" "sayid-def-value" "trace-id" "7" "path" ("return")))
+    (expect 'cider-inspect-expr :to-have-been-called-with "$s/*" "user"))
+
+  (it "falls back to the throw when the call has no return"
+    (spy-on 'sayid-tree--call-at-point :and-return-value
+            (nrepl-dict "id" "7" "throw" (nrepl-dict "cause" "boom")))
+    (sayid-tree-inspect)
+    (expect 'sayid-send-and-message :to-have-been-called-with
+            '("op" "sayid-def-value" "trace-id" "7" "path" ("throw")))
+    (expect 'cider-inspect-expr :to-have-been-called-with "$s/*" "user"))
+
+  (it "errors without touching the server when there is nothing to inspect"
+    (spy-on 'sayid-tree--call-at-point :and-return-value (nrepl-dict "id" "7"))
+    (expect (sayid-tree-inspect) :to-throw 'user-error)
+    (expect 'sayid-send-and-message :not :to-have-been-called)
+    (expect 'cider-inspect-expr :not :to-have-been-called))
+
+  (it "errors when the prefix-arg prompt selects nothing"
+    (spy-on 'sayid-tree--call-at-point :and-return-value
+            (nrepl-dict "id" "7" "return" "42"))
+    (spy-on 'completing-read :and-return-value "")
+    (expect (sayid-tree-inspect '(4)) :to-throw 'user-error)
+    (expect 'sayid-send-and-message :not :to-have-been-called)
+    (expect 'cider-inspect-expr :not :to-have-been-called)))
+
+(describe "sayid-buf-inspect-at-point"
+  (before-each
+    (spy-on 'sayid-send-and-message)
+    (spy-on 'cider-inspect-expr)
+    (spy-on 'cider-current-ns :and-return-value "user"))
+
+  (it "defs the value at point server-side and opens it in the inspector"
+    (with-temp-buffer
+      (insert (propertize "42" 'id "7" 'path '("return")))
+      (goto-char (point-min))
+      (sayid-buf-inspect-at-point))
+    (expect 'sayid-send-and-message :to-have-been-called-with
+            '("op" "sayid-def-value" "trace-id" "7" "path" ("return")))
+    (expect 'cider-inspect-expr :to-have-been-called-with "$s/*" "user"))
+
+  (it "errors without touching the server when point has no value"
+    (with-temp-buffer
+      (insert "no properties here")
+      (goto-char (point-min))
+      (expect (sayid-buf-inspect-at-point) :to-throw 'user-error))
+    (expect 'sayid-send-and-message :not :to-have-been-called)
+    (expect 'cider-inspect-expr :not :to-have-been-called)))
+
 (describe "sayid-tree--query-title"
   (it "names the query kind and selector"
     (expect (sayid-tree--query-title "fn" "my.ns/foo" "")
