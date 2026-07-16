@@ -66,7 +66,7 @@ the whole execution as data, after the fact, to query however you want.
 ### Requirements
 
 Basic usage requires Clojure 1.10+ running on Java 8 or newer. The optional
-nREPL middleware requires nREPL 1.0+, and the Emacs client requires CIDER 1.0+
+nREPL middleware requires nREPL 1.0+, and the Emacs client requires CIDER 2.0+
 on Emacs 28+.
 
 (Sayid is tested against Clojure 1.10, 1.11 and 1.12 on a range of JDKs. Older

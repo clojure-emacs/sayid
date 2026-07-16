@@ -2,6 +2,10 @@
 
 ## master (unreleased)
 
+### Changes
+
+* Require CIDER 2.0.
+
 ### Bugs fixed
 
 * Fix `sayid-tree-inspect` (`c i` in the tree view) and `sayid-buf-inspect-at-point` never opening the inspector: they passed an expression string to `cider-inspect`, an API that CIDER dropped years ago. They now go through `cider-inspect-expr`.

@@ -6,7 +6,7 @@
 ;; Maintainer: Bozhidar Batsov <bozhidar@batsov.dev>
 ;; Version: 0.7.1
 ;; URL: https://github.com/clojure-emacs/sayid
-;; Package-Requires: ((emacs "28") (cider "1.23"))
+;; Package-Requires: ((emacs "28") (cider "2.0"))
 ;; Keywords: clojure, cider, debugger
 
 ;; Licensed under the Apache License, Version 2.0 (the "License");
