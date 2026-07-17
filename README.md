@@ -16,6 +16,11 @@ functions. The user can select which functions to trace. Functions can
 be selected individually or by namespace. The recorded data can be
 displayed, queried and profiled.
 
+The whole loop in one take - trace some namespaces, run your code, then
+explore the recorded call tree:
+
+![Tracing a namespace, running the code and exploring the recorded call tree](doc/images/sayid-workflow.gif)
+
 Sayid currently has three components:
 
 * `sayid.core` and its supporting namespaces
@@ -358,6 +363,8 @@ is traced and recorded right now. The keybindings are also listed by buffer
 below, and every list is available from within Emacs: press `h` in any
 Sayid buffer to pop up the matching help buffer.
 
+![The Sayid menu popped up under a Clojure buffer, showing the commands grouped by workflow](doc/images/sayid-menu.png)
+
 API docs for the core namespaces are available on
 [cljdoc](https://cljdoc.org/d/mx.cider/sayid/CURRENT).
 
@@ -388,8 +395,13 @@ API docs for the core namespaces are available on
 
 
 The workspace opens in the `*sayid-tree*` buffer, a foldable tree built on
-CIDER's `cider-tree-view`. Navigation and folding come from there; Sayid adds a
-few actions on top:
+CIDER's `cider-tree-view`. Every recorded call shows its arguments and its
+return value (or the exception it threw):
+
+![The Sayid workspace tree showing recorded calls with arguments, return values and a thrown exception](doc/images/sayid-workspace-tree.png)
+
+Navigation and folding come from `cider-tree-view`; Sayid adds a few actions
+on top:
 
     TAB -- fold or unfold the call at point
     RET, . -- jump to the call's source
@@ -414,6 +426,8 @@ tree in the `*sayid-traced*` buffer. `RET` on a function jumps to its source;
 `TAB` folds a namespace, `n`/`p` move, `g` refreshes, `q` quits. `e`/`d`/`r`
 enable, disable and remove the trace at point, and `i`/`o` switch a function to
 an inner or outer trace.
+
+![The traced-functions view, a namespaces to functions tree](doc/images/sayid-traced.png)
 
 
 In the `*sayid-pprint*` buffer, press `h` to pop up the help
