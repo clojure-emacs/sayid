@@ -64,12 +64,14 @@ Apply a trace action to the function whose symbol is at the cursor.
 | `line`, `column` | 1-based cursor position |
 | `source` | the buffer's full text |
 
-Replies with a map describing the outcome, so clients can report it truthfully:
-`sym` is the resolved qualified symbol (e.g. `"my.ns/my-fn"`) and `was-traced`
-(`0`/`1`) says whether the function was traced before the action. When nothing
-resolves at that position the reply is an empty map. `enable`, `disable` and
-`remove` are only applied when the function was traced; `add-outer`/`add-inner`
-always apply.
+The reply's `value` is the resolved qualified symbol (e.g. `"my.ns/my-fn"`), or
+an empty string when nothing resolves at that position - the shape older
+clients expect. The outcome details ride along as extra response slots: `sym`
+(the same symbol) and `was-traced` (`0`/`1`, whether the function was traced
+before the action), so a current client can report the outcome truthfully.
+`enable` and `disable` are only applied when the function was traced;
+`add-outer`, `add-inner` and `remove` always apply (`remove` doubles as the
+reconciliation path for a trace that fell out of sync with the workspace).
 
 ### `sayid-query-form-at-point-data`
 

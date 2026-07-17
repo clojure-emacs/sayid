@@ -191,7 +191,7 @@
     (spy-on 'sayid--refresh-traced-if-visible))
 
   (it "describes a fresh outer trace and points at the workspace view"
-    (spy-on 'sayid-req-get-value :and-return-value
+    (spy-on 'sayid--send-sync-request :and-return-value
             (nrepl-dict "sym" "my.ns/foo" "was-traced" 0))
     (sayid-trace-fn)
     (expect (apply #'format (spy-calls-args-for 'message 0))
@@ -199,21 +199,42 @@
     (expect 'sayid--refresh-traced-if-visible :to-have-been-called))
 
   (it "reports switching the trace kind when the fn was already traced"
-    (spy-on 'sayid-req-get-value :and-return-value
+    (spy-on 'sayid--send-sync-request :and-return-value
             (nrepl-dict "sym" "my.ns/foo" "was-traced" 1))
     (sayid-trace-fn-inner)
     (expect (apply #'format (spy-calls-args-for 'message 0))
             :to-match "Switched my\\.ns/foo to an inner trace"))
 
   (it "refuses to enable a trace that doesn't exist, naming the remedy"
-    (spy-on 'sayid-req-get-value :and-return-value
+    (spy-on 'sayid--send-sync-request :and-return-value
             (nrepl-dict "sym" "my.ns/foo" "was-traced" 0))
     (expect (sayid-trace-fn-enable) :to-throw 'user-error)
     (expect 'message :not :to-have-been-called))
 
+  (it "reports a removed trace even when the workspace didn't list it"
+    (spy-on 'sayid--send-sync-request :and-return-value
+            (nrepl-dict "sym" "my.ns/foo" "was-traced" 0))
+    (sayid-trace-fn-remove)
+    (expect (apply #'format (spy-calls-args-for 'message 0))
+            :to-match "Removed the trace on my\\.ns/foo"))
+
   (it "errors when point isn't on a function"
-    (spy-on 'sayid-req-get-value :and-return-value (nrepl-dict))
+    (spy-on 'sayid--send-sync-request :and-return-value
+            (nrepl-dict "value" ""))
     (expect (sayid-trace-fn) :to-throw 'user-error))
+
+  (it "still works against a pre-0.8 middleware's string reply"
+    (spy-on 'sayid--send-sync-request :and-return-value
+            (nrepl-dict "value" "my.ns/foo"))
+    (sayid-trace-fn-enable)
+    (expect (apply #'format (spy-calls-args-for 'message 0))
+            :to-match "Enabled the trace on my\\.ns/foo"))
+
+  (it "surfaces a middleware error instead of blaming the cursor"
+    (spy-on 'sayid--send-sync-request :and-return-value
+            (nrepl-dict "ex" "clojure.lang.ExceptionInfo"))
+    (expect (sayid-trace-fn)
+            :to-throw 'user-error '("Sayid failed: clojure.lang.ExceptionInfo")))
 
   (it "keeps the old command names alive as obsolete aliases"
     (dolist (old '(sayid-outer-trace-fn sayid-inner-trace-fn
@@ -347,7 +368,17 @@
   (it "errors when nothing was recorded for the form"
     (spy-on 'sayid-req-get-value :and-return-value nil)
     (expect (sayid-tree--show-form-query "/tmp/a.clj" 3)
-            :to-throw 'user-error)))
+            :to-throw 'user-error))
+
+  (it "falls back to the legacy view when the middleware lacks the data op"
+    (spy-on 'cider-nrepl-op-supported-p :and-return-value nil)
+    (spy-on 'buffer-file-name :and-return-value "/tmp/a.clj")
+    (spy-on 'sayid-req-insert-content)
+    (sayid-query-form-at-point)
+    (expect (car (spy-calls-args-for 'sayid-req-insert-content 0))
+            :to-equal (list "op" "sayid-query-form-at-point"
+                            "file" "/tmp/a.clj"
+                            "line" (line-number-at-pos)))))
 
 (describe "sayid-buf-inspect-at-point"
   (before-each
