@@ -281,7 +281,37 @@
     (expect (spy-calls-count 'sayid-req-get-value) :to-equal 2)
     (expect (car (spy-calls-args-for 'sayid-req-get-value 1))
             :to-equal '("op" "sayid-query-by-fn-data" "fn-name" "my.ns/foo" "mod" ""))
-    (kill-buffer "*sayid-tree*")))
+    (kill-buffer "*sayid-tree*"))
+
+  (it "renders an emptied query as an empty view instead of erroring"
+    (spy-on 'cider-popup-buffer :and-call-fake
+            (lambda (name _select mode _ancillary)
+              (with-current-buffer (get-buffer-create name)
+                (funcall mode)
+                (current-buffer))))
+    (let ((first-call t))
+      (spy-on 'sayid-req-get-value :and-call-fake
+              (lambda (_req)
+                (prog1 (when first-call
+                         (list (nrepl-dict "id" "1" "name" "my.ns/foo"
+                                           "return" "1")))
+                  (setq first-call nil)))))
+    (sayid-tree--show-fn-query "my.ns/foo" "")
+    (with-current-buffer "*sayid-tree*"
+      (sayid-tree-refresh)
+      (expect (buffer-string) :to-match "no longer matches"))
+    (kill-buffer "*sayid-tree*"))
+
+  (it "keeps the namespace filter when refreshing the visible traced view"
+    (let ((buf (get-buffer-create "*traced-test*")))
+      (with-current-buffer buf
+        (setq-local sayid-traced--ns "my.ns"))
+      (spy-on 'get-buffer-window :and-return-value (selected-window))
+      (spy-on 'window-buffer :and-return-value buf)
+      (spy-on 'sayid-show-traced)
+      (sayid--refresh-traced-if-visible)
+      (expect 'sayid-show-traced :to-have-been-called-with "my.ns")
+      (kill-buffer buf))))
 
 (describe "sayid-tree-inspect"
   (before-each
