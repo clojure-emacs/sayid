@@ -4,6 +4,10 @@
 
 ### Changes
 
+* An empty workspace tree (`C-c s w`) and an empty traced-functions view (`C-c s s`) now render a short getting-started hint instead of signaling an error.
+
+### Changes
+
 * Require CIDER 2.0.
 
 ### Bugs fixed

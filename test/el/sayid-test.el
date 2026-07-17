@@ -149,6 +149,42 @@
       (expect (cdr (assoc "throw" targets)) :to-equal '("throw"))
       (expect (cdr (assoc "arg x" targets)) :to-equal '("arg-map" "x")))))
 
+(describe "the empty states"
+  (before-each
+    ;; Stand in for `cider-popup-buffer': a fresh buffer in the right mode,
+    ;; without needing window management in batch mode.
+    (spy-on 'cider-popup-buffer :and-call-fake
+            (lambda (name _select mode _ancillary)
+              (with-current-buffer (get-buffer-create name)
+                (funcall mode)
+                (current-buffer)))))
+  (after-each
+    (dolist (name '("*sayid-tree*" "*sayid-traced*"))
+      (when (get-buffer name)
+        (kill-buffer name))))
+
+  (it "renders the workspace tree with a getting-started hint instead of erroring"
+    (spy-on 'sayid-req-get-value :and-return-value nil)
+    (sayid-tree-view-workspace)
+    (with-current-buffer "*sayid-tree*"
+      (expect (buffer-string) :to-match "workspace is empty")
+      (expect (buffer-string) :to-match "sayid-trace-ns-in-file")))
+
+  (it "renders the traced view with a how-to-trace hint instead of erroring"
+    (spy-on 'sayid-req-get-value :and-return-value nil)
+    (sayid-show-traced)
+    (with-current-buffer "*sayid-traced*"
+      (expect (buffer-string) :to-match "Nothing is traced yet")
+      (expect (buffer-string) :to-match "sayid-trace-ns-in-file")))
+
+  (it "shows no hint when the workspace has recorded calls"
+    (spy-on 'sayid-req-get-value :and-return-value
+            (list (nrepl-dict "id" "1" "name" "my.ns/foo" "return" "42")))
+    (sayid-tree-view-workspace)
+    (with-current-buffer "*sayid-tree*"
+      (expect (buffer-string) :not :to-match "workspace is empty")
+      (expect (buffer-string) :to-match "my.ns/foo"))))
+
 (describe "sayid-tree-inspect"
   (before-each
     (spy-on 'sayid-send-and-message)
