@@ -664,6 +664,12 @@ reported) when the function isn't traced, instead of silently no-oping."
   (reply:data msg (query-tree->data
                    (buf-query-tree [#'parent-name-or-name (symbol fn-name)] mod))))
 
+(defn ^:nrepl sayid-query-form-at-point-data
+  "Data counterpart of `sayid-query-form-at-point`: the recorded calls matching
+  the form at FILE/LINE as node data.  See doc/nrepl-api.md."
+  [{:keys [file line] :as msg}]
+  (reply:data msg (query-tree->data (sd/ws-query-by-file-pos file line))))
+
 (def sayid-nrepl-ops
   (->> *ns*
        ns-interns

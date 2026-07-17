@@ -312,13 +312,24 @@ state.  POS is the position to move cursor to."
   (sayid-setup-buf (sayid-req-get-value req) t nil))
 
 
+(defun sayid-tree--show-form-query (file line)
+  "Fetch and render every recorded call of the form at FILE and LINE as a tree."
+  (let ((roots (sayid-req-get-value (list "op" "sayid-query-form-at-point-data"
+                                          "file" file
+                                          "line" line))))
+    (if roots
+        (sayid-tree--render roots
+                            (format "Query: %s:%s"
+                                    (file-name-nondirectory file) line)
+                            nil
+                            (lambda () (sayid-tree--show-form-query file line)))
+      (user-error "No recorded calls for the form at point"))))
+
 ;;;###autoload
 (defun sayid-query-form-at-point ()
-  "Query sayid for invocations of the function defined at point."
+  "Show every recorded call of the form at point as a tree."
   (interactive)
-  (sayid-req-insert-content (list "op" "sayid-query-form-at-point"
-                                  "file" (buffer-file-name)
-                                  "line" (line-number-at-pos))))
+  (sayid-tree--show-form-query (buffer-file-name) (line-number-at-pos)))
 
 ;;;###autoload
 (defun sayid-get-meta-at-point ()
@@ -660,6 +671,20 @@ so `sayid-tree-refresh' can re-run the fetch that produced this tree."
   (format "Query: %s %s%s" kind selector
           (if (string-empty-p mod) "" (format " [%s]" mod))))
 
+(defun sayid-tree--read-value-path (call prompt-p)
+  "Pick one of CALL's captured values and return its `sayid-def-value' path.
+By default picks the return value (or the thrown error); with PROMPT-P
+non-nil, prompt for which value - the return, the throw, or a named
+argument."
+  (let ((targets (or (sayid-tree--value-targets call)
+                     (user-error "This call has no captured values"))))
+    (if prompt-p
+        (or (cdr (assoc (completing-read "Value: " targets nil t) targets))
+            (user-error "No value selected"))
+      (or (cdr (assoc "return" targets))
+          (cdr (assoc "throw" targets))
+          (user-error "This call has no return value")))))
+
 (defun sayid-tree-inspect (&optional arg)
   "Inspect a captured value of the call at point in CIDER's inspector.
 Defs the value to `$s/*' server-side and hands the live object to
@@ -667,17 +692,47 @@ Defs the value to `$s/*' server-side and hands the live object to
 error); with a prefix ARG, prompt for which value - the return, the throw, or
 a named argument."
   (interactive "P")
+  (let ((call (sayid-tree--call-at-point)))
+    (sayid--inspect-value (nrepl-dict-get call "id")
+                          (sayid-tree--read-value-path call arg))))
+
+(defun sayid-tree-def-value (&optional arg)
+  "Def a captured value of the call at point to the `$s/*' var.
+By default defs the return value (or the thrown error); with a prefix ARG,
+prompt for which value.  Handy for poking at a captured value in the REPL."
+  (interactive "P")
+  (let ((call (sayid-tree--call-at-point)))
+    (sayid-send-and-message (list "op" "sayid-def-value"
+                                  "trace-id" (nrepl-dict-get call "id")
+                                  "path" (sayid-tree--read-value-path call arg)))))
+
+(defun sayid-tree-pprint (&optional arg)
+  "Pretty-print a captured value of the call at point in its own buffer.
+By default prints the return value (or the thrown error); with a prefix ARG,
+prompt for which value."
+  (interactive "P")
   (let* ((call (sayid-tree--call-at-point))
-         (targets (or (sayid-tree--value-targets call)
-                      (user-error "This call has no values to inspect")))
-         (path (if arg
-                   (or (cdr (assoc (completing-read "Inspect value: " targets nil t)
-                                   targets))
-                       (user-error "No value selected"))
-                 (or (cdr (assoc "return" targets))
-                     (cdr (assoc "throw" targets))
-                     (user-error "This call has no return value to inspect")))))
-    (sayid--inspect-value (nrepl-dict-get call "id") path)))
+         (path (sayid-tree--read-value-path call arg)))
+    (sayid-select-pprint-buf)
+    (sayid-req-insert-content (list "op" "sayid-pprint-value"
+                                    "trace-id" (nrepl-dict-get call "id")
+                                    "path" path))
+    (goto-char 1)
+    (sayid-select-default-buf)))
+
+(defun sayid-tree-gen-instance-expr ()
+  "Put an expression reproducing the call at point in the kill ring.
+The expression calls the function with the recorded arguments, so yanking
+it into the REPL replays the call."
+  (interactive)
+  (let* ((call (sayid-tree--call-at-point))
+         (expr (sayid-req-get-value
+                (list "op" "sayid-gen-instance-expr"
+                      "trace-id" (nrepl-dict-get call "id")))))
+    (if (or (null expr) (string= "" expr))
+        (message "Sayid couldn't generate a reproduction expression here")
+      (kill-new expr)
+      (message "Written to kill ring: %s" expr))))
 
 (defun sayid-tree--show-fn-query (fn-name mod)
   "Fetch and render every recorded call of FN-NAME, with query modifier MOD."
@@ -734,6 +789,9 @@ See `sayid-tree-mode' for the keys available in the tree buffer."
     (define-key map (kbd "i")   #'sayid-tree-query-id)
     (define-key map (kbd "w")   #'sayid-tree-view-workspace)
     (define-key map (kbd "c i") #'sayid-tree-inspect)
+    (define-key map (kbd "c d") #'sayid-tree-def-value)
+    (define-key map (kbd "c p") #'sayid-tree-pprint)
+    (define-key map (kbd "c r") #'sayid-tree-gen-instance-expr)
     map)
   "Keymap for `sayid-tree-mode', layered over `cider-tree-view-mode-map'.")
 
@@ -742,8 +800,10 @@ See `sayid-tree-mode' for the keys available in the tree buffer."
 Inherits navigation and folding from `cider-tree-view-mode' and adds Sayid
 actions: \\<sayid-tree-mode-map>\\[sayid-tree-query-fn] query the function at
 point, \\[sayid-tree-query-id] focus the call at point, \\[sayid-tree-inspect]
-inspect a value, \\[sayid-tree-refresh] refresh the current view,
-\\[sayid-tree-view-workspace] back to the full workspace.")
+inspect a value, \\[sayid-tree-def-value] def a value to `$s/*',
+\\[sayid-tree-pprint] pretty-print a value, \\[sayid-tree-gen-instance-expr]
+copy an expression reproducing the call, \\[sayid-tree-refresh] refresh the
+current view, \\[sayid-tree-view-workspace] back to the full workspace.")
 
 (defun sayid-traced--fn-node (fn)
   "Make a `cider-tree-view-node' for a traced-function dict FN.

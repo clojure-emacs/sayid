@@ -71,6 +71,17 @@ resolves at that position the reply is an empty map. `enable`, `disable` and
 `remove` are only applied when the function was traced; `add-outer`/`add-inner`
 always apply.
 
+### `sayid-query-form-at-point-data`
+
+Data counterpart of `sayid-query-form-at-point`: replies with the recorded
+calls whose source position matches `file`/`line`, as a list of call nodes
+(the `sayid-get-workspace-data` shape).
+
+| param | meaning |
+|-------|---------|
+| `file` | path of the buffer's file |
+| `line` | 1-based cursor line |
+
 ### `sayid-trace-fn`
 
 Apply a trace action to an explicitly named function.

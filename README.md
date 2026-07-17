@@ -354,7 +354,7 @@ API docs for the core namespaces are available on
 In a clojure-mode buffer, press `C-c s h` (`sayid-show-help`) to
 pop up the help buffer.
 
-    C-c s f -- Queries the active workspace for entries that most closely match the context of the cursor position
+    C-c s f -- Show the recorded calls of the form at point as a tree
     C-c s ! -- Disable traces, load the current buffer, enable traces, and clear the workspace log
     C-c s w -- Show the recorded workspace as a navigable, foldable tree
     C-c s t t -- Trace the function at point (start here)
@@ -391,15 +391,15 @@ few actions on top:
     f -- show every recorded call of the function at point (prefix: a modifier)
     i -- focus the call at point and its subtree (prefix: ancestors/descendants)
     c i -- inspect a captured value in CIDER's inspector (prefix: pick which)
+    c d -- def a captured value to $s/* for the REPL (prefix: pick which)
+    c p -- pretty-print a captured value (prefix: pick which)
+    c r -- copy an expression that reproduces the call at point
     w -- back to the full workspace
     q -- quit the window
 
-The older text-rendered view is still available (`M-x sayid-get-workspace`, and
-where the pretty-print and query-at-point commands land); press `h` in it for its
-own keybinding help.
-    g -- generate instance expression and put in kill ring
-    h -- help
-    q -- quit window
+The legacy text-rendered view (`M-x sayid-get-workspace`) is still around but
+no longer where any default binding lands; press `h` in it for its keybinding
+help.
 
 
 `C-c s s` (`sayid-show-traced`) shows what's traced as a namespaces to functions
