@@ -367,7 +367,7 @@ Refreshes the traced-functions view when it is visible."
                    (sayid--key-hint #'sayid-tree-view-workspace)))))
      ((not was-traced)
       (user-error "%s isn't traced - trace it first with `%s'"
-                  sym (sayid--key-hint #'sayid-outer-trace-fn)))
+                  sym (sayid--key-hint #'sayid-trace-fn)))
      (t
       (message "%s the trace on %s"
                (pcase action
@@ -390,22 +390,39 @@ Refreshes the traced-functions view when it is visible."
   (sayid--trace-fn-at-point "disable"))
 
 ;;;###autoload
-(defun sayid-outer-trace-fn ()
+(defun sayid-trace-fn ()
+  "Trace the function at point.
+This is the place to start: it records every call of the function -
+arguments and return value - into the workspace.  Same as
+`sayid-trace-fn-outer'; use `sayid-trace-fn-inner' to also record the
+expressions evaluated inside the function."
+  (interactive)
+  (sayid--trace-fn-at-point "add-outer"))
+
+;;;###autoload
+(defun sayid-trace-fn-outer ()
   "Trace the function at point, recording its arguments and return value."
   (interactive)
   (sayid--trace-fn-at-point "add-outer"))
 
 ;;;###autoload
-(defun sayid-inner-trace-fn ()
+(defun sayid-trace-fn-inner ()
   "Inner-trace the function at point, also recording its inner expressions."
   (interactive)
   (sayid--trace-fn-at-point "add-inner"))
 
 ;;;###autoload
-(defun sayid-remove-trace-fn ()
+(defun sayid-trace-fn-remove ()
   "Remove the trace of the function at point."
   (interactive)
   (sayid--trace-fn-at-point "remove"))
+
+(define-obsolete-function-alias 'sayid-outer-trace-fn
+  #'sayid-trace-fn-outer "0.8.0")
+(define-obsolete-function-alias 'sayid-inner-trace-fn
+  #'sayid-trace-fn-inner "0.8.0")
+(define-obsolete-function-alias 'sayid-remove-trace-fn
+  #'sayid-trace-fn-remove "0.8.0")
 
 ;;;###autoload
 (defun sayid-load-enable-clear ()
@@ -608,8 +625,9 @@ the thrown error, or a named argument."
 
 To record something:
 
-  1. Trace what you're interested in: `sayid-trace-ns-in-file'
-     (`C-c s t b') traces the current buffer's namespace.
+  1. Trace what you're interested in: `sayid-trace-fn' (`C-c s t t')
+     traces the function at point, `sayid-trace-ns-in-file'
+     (`C-c s t b') the current buffer's whole namespace.
   2. Run some code that calls what you traced (eval a form,
      run a test, hit an endpoint).
   3. Refresh this buffer with `g' (or `C-c s w' from anywhere).
@@ -1138,6 +1156,7 @@ file can be found, jump to it."
     (define-key map (kbd "f")   'sayid-query-form-at-point)
     (define-key map (kbd "!")   'sayid-load-enable-clear)
     (define-key map (kbd "w")   'sayid-tree-view-workspace)
+    (define-key map (kbd "t t") 'sayid-trace-fn)
     (define-key map (kbd "t y") 'sayid-trace-all-ns-in-dir)
     (define-key map (kbd "t p") 'sayid-trace-ns-by-pattern)
     (define-key map (kbd "t b") 'sayid-trace-ns-in-file)
@@ -1145,9 +1164,9 @@ file can be found, jump to it."
     (define-key map (kbd "t E") 'sayid-trace-enable-all)
     (define-key map (kbd "t d") 'sayid-trace-fn-disable)
     (define-key map (kbd "t D") 'sayid-trace-disable-all)
-    (define-key map (kbd "t n") 'sayid-inner-trace-fn)
-    (define-key map (kbd "t o") 'sayid-outer-trace-fn)
-    (define-key map (kbd "t r") 'sayid-remove-trace-fn)
+    (define-key map (kbd "t n") 'sayid-trace-fn-inner)
+    (define-key map (kbd "t o") 'sayid-trace-fn-outer)
+    (define-key map (kbd "t r") 'sayid-trace-fn-remove)
     (define-key map (kbd "t K") 'sayid-kill-all-traces)
     (define-key map (kbd "d t") 'sayid-tap-trace)
     (define-key map (kbd "d b") 'sayid-capture-baseline)
