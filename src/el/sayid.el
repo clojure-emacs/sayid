@@ -567,12 +567,29 @@ the thrown error, or a named argument."
                   (user-error "No call at point"))))
     (cider-tree-view-node-value node)))
 
-(defun sayid-tree--render (roots title)
+(defconst sayid-tree--empty-workspace-hint
+  "The workspace is empty - Sayid hasn't recorded any calls yet.
+
+To record something:
+
+  1. Trace what you're interested in: `sayid-trace-ns-in-file'
+     (`C-c s t b') traces the current buffer's namespace.
+  2. Run some code that calls what you traced (eval a form,
+     run a test, hit an endpoint).
+  3. View the recording with `sayid-tree-view-workspace' (`C-c s w').
+"
+  "What to show in the workspace tree buffer when nothing was recorded.")
+
+(defun sayid-tree--render (roots title &optional empty-hint)
   "Render ROOTS, a list of `sayid-get-workspace-data' nodes, as a tree.
-TITLE is shown in the header line."
+TITLE is shown in the header line.  When ROOTS is empty, show EMPTY-HINT
+\(a string) instead of a blank buffer."
   (with-current-buffer (cider-popup-buffer "*sayid-tree*" 'select
                                            'sayid-tree-mode 'ancillary)
-    (cider-tree-view-render (mapcar #'sayid-tree--make-node roots) title)))
+    (cider-tree-view-render (mapcar #'sayid-tree--make-node roots) title
+                            (when (and empty-hint (null roots))
+                              (lambda ()
+                                (insert (propertize empty-hint 'face 'shadow)))))))
 
 (defun sayid-tree--query-title (kind selector mod)
   "Build a tree title for a query of KIND on SELECTOR with modifier MOD."
@@ -629,12 +646,11 @@ With a prefix ARG, also prompt for a query modifier (e.g. \"a\" for ancestors,
 (defun sayid-tree-view-workspace ()
   "Show the recorded workspace as a navigable, foldable tree.
 Built from the `sayid-get-workspace-data' op, rendered with `cider-tree-view'.
+When nothing has been recorded yet the buffer explains how to get going.
 See `sayid-tree-mode' for the keys available in the tree buffer."
   (interactive)
   (let ((roots (sayid-req-get-value (list "op" "sayid-get-workspace-data"))))
-    (if roots
-        (sayid-tree--render roots "Sayid workspace")
-      (user-error "The Sayid workspace is empty, or Sayid isn't loaded"))))
+    (sayid-tree--render roots "Sayid workspace" sayid-tree--empty-workspace-hint)))
 
 (defvar sayid-tree-mode-map
   (let ((map (make-sparse-keymap)))
@@ -734,22 +750,39 @@ management: \\<sayid-traced-tree-mode-map>\\[sayid-traced-enable] enable,
 \\[sayid-traced-inner-trace] inner-trace, \\[sayid-traced-outer-trace]
 outer-trace the entry at point.")
 
+(defconst sayid-traced--empty-hint
+  "Nothing is traced yet.
+
+In a Clojure buffer, `sayid-trace-ns-in-file' (`C-c s t b') traces the
+buffer's namespace; `sayid-trace-ns-by-pattern' (`C-c s t p') traces
+namespaces by a wildcard pattern.  Then run some code and view the
+recording with `sayid-tree-view-workspace' (`C-c s w').
+"
+  "What to show in the traced-functions buffer when nothing is traced.")
+
+(defun sayid-traced--render (groups)
+  "Render GROUPS, a list of `sayid-show-traced-data' namespace groups.
+When GROUPS is empty, show a hint on how to trace something instead."
+  (with-current-buffer (cider-popup-buffer "*sayid-traced*" 'select
+                                           'sayid-traced-tree-mode 'ancillary)
+    (cider-tree-view-render (mapcar #'sayid-traced--ns-node groups)
+                            "Traced functions"
+                            (unless groups
+                              (lambda ()
+                                (insert (propertize sayid-traced--empty-hint
+                                                    'face 'shadow)))))))
+
 ;;;###autoload
 (defun sayid-show-traced (&optional ns)
   "Show what Sayid has traced as a namespaces to functions tree.
-With NS, restrict to that namespace.
+With NS, restrict to that namespace.  When nothing is traced the buffer
+explains how to trace something.
 See `sayid-traced-tree-mode' for the keys (RET jumps to source; e/d/r/i/o
 manage traces)."
   (interactive)
-  (let ((groups (sayid-req-get-value
-                 (append (list "op" "sayid-show-traced-data")
-                         (when ns (list "ns" ns))))))
-    (if groups
-        (with-current-buffer (cider-popup-buffer "*sayid-traced*" 'select
-                                                 'sayid-traced-tree-mode 'ancillary)
-          (cider-tree-view-render (mapcar #'sayid-traced--ns-node groups)
-                                  "Traced functions"))
-      (user-error "Nothing is traced"))))
+  (sayid-traced--render (sayid-req-get-value
+                         (append (list "op" "sayid-show-traced-data")
+                                 (when ns (list "ns" ns))))))
 
 ;;;###autoload
 (defun sayid-show-traced-ns ()
