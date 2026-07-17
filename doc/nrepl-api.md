@@ -11,7 +11,7 @@ This document is the reference for that wire API.
 With Leiningen, add Sayid as a plugin (it registers the middleware automatically):
 
 ```clojure
-{:user {:plugins [[mx.cider/sayid "0.7.1"]]}}
+{:user {:plugins [[mx.cider/sayid "0.8.0"]]}}
 ```
 
 Or add the middleware explicitly when you start the server, e.g. with the
@@ -276,7 +276,7 @@ Remove all traces and clear the recorded calls. Takes no params. Replies
 
 ### `sayid-version`
 
-Replies with the Sayid version string (e.g. `"0.7.1"`).
+Replies with the Sayid version string (e.g. `"0.8.0"`).
 
 ### `sayid-get-trace-count`
 

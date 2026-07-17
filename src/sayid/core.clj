@@ -18,7 +18,7 @@
 
 (def version
   "The current version of sayid as a string."
-  "0.7.1")
+  "0.8.0")
 
 (def workspace
   "The active workspace. Used by default in any function prefixed `ws-`
