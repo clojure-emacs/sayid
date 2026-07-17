@@ -64,8 +64,12 @@ Apply a trace action to the function whose symbol is at the cursor.
 | `line`, `column` | 1-based cursor position |
 | `source` | the buffer's full text |
 
-Replies with the resolved qualified symbol (e.g. `"my.ns/my-fn"`), or `nil` when
-nothing resolves at that position.
+Replies with a map describing the outcome, so clients can report it truthfully:
+`sym` is the resolved qualified symbol (e.g. `"my.ns/my-fn"`) and `was-traced`
+(`0`/`1`) says whether the function was traced before the action. When nothing
+resolves at that position the reply is an empty map. `enable`, `disable` and
+`remove` are only applied when the function was traced; `add-outer`/`add-inner`
+always apply.
 
 ### `sayid-trace-fn`
 

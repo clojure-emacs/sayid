@@ -386,6 +386,7 @@ few actions on top:
     TAB -- fold or unfold the call at point
     RET, . -- jump to the call's source
     n, p -- move to the next / previous call
+    g -- refresh the current view (re-runs its query)
     f -- show every recorded call of the function at point (prefix: a modifier)
     i -- focus the call at point and its subtree (prefix: ancestors/descendants)
     c i -- inspect a captured value in CIDER's inspector (prefix: pick which)
@@ -402,9 +403,9 @@ own keybinding help.
 
 `C-c s s` (`sayid-show-traced`) shows what's traced as a namespaces to functions
 tree in the `*sayid-traced*` buffer. `RET` on a function jumps to its source;
-`TAB` folds a namespace, `n`/`p` move, `q` quits. `e`/`d`/`r` enable, disable and
-remove the trace at point, and `i`/`o` switch a function to an inner or outer
-trace.
+`TAB` folds a namespace, `n`/`p` move, `g` refreshes, `q` quits. `e`/`d`/`r`
+enable, disable and remove the trace at point, and `i`/`o` switch a function to
+an inner or outer trace.
 
 
 In the `*sayid-pprint*` buffer, press `h` to pop up the help
