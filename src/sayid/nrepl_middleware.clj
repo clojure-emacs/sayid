@@ -181,22 +181,28 @@ qualified function symbol."
 
 (defn ^:nrepl sayid-trace-fn-at-point
   "Apply trace ACTION to the function whose symbol sits at the cursor position
-described by MSG (file/line/column/source).  Replies with a map of the resolved
-symbol (`sym`) and whether it was traced before the action (`was-traced`, 0/1),
-so the client can describe the outcome truthfully - or an empty map when no
-function resolves there.  Enable/disable/remove are skipped (but still
-reported) when the function isn't traced, instead of silently no-oping."
-  [{:keys [action file line column source] :as msg}]
+described by MSG (file/line/column/source).  The reply's `:value` stays the
+resolved symbol (or an empty string), exactly as older clients expect; the
+outcome details ride along as extra response slots - `:sym` and `:was-traced`
+(0/1, the state before the action) - so a current client can describe the
+outcome truthfully.  Enable/disable are skipped (but still reported) when the
+function isn't traced; remove always runs, since it also reconciles a var
+whose trace fell out of sync with the workspace's traced sets."
+  [{:keys [action file line column source transport] :as msg}]
   (let [sym (get-sym-at-pos-in-source file line column source)
         ns-sym (symbol (parse-ns-name-from-source source))
         qual-sym (sym/resolve-to-qual-sym ns-sym sym)]
     (if-not qual-sym
-      (reply:data msg {})
+      (do (t/send transport (response-for msg :value ""))
+          (send-status-done msg))
       (let [was-traced (fn-traced? qual-sym)]
-        (when (or was-traced (#{"add-outer" "add-inner"} action))
+        (when (or was-traced (not (#{"enable" "disable"} action)))
           ((fn-trace-actions action) qual-sym))
-        (reply:data msg {"sym"        (str qual-sym)
-                         "was-traced" (if was-traced 1 0)})))))
+        (t/send transport (response-for msg
+                                        :value (str qual-sym)
+                                        :sym (str qual-sym)
+                                        :was-traced (if was-traced 1 0)))
+        (send-status-done msg)))))
 
 ;; ======================
 

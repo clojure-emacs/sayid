@@ -329,9 +329,15 @@ state.  POS is the position to move cursor to."
 
 ;;;###autoload
 (defun sayid-query-form-at-point ()
-  "Show every recorded call of the form at point as a tree."
+  "Show every recorded call of the form at point as a tree.
+Falls back to the legacy text view when the connected middleware predates
+the `sayid-query-form-at-point-data' op."
   (interactive)
-  (sayid-tree--show-form-query (buffer-file-name) (line-number-at-pos)))
+  (if (cider-nrepl-op-supported-p "sayid-query-form-at-point-data")
+      (sayid-tree--show-form-query (buffer-file-name) (line-number-at-pos))
+    (sayid-req-insert-content (list "op" "sayid-query-form-at-point"
+                                    "file" (buffer-file-name)
+                                    "line" (line-number-at-pos)))))
 
 ;;;###autoload
 (defun sayid-get-meta-at-point ()
@@ -363,26 +369,34 @@ to naming the command."
 
 (defun sayid--trace-fn-at-point (action)
   "Apply trace ACTION to the function at point and describe the outcome.
-Refreshes the traced-functions view when it is visible."
-  (let* ((resp (sayid-req-get-value (list "op" "sayid-trace-fn-at-point"
-                                          "action" action
-                                          "file" (buffer-file-name)
-                                          "line" (line-number-at-pos)
-                                          "column" (+ (current-column) 1)
-                                          "source" (buffer-string))))
-         (sym (and resp (nrepl-dict-get resp "sym")))
-         (was-traced (and resp (eql 1 (nrepl-dict-get resp "was-traced")))))
+Refreshes the traced-functions view when it is visible.  Works against an
+older middleware too - its reply just carries the symbol without the
+`was-traced' slot, so the outcome is described less precisely."
+  (let* ((resp (sayid--send-sync-request (list "op" "sayid-trace-fn-at-point"
+                                               "action" action
+                                               "file" (buffer-file-name)
+                                               "line" (line-number-at-pos)
+                                               "column" (+ (current-column) 1)
+                                               "source" (buffer-string))))
+         (sym (or (nrepl-dict-get resp "sym")
+                  ;; Pre-0.8 middleware: the symbol is the value itself.
+                  (let ((value (nrepl-dict-get resp "value")))
+                    (and (stringp value) (not (string-empty-p value)) value))))
+         ;; 1, 0, or nil when the middleware is too old to say.
+         (was-traced (nrepl-dict-get resp "was-traced")))
+    (when-let* ((ex (nrepl-dict-get resp "ex")))
+      (user-error "Sayid failed: %s" ex))
     (unless sym
       (user-error "No function at point - put the cursor on a function name"))
     (cond
      ((member action '("add-outer" "add-inner"))
       (let ((kind (if (string= action "add-outer") "outer" "inner")))
-        (if was-traced
+        (if (eql 1 was-traced)
             (message "Switched %s to an %s trace" sym kind)
           (message "%s-traced %s - run some code, then `%s' shows what was recorded"
                    (capitalize kind) sym
                    (sayid--key-hint #'sayid-tree-view-workspace)))))
-     ((not was-traced)
+     ((and (member action '("enable" "disable")) (eql 0 was-traced))
       (user-error "%s isn't traced - trace it first with `%s'"
                   sym (sayid--key-hint #'sayid-trace-fn)))
      (t
@@ -1287,17 +1301,23 @@ menu doubles as the keybinding reference."
     ("h"   "describe all bindings"   sayid-show-help)]])
 
 (defun sayid--menu-key (command)
-  "Return COMMAND's key sequence inside `sayid-menu', or nil."
-  (cl-labels ((scan (x)
+  "Return COMMAND's key sequence inside `sayid-menu', or nil.
+Understands both transient layout encodings: the classic one, where a
+suffix is (LEVEL CLASS PLIST), and the current one, where a suffix is
+\(CLASS . PLIST).  Anything unrecognized just yields nil, which makes
+`sayid--key-hint' fall back to naming the command."
+  (cl-labels ((plist-key (pl)
+                (and (keywordp (car-safe pl))
+                     (eq (plist-get pl :command) command)
+                     (plist-get pl :key)))
+              (scan (x)
                 (cond
                  ((vectorp x) (cl-some #'scan (append x nil)))
                  ((consp x)
-                  (or (and (keywordp (car x))
-                           (plist-member x :command)
-                           (eq (plist-get x :command) command)
-                           (plist-get x :key))
+                  (or (plist-key x)
+                      (and (symbolp (car x)) (plist-key (cdr x)))
                       (cl-some #'scan x))))))
-    (scan (get 'sayid-menu 'transient--layout))))
+    (ignore-errors (scan (get 'sayid-menu 'transient--layout)))))
 
 (defvar sayid-clj-mode-keys
   (let ((map (make-sparse-keymap)))
