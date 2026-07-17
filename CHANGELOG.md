@@ -9,6 +9,8 @@
 * Tracing a function no longer pops up the traced-functions window; it's refreshed only when already visible.
 * `g` refreshes the workspace tree and traced-functions buffers.
 * `sayid-reset-workspace` asks for confirmation, since it irreversibly drops all traces and the whole recording.
+* Add `sayid-trace-fn` (`C-c s t t`), the just-trace-this command for newcomers - an outer trace of the function at point.
+* Rename the per-function trace commands for consistency: `sayid-trace-fn-outer`, `sayid-trace-fn-inner` and `sayid-trace-fn-remove` (the old `sayid-outer-trace-fn`, `sayid-inner-trace-fn` and `sayid-remove-trace-fn` names remain as obsolete aliases).
 
 ### Changes
 

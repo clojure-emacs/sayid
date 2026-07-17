@@ -193,7 +193,7 @@
   (it "describes a fresh outer trace and points at the workspace view"
     (spy-on 'sayid-req-get-value :and-return-value
             (nrepl-dict "sym" "my.ns/foo" "was-traced" 0))
-    (sayid-outer-trace-fn)
+    (sayid-trace-fn)
     (expect (apply #'format (spy-calls-args-for 'message 0))
             :to-match "Outer-traced my\\.ns/foo")
     (expect 'sayid--refresh-traced-if-visible :to-have-been-called))
@@ -201,7 +201,7 @@
   (it "reports switching the trace kind when the fn was already traced"
     (spy-on 'sayid-req-get-value :and-return-value
             (nrepl-dict "sym" "my.ns/foo" "was-traced" 1))
-    (sayid-inner-trace-fn)
+    (sayid-trace-fn-inner)
     (expect (apply #'format (spy-calls-args-for 'message 0))
             :to-match "Switched my\\.ns/foo to an inner trace"))
 
@@ -213,7 +213,17 @@
 
   (it "errors when point isn't on a function"
     (spy-on 'sayid-req-get-value :and-return-value (nrepl-dict))
-    (expect (sayid-outer-trace-fn) :to-throw 'user-error)))
+    (expect (sayid-trace-fn) :to-throw 'user-error))
+
+  (it "keeps the old command names alive as obsolete aliases"
+    (dolist (old '(sayid-outer-trace-fn sayid-inner-trace-fn
+                                        sayid-remove-trace-fn))
+      (expect (fboundp old) :to-be-truthy)
+      (expect (get old 'byte-obsolete-info) :to-be-truthy)))
+
+  (it "binds the DWIM trace command under t t"
+    (expect (lookup-key sayid-clj-mode-keys (kbd "t t"))
+            :to-be 'sayid-trace-fn)))
 
 (describe "sayid-reset-workspace"
   (it "does nothing when the user declines the confirmation"

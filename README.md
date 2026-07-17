@@ -357,6 +357,7 @@ pop up the help buffer.
     C-c s f -- Queries the active workspace for entries that most closely match the context of the cursor position
     C-c s ! -- Disable traces, load the current buffer, enable traces, and clear the workspace log
     C-c s w -- Show the recorded workspace as a navigable, foldable tree
+    C-c s t t -- Trace the function at point (start here)
     C-c s t y -- Prompts for a dir, recursively traces all ns's in that dir and subdirs
     C-c s t p -- Prompts for a pattern (* = wildcard), and applies a trace to all *loaded* ns's whose name matches the pattern
     C-c s t b -- Trace the ns in the current buffer
