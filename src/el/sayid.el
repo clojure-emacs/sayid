@@ -316,16 +316,12 @@ state.  POS is the position to move cursor to."
 
 (defun sayid-tree--show-form-query (file line)
   "Fetch and render every recorded call of the form at FILE and LINE as a tree."
-  (let ((roots (sayid-req-get-value (list "op" "sayid-query-form-at-point-data"
-                                          "file" file
-                                          "line" line))))
-    (if roots
-        (sayid-tree--render roots
-                            (format "Query: %s:%s"
-                                    (file-name-nondirectory file) line)
-                            nil
-                            (lambda () (sayid-tree--show-form-query file line)))
-      (user-error "No recorded calls for the form at point"))))
+  (sayid-tree--show-query
+   (lambda () (sayid-req-get-value (list "op" "sayid-query-form-at-point-data"
+                                         "file" file
+                                         "line" line)))
+   (format "Query: %s:%s" (file-name-nondirectory file) line)
+   "No recorded calls for the form at point"))
 
 ;;;###autoload
 (defun sayid-query-form-at-point ()
@@ -363,9 +359,12 @@ to naming the command."
      (t (format "M-x %s" command)))))
 
 (defun sayid--refresh-traced-if-visible ()
-  "Refresh the traced-functions view when its buffer is visible."
-  (when (get-buffer-window "*sayid-traced*" 'visible)
-    (save-selected-window (sayid-show-traced))))
+  "Refresh the traced-functions view when its buffer is visible.
+Preserves the namespace filter the view was rendered with."
+  (when-let* ((win (get-buffer-window "*sayid-traced*" 'visible)))
+    (save-selected-window
+      (sayid-show-traced
+       (buffer-local-value 'sayid-traced--ns (window-buffer win))))))
 
 (defun sayid--trace-fn-at-point (action)
   "Apply trace ACTION to the function at point and describe the outcome.
@@ -651,19 +650,23 @@ the thrown error, or a named argument."
                   (user-error "No call at point"))))
     (cider-tree-view-node-value node)))
 
-(defconst sayid-tree--empty-workspace-hint
-  "The workspace is empty - Sayid hasn't recorded any calls yet.
+(defun sayid-tree--empty-workspace-hint ()
+  "Build the hint shown in the workspace tree when nothing was recorded.
+The key sequences are looked up live, so a custom prefix shows correctly."
+  (format "The workspace is empty - Sayid hasn't recorded any calls yet.
 
 To record something:
 
-  1. Trace what you're interested in: `sayid-trace-fn' (`C-c s t t')
+  1. Trace what you're interested in: `sayid-trace-fn' (`%s')
      traces the function at point, `sayid-trace-ns-in-file'
-     (`C-c s t b') the current buffer's whole namespace.
+     (`%s') the current buffer's whole namespace.
   2. Run some code that calls what you traced (eval a form,
      run a test, hit an endpoint).
-  3. Refresh this buffer with `g' (or `C-c s w' from anywhere).
+  3. Refresh this buffer with `g' (or `%s' from anywhere).
 "
-  "What to show in the workspace tree buffer when nothing was recorded.")
+          (sayid--key-hint #'sayid-trace-fn)
+          (sayid--key-hint #'sayid-trace-ns-in-file)
+          (sayid--key-hint #'sayid-tree-view-workspace)))
 
 (defvar-local sayid-tree--refresh-fn nil
   "Function of no arguments that re-runs the fetch that produced this tree.")
@@ -685,6 +688,30 @@ so `sayid-tree-refresh' can re-run the fetch that produced this tree."
   "Re-run the query that produced this tree buffer and re-render it."
   (interactive)
   (funcall (or sayid-tree--refresh-fn #'sayid-tree-view-workspace)))
+
+(defun sayid-tree--stale-query-hint ()
+  "Build the hint shown when a refreshed query no longer matches anything."
+  (format "This query no longer matches anything - the recording changed.
+
+Press `w' for the full workspace, or trace and run something new
+\(`%s' traces the function at point).
+"
+          (sayid--key-hint #'sayid-trace-fn)))
+
+(defun sayid-tree--show-query (fetch-fn title empty-error &optional refreshing)
+  "Fetch roots with FETCH-FN and render them as a tree titled TITLE.
+When nothing matches, signal EMPTY-ERROR - unless REFRESHING is non-nil
+\(a `sayid-tree-refresh' re-run of an existing view), where an emptied
+query renders as an empty tree with a hint, rather than erroring while
+the stale content stays on screen."
+  (let ((roots (funcall fetch-fn))
+        (refresh (lambda ()
+                   (sayid-tree--show-query fetch-fn title empty-error t))))
+    (cond
+     (roots (sayid-tree--render roots title nil refresh))
+     (refreshing
+      (sayid-tree--render nil title (sayid-tree--stale-query-hint) refresh))
+     (t (user-error "%s" empty-error)))))
 
 (defun sayid-tree--query-title (kind selector mod)
   "Build a tree title for a query of KIND on SELECTOR with modifier MOD."
@@ -737,7 +764,11 @@ prompt for which value."
     (sayid-req-insert-content (list "op" "sayid-pprint-value"
                                     "trace-id" (nrepl-dict-get call "id")
                                     "path" path))
-    (goto-char 1)
+    ;; Point may have landed back in the tree buffer; reset the pprint
+    ;; buffer's position without disturbing the tree's.
+    (when-let* ((buf (get-buffer (car sayid-pprint-buf-spec))))
+      (with-current-buffer buf
+        (goto-char (point-min))))
     (sayid-select-default-buf)))
 
 (defun sayid-tree-gen-instance-expr ()
@@ -756,14 +787,12 @@ it into the REPL replays the call."
 
 (defun sayid-tree--show-fn-query (fn-name mod)
   "Fetch and render every recorded call of FN-NAME, with query modifier MOD."
-  (let ((roots (sayid-req-get-value (list "op" "sayid-query-by-fn-data"
-                                          "fn-name" fn-name
-                                          "mod" mod))))
-    (if roots
-        (sayid-tree--render roots (sayid-tree--query-title "fn" fn-name mod)
-                            nil
-                            (lambda () (sayid-tree--show-fn-query fn-name mod)))
-      (user-error "No recorded calls of %s" fn-name))))
+  (sayid-tree--show-query
+   (lambda () (sayid-req-get-value (list "op" "sayid-query-by-fn-data"
+                                         "fn-name" fn-name
+                                         "mod" mod)))
+   (sayid-tree--query-title "fn" fn-name mod)
+   (format "No recorded calls of %s" fn-name)))
 
 (defun sayid-tree-query-fn (&optional arg)
   "Re-render the tree with every recorded call of the function at point.
@@ -774,14 +803,12 @@ With a prefix ARG, also prompt for a query modifier."
 
 (defun sayid-tree--show-id-query (id mod)
   "Fetch and render the recorded call ID and its subtree, with modifier MOD."
-  (let ((roots (sayid-req-get-value (list "op" "sayid-query-by-id-data"
-                                          "trace-id" id
-                                          "mod" mod))))
-    (if roots
-        (sayid-tree--render roots (sayid-tree--query-title "id" id mod)
-                            nil
-                            (lambda () (sayid-tree--show-id-query id mod)))
-      (user-error "Call %s not found" id))))
+  (sayid-tree--show-query
+   (lambda () (sayid-req-get-value (list "op" "sayid-query-by-id-data"
+                                         "trace-id" id
+                                         "mod" mod)))
+   (sayid-tree--query-title "id" id mod)
+   (format "Call %s not found" id)))
 
 (defun sayid-tree-query-id (&optional arg)
   "Re-render the tree focused on the call at point.
@@ -799,7 +826,8 @@ When nothing has been recorded yet the buffer explains how to get going.
 See `sayid-tree-mode' for the keys available in the tree buffer."
   (interactive)
   (let ((roots (sayid-req-get-value (list "op" "sayid-get-workspace-data"))))
-    (sayid-tree--render roots "Sayid workspace" sayid-tree--empty-workspace-hint
+    (sayid-tree--render roots "Sayid workspace"
+                        (sayid-tree--empty-workspace-hint)
                         #'sayid-tree-view-workspace)))
 
 (defvar sayid-tree-mode-map
@@ -908,15 +936,19 @@ management: \\<sayid-traced-tree-mode-map>\\[sayid-traced-enable] enable,
 \\[sayid-traced-inner-trace] inner-trace, \\[sayid-traced-outer-trace]
 outer-trace the entry at point, \\[sayid-traced-refresh] refresh the view.")
 
-(defconst sayid-traced--empty-hint
-  "Nothing is traced yet.
+(defun sayid-traced--empty-hint ()
+  "Build the hint shown in the traced-functions buffer when nothing is traced.
+The key sequences are looked up live, so a custom prefix shows correctly."
+  (format "Nothing is traced yet.
 
-In a Clojure buffer, `sayid-trace-ns-in-file' (`C-c s t b') traces the
-buffer's namespace; `sayid-trace-ns-by-pattern' (`C-c s t p') traces
+In a Clojure buffer, `sayid-trace-ns-in-file' (`%s') traces the
+buffer's namespace; `sayid-trace-ns-by-pattern' (`%s') traces
 namespaces by a wildcard pattern.  Then run some code and view the
-recording with `sayid-tree-view-workspace' (`C-c s w').
+recording with `sayid-tree-view-workspace' (`%s').
 "
-  "What to show in the traced-functions buffer when nothing is traced.")
+          (sayid--key-hint #'sayid-trace-ns-in-file)
+          (sayid--key-hint #'sayid-trace-ns-by-pattern)
+          (sayid--key-hint #'sayid-tree-view-workspace)))
 
 (defvar-local sayid-traced--ns nil
   "The namespace filter this traced-functions buffer was rendered with.")
@@ -933,7 +965,7 @@ GROUPS is empty, show a hint on how to trace something instead."
                             "Traced functions"
                             (unless groups
                               (lambda ()
-                                (insert (propertize sayid-traced--empty-hint
+                                (insert (propertize (sayid-traced--empty-hint)
                                                     'face 'shadow)))))))
 
 (defun sayid-traced-refresh ()
