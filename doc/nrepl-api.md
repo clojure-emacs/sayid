@@ -284,6 +284,11 @@ Replies with the number of traces in the workspace.
 
 Replies with the number of currently enabled traces.
 
+### `sayid-get-log-count`
+
+Replies with the number of top-level calls currently recorded in the
+workspace.
+
 ### `sayid-get-meta-at-point`
 
 Resolve the symbol at the cursor and report its metadata. Params: `source`,

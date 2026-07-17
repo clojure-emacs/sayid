@@ -33,8 +33,10 @@
 
 ;;; Code:
 
+(require 'cl-lib)
 (require 'cider)
 (require 'cider-tree-view)
+(require 'transient)
 
 (defgroup sayid nil
   "Sayid is an advanced Clojure debugging tool."
@@ -342,13 +344,17 @@ state.  POS is the position to move cursor to."
 
 (defun sayid--key-hint (command)
   "Return a human-readable way to invoke COMMAND.
-Prefers the real keybinding in `clojure-mode-map' (where
-`sayid-setup-package' installs the Sayid keys); falls back to naming
-the command."
-  (let ((key (where-is-internal command (list clojure-mode-map) t)))
-    (if key
-        (key-description key)
-      (format "M-x %s" command))))
+Prefers a direct keybinding in `clojure-mode-map' (where
+`sayid-setup-package' installs the Sayid keys); when the prefix is bound
+to `sayid-menu' instead, spells out the menu key sequence.  Falls back
+to naming the command."
+  (let ((direct (where-is-internal command (list clojure-mode-map) t))
+        (menu (where-is-internal 'sayid-menu (list clojure-mode-map) t)))
+    (cond
+     (direct (key-description direct))
+     ((and menu (sayid--menu-key command))
+      (format "%s %s" (key-description menu) (sayid--menu-key command)))
+     (t (format "M-x %s" command)))))
 
 (defun sayid--refresh-traced-if-visible ()
   "Refresh the traced-functions view when its buffer is visible."
@@ -1211,6 +1217,88 @@ file can be found, jump to it."
   (interactive)
   (sayid--buf-cycle #'sayid-cycle-ring-back))
 
+;;; The Sayid menu
+;;
+;; A transient (magit-style) menu over the same key sequences as the classic
+;; `C-c s' prefix map, so the menu teaches the keys instead of replacing them:
+;; `C-c s t b' does the same thing whether you read it off the menu or type
+;; it blind.
+
+(defun sayid--menu-status ()
+  "Return a line of live workspace state for the menu header, or nil.
+Answers what a newcomer needs to place themselves in the trace -> run ->
+inspect loop: how much is traced, and how much has been recorded."
+  (condition-case nil
+      (format "%s traced (%s enabled) | %s calls recorded"
+              (sayid-req-get-value '("op" "sayid-get-trace-count"))
+              (sayid-req-get-value '("op" "sayid-get-enabled-trace-count"))
+              (sayid-req-get-value '("op" "sayid-get-log-count")))
+    (error nil)))
+
+(defun sayid--menu-description ()
+  "Build the header line for `sayid-menu'.
+Shows live traced/recorded state when connected, and what is missing
+\(a REPL, or the middleware) when not."
+  (concat
+   "Sayid"
+   (propertize
+    (cond
+     ((not (cider-connected-p))
+      "  [no REPL - start one with cider-jack-in]")
+     ((not (cider-nrepl-op-supported-p "sayid-get-log-count" nil 'skip-ensure))
+      "  [Sayid middleware not loaded (or too old) - see the README]")
+     (t (let ((status (sayid--menu-status)))
+          (if status (format "  [%s]" status) ""))))
+    'face 'shadow)))
+
+;;;###autoload (autoload 'sayid-menu "sayid" nil t)
+(transient-define-prefix sayid-menu ()
+  "Sayid's main menu: trace something, run your code, explore the recording.
+Every key here is also a direct key sequence on the same prefix, so the
+menu doubles as the keybinding reference."
+  [:description sayid--menu-description ""]
+  [["Trace"
+    ("t t" "function at point"      sayid-trace-fn)
+    ("t n" "fn at point, inner"     sayid-trace-fn-inner)
+    ("t o" "fn at point, outer"     sayid-trace-fn-outer)
+    ("t b" "buffer's namespace"     sayid-trace-ns-in-file)
+    ("t p" "namespaces by pattern"  sayid-trace-ns-by-pattern)
+    ("t y" "namespaces in a dir"    sayid-trace-all-ns-in-dir)]
+   ["Manage traces"
+    ("s"   "show what's traced"     sayid-show-traced)
+    ("S"   "show traced, this ns"   sayid-show-traced-ns)
+    ("t e" "enable fn trace"        sayid-trace-fn-enable)
+    ("t d" "disable fn trace"       sayid-trace-fn-disable)
+    ("t r" "remove fn trace"        sayid-trace-fn-remove)
+    ("t E" "enable all"             sayid-trace-enable-all)
+    ("t D" "disable all"            sayid-trace-disable-all)
+    ("t K" "remove all"             sayid-kill-all-traces)]]
+  [["Recording"
+    ("w"   "view the workspace tree" sayid-tree-view-workspace)
+    ("f"   "calls of form at point"  sayid-query-form-at-point)
+    ("!"   "reload buffer, clear log" sayid-load-enable-clear)
+    ("c"   "clear the log"           sayid-clear-log)
+    ("x"   "reset the workspace"     sayid-reset-workspace)]
+   ["Data tools"
+    ("d t" "tap the trace"           sayid-tap-trace)
+    ("d b" "capture baseline"        sayid-capture-baseline)
+    ("d d" "diff vs baseline"        sayid-diff-traces)
+    ("V s" "set the view"            sayid-set-view)
+    ("h"   "describe all bindings"   sayid-show-help)]])
+
+(defun sayid--menu-key (command)
+  "Return COMMAND's key sequence inside `sayid-menu', or nil."
+  (cl-labels ((scan (x)
+                (cond
+                 ((vectorp x) (cl-some #'scan (append x nil)))
+                 ((consp x)
+                  (or (and (keywordp (car x))
+                           (plist-member x :command)
+                           (eq (plist-get x :command) command)
+                           (plist-get x :key))
+                      (cl-some #'scan x))))))
+    (scan (get 'sayid-menu 'transient--layout))))
+
 (defvar sayid-clj-mode-keys
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "f")   'sayid-query-form-at-point)
@@ -1314,13 +1402,27 @@ PREFIX is the key prefix to bind the sayid commands under."
   (buffer-disable-undo))
 
 
+(defcustom sayid-use-menu t
+  "When non-nil, `sayid-setup-package' binds the prefix to `sayid-menu'.
+The menu shows the commands grouped by workflow, using the same key
+sequences as the classic prefix map (so e.g. `C-c s t b' works either
+way).  Set to nil to bind the raw `sayid-clj-mode-keys' prefix map
+without the menu popping up."
+  :package-version '(sayid . "0.8.0")
+  :type 'boolean)
+
 ;;;###autoload
 (defun sayid-setup-package (&optional clj-mode-prefix)
   "Set up the sayid package.
 CLJ-MODE-PREFIX sets the prefix key for the `clojure-mode' keybindings.
-When omitted, it defaults to the usual sayid prefix."
+When omitted, it defaults to the usual sayid prefix.  The prefix opens
+`sayid-menu' unless `sayid-use-menu' is nil, in which case the classic
+prefix keymap is bound directly."
   (interactive)
-  (sayid-set-clj-mode-keys (or clj-mode-prefix (kbd "C-c s"))))
+  (let ((prefix (or clj-mode-prefix (kbd "C-c s"))))
+    (if sayid-use-menu
+        (define-key clojure-mode-map prefix #'sayid-menu)
+      (sayid-set-clj-mode-keys prefix))))
 
 (provide 'sayid)
 

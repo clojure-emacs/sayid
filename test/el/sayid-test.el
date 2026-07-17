@@ -395,5 +395,63 @@
       (expect (cider-tree-view-node-value (car children)) :to-equal
               (nrepl-dict "name" "foo" "file" "my/ns.clj" "line" 3)))))
 
+(describe "sayid-menu"
+  (it "is a transient prefix"
+    (expect (fboundp 'sayid-menu) :to-be-truthy)
+    (expect (get 'sayid-menu 'transient--layout) :not :to-be nil))
+
+  (it "uses the same key sequences as the classic prefix map"
+    ;; The menu should teach the keys, not invent new ones: every command it
+    ;; lists must sit on the identical key sequence in `sayid-clj-mode-keys'.
+    (dolist (cmd '(sayid-trace-fn sayid-trace-fn-inner sayid-trace-fn-outer
+                                  sayid-trace-ns-in-file sayid-trace-ns-by-pattern
+                                  sayid-trace-all-ns-in-dir sayid-show-traced
+                                  sayid-show-traced-ns sayid-trace-fn-enable
+                                  sayid-trace-fn-disable sayid-trace-fn-remove
+                                  sayid-trace-enable-all sayid-trace-disable-all
+                                  sayid-kill-all-traces sayid-tree-view-workspace
+                                  sayid-query-form-at-point sayid-load-enable-clear
+                                  sayid-clear-log sayid-reset-workspace
+                                  sayid-tap-trace sayid-capture-baseline
+                                  sayid-diff-traces sayid-set-view sayid-show-help))
+      (expect (sayid--menu-key cmd) :to-equal
+              (key-description
+               (where-is-internal cmd (list sayid-clj-mode-keys) t)))))
+
+  (it "reports the missing REPL in the header"
+    (spy-on 'cider-connected-p :and-return-value nil)
+    (expect (sayid--menu-description) :to-match "no REPL"))
+
+  (it "reports a missing middleware in the header"
+    (spy-on 'cider-connected-p :and-return-value t)
+    (spy-on 'cider-nrepl-op-supported-p :and-return-value nil)
+    (expect (sayid--menu-description) :to-match "middleware not loaded"))
+
+  (it "shows live traced/recorded state when connected"
+    (spy-on 'cider-connected-p :and-return-value t)
+    (spy-on 'cider-nrepl-op-supported-p :and-return-value t)
+    (spy-on 'sayid-req-get-value :and-call-fake
+            (lambda (req)
+              (pcase (cadr req)
+                ("sayid-get-trace-count" 3)
+                ("sayid-get-enabled-trace-count" 2)
+                ("sayid-get-log-count" 12))))
+    (expect (sayid--menu-description)
+            :to-match "3 traced (2 enabled) | 12 calls recorded")))
+
+(describe "sayid-setup-package"
+  (it "binds the prefix to the menu by default"
+    (let ((clojure-mode-map (make-sparse-keymap))
+          (sayid-use-menu t))
+      (sayid-setup-package)
+      (expect (lookup-key clojure-mode-map (kbd "C-c s")) :to-be 'sayid-menu)))
+
+  (it "binds the classic prefix map when the menu is disabled"
+    (let ((clojure-mode-map (make-sparse-keymap))
+          (sayid-use-menu nil))
+      (sayid-setup-package)
+      (expect (lookup-key clojure-mode-map (kbd "C-c s w"))
+              :to-be 'sayid-tree-view-workspace))))
+
 (provide 'sayid-test)
 ;;; sayid-test.el ends here

@@ -301,6 +301,11 @@ reported) when the function isn't traced, instead of silently no-oping."
            count-enabled-traces
            (reply:clj->nrepl msg $)))
 
+(defn ^:nrepl sayid-get-log-count
+  "Reply with the number of top-level calls currently recorded in the workspace."
+  [msg]
+  (reply:clj->nrepl msg (count (:children (sd/ws-deref!)))))
+
 (defn ^:nrepl sayid-trace-fn
   "Apply trace ACTION to the function named by MSG's fn-ns/fn-name."
   [{:keys [action fn-name fn-ns] :as msg}]
