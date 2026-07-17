@@ -253,6 +253,48 @@
       (t/is (seq value))
       (t/is (str/includes? (get (first value) "name") "func1")))))
 
+;;; --- Trace-at-point outcomes -------------------------------------------------
+
+(def ^:private point-source
+  "A tiny stand-in for a buffer's source: `func1' sits on line 2."
+  "(ns sayid.test-ns1)\n(defn func1 [arg1] arg1)\n")
+
+(defn- trace-at-point
+  "Drive sayid-trace-fn-at-point with ACTION on `func1' in `point-source'."
+  [action]
+  (captured-value "sayid-trace-fn-at-point"
+                  {:action action :file "fake.clj" :line 2 :column 8
+                   :source point-source}))
+
+(t/deftest trace-fn-at-point-reports-a-fresh-trace
+  (let [value (trace-at-point "add-outer")]
+    (t/is (= "sayid.test-ns1/func1" (get value "sym")))
+    (t/is (= 0 (get value "was-traced")))
+    (t/is (contains? (:fn (:traced (sd/ws-get-active!)))
+                     'sayid.test-ns1/func1)
+          "the outer trace was applied")))
+
+(t/deftest trace-fn-at-point-reports-an-existing-trace
+  (trace-at-point "add-outer")
+  (let [value (trace-at-point "add-inner")]
+    (t/is (= 1 (get value "was-traced")))
+    (t/is (contains? (:inner-fn (:traced (sd/ws-get-active!)))
+                     'sayid.test-ns1/func1)
+          "the trace was switched to inner")))
+
+(t/deftest trace-fn-at-point-skips-managing-an-absent-trace
+  (let [value (trace-at-point "enable")]
+    (t/is (= 0 (get value "was-traced")))
+    (t/is (empty? (:fn (:traced (sd/ws-get-active!))))
+          "enable on an untraced fn applies nothing")))
+
+(t/deftest trace-fn-at-point-reports-nothing-at-point
+  (let [value (captured-value "sayid-trace-fn-at-point"
+                              {:action "add-outer" :file "fake.clj"
+                               :line 2 :column 2
+                               :source "(ns sayid.test-ns1)\n(nonexistent-fn-xyz 1)\n"})]
+    (t/is (empty? value) "no resolvable function replies with an empty map")))
+
 (t/deftest show-traced-renders-the-audit
   (t/testing "sayid-show-traced returns a rendered [text properties] pair"
     (sd/ws-add-trace-ns! ns1)

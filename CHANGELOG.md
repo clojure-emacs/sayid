@@ -5,6 +5,10 @@
 ### Changes
 
 * An empty workspace tree (`C-c s w`) and an empty traced-functions view (`C-c s s`) now render a short getting-started hint instead of signaling an error.
+* The trace commands describe their outcome in plain language (what was traced and what to do next) instead of echoing the raw server reply, and enabling/disabling an untraced function now reports the actual problem. The `sayid-trace-fn-at-point` op reply changed accordingly (see `doc/nrepl-api.md`).
+* Tracing a function no longer pops up the traced-functions window; it's refreshed only when already visible.
+* `g` refreshes the workspace tree and traced-functions buffers.
+* `sayid-reset-workspace` asks for confirmation, since it irreversibly drops all traces and the whole recording.
 
 ### Changes
 

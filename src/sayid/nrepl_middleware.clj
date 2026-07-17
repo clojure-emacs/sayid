@@ -170,17 +170,33 @@ qualified function symbol."
    "disable"   sd/ws-disable-trace-fn!
    "remove"    sd/ws-remove-trace-fn!})
 
+(defn- fn-traced?
+  "True when QUAL-SYM is currently traced - individually or via its namespace."
+  [qual-sym]
+  (let [{ns-syms :ns fn-syms :fn inner-syms :inner-fn}
+        (:traced (sd/ws-get-active!))]
+    (boolean (or (contains? fn-syms qual-sym)
+                 (contains? inner-syms qual-sym)
+                 (contains? ns-syms (symbol (namespace qual-sym)))))))
+
 (defn ^:nrepl sayid-trace-fn-at-point
   "Apply trace ACTION to the function whose symbol sits at the cursor position
-described by MSG (file/line/column/source).  Replies with the resolved symbol,
-or nil when nothing resolves there."
+described by MSG (file/line/column/source).  Replies with a map of the resolved
+symbol (`sym`) and whether it was traced before the action (`was-traced`, 0/1),
+so the client can describe the outcome truthfully - or an empty map when no
+function resolves there.  Enable/disable/remove are skipped (but still
+reported) when the function isn't traced, instead of silently no-oping."
   [{:keys [action file line column source] :as msg}]
   (let [sym (get-sym-at-pos-in-source file line column source)
         ns-sym (symbol (parse-ns-name-from-source source))
         qual-sym (sym/resolve-to-qual-sym ns-sym sym)]
-    (when qual-sym
-      ((fn-trace-actions action) qual-sym))
-    (reply:clj->nrepl msg qual-sym)))
+    (if-not qual-sym
+      (reply:data msg {})
+      (let [was-traced (fn-traced? qual-sym)]
+        (when (or was-traced (#{"add-outer" "add-inner"} action))
+          ((fn-trace-actions action) qual-sym))
+        (reply:data msg {"sym"        (str qual-sym)
+                         "was-traced" (if was-traced 1 0)})))))
 
 ;; ======================
 

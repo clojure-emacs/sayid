@@ -185,6 +185,73 @@
       (expect (buffer-string) :not :to-match "workspace is empty")
       (expect (buffer-string) :to-match "my.ns/foo"))))
 
+(describe "sayid--trace-fn-at-point"
+  (before-each
+    (spy-on 'message)
+    (spy-on 'sayid--refresh-traced-if-visible))
+
+  (it "describes a fresh outer trace and points at the workspace view"
+    (spy-on 'sayid-req-get-value :and-return-value
+            (nrepl-dict "sym" "my.ns/foo" "was-traced" 0))
+    (sayid-outer-trace-fn)
+    (expect (apply #'format (spy-calls-args-for 'message 0))
+            :to-match "Outer-traced my\\.ns/foo")
+    (expect 'sayid--refresh-traced-if-visible :to-have-been-called))
+
+  (it "reports switching the trace kind when the fn was already traced"
+    (spy-on 'sayid-req-get-value :and-return-value
+            (nrepl-dict "sym" "my.ns/foo" "was-traced" 1))
+    (sayid-inner-trace-fn)
+    (expect (apply #'format (spy-calls-args-for 'message 0))
+            :to-match "Switched my\\.ns/foo to an inner trace"))
+
+  (it "refuses to enable a trace that doesn't exist, naming the remedy"
+    (spy-on 'sayid-req-get-value :and-return-value
+            (nrepl-dict "sym" "my.ns/foo" "was-traced" 0))
+    (expect (sayid-trace-fn-enable) :to-throw 'user-error)
+    (expect 'message :not :to-have-been-called))
+
+  (it "errors when point isn't on a function"
+    (spy-on 'sayid-req-get-value :and-return-value (nrepl-dict))
+    (expect (sayid-outer-trace-fn) :to-throw 'user-error)))
+
+(describe "sayid-reset-workspace"
+  (it "does nothing when the user declines the confirmation"
+    (spy-on 'y-or-n-p :and-return-value nil)
+    (spy-on 'sayid--send-sync-request)
+    (sayid-reset-workspace)
+    (expect 'sayid--send-sync-request :not :to-have-been-called))
+
+  (it "resets after the user confirms"
+    (spy-on 'y-or-n-p :and-return-value t)
+    (spy-on 'sayid--send-sync-request)
+    (sayid-reset-workspace)
+    (expect 'sayid--send-sync-request :to-have-been-called-with
+            '("op" "sayid-reset-workspace"))))
+
+(describe "the refresh bindings"
+  (it "bind g in both tree buffers"
+    (expect (lookup-key sayid-tree-mode-map (kbd "g"))
+            :to-be 'sayid-tree-refresh)
+    (expect (lookup-key sayid-traced-tree-mode-map (kbd "g"))
+            :to-be 'sayid-traced-refresh))
+
+  (it "re-runs the fetch that produced the tree buffer"
+    (spy-on 'cider-popup-buffer :and-call-fake
+            (lambda (name _select mode _ancillary)
+              (with-current-buffer (get-buffer-create name)
+                (funcall mode)
+                (current-buffer))))
+    (spy-on 'sayid-req-get-value :and-return-value
+            (list (nrepl-dict "id" "1" "name" "my.ns/foo" "return" "1")))
+    (sayid-tree--show-fn-query "my.ns/foo" "")
+    (with-current-buffer "*sayid-tree*"
+      (sayid-tree-refresh))
+    (expect (spy-calls-count 'sayid-req-get-value) :to-equal 2)
+    (expect (car (spy-calls-args-for 'sayid-req-get-value 1))
+            :to-equal '("op" "sayid-query-by-fn-data" "fn-name" "my.ns/foo" "mod" ""))
+    (kill-buffer "*sayid-tree*")))
+
 (describe "sayid-tree-inspect"
   (before-each
     (spy-on 'sayid-send-and-message)

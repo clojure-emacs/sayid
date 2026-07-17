@@ -329,47 +329,83 @@ state.  POS is the position to move cursor to."
                                 "file" (buffer-file-name)
                                 "line" (line-number-at-pos))))
 
-(defun sayid--trace-fn-at-point (action fail-msg)
-  "Apply trace ACTION to the fn at point, reporting FAIL-MSG when none resolves.
-Refreshes the traced-functions view afterwards."
-  (sayid-send-and-message (list "op" "sayid-trace-fn-at-point"
-                                "action" action
-                                "file" (buffer-file-name)
-                                "line" (line-number-at-pos)
-                                "column" (+ (current-column) 1)
-                                "source" (buffer-string))
-                          fail-msg)
-  (sayid-show-traced))
+(defun sayid--key-hint (command)
+  "Return a human-readable way to invoke COMMAND.
+Prefers the real keybinding in `clojure-mode-map' (where
+`sayid-setup-package' installs the Sayid keys); falls back to naming
+the command."
+  (let ((key (where-is-internal command (list clojure-mode-map) t)))
+    (if key
+        (key-description key)
+      (format "M-x %s" command))))
+
+(defun sayid--refresh-traced-if-visible ()
+  "Refresh the traced-functions view when its buffer is visible."
+  (when (get-buffer-window "*sayid-traced*" 'visible)
+    (save-selected-window (sayid-show-traced))))
+
+(defun sayid--trace-fn-at-point (action)
+  "Apply trace ACTION to the function at point and describe the outcome.
+Refreshes the traced-functions view when it is visible."
+  (let* ((resp (sayid-req-get-value (list "op" "sayid-trace-fn-at-point"
+                                          "action" action
+                                          "file" (buffer-file-name)
+                                          "line" (line-number-at-pos)
+                                          "column" (+ (current-column) 1)
+                                          "source" (buffer-string))))
+         (sym (and resp (nrepl-dict-get resp "sym")))
+         (was-traced (and resp (eql 1 (nrepl-dict-get resp "was-traced")))))
+    (unless sym
+      (user-error "No function at point - put the cursor on a function name"))
+    (cond
+     ((member action '("add-outer" "add-inner"))
+      (let ((kind (if (string= action "add-outer") "outer" "inner")))
+        (if was-traced
+            (message "Switched %s to an %s trace" sym kind)
+          (message "%s-traced %s - run some code, then `%s' shows what was recorded"
+                   (capitalize kind) sym
+                   (sayid--key-hint #'sayid-tree-view-workspace)))))
+     ((not was-traced)
+      (user-error "%s isn't traced - trace it first with `%s'"
+                  sym (sayid--key-hint #'sayid-outer-trace-fn)))
+     (t
+      (message "%s the trace on %s"
+               (pcase action
+                 ("enable" "Enabled")
+                 ("disable" "Disabled")
+                 ("remove" "Removed"))
+               sym)))
+    (sayid--refresh-traced-if-visible)))
 
 ;;;###autoload
 (defun sayid-trace-fn-enable ()
-  "Enable tracing for symbol at point.  Symbol should point to a fn var."
+  "Enable the existing (disabled) trace of the function at point."
   (interactive)
-  (sayid--trace-fn-at-point "enable" "Nothing traced. Make sure cursor is on symbol."))
+  (sayid--trace-fn-at-point "enable"))
 
 ;;;###autoload
 (defun sayid-trace-fn-disable ()
-  "Disable tracing for symbol at point.  Symbol should point to a fn var."
+  "Disable the trace of the function at point, keeping it in the trace set."
   (interactive)
-  (sayid--trace-fn-at-point "disable" "Nothing found. Make sure cursor is on symbol."))
+  (sayid--trace-fn-at-point "disable"))
 
 ;;;###autoload
 (defun sayid-outer-trace-fn ()
-  "Add outer tracing for symbol at point.  Symbol should point to a fn var."
+  "Trace the function at point, recording its arguments and return value."
   (interactive)
-  (sayid--trace-fn-at-point "add-outer" "Nothing traced. Make sure cursor is on symbol."))
+  (sayid--trace-fn-at-point "add-outer"))
 
 ;;;###autoload
 (defun sayid-inner-trace-fn ()
-  "Add inner tracing for symbol at point.  Symbol should point to a fn var."
+  "Inner-trace the function at point, also recording its inner expressions."
   (interactive)
-  (sayid--trace-fn-at-point "add-inner" "Nothing traced. Make sure cursor is on symbol."))
+  (sayid--trace-fn-at-point "add-inner"))
 
 ;;;###autoload
 (defun sayid-remove-trace-fn ()
-  "Remove tracing for symbol at point.  Symbol should point to a fn var."
+  "Remove the trace of the function at point."
   (interactive)
-  (sayid--trace-fn-at-point "remove" "Nothing found. Make sure cursor is on symbol."))
+  (sayid--trace-fn-at-point "remove"))
 
 ;;;###autoload
 (defun sayid-load-enable-clear ()
@@ -576,20 +612,30 @@ To record something:
      (`C-c s t b') traces the current buffer's namespace.
   2. Run some code that calls what you traced (eval a form,
      run a test, hit an endpoint).
-  3. View the recording with `sayid-tree-view-workspace' (`C-c s w').
+  3. Refresh this buffer with `g' (or `C-c s w' from anywhere).
 "
   "What to show in the workspace tree buffer when nothing was recorded.")
 
-(defun sayid-tree--render (roots title &optional empty-hint)
+(defvar-local sayid-tree--refresh-fn nil
+  "Function of no arguments that re-runs the fetch that produced this tree.")
+
+(defun sayid-tree--render (roots title &optional empty-hint refresh-fn)
   "Render ROOTS, a list of `sayid-get-workspace-data' nodes, as a tree.
 TITLE is shown in the header line.  When ROOTS is empty, show EMPTY-HINT
-\(a string) instead of a blank buffer."
+\(a string) instead of a blank buffer.  REFRESH-FN, when non-nil, is stored
+so `sayid-tree-refresh' can re-run the fetch that produced this tree."
   (with-current-buffer (cider-popup-buffer "*sayid-tree*" 'select
                                            'sayid-tree-mode 'ancillary)
+    (setq-local sayid-tree--refresh-fn refresh-fn)
     (cider-tree-view-render (mapcar #'sayid-tree--make-node roots) title
                             (when (and empty-hint (null roots))
                               (lambda ()
                                 (insert (propertize empty-hint 'face 'shadow)))))))
+
+(defun sayid-tree-refresh ()
+  "Re-run the query that produced this tree buffer and re-render it."
+  (interactive)
+  (funcall (or sayid-tree--refresh-fn #'sayid-tree-view-workspace)))
 
 (defun sayid-tree--query-title (kind selector mod)
   "Build a tree title for a query of KIND on SELECTOR with modifier MOD."
@@ -615,32 +661,42 @@ a named argument."
                      (user-error "This call has no return value to inspect")))))
     (sayid--inspect-value (nrepl-dict-get call "id") path)))
 
+(defun sayid-tree--show-fn-query (fn-name mod)
+  "Fetch and render every recorded call of FN-NAME, with query modifier MOD."
+  (let ((roots (sayid-req-get-value (list "op" "sayid-query-by-fn-data"
+                                          "fn-name" fn-name
+                                          "mod" mod))))
+    (if roots
+        (sayid-tree--render roots (sayid-tree--query-title "fn" fn-name mod)
+                            nil
+                            (lambda () (sayid-tree--show-fn-query fn-name mod)))
+      (user-error "No recorded calls of %s" fn-name))))
+
 (defun sayid-tree-query-fn (&optional arg)
   "Re-render the tree with every recorded call of the function at point.
 With a prefix ARG, also prompt for a query modifier."
   (interactive "P")
-  (let* ((fn-name (nrepl-dict-get (sayid-tree--call-at-point) "name"))
-         (mod (sayid--read-query-mod arg))
-         (roots (sayid-req-get-value (list "op" "sayid-query-by-fn-data"
-                                           "fn-name" fn-name
-                                           "mod" mod))))
+  (sayid-tree--show-fn-query (nrepl-dict-get (sayid-tree--call-at-point) "name")
+                             (sayid--read-query-mod arg)))
+
+(defun sayid-tree--show-id-query (id mod)
+  "Fetch and render the recorded call ID and its subtree, with modifier MOD."
+  (let ((roots (sayid-req-get-value (list "op" "sayid-query-by-id-data"
+                                          "trace-id" id
+                                          "mod" mod))))
     (if roots
-        (sayid-tree--render roots (sayid-tree--query-title "fn" fn-name mod))
-      (user-error "No recorded calls of %s" fn-name))))
+        (sayid-tree--render roots (sayid-tree--query-title "id" id mod)
+                            nil
+                            (lambda () (sayid-tree--show-id-query id mod)))
+      (user-error "Call %s not found" id))))
 
 (defun sayid-tree-query-id (&optional arg)
   "Re-render the tree focused on the call at point.
 With a prefix ARG, also prompt for a query modifier (e.g. \"a\" for ancestors,
 \"d\" for descendants, optionally with a depth)."
   (interactive "P")
-  (let* ((id (nrepl-dict-get (sayid-tree--call-at-point) "id"))
-         (mod (sayid--read-query-mod arg))
-         (roots (sayid-req-get-value (list "op" "sayid-query-by-id-data"
-                                           "trace-id" id
-                                           "mod" mod))))
-    (if roots
-        (sayid-tree--render roots (sayid-tree--query-title "id" id mod))
-      (user-error "Call %s not found" id))))
+  (sayid-tree--show-id-query (nrepl-dict-get (sayid-tree--call-at-point) "id")
+                             (sayid--read-query-mod arg)))
 
 ;;;###autoload
 (defun sayid-tree-view-workspace ()
@@ -650,11 +706,13 @@ When nothing has been recorded yet the buffer explains how to get going.
 See `sayid-tree-mode' for the keys available in the tree buffer."
   (interactive)
   (let ((roots (sayid-req-get-value (list "op" "sayid-get-workspace-data"))))
-    (sayid-tree--render roots "Sayid workspace" sayid-tree--empty-workspace-hint)))
+    (sayid-tree--render roots "Sayid workspace" sayid-tree--empty-workspace-hint
+                        #'sayid-tree-view-workspace)))
 
 (defvar sayid-tree-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "f")   #'sayid-tree-query-fn)
+    (define-key map (kbd "g")   #'sayid-tree-refresh)
     (define-key map (kbd "i")   #'sayid-tree-query-id)
     (define-key map (kbd "w")   #'sayid-tree-view-workspace)
     (define-key map (kbd "c i") #'sayid-tree-inspect)
@@ -666,7 +724,8 @@ See `sayid-tree-mode' for the keys available in the tree buffer."
 Inherits navigation and folding from `cider-tree-view-mode' and adds Sayid
 actions: \\<sayid-tree-mode-map>\\[sayid-tree-query-fn] query the function at
 point, \\[sayid-tree-query-id] focus the call at point, \\[sayid-tree-inspect]
-inspect a value, \\[sayid-tree-view-workspace] back to the full workspace.")
+inspect a value, \\[sayid-tree-refresh] refresh the current view,
+\\[sayid-tree-view-workspace] back to the full workspace.")
 
 (defun sayid-traced--fn-node (fn)
   "Make a `cider-tree-view-node' for a traced-function dict FN.
@@ -736,6 +795,7 @@ namespace-level op (only meaningful for enable, disable and remove)."
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "e") #'sayid-traced-enable)
     (define-key map (kbd "d") #'sayid-traced-disable)
+    (define-key map (kbd "g") #'sayid-traced-refresh)
     (define-key map (kbd "r") #'sayid-traced-remove)
     (define-key map (kbd "i") #'sayid-traced-inner-trace)
     (define-key map (kbd "o") #'sayid-traced-outer-trace)
@@ -748,7 +808,7 @@ Inherits navigation and folding from `cider-tree-view-mode' and adds trace
 management: \\<sayid-traced-tree-mode-map>\\[sayid-traced-enable] enable,
 \\[sayid-traced-disable] disable, \\[sayid-traced-remove] remove,
 \\[sayid-traced-inner-trace] inner-trace, \\[sayid-traced-outer-trace]
-outer-trace the entry at point.")
+outer-trace the entry at point, \\[sayid-traced-refresh] refresh the view.")
 
 (defconst sayid-traced--empty-hint
   "Nothing is traced yet.
@@ -760,17 +820,28 @@ recording with `sayid-tree-view-workspace' (`C-c s w').
 "
   "What to show in the traced-functions buffer when nothing is traced.")
 
-(defun sayid-traced--render (groups)
+(defvar-local sayid-traced--ns nil
+  "The namespace filter this traced-functions buffer was rendered with.")
+
+(defun sayid-traced--render (groups ns)
   "Render GROUPS, a list of `sayid-show-traced-data' namespace groups.
-When GROUPS is empty, show a hint on how to trace something instead."
+NS is the namespace filter the groups were fetched with (nil for all),
+remembered so `sayid-traced-refresh' can re-run the same fetch.  When
+GROUPS is empty, show a hint on how to trace something instead."
   (with-current-buffer (cider-popup-buffer "*sayid-traced*" 'select
                                            'sayid-traced-tree-mode 'ancillary)
+    (setq-local sayid-traced--ns ns)
     (cider-tree-view-render (mapcar #'sayid-traced--ns-node groups)
                             "Traced functions"
                             (unless groups
                               (lambda ()
                                 (insert (propertize sayid-traced--empty-hint
                                                     'face 'shadow)))))))
+
+(defun sayid-traced-refresh ()
+  "Re-fetch and re-render the traced-functions view."
+  (interactive)
+  (sayid-show-traced sayid-traced--ns))
 
 ;;;###autoload
 (defun sayid-show-traced (&optional ns)
@@ -782,7 +853,8 @@ manage traces)."
   (interactive)
   (sayid-traced--render (sayid-req-get-value
                          (append (list "op" "sayid-show-traced-data")
-                                 (when ns (list "ns" ns))))))
+                                 (when ns (list "ns" ns))))
+                        ns))
 
 ;;;###autoload
 (defun sayid-show-traced-ns ()
@@ -847,10 +919,12 @@ manage traces)."
 
 ;;;###autoload
 (defun sayid-reset-workspace ()
-  "Reset all traces and log in workspace."
+  "Reset the workspace: remove all traces and the whole recording.
+Asks for confirmation first, since there is no way back."
   (interactive)
-  (sayid--send-sync-request (list "op" "sayid-reset-workspace"))
-  (message "Removed traces. Cleared log."))
+  (when (y-or-n-p "Reset the Sayid workspace (removes all traces and the recording)? ")
+    (sayid--send-sync-request (list "op" "sayid-reset-workspace"))
+    (message "Removed traces. Cleared log.")))
 
 ;;;###autoload
 (defun sayid-tap-trace ()
