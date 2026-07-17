@@ -298,6 +298,57 @@
     (expect 'sayid-send-and-message :not :to-have-been-called)
     (expect 'cider-inspect-expr :not :to-have-been-called)))
 
+(describe "the tree value commands"
+  (before-each
+    (spy-on 'sayid-tree--call-at-point :and-return-value
+            (nrepl-dict "id" "7" "return" "42")))
+
+  (it "def a captured value to $s/*"
+    (spy-on 'sayid-send-and-message)
+    (sayid-tree-def-value)
+    (expect 'sayid-send-and-message :to-have-been-called-with
+            '("op" "sayid-def-value" "trace-id" "7" "path" ("return"))))
+
+  (it "pretty-print a captured value"
+    (spy-on 'sayid-req-insert-content)
+    (spy-on 'sayid-select-pprint-buf)
+    (spy-on 'sayid-select-default-buf)
+    (sayid-tree-pprint)
+    (expect 'sayid-req-insert-content :to-have-been-called-with
+            '("op" "sayid-pprint-value" "trace-id" "7" "path" ("return"))))
+
+  (it "put a reproduction expression in the kill ring"
+    (spy-on 'sayid-req-get-value :and-return-value "(my.ns/foo 42)")
+    (spy-on 'message)
+    (sayid-tree-gen-instance-expr)
+    (expect (current-kill 0) :to-equal "(my.ns/foo 42)"))
+
+  (it "report when no reproduction expression could be generated"
+    (spy-on 'sayid-req-get-value :and-return-value "")
+    (spy-on 'kill-new)
+    (spy-on 'message)
+    (sayid-tree-gen-instance-expr)
+    (expect 'kill-new :not :to-have-been-called)))
+
+(describe "sayid-query-form-at-point"
+  (it "renders the matching calls in the tree view"
+    (spy-on 'cider-popup-buffer :and-call-fake
+            (lambda (name _select mode _ancillary)
+              (with-current-buffer (get-buffer-create name)
+                (funcall mode)
+                (current-buffer))))
+    (spy-on 'sayid-req-get-value :and-return-value
+            (list (nrepl-dict "id" "1" "name" "my.ns/foo" "return" "1")))
+    (sayid-tree--show-form-query "/tmp/a.clj" 3)
+    (with-current-buffer "*sayid-tree*"
+      (expect (buffer-string) :to-match "my.ns/foo"))
+    (kill-buffer "*sayid-tree*"))
+
+  (it "errors when nothing was recorded for the form"
+    (spy-on 'sayid-req-get-value :and-return-value nil)
+    (expect (sayid-tree--show-form-query "/tmp/a.clj" 3)
+            :to-throw 'user-error)))
+
 (describe "sayid-buf-inspect-at-point"
   (before-each
     (spy-on 'sayid-send-and-message)

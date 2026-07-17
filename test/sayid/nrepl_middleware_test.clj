@@ -251,7 +251,14 @@
   (t/testing "sayid-query-data runs a query and returns data"
     (let [value (captured-value "sayid-query-data" {:query "()"})]
       (t/is (seq value))
-      (t/is (str/includes? (get (first value) "name") "func1")))))
+      (t/is (str/includes? (get (first value) "name") "func1"))))
+  (t/testing "sayid-query-form-at-point-data matches calls by source position"
+    (let [{:keys [file line]} (meta #'ns1/func1)
+          value (captured-value "sayid-query-form-at-point-data"
+                                {:file file :line line})]
+      (t/is (= 1 (count value)))
+      (t/is (str/includes? (get (first value) "name") "func1"))
+      (t/is (bencode-roundtrips? value) "the data bencodes cleanly"))))
 
 ;;; --- Trace-at-point outcomes -------------------------------------------------
 

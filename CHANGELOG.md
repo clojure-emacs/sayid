@@ -11,6 +11,8 @@
 * `sayid-reset-workspace` asks for confirmation, since it irreversibly drops all traces and the whole recording.
 * Add `sayid-trace-fn` (`C-c s t t`), the just-trace-this command for newcomers - an outer trace of the function at point.
 * Rename the per-function trace commands for consistency: `sayid-trace-fn-outer`, `sayid-trace-fn-inner` and `sayid-trace-fn-remove` (the old `sayid-outer-trace-fn`, `sayid-inner-trace-fn` and `sayid-remove-trace-fn` names remain as obsolete aliases).
+* Bring the workspace tree view to feature parity with the legacy text view: `c d` defs a captured value to `$s/*`, `c p` pretty-prints one, and `c r` copies an expression reproducing the call at point.
+* `sayid-query-form-at-point` (`C-c s f`) now renders its results in the tree view, backed by the new `sayid-query-form-at-point-data` op, instead of the legacy text view.
 
 ### Changes
 
