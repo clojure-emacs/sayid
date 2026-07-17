@@ -113,6 +113,13 @@ somewhere, to load keybindings for clojure-mode buffers.
   (sayid-setup-package))
 ```
 
+This binds `C-c s` to the Sayid menu (`sayid-menu`), a transient popup
+showing the commands grouped by workflow, plus live state about what's
+traced and recorded. The menu uses real key sequences, so `C-c s t b`
+does the same thing whether you read it off the menu or type it blind.
+Prefer the classic prefix keymap without a popup? Set `sayid-use-menu`
+to nil before calling `sayid-setup-package`.
+
 If you use CIDER's jack-in commands, then Sayid automatically adds the
 Maven dependency when starting a REPL. This means you don't need to
 manually add the dependency to your `project.clj` or `deps.edn` file.
@@ -344,15 +351,15 @@ a baseline for `(fn [a b] (let [s (+ a b)] (if (> s 10) (* s 2) s)))` records
 > [!NOTE]
 > This section assumes you're using the official CIDER plugin.
 
-The keybindings are grouped by buffer below. Every list is also available
-from within Emacs: press `h` in any Sayid buffer (or `C-c s h` in a Clojure
-buffer) to pop up the matching help buffer.
+The basic loop is: **trace** something, **run** the code that hits it, then
+**explore** what was recorded. In a Clojure buffer press `C-c s` to pop up
+the Sayid menu - it groups the commands along that loop and shows how much
+is traced and recorded right now. The keybindings are also listed by buffer
+below, and every list is available from within Emacs: press `h` in any
+Sayid buffer to pop up the matching help buffer.
 
 API docs for the core namespaces are available on
 [cljdoc](https://cljdoc.org/d/mx.cider/sayid/CURRENT).
-
-In a clojure-mode buffer, press `C-c s h` (`sayid-show-help`) to
-pop up the help buffer.
 
     C-c s f -- Show the recorded calls of the form at point as a tree
     C-c s ! -- Disable traces, load the current buffer, enable traces, and clear the workspace log

@@ -4,6 +4,7 @@
 
 ### Changes
 
+* Add `sayid-menu`, a transient menu that `sayid-setup-package` now binds to the `C-c s` prefix: commands grouped by workflow, with live traced/recorded state in the header (backed by a new `sayid-get-log-count` op). All classic key sequences keep working - the menu uses the same keys - and `sayid-use-menu` set to nil restores the plain prefix keymap.
 * An empty workspace tree (`C-c s w`) and an empty traced-functions view (`C-c s s`) now render a short getting-started hint instead of signaling an error.
 * The trace commands describe their outcome in plain language (what was traced and what to do next) instead of echoing the raw server reply, and enabling/disabling an untraced function now reports the actual problem. The `sayid-trace-fn-at-point` op reply changed accordingly (see `doc/nrepl-api.md`).
 * Tracing a function no longer pops up the traced-functions window; it's refreshed only when already visible.

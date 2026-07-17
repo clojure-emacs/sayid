@@ -260,6 +260,15 @@
       (t/is (str/includes? (get (first value) "name") "func1"))
       (t/is (bencode-roundtrips? value) "the data bencodes cleanly"))))
 
+(t/deftest log-count-reports-recorded-top-level-calls
+  (t/is (= 0 (captured-value "sayid-get-log-count" {}))
+        "an empty workspace has no recorded calls")
+  (sd/ws-add-trace-ns! ns1)
+  (ns1/func1 :a)
+  (ns1/func1 :b)
+  (t/is (= 2 (captured-value "sayid-get-log-count" {}))
+        "each top-level call adds a root"))
+
 ;;; --- Trace-at-point outcomes -------------------------------------------------
 
 (def ^:private point-source
